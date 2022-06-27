@@ -123,6 +123,23 @@ class CompositionTools:
         comp = comp.assign_coords(component=components)
         return comp
         
+    def add_grid(self,components,pts_per_row=50,basis=100,dim_name='grid'):
+        compositions = composition_grid(
+                pts_per_row = pts_per_row,
+                basis = basis,
+                dim=len(components),
+                )
+
+        for component in components:
+            name = component+'_grid'
+            if name in self.data:
+                del self.data[name]
+
+        for component,comps in zip(components,compositions.T):
+            name = component+'_grid'
+            self.data[name] = (dim_name,comps)
+        return self.data
+    
     def plot_scatter(self,components,labels=None,**mpl_kw):
         if len(components)==3:
             xy = self.to_xy(components)
@@ -139,7 +156,7 @@ class CompositionTools:
             elif ('labels' in self.data):
                 labels = self.data['labels'].values
             else:
-                labels = np.zeros(self.data.system.shape[0])
+                labels = np.zeros(xy.shape[0])
                 
         artists = []
         for label in np.unique(labels):
@@ -196,27 +213,6 @@ def format_ternary(ax=None,label_right=None,label_top=None,label_left=None):
     if label_left is not None:
         ax.text(0,0,label_left,ha='right')
         
-# def phasemap_grid_factory(components,pts_per_row=50,basis=100):
-#     compositions = composition_grid(
-#             pts_per_row = pts_per_row,
-#             basis = basis,
-#             dim=len(components),
-#             )
-#     N = compositions.shape[0]
-#     compositions = pd.DataFrame(compositions,columns=components)
-#     q = np.geomspace(1e-3,1,25)
-#     I = np.random.random(25)
-#     measurements = pd.concat([pd.Series(index=q,data=I) for _ in range(N)],axis=1).T
-#     labels = pd.Series(np.ones(N))
-#      
-#     pm = PhaseMap(components)
-#     pm.append(
-#             compositions=compositions,
-#             measurements=measurements,
-#             labels=labels,
-#             )
-# 
-#     return pm
 
 
 def composition_grid(pts_per_row=50,basis=100,dim=3,eps=1e-9):
