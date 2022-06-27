@@ -13,7 +13,7 @@ from scipy.stats import entropy
 from sklearn.neighbors import KernelDensity
 import tqdm
 
-from AFL.automation.agent.PhaseMap import ternary2cart
+from AFL.agent.PhaseMap import to_xy
 
     
 class GP:
@@ -21,7 +21,7 @@ class GP:
         
         self.pm = pm
         if self.pm.ncomponents==3:
-            self.xy = ternary2cart(pm.compositions)
+            self.xy = to_xy(pm.compositions)
         else: 
             self.xy = None
         
@@ -90,7 +90,7 @@ class GP:
     
     def predict(self,compositions):
         if self.xy is not None:
-            xy_dense = ternary2cart(compositions)
+            xy_dense = to_xy(compositions)
             self.y = self.model.predict_y(xy_dense)
         else:
             #throw out last composition as it's not linearly indepedent

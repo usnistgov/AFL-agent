@@ -1,8 +1,8 @@
 import requests
 import base64
 import pickle
-from AFL.automation.APIServer.client.Client import Client
-from AFL.automation.agent.Serialize import deserialize,serialize
+from AFL.automation.APIServer.Client import Client
+from AFL.automation.shared.Serialize import deserialize,serialize
 import time
 
 class AgentClient(Client):

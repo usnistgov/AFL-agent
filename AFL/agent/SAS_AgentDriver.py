@@ -1,7 +1,7 @@
-from AFL.automation.APIServer.client.Client import Client
-from AFL.automation.APIServer.client.OT2Client import OT2Client
+from AFL.automation.APIServer.Client import Client
+from AFL.automation.prepare.OT2Client import OT2Client
 from AFL.automation.shared.utilities import listify
-from AFL.automation.APIServer.driver.Driver import Driver
+from AFL.automation.APIServer.Driver import Driver
 
 from math import ceil,sqrt
 import json
@@ -16,13 +16,13 @@ import pandas as pd
 import numpy as np
 import pathlib
 
-from AFL.automation.agent import AcquisitionFunction 
-from AFL.automation.agent import GaussianProcess 
-from AFL.automation.agent import PhaseMap
-from AFL.automation.agent import Similarity 
-from AFL.automation.agent import PhaseLabeler
-from AFL.automation.agent.Serialize import serialize,deserialize
-from AFL.automation.agent.WatchDog import WatchDog
+from AFL.agent import AcquisitionFunction 
+from AFL.agent import GaussianProcess 
+from AFL.agent import PhaseMap
+from AFL.agent import Similarity 
+from AFL.agent import PhaseLabeler
+from AFL.agent.Serialize import serialize,deserialize
+from AFL.agent.WatchDog import WatchDog
 
 import tensorflow as tf
 import gpflow
