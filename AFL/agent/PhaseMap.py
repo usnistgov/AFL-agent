@@ -1,329 +1,222 @@
-import pickle
-import warnings
-from copy import deepcopy
-
-import matplotlib.pyplot as plt
+import xarray as xr
 import numpy as np
-import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from scipy.signal import savgol_filter
 
-from sklearn.preprocessing import OrdinalEncoder
+@xr.register_dataarray_accessor('afl')
+class AFL_DataArrayTools:
+    def __init__(self,da):
+        self.da = da
+        self.comp = CompositionTools(da)
+        self.scatt = ScatteringTools(da)
+        
+@xr.register_dataset_accessor('afl')
+class AFL_DatasetTools:
+    def __init__(self,ds):
+        self.ds = ds
+        self.comp = CompositionTools(ds)
+        
+class ScatteringTools:
+    def __init__(self,data):
+        self.data = data
+        
+    def plot_logwaterfall(self,x='q',dim='system',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,base=10,ax=None):
+        N = self.data[dim].shape[0]
+        mul = self.data[dim].copy(data=np.geomspace(1,float(base)**(N+1),N))
+        lines = (self
+         .data
+         .pipe(lambda x:x*mul)
+         .plot
+         .line(
+            x=x,
+            xscale='log',
+            yscale='log',
+            marker='.',
+            ls='None',
+            add_legend=legend,
+            ax=ax)
+        )
+        plt.gca().set( xlabel=xlabel,  ylabel=ylabel, )
+        if legend:
+            sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
+        return lines
+            
+    def plot_waterfall(self,x='q',dim='system',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,base=1,ax=None):
+        N = self.data[dim].shape[0]
+        mul = self.data[dim].copy(data=np.linspace(1,base*N,N))
+        lines = (self
+         .data
+         .pipe(lambda x:x+mul)
+         .plot
+         .line(
+            x=x,
+            xscale='linear',
+            yscale='linear',
+            marker='.',
+            ls='None',
+            add_legend=legend,
+            ax=ax)
+        )
+        plt.gca().set( xlabel=xlabel,  ylabel=ylabel, )
+        if legend:
+            sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
+        return lines
+            
+    def plot_loglog(self,x='q',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None):
+        lines = self.data.plot.line(
+            x=x,
+            xscale='log',
+            yscale='log',
+            marker='.',
+            ls='None',
+            add_legend=legend,
+            ax=ax)
+        plt.gca().set( xlabel=xlabel,ylabel=ylabel)
+        if legend:
+            sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
+        return lines
+    def plot_linlin(self,x='q',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None):
+        lines = self.data.plot.line(
+            x=x,
+            marker='.',
+            ls='None',
+            add_legend=legend,
+            ax=ax)
+        plt.gca().set( xlabel=xlabel,ylabel=ylabel)
+        if legend:
+            sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
+        return lines
+            
+    def derivative(self,order=1,qlo_isel=0,qhi_isel=-1,npts=500,sgf_window_length=31,sgf_polyorder=2):
+        #log scale
+        data2 =self.data.copy()
+        data2.name='I'
+        data2 = data2.where(data2>0.0,drop=True).pipe(np.log10)
+        data2 = data2.isel(q=slice(qlo_isel,qhi_isel))
+        data2['q'] = np.log10(data2.q)
+        
+        #interpolate to constant log(dq) grid
+        qnew = np.geomspace(data2.q.min(),data2.q.max(),npts)
+        dq = qnew[1]-qnew[0]
+        data2 = data2.interp(q=qnew)
+        
+        #filter out any q that have NaN
+        data2 = data2.dropna('q','any')
+        
+        #take derivative
+        dI = savgol_filter(data2.values.T,window_length=sgf_window_length,polyorder=sgf_polyorder,delta=dq,axis=0,deriv=order)
+        data2_dI = data2.copy(data=dI.T)
+        return data2_dI
+    
+        
+class CompositionTools:
+    def __init__(self,data):
+        self.data = data
 
-
-class PhaseMap:
-    '''Container for compositions, measurements, and labels'''
-    def __init__(self,components):
-        self.model = PhaseMapModel(components)
-        self.view = PhaseMapView_MPL()
+    def get(self,components):
+        da_list = []
+        for k in components:
+            da_list.append(self.data[k])
+        comp = xr.concat(da_list,dim='component')
+        comp.name='compositions'
+        comp = comp.assign_coords(component=components)
+        return comp
         
-    def __str__(self):
-        return f'<PhaseMap {self.shape[0]} pts>'
-    
-    def __repr__(self):
-        return self.__str__()
-            
-    def __getitem__(self,index):
-        composition = self.model.compositions.iloc[index]
-        measurement = self.model.measurements.iloc[index]
-        label = self.model.labels.iloc[index]
-        return (composition,measurement,label)
-    
-    def slice(self,indices):
-        compositions = self.model.compositions.iloc[indices]
-        measurements = self.model.measurements.iloc[indices]
-        labels = self.model.labels.iloc[indices]
-        pm = PhaseMap(self.components)
-        pm.append(
-            compositions=compositions,
-            measurements=measurements,
-            labels=labels,
-        )
-        return pm
-    
-    def project(self,components):
-        compositions = self.compositions[components].copy()
-        compositions,mask = rescale_compositions(compositions)
-        
-        labels = self.labels.loc[mask].copy()
-        measurements = self.measurements.reset_index(drop=True).loc[mask].copy()
-        
-        pm = PhaseMap(components)
-        pm.append(
-            compositions=compositions,
-            measurements=measurements,
-            labels=labels,
-        )
-        return pm
-        
-
-    @property
-    def components(self):
-        return self.model.components
-
-    @property
-    def ncomponents(self):
-        return len(self.model.components)
-    
-    @property
-    def compositions(self):
-        return self.model.compositions
-    
-    @compositions.setter
-    def compositions(self,value):
-        self.model.compositions = value
-    
-    @property
-    def measurements(self):
-        return self.model.measurements
-
-    @measurements.setter
-    def measurements(self,measurements):
-        if not isinstance(measurements,pd.DataFrame):
-            measurements = pd.DataFrame(measurements.copy())
-        self.model.measurements = measurements
-    
-    @property
-    def labels(self):
-        return self.model.labels
-    
-    @labels.setter
-    def labels(self,labels):
-        if not isinstance(labels,pd.Series):
-            labels = pd.Series(labels.copy())
-        self.model.labels = labels.copy()
-        
-    @property
-    def labels_ordinal(self):
-        '''Numerical labels sorted by spatial position'''
-        self.update_encoder()
-        
-        labels_ordinal = pd.Series(
-            data=self.label_encoder.transform(
-                self.labels.values.reshape(-1,1)
-            ).flatten(),
-            index=self.model.labels.index,
-        )
-        return labels_ordinal
-    
-    def update_encoder(self):
-        labels_sorted = (
-            self.compositions
-            .copy()
-            .set_index(self.labels)
-            .sort_values(self.components[:-1]) # sort by comp1 and then comp2
-            .index
-            .values
-        )
-        
-        self.label_encoder.fit(labels_sorted.reshape(-1,1))
-    
-    @property
-    def label_encoder(self):
-        return self.model.label_encoder
-    
-    @property
-    def shape(self):
-        return self.model.compositions.shape
-    
-    @property
-    def size(self):
-        return self.model.compositions.size
-    
-    def copy(self,labels=None):
-        if labels is None:
-            labels = self.model.labels
-           
-        if not isinstance(labels,pd.Series):
-            labels = pd.Series(labels)
-            
-        pm = PhaseMap(self.components)
-        pm.append(
-            compositions = self.model.compositions,
-            measurements = self.model.measurements,
-            labels = labels,
-        )
-        return pm
-    
-    def save(self,fname):
-        out_dict = {}
-        out_dict['components'] = self.model.components
-        out_dict['compositions'] = self.model.compositions
-        out_dict['measurements'] = self.model.measurements
-        out_dict['labels'] = self.model.labels
-        
-        fname = str(fname)#handle pathlib objects
-        if not (fname[-4:]=='.pkl'):
-            fname+='.pkl'
-        
-        with open(fname,'wb') as f:
-            pickle.dump(out_dict,f,protocol=-1)
-            
-    @classmethod
-    def load(cls,fname):
-        fname = str(fname)#handle pathlib objects
-        if not (fname[-4:]=='.pkl'):
-            fname+='.pkl'
-            
-        with open(fname,'rb') as f:
-            in_dict = pickle.load(f)
-        
-        pm = cls(in_dict['components'])
-        pm.append(
-            compositions = in_dict['compositions'],
-            measurements = in_dict['measurements'],
-            labels       = in_dict['labels'],
-        )
-        return pm
-            
-    
-    def append(self,compositions,measurements=None,labels=None):
-        self.model.append(
-                compositions=compositions,
-                measurements=measurements,
-                labels=labels
-                )
-        
-    def plot(self,components=None,compositions=None,labels=None,rescale=True,**mpl_kw):
-        if (components is None) and (compositions is None) and (labels is None):
-            components = self.components.copy()
-            labels = self.labels.copy()
-            compositions = self.compositions.copy()
-            
-        if components is not None:
-            compositions = self.compositions[components].copy()
-            labels = self.labels.copy()
+    def plot_scatter(self,components,labels=None,**mpl_kw):
+        if len(components)==3:
+            xy = self.to_xy(components)
+            ternary=True
+        elif len(components)==2:
+            xy = np.vstack(list(self.data[c].values for c in components)).T
+            ternary=False
         else:
-            components = self.components.copy()
+            raise ValueError(f'Can only work with 2 or 3 components. You passed: {components}')
+        
+        if (labels is None):
+            if ('labels' in self.data.coords):
+                labels = self.data.coords['labels'].values
+            elif ('labels' in self.data):
+                labels = self.data['labels'].values
+            else:
+                labels = np.zeros(self.data.system.shape[0])
+                
+        artists = []
+        for label in np.unique(labels):
+            mask = (labels==label)
+            artists.append(plt.scatter(*xy[mask].T,**mpl_kw))
             
-        if labels is None:
-            labels = pd.Series(np.ones_like(compositions.shape[0]))
-        
-        if rescale:
-            # compositions = compositions.apply(lambda x: 100.0*x/x.sum(),axis=1)
-            comps = compositions.copy()
-            mask = (comps[components].sum(1)>0.0)
-            comps = comps[components].loc[mask].values
-            comps = 100.0*comps/comps.sum(1)[:,np.newaxis]
-            compositions = pd.DataFrame(comps,columns=components)
-            labels = labels.loc[mask]
-        
-        compositions = compositions[components]#ensure ordering
+        if ternary:
+            format_ternary(plt.gca(),*components)
+        else:
+            plt.gca().set(xlabel=components[0],ylabel=components[1])
+        return artists
             
-        ax = None
-        if len(components)==2:
-            ax=self.view.scatter(compositions,labels=labels,**mpl_kw)
-        elif len(components)==3:
-            ax=self.view.scatter_ternary(compositions,labels=labels,**mpl_kw)
-        else:
-            raise ValueError(f'Unable to plot {len(components)} dimensions.')
-        return ax
-    
-class PhaseMapModel:
-    def __init__(self,components):
-        self.components = components
-        self.compositions = pd.DataFrame(columns=components)
-        self.measurements = pd.DataFrame()
-        self.labels = pd.Series(dtype=np.float64)
-        self.label_encoder = OrdinalEncoder()
         
-    def append(self,compositions,labels,measurements):
-        self.compositions = pd.concat([self.compositions,compositions],ignore_index=True)
-        if measurements is not None:
-            self.measurements = pd.concat([self.measurements,measurements])
-        else:
-            self.measurements = None
             
-        if labels is not None:
-            self.labels = pd.concat([self.labels,labels],ignore_index=True)
-        else:
-            self.labels = pd.Series(np.ones(compositions.shape[0]))
-        
-    
-class PhaseMapView_MPL:
-    def __init__(self,cmap='jet'):
-        self.cmap = cmap
-        
-    def make_axes(self,components,subplots=(1,1)):
-        fig,ax = plt.subplots(*subplots,figsize=(5*subplots[1],4*subplots[0]))
-        
-        if (subplots[0]>1) or (subplots[1]>1):
-            ax = ax.flatten()
-            if len(components)==3:
-                for cax in ax:
-                    format_plot_ternary(ax,*components)
-        else:
-            if len(components)==3:
-                format_plot_ternary(ax,*components)
-        return ax
-    
-    def scatter(self,compositions,labels=None,ax=None,**mpl_kw):
-        if ax is None:
-            ax = self.make_axes(compositions.columns.values,(1,1))
-        
-        xy = compositions.values
-        
-        if 'marker' not in mpl_kw:
-            mpl_kw['marker'] = '.'
-        if ('cmap' not in mpl_kw) and ('color' not in mpl_kw):
-            mpl_kw['cmap'] = self.cmap
-        mpl_kw['c'] = labels
-        ax.scatter(*xy.T,**mpl_kw)
-        return ax
-    
-    def scatter_ternary(self,compositions,labels=None,ax=None,**mpl_kw):
-        if ax is None:
-            ax = self.make_axes(compositions.columns.values,(1,1))
-        
-        xy = ternary2cart(compositions.values)
-        
-        if 'marker' not in mpl_kw:
-            mpl_kw['marker'] = '.'
-        if ('cmap' not in mpl_kw) and ('color' not in mpl_kw):
-            mpl_kw['cmap'] = self.cmap
-        if 'color' not in mpl_kw:
-            mpl_kw['c'] = labels
-        ax.scatter(*xy.T,**mpl_kw)
-        return ax
-    
-    def lines(self,xy,ax=None,label=None):
-        if ax is None:
-            ax = self.make_axes((1,1))
+    def to_xy(self,components):
+        '''Ternary composition to Cartesian coordinate'''
             
-        ax.plot(*xy.T,marker='None',ls=':',label=label)
-        return ax
-
-def rescale_compositions(compositions,basis=100.0,remove_zeros=True):
-    comps = compositions.copy()
-    if remove_zeros:
-        mask = (comps.sum(1)>0.0)
-    else:
-        mask = np.ones(comps.shape[0],dtype=bool)
+        if not (len(components)==3):
+            raise ValueError('Must specify exactly three components')
         
-    comps = comps.loc[mask].values
-    comps = basis*comps/comps.sum(1)[:,np.newaxis]
-    compositions = pd.DataFrame(comps,columns=compositions.columns)
-    return compositions,mask
-
-def phasemap_grid_factory(components,pts_per_row=50,basis=100):
-    compositions = composition_grid(
-            pts_per_row = pts_per_row,
-            basis = basis,
-            dim=len(components),
-            )
-    N = compositions.shape[0]
-    compositions = pd.DataFrame(compositions,columns=components)
-    q = np.geomspace(1e-3,1,25)
-    I = np.random.random(25)
-    measurements = pd.concat([pd.Series(index=q,data=I) for _ in range(N)],axis=1).T
-    labels = pd.Series(np.ones(N))
-     
-    pm = PhaseMap(components)
-    pm.append(
-            compositions=compositions,
-            measurements=measurements,
-            labels=labels,
-            )
-
-    return pm
+        comps = np.vstack(list(self.data[c].values for c in components)).T
+        
+        return to_xy(comps)
+            
+    
+def to_xy(comps,normalize=True):
+    '''Ternary composition to Cartesian coordinate'''
+        
+    if not (comps.shape[1]==3):
+        raise ValueError('Must specify exactly three components')
+    
+    if normalize:
+        comps = comps/comps.sum(1)[:,np.newaxis]
+        
+    # Convert ternary data to cartesian coordinates.
+    xy = np.zeros((comps.shape[0],2))
+    xy[:,1] = comps[:,1]*np.sin(60.*np.pi / 180.)
+    xy[:,0] = comps[:,0] + xy[:,1]*np.sin(30.*np.pi/180.)/np.sin(60*np.pi/180)
+    return xy
+    
+def format_ternary(ax=None,label_right=None,label_top=None,label_left=None):
+    if ax is None:
+        ax = plt.gca()
+        
+    ax.axis('off')
+    ax.set_aspect('equal','box')
+    ax.set(xlim = [0,1],ylim = [0,1])
+    ax.plot([0,1,0.5,0],[0,0,np.sqrt(3)/2,0],ls='-',color='k')
+    
+    if label_right is not None:
+        ax.text(1,0,label_right,ha='left')
+    if label_top is not None:
+        ax.text(0.5,np.sqrt(3)/2,label_top,ha='center',va='bottom')
+    if label_left is not None:
+        ax.text(0,0,label_left,ha='right')
+        
+# def phasemap_grid_factory(components,pts_per_row=50,basis=100):
+#     compositions = composition_grid(
+#             pts_per_row = pts_per_row,
+#             basis = basis,
+#             dim=len(components),
+#             )
+#     N = compositions.shape[0]
+#     compositions = pd.DataFrame(compositions,columns=components)
+#     q = np.geomspace(1e-3,1,25)
+#     I = np.random.random(25)
+#     measurements = pd.concat([pd.Series(index=q,data=I) for _ in range(N)],axis=1).T
+#     labels = pd.Series(np.ones(N))
+#      
+#     pm = PhaseMap(components)
+#     pm.append(
+#             compositions=compositions,
+#             measurements=measurements,
+#             labels=labels,
+#             )
+# 
+#     return pm
 
 
 def composition_grid(pts_per_row=50,basis=100,dim=3,eps=1e-9):
@@ -343,66 +236,3 @@ def composition_grid(pts_per_row=50,basis=100,dim=3,eps=1e-9):
         pt = [k*basis for k in [*i,j]]
         pts.append(pt)
     return np.array(pts)
-
-def cart2ternary(compositions):
-    '''Ternary composition to Cartesian cooridate'''
-    if compositions is None:
-        compositions = self.model.compositions
-        
-    try:
-        #Assume pandas
-        xy = compositions.values.copy()
-    except AttributeError:
-        # Assume numpy
-        xy = compositions.copy()
-    
-    if xy.ndim==1:
-        xy = np.array([xy])
-
-    if xy.shape[1]!=2:
-        raise ValueError('This class only works with ternary (3-component) data!')
-        
-    # Convert ternary data to cartesian coordinates.
-    t = np.zeros((xy.shape[0],3))
-    t[:,1] = 100.*xy[:,1]/np.sin(60*np.pi/180.)
-    t[:,0] = 100.0*(xy[:,0] - xy[:,1]*np.sin(30.*np.pi/180.)/np.sin(60*np.pi/180))
-    t[:,2] = 100.0 - t[:,0] - t[:,1]
-    return t
-
-def ternary2cart(compositions):
-    '''Ternary composition to Cartesian cooridate'''
-    if compositions is None:
-        compositions = self.model.compositions
-        
-    try:
-        #Assume pandas
-        t = compositions.values.copy()
-    except AttributeError:
-        # Assume numpy
-        t = compositions.copy()
-    
-    if t.ndim==1:
-        t = np.array([t])
-
-    if t.shape[1]!=3:
-        raise ValueError('This class only works with ternary (3-component) data!')
-        
-    # Convert ternary data to cartesian coordinates.
-    xy = np.zeros((t.shape[0],2))
-    xy[:,1] = t[:,1]*np.sin(60.*np.pi / 180.) / 100.
-    xy[:,0] = t[:,0]/100. + xy[:,1]*np.sin(30.*np.pi/180.)/np.sin(60*np.pi/180)
-    return xy
-
-def format_plot_ternary(ax,label_a=None,label_b=None,label_c=None):
-    ax.axis('off')
-    ax.set(
-        xlim = [0,1],
-        ylim = [0,1],
-    )
-    ax.plot([0,1,0.5,0],[0,0,np.sqrt(3)/2,0],ls='-',color='k')
-    if label_a is not None:
-        ax.text(1,0,label_a,ha='left')
-    if label_b is not None:
-        ax.text(0.5,np.sqrt(3)/2,label_b,ha='center',va='bottom')
-    if label_c is not None:
-        ax.text(0,0,label_c,ha='right')
