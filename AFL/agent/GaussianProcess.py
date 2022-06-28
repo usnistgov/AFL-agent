@@ -17,14 +17,16 @@ from AFL.agent.PhaseMap import to_xy
 
     
 class GP:
-    def __init__(self,pm,num_classes):
+    def __init__(self,ds,components,num_classes):
+        self.ds = ds
+
+        if 'labels' not in ds:
+            raise ValueError('Must have labels in Dataset before making GP!')
+
+        if 'labels_ordinal' not in ds:
+            self.ds = self.ds.afl.labels.make_ordinal()
         
-        self.pm = pm
-        if self.pm.ncomponents==3:
-            self.xy = to_xy(pm.compositions)
-        else: 
-            self.xy = None
-        
+        self.components = components
         self.num_classes = num_classes
         
         self.reset_GP()
@@ -34,10 +36,12 @@ class GP:
         
     def reset_GP(self,kernel=None):
         
-        if self.xy is not None:
-            data = (self.xy, self.pm.labels_ordinal) 
+        if len(self.components)==3:
+            xy = self.ds.afl.comp.to_xy(self.components)
+            data = (xy, self.ds['labels_ordinal']) 
         else:
-            data = (self.pm.compositions.astype(float).values[:,:-1]/100.0, self.pm.labels_ordinal) 
+            comp = self.ds.afl.comp.get(self.components).values[:,:-1]#only need N-1 compositions
+            data = (comp, self.ds['labels_ordinal']) 
             
         if kernel is None:
             kernel = gpflow.kernels.Matern32(variance=0.1,lengthscales=0.1) 
@@ -89,7 +93,7 @@ class GP:
         self.iter_monitor(i)
     
     def predict(self,compositions):
-        if self.xy is not None:
+        if len(self.components)==3:
             xy_dense = to_xy(compositions)
             self.y = self.model.predict_y(xy_dense)
         else:
