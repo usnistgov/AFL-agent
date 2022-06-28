@@ -2,6 +2,7 @@ from AFL.automation.APIServer.Client import Client
 from AFL.automation.prepare.OT2Client import OT2Client
 from AFL.automation.shared.utilities import listify
 from AFL.automation.APIServer.Driver import Driver
+from AFL.automation.shared.Serialize import serialize,deserialize
 
 from math import ceil,sqrt
 import json
@@ -21,7 +22,6 @@ from AFL.agent import GaussianProcess
 from AFL.agent import PhaseMap
 from AFL.agent import Similarity 
 from AFL.agent import PhaseLabeler
-from AFL.agent.Serialize import serialize,deserialize
 from AFL.agent.WatchDog import WatchDog
 
 import tensorflow as tf
