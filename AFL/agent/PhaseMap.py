@@ -164,6 +164,7 @@ class CompositionTools:
     def __init__(self,data):
         self.data = data
         self.default = None
+        self.cmap = 'viridis'
 
     def set_default(self,components):
         self.default = components
@@ -187,9 +188,21 @@ class CompositionTools:
         comp.name='compositions'
         comp = comp.assign_coords(component=components)
         return comp.transpose()#ensures columns are components
+
+    def get_grid(self,components=None):
+        components = self._get_default(components)
+
+        da_list = []
+        for k in components:
+            da_list.append(self.data[k+'_grid'])
+        comp = xr.concat(da_list,dim='component')
+        comp.name='compositions_grid'
+        comp = comp.assign_coords(component=components)
+        return comp.transpose()#ensures columns are components
         
     def add_grid(self,components=None,pts_per_row=50,basis=100,dim_name='grid'):
         components = self._get_default(components)
+        print(f'--> Making grid for components {components} at {pts_per_row} pts_per_row')
 
         compositions = composition_grid(
                 pts_per_row = pts_per_row,
@@ -208,7 +221,42 @@ class CompositionTools:
         return self.data
 
     
-    def plot_scatter(self,components=None,labels=None,**mpl_kw):
+    def plot_continuous(self,components=None,labels=None,set_labels=True,**mpl_kw):
+        components = self._get_default(components)
+
+        if len(components)==3:
+            xy = self.to_xy(components)
+            ternary=True
+        elif len(components)==2:
+            xy = np.vstack(list(self.data[c].values for c in components)).T
+            ternary=False
+        else:
+            raise ValueError(f'Can only work with 2 or 3 components. You passed: {components}')
+        
+        if (labels is None):
+            if ('labels' in self.data.coords):
+                labels = self.data.coords['labels'].values
+            elif ('labels' in self.data):
+                labels = self.data['labels'].values
+            else:
+                labels = np.zeros(xy.shape[0])
+        elif isinstance(labels,str) and (labels in self.data):
+                labels = self.data[labels].values
+                
+        if ('cmap' not in mpl_kw) and ('color' not in mpl_kw):
+             mpl_kw['cmap'] = 'viridis'
+        if 'color' not in mpl_kw:
+            mpl_kw['c'] = labels
+        artists = plt.scatter(*xy.T,**mpl_kw)
+
+        if set_labels:
+            if ternary:
+                format_ternary(plt.gca(),*components)
+            else:
+                plt.gca().set(xlabel=components[0],ylabel=components[1])
+        return artists
+
+    def plot_discrete(self,components=None,labels=None,set_labels=True,**mpl_kw):
         components = self._get_default(components)
 
         if len(components)==3:
@@ -233,10 +281,11 @@ class CompositionTools:
             mask = (labels==label)
             artists.append(plt.scatter(*xy[mask].T,**mpl_kw))
             
-        if ternary:
-            format_ternary(plt.gca(),*components)
-        else:
-            plt.gca().set(xlabel=components[0],ylabel=components[1])
+        if set_labels:
+            if ternary:
+                format_ternary(plt.gca(),*components)
+            else:
+                plt.gca().set(xlabel=components[0],ylabel=components[1])
         return artists
             
         
