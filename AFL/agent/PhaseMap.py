@@ -3,6 +3,9 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
+from sklearn.preprocessing import OrdinalEncoder
+
+import textwrap
 
 @xr.register_dataarray_accessor('afl')
 class AFL_DataArrayTools:
@@ -45,6 +48,24 @@ class AFL_DatasetTools:
                 v_xr = xr.DataArray([v],dims=concat_dim)
                 ds_new[k] = xr.concat([self.ds[k].copy(),v_xr],dim=concat_dim)
         return ds_new
+
+class LabelTools:
+    def __init__(self,data):
+        self.data = data
+
+    def make_default(self,name='labels',dim='system'):
+        data = self.data.copy()
+        data['labels'] = xr.DataArray(np.ones(self.data[dim].shape[0]),dims=dim,coords=self.data[dim].coords)
+        return data
+
+    def make_ordinal(self,ordinal_name='labels_ordinal',labels_name='labels',sortby=None):
+        encoder = OrdinalEncoder()
+        data = self.data.copy()
+        if sortby is not None:
+            data = data.sortby(sortby)
+        labels_ordinal = encoder.fit_transform(data[labels_name].values.reshape(-1,1)).flatten()
+        data[ordinal_name]  = data[labels_name].copy(data=labels_ordinal)
+        return data
         
 class ScatteringTools:
     def __init__(self,data):
@@ -142,17 +163,34 @@ class ScatteringTools:
 class CompositionTools:
     def __init__(self,data):
         self.data = data
+        self.default = None
 
-    def get(self,components):
+    def set_default(self,components):
+        self.default = components
+        return self.data
+
+    def _get_default(self,components=None):
+        if (components is None):
+            if self.default is not None:
+                components = self.default
+            else:
+                raise ValueError('Must pass components or use .set_default')
+        return components
+
+    def get(self,components=None):
+        components = self._get_default(components)
+
         da_list = []
         for k in components:
             da_list.append(self.data[k])
         comp = xr.concat(da_list,dim='component')
         comp.name='compositions'
         comp = comp.assign_coords(component=components)
-        return comp
+        return comp.transpose()#ensures columns are components
         
-    def add_grid(self,components,pts_per_row=50,basis=100,dim_name='grid'):
+    def add_grid(self,components=None,pts_per_row=50,basis=100,dim_name='grid'):
+        components = self._get_default(components)
+
         compositions = composition_grid(
                 pts_per_row = pts_per_row,
                 basis = basis,
@@ -168,8 +206,11 @@ class CompositionTools:
             name = component+'_grid'
             self.data[name] = (dim_name,comps)
         return self.data
+
     
-    def plot_scatter(self,components,labels=None,**mpl_kw):
+    def plot_scatter(self,components=None,labels=None,**mpl_kw):
+        components = self._get_default(components)
+
         if len(components)==3:
             xy = self.to_xy(components)
             ternary=True
@@ -200,8 +241,9 @@ class CompositionTools:
             
         
             
-    def to_xy(self,components):
+    def to_xy(self,components=None):
         '''Ternary composition to Cartesian coordinate'''
+        components = self._get_default(components)
             
         if not (len(components)==3):
             raise ValueError('Must specify exactly three components')
