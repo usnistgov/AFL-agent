@@ -16,6 +16,35 @@ class AFL_DatasetTools:
     def __init__(self,ds):
         self.ds = ds
         self.comp = CompositionTools(ds)
+        self.labels = LabelTools(ds)
+
+    def append(self,data_dict,concat_dim='system'):
+        '''Append data to current dataset (warning: much copying and data loss)'''
+
+        # need to make sure all DataArrays have concat_dim
+        # initial pass to prep for new Dataset creation
+        for k in data_dict.keys():
+            # make sure all variables in data_dict are already in this dataset
+            if k not in self.ds:
+                raise ValueError(textwrap.fill(textwrap.dedent(f'''
+                All variables in data_dict {list(data_dict.keys())} must be
+                in this Dataset before appending
+                ''')))
+
+            # make sure all DataArrays have concat_dim
+            v = data_dict[k]
+            if isinstance(v,xr.DataArray):
+                if concat_dim not in v.coords:
+                    data_dict[k] =  xr.DataArray([v],dims=[concat_dim,*v.dims],coords=v.coords)
+
+        ds_new = xr.Dataset()
+        for k,v in data_dict.items():
+            if isinstance(v,xr.DataArray):
+                ds_new[k] = xr.concat([self.ds[k].copy(),v.copy()],dim=concat_dim)
+            else:
+                v_xr = xr.DataArray([v],dims=concat_dim)
+                ds_new[k] = xr.concat([self.ds[k].copy(),v_xr],dim=concat_dim)
+        return ds_new
         
 class ScatteringTools:
     def __init__(self,data):
