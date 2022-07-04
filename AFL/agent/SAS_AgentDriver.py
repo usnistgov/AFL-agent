@@ -97,7 +97,7 @@ class SAS_AgentDriver(Driver):
         )
         self.watchdog.start()
         
-    def update_phasemap(self,predict=True):
+    def read_data(self,predict=True):
         self.app.logger.info(f'Updating phasemap with latest data in {self.config["data_manifest_file"]}')
         path = pathlib.Path(self.config['data_path'])
         
@@ -128,6 +128,8 @@ class SAS_AgentDriver(Driver):
         self.phasemap.afl.comp.set_default(self.components)
         print('grid_pts_per_row',self.config['grid_pts_per_row'])
         self.phasemap = self.phasemap.afl.comp.add_grid(pts_per_row=self.config['grid_pts_per_row'])
+        #XXX Need to make mask have axes!!!
+        self.phasemap['mask'] = ('grid',self.mask)
         if self.mask.shape[0]!=self.phasemap['grid'].shape[0]:
             raise ValueError(f'Mask shape doesn\'t match phasemap: {self.mask.shape[0]} vs {self.phasemap["grid"].shape[0]}')
 
@@ -181,7 +183,7 @@ class SAS_AgentDriver(Driver):
         data_dict = {k:deserialize(v) for k,v in data_dict.items()}
         self.phasemap = self.phasemap.append(data_dict)
 
-    def get_measurements(self,process=True,qlo=0.007,qhi=0.1,pedestal=1e-12,serialize=False):
+    def process_data(self,process=True,qlo=0.0001,qhi=0.3,pedestal=1e-12,serialize=False):
         # should this put the q on logscale? Should we resample data to the sample q-values? geomspaced?
         measurements = self.phasemap['raw'].copy()
         
@@ -199,8 +201,8 @@ class SAS_AgentDriver(Driver):
         measurements = measurements.where(~np.isnan(measurements)).fillna(pedestal)
         
         #invariant scaling 
-        norm = measurements.integrate('q')
-        measurements = measurements/norm
+        #norm = measurements.integrate('q')
+        #measurements = measurements/norm
 
         self.phasemap['processed'] = measurements
         
@@ -208,7 +210,7 @@ class SAS_AgentDriver(Driver):
     
     def predict(self):
         self.app.logger.info('Starting next sample prediction...')
-        measurements = self.get_measurements()
+        measurements = self.process_data()
         self.similarity.calculate(measurements)
 
         self.n_cluster,labels,silh = PhaseLabeler.silhouette(self.similarity.W,self.labeler)
@@ -228,7 +230,14 @@ class SAS_AgentDriver(Driver):
             kernel = gpflow.kernels.Matern32(variance=0.5,lengthscales=1.0) 
             self.GP.reset_GP(kernel = kernel)          
             self.GP.optimize(1500,progress_bar=True)
+
+        self.acq_count  = 0
+        self.iteration +=1#iteration represents number of full calculations
+
+        self.app.logger.info(f'Finished AL iteration {self.iteration}')
         
+    @Driver.unqueued()
+    def get_next_sample(self):
         self.app.logger.info(f'Calculating acquisition function...')
         check = self.data_manifest[self.components].values
         self.acquisition.reset_phasemap(self.phasemap,self.components)
@@ -242,57 +251,66 @@ class SAS_AgentDriver(Driver):
         self.stale = False
                              
         ## SAVE DATA ##
+        
+        #write netcdf
         uuid_str = str(uuid.uuid4())
         save_path = pathlib.Path(self.config['save_path'])
+        date =  datetime.datetime.now().strftime('%y%m%d')
+        time =  datetime.datetime.now().strftime('%H:%M:%S')
         self.phasemap['gp_y_var'] = (('grid','phase_num'),self.acquisition.y_var)
         self.phasemap['gp_y_mean'] = (('grid','phase_num'),self.acquisition.y_mean)
-        self.phasemap['labels'] = ('system',labels)
         self.phasemap['mask'] = ('grid',self.mask)
         self.phasemap['next_sample'] = self.next_sample
         self.phasemap.attrs['n_cluster'] = self.n_cluster
-        self.phasemap.attrs['iteration'] = self.iteration
-        self.phasemap.attrs['data_tag'] = self.config["data_tag"]
         self.phasemap.attrs['uuid'] = uuid_str
-        self.phasemap.to_netcdf(save_path/f'phasemap_acq{self.acq_count:04d}_iter{self.iteration:04d}_{self.config["data_tag"]}_{uuid_str}.nc')
+        self.phasemap.attrs['date'] = date
+        self.phasemap.attrs['time'] = time
+        self.phasemap.attrs['data_tag'] = self.config["data_tag"]
+        self.phasemap.attrs['acq_count'] = self.acq_count
+        self.phasemap.attrs['iteration'] = self.iteration
+        self.phasemap.to_netcdf(save_path/f'phasemap_{self.config["data_tag"]}_{uuid_str}.nc')
         
+        #write manifest csv
+        uuid_str = str(uuid.uuid4())
         AL_manifest_path = save_path/'manifest.csv'
         if AL_manifest_path.exists():
             self.AL_manifest = pd.read_csv(AL_manifest_path)
         else:
-            self.AL_manifest = pd.DataFrame(columns=['uuid','date','time','data_tag','iteration'])
+            self.AL_manifest = pd.DataFrame(columns=['uuid','date','time','data_tag','iteration','acq_count'])
         
         row = {}
         row['uuid'] = uuid_str
-        row['date'] =  datetime.datetime.now().strftime('%y%m%d')
-        row['time'] =  datetime.datetime.now().strftime('%H:%M:%S')
+        row['date'] =  date
+        row['time'] =  time
         row['data_tag'] = self.config['data_tag']
         row['iteration'] = self.iteration
+        row['acq_count'] = self.acq_count
         self.AL_manifest = self.AL_manifest.append(row,ignore_index=True)
         self.AL_manifest.to_csv(AL_manifest_path,index=False)
             
         
-        self.iteration+=1#iteration represents number of full calculations
         self.acq_count+=1#acq represents number of times 'get_next_sample' is called
-        self.app.logger.info(f'Finished AL iteration {self.iteration}')
     
-    @Driver.unqueued()
-    def get_next_sample(self):
-        self.app.logger.info(f'Calculating acquisition function...')
-        check = self.data_manifest[self.phasemap.afl.comp.default].values
-        self.acquisition.reset_phasemap(self.phasemap,self.components)
-        self.acquisition.reset_mask(self.mask)
-        self.acquisition.calculate_metric(self.GP)
+    # @Driver.unqueued()
+    # def get_next_sample(self):
+    #     self.app.logger.info(f'Calculating acquisition function...')
+    #     check = self.data_manifest[self.phasemap.afl.comp.default].values
+    #     self.acquisition.reset_phasemap(self.phasemap,self.components)
+    #     self.acquisition.reset_mask(self.mask)
+    #     self.acquisition.calculate_metric(self.GP)
 
-        self.acquisition.ds.to_netcdf(save_path/f'phasemap_acq{self.acq_count:04d}_iter{self.iteration:04d}_{self.config["data_tag"]}_{uuid_str}.nc')
-        self.acq_count+=1
+    #     uuid_str = str(uuid.uuid4())
+    #     self.phasemap.attrs['acq_count'] = 0
+    #     self.phasemap.to_netcdf(save_path/f'phasemap_{self.config["data_tag"]}_{uuid_str}.nc')
+    #     self.acq_count+=1
 
-        self.app.logger.info(f'Finding next sample composition based on acquisition function')
-        check = self.data_manifest[self.phasemap.afl.comp.default].values
-        self.next_sample = self.acquisition.get_next_sample(composition_check=check)
-        self.app.logger.info(f'Next sample is found to be {self.next_sample.squeeze().to_dict()} by acquisition function {self.acquisition.name}')
-        obj = serialize((self.next_sample,self.stale))
-        self.stale = True
-        return obj
+    #     self.app.logger.info(f'Finding next sample composition based on acquisition function')
+    #     check = self.data_manifest[self.phasemap.afl.comp.default].values
+    #     self.next_sample = self.acquisition.get_next_sample(composition_check=check)
+    #     self.app.logger.info(f'Next sample is found to be {self.next_sample.squeeze().to_dict()} by acquisition function {self.acquisition.name}')
+    #     obj = serialize((self.next_sample,self.stale))
+    #     self.stale = True
+    #     return obj
         
     
 
