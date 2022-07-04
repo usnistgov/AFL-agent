@@ -165,19 +165,15 @@ class ScatteringTools:
 class CompositionTools:
     def __init__(self,data):
         self.data = data
-        self.default = None
         self.cmap = 'viridis'
 
-    def set_default(self,components):
-        self.default = components
-        return self.data
 
     def _get_default(self,components=None):
         if (components is None):
-            if self.default is not None:
-                components = self.default
-            else:
-                raise ValueError('Must pass components or use .set_default')
+            try:
+                components = self.data.attrs['components']
+            except KeyError:
+                raise ValueError('Must pass components or set "components" in Dataset attributes.')
         return components
 
     def get(self,components=None):
@@ -202,7 +198,7 @@ class CompositionTools:
         comp = comp.assign_coords(component=components)
         return comp.transpose()#ensures columns are components
         
-    def add_grid(self,components=None,pts_per_row=50,basis=100,dim_name='grid'):
+    def add_grid(self,components=None,pts_per_row=50,basis=1.0,dim_name='grid'):
         components = self._get_default(components)
         print(f'--> Making grid for components {components} at {pts_per_row} pts_per_row')
 
@@ -217,11 +213,13 @@ class CompositionTools:
             if name in self.data:
                 del self.data[name]
 
+        components_grid = []
         for component,comps in zip(components,compositions.T):
             name = component+'_grid'
             self.data[name] = (dim_name,comps)
+            components_grid.append(name)
+        self.data.attrs['components_grid'] = components_grid
         return self.data
-
     
     def plot_continuous(self,components=None,labels=None,set_labels=True,**mpl_kw):
         components = self._get_default(components)
