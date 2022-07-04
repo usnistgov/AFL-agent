@@ -113,7 +113,7 @@ class ScatteringTools:
             sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
         return lines
             
-    def plot_loglog(self,x='q',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None):
+    def plot_loglog(self,x='q',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None,**mpl_kw):
         lines = self.data.plot.line(
             x=x,
             xscale='log',
@@ -121,18 +121,20 @@ class ScatteringTools:
             marker='.',
             ls='None',
             add_legend=legend,
-            ax=ax)
+            ax=ax,
+            **mpl_kw)
         plt.gca().set( xlabel=xlabel,ylabel=ylabel)
         if legend:
             sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
         return lines
-    def plot_linlin(self,x='q',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None):
+    def plot_linlin(self,x='q',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None,**mpl_kw):
         lines = self.data.plot.line(
             x=x,
             marker='.',
             ls='None',
             add_legend=legend,
-            ax=ax)
+            ax=ax,
+            **mpl_kw)
         plt.gca().set( xlabel=xlabel,ylabel=ylabel)
         if legend:
             sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
