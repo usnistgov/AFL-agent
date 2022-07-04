@@ -4,6 +4,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
 from sklearn.preprocessing import OrdinalEncoder
+import warnings
 
 import textwrap
 
@@ -335,7 +336,9 @@ def format_ternary(ax=None,label_right=None,label_top=None,label_left=None):
         
 
 
-def composition_grid(pts_per_row=50,basis=100,dim=3,eps=1e-9):
+def composition_grid(pts_per_row=50,basis=1.0,dim=3,eps=1e-9):
+    warnings.warn('composition_grid assumes that only dim-1 points are indepenent',stacklevel=2)
+    #XXX Need to generalize for independent and non-indepedent coords
     try:
         from tqdm.contrib.itertools import product
     except ImportError:
