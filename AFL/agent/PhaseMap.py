@@ -199,7 +199,7 @@ class CompositionTools:
         comp = comp.assign_coords(component=components)
         return comp.transpose()#ensures columns are components
         
-    def add_grid(self,components=None,pts_per_row=50,basis=1.0,dim_name='grid'):
+    def add_grid(self,components=None,pts_per_row=50,basis=1.0,dim_name='grid',overwrite=False):
         components = self._get_default(components)
         print(f'--> Making grid for components {components} at {pts_per_row} pts_per_row')
 
@@ -212,7 +212,10 @@ class CompositionTools:
         for component in components:
             name = component+'_grid'
             if name in self.data:
-                del self.data[name]
+                if overwrite:
+                    del self.data[name]
+                else:
+                    raise ValueError('Component {component} already in Dataset and overwrite is False.')
 
         components_grid = []
         for component,comps in zip(components,compositions.T):
