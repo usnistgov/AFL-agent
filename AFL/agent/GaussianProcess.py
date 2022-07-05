@@ -12,6 +12,7 @@ import tensorflow as tf
 from scipy.stats import entropy
 from sklearn.neighbors import KernelDensity
 import tqdm
+import warnings
 
 from AFL.agent.PhaseMap import to_xy
 
@@ -35,8 +36,7 @@ class GP:
         self.final_monitor = lambda x: None
         
     def reset_GP(self,kernel=None):
-        raise ValueError
-        # Need to generalize for cases with indepenedent and non-indepenent coords
+        warnings.warn('Code is not fully generalized for non-independent coordinates. Use with case...',stacklevel=2)
         
         if len(self.components)==3:
             xy = self.ds.afl.comp.to_xy(self.components)
