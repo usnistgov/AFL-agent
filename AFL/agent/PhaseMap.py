@@ -304,6 +304,9 @@ class CompositionTools:
         comps = np.vstack(list(self.data[c].values for c in components)).T
         
         return to_xy(comps)
+
+    def plot_mask(self,mask_name='mask',components_name='components_grid'):
+        self.plot_discrete(self.data.attrs[components_name],labels=self.data[mask_name].astype(int),s=1)
             
     
 def to_xy(comps,normalize=True):
