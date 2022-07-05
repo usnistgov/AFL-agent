@@ -22,7 +22,7 @@ class AFL_DatasetTools:
         self.comp = CompositionTools(ds)
         self.labels = LabelTools(ds)
 
-    def append(self,data_dict,concat_dim='system'):
+    def append(self,data_dict,concat_dim='sample'):
         '''Append data to current dataset (warning: much copying and data loss)'''
 
         # need to make sure all DataArrays have concat_dim
@@ -54,7 +54,7 @@ class LabelTools:
     def __init__(self,data):
         self.data = data
 
-    def make_default(self,name='labels',dim='system'):
+    def make_default(self,name='labels',dim='sample'):
         data = self.data.copy()
         data['labels'] = xr.DataArray(np.ones(self.data[dim].shape[0]),dims=dim,coords=self.data[dim].coords)
         return data
@@ -72,7 +72,7 @@ class ScatteringTools:
     def __init__(self,data):
         self.data = data
         
-    def plot_logwaterfall(self,x='q',dim='system',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,base=10,ax=None):
+    def plot_logwaterfall(self,x='q',dim='sample',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,base=10,ax=None):
         N = self.data[dim].shape[0]
         mul = self.data[dim].copy(data=np.geomspace(1,float(base)**(N+1),N))
         lines = (self
@@ -93,7 +93,7 @@ class ScatteringTools:
             sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
         return lines
             
-    def plot_waterfall(self,x='q',dim='system',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,base=1,ax=None):
+    def plot_waterfall(self,x='q',dim='sample',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,base=1,ax=None):
         N = self.data[dim].shape[0]
         mul = self.data[dim].copy(data=np.linspace(1,base*N,N))
         lines = (self
