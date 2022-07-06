@@ -63,10 +63,14 @@ class Acquisition:
                 raise ValueError(f'No next sample found! Searched {nth} iterations from {metric.labels.iloc[mask].shape[0]} labels!')
 
             if sample_randomly:
-                grid = acq.phasemap.afl.comp.get_grid(self.components)
+                grid = acq.phasemap.where(mask,drop=True).copy()
+                grid = grid.afl.comp.get_grid(self.components)
                 composition = grid.isel(grid=np.random.choice(grid.grid,size=1))
             else:
-                composition = self.phasemap.sortby('metric').afl.comp.get_grid(self.components).isel(grid=-1)
+                metric = self.phasemap.where(mask,drop=True).copy()
+                metric = metric.sortby('metric')
+                metric = metric.afl.comp.get_grid(self.components)
+                composition = metric.isel(grid=-1)
 
             if composition_check is None:
                 break #all done
