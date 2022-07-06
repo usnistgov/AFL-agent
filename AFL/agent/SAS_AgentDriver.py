@@ -279,7 +279,7 @@ class SAS_AgentDriver(Driver):
         self.phasemap.to_netcdf(save_path/f'phasemap_{self.config["data_tag"]}_{uuid_str}.nc')
         
         #write manifest csv
-        AL_manifest_path = save_path/'manifest.csv'
+        AL_manifest_path = save_path/'calculation_manifest.csv'
         if AL_manifest_path.exists():
             self.AL_manifest = pd.read_csv(AL_manifest_path)
         else:
