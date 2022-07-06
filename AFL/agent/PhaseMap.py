@@ -291,6 +291,35 @@ class CompositionTools:
             else:
                 plt.gca().set(xlabel=components[0],ylabel=components[1])
         return artists
+
+    def plot_3D(self,components=None,labels=None,set_labels=True,**mpl_kw):
+        from mpl_toolkits import mplot3d
+
+        components = self._get_default(components)
+
+        if not (len(components)==3):
+            raise ValueError(f'Can only work with  3 components. You passed: {components}')
+
+        xy = np.vstack(list(self.data[c].values for c in components)).T
+        
+        if (labels is None):
+            if ('labels' in self.data.coords):
+                labels = self.data.coords['labels'].values
+            elif ('labels' in self.data):
+                labels = self.data['labels'].values
+            else:
+                labels = np.zeros(xy.shape[0])
+
+
+        fig = plt.figure()
+        ax = plt.axes(projection='3d')
+                
+        artists = []
+        for label in np.unique(labels):
+            mask = (labels==label)
+            artists.append(ax.scatter3D(*xy[mask].T,**mpl_kw))
+
+        ax.set(xlabel=components[0],ylabel=components[1],zlabel=components[2])
             
         
             
