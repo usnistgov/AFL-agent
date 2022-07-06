@@ -264,7 +264,59 @@ class SAS_AL_SampleDriver(Driver):
         self.take_snapshot(prefix = f'06-after-measure-{name}')
             
         self.update_status(f'All done for {name}!')
+
+
+    def process_sample_outoforder(self,sample):
+        name = sample['name']
+
+        targets = set()
+        for task in sample['prep_protocol']:
+            if 'target' in task['source'].lower():
+                targets.add(task['source'])
+            if 'target' in task['dest'].lower():
+                targets.add(task['dest'])
+
+        for task in sample['catch_protocol']:
+            if 'target' in task['source'].lower():
+                targets.add(task['source'])
+            if 'target' in task['dest'].lower():
+                targets.add(task['dest'])
+
+        target_map = {}
+        for t in targets:
+            prep_target = self.prep_client.enqueue(task_name='get_prep_target',interactive=True)['return_val']
+            target_map[t] = prep_target
+
+        for task in sample['prep_protocol']:
+            #if the well isn't in the map, just use the well
+            task['source'] = target_map.get(task['source'],task['source'])
+            task['dest'] = target_map.get(task['dest'],task['dest'])
+            self.prep_uuid = self.prep_client.transfer(**task)
         
+        if self.load_uuid is not None:
+            self.load_client.wait(self.load_uuid)
+            last_name = self.last_sample['name']
+            self.take_snapshot(prefix = f'05-after-load-{last_name}')
+
+            self.update_status(f'Sample is loaded, asking the instrument for exposure...')
+            self.sas_uuid = self.measure(self.last_sample)#self.measure blocks...
+            self.take_snapshot(prefix = f'06-after-measure-{last_name}')
+            
+            self.update_status(f'Cleaning up sample {last_name}...')
+            self.rinse_uuid = self.load_client.enqueue(task_name='rinseCell')
+            self.load_client.wait(self.rinse_uuid)
+
+            self.update_status(f'Waiting for rinse...')
+            self.load_client.wait(self.rinse_uuid)
+            self.update_status(f'Rinse done!')
+            
+        self.update_status(f'Queueing sample {name} load into syringe loader')
+        for task in sample['catch_protocol']:
+            #if the well isn't in the map, just use the well
+            task['source'] = target_map.get(task['source'],task['source'])
+            task['dest'] = target_map.get(task['dest'],task['dest'])
+            self.catch_uuid = self.prep_client.transfer(**task)
+    
     @Driver.unqueued()
     def stop_active_learning(self):
         self.stop_AL = True
@@ -309,14 +361,13 @@ class SAS_AL_SampleDriver(Driver):
                 print('\n\n\n')
                 
             #make target object
-            target = AFL.automation.prepare.Solution('target',list(next_sample.columns.values) + ['F127'])
-            # target = AFL.automation.prepare.Solution('target',list(next_sample.columns.values))
+            target = AFL.automation.prepare.Solution('target',list(next_sample.columns.values))
             # target = AFL.automation.prepare.Solution('target',list(next_sample.columns.values) + ['NaCl'])
             target.mass_fraction = next_sample_dict
             target.volume = sample_volume*units('ul')
             # target.concentration = {'NaCl':110*units('mg/ml')}
-            target.concentration = {'F127':100*units('mg/ml')}
-            self.app.logger.info('Setting fixed F127 concentration of 100 mg/ml')
+            # target.concentration = {'F127':100*units('mg/ml')}
+            # self.app.logger.info('Setting fixed F127 concentration of 100 mg/ml')
                 
             self.deck.reset_targets()
             self.deck.add_target(target,name='target')
@@ -359,7 +410,7 @@ class SAS_AL_SampleDriver(Driver):
         
 
             # CHECK TRANMISSION OF LAST SAMPLE
-            h5_path = data_path / (sample_name+'.h5')
+            file_path = data_path / (sample_name+'.txt')
             with h5py.File(h5_path,'r') as h5:
                 transmission = h5['entry/sample/transmission'][()]
 
