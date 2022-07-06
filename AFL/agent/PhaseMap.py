@@ -4,6 +4,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
 from sklearn.preprocessing import OrdinalEncoder
+import warnings
 
 import textwrap
 
@@ -21,7 +22,7 @@ class AFL_DatasetTools:
         self.comp = CompositionTools(ds)
         self.labels = LabelTools(ds)
 
-    def append(self,data_dict,concat_dim='system'):
+    def append(self,data_dict,concat_dim='sample'):
         '''Append data to current dataset (warning: much copying and data loss)'''
 
         # need to make sure all DataArrays have concat_dim
@@ -53,7 +54,7 @@ class LabelTools:
     def __init__(self,data):
         self.data = data
 
-    def make_default(self,name='labels',dim='system'):
+    def make_default(self,name='labels',dim='sample'):
         data = self.data.copy()
         data['labels'] = xr.DataArray(np.ones(self.data[dim].shape[0]),dims=dim,coords=self.data[dim].coords)
         return data
@@ -71,7 +72,7 @@ class ScatteringTools:
     def __init__(self,data):
         self.data = data
         
-    def plot_logwaterfall(self,x='q',dim='system',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,base=10,ax=None):
+    def plot_logwaterfall(self,x='q',dim='sample',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,base=10,ax=None):
         N = self.data[dim].shape[0]
         mul = self.data[dim].copy(data=np.geomspace(1,float(base)**(N+1),N))
         lines = (self
@@ -92,7 +93,7 @@ class ScatteringTools:
             sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
         return lines
             
-    def plot_waterfall(self,x='q',dim='system',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,base=1,ax=None):
+    def plot_waterfall(self,x='q',dim='sample',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,base=1,ax=None):
         N = self.data[dim].shape[0]
         mul = self.data[dim].copy(data=np.linspace(1,base*N,N))
         lines = (self
@@ -113,7 +114,7 @@ class ScatteringTools:
             sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
         return lines
             
-    def plot_loglog(self,x='q',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None):
+    def plot_loglog(self,x='q',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None,**mpl_kw):
         lines = self.data.plot.line(
             x=x,
             xscale='log',
@@ -121,18 +122,20 @@ class ScatteringTools:
             marker='.',
             ls='None',
             add_legend=legend,
-            ax=ax)
+            ax=ax,
+            **mpl_kw)
         plt.gca().set( xlabel=xlabel,ylabel=ylabel)
         if legend:
             sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
         return lines
-    def plot_linlin(self,x='q',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None):
+    def plot_linlin(self,x='q',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None,**mpl_kw):
         lines = self.data.plot.line(
             x=x,
             marker='.',
             ls='None',
             add_legend=legend,
-            ax=ax)
+            ax=ax,
+            **mpl_kw)
         plt.gca().set( xlabel=xlabel,ylabel=ylabel)
         if legend:
             sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
@@ -163,18 +166,15 @@ class ScatteringTools:
 class CompositionTools:
     def __init__(self,data):
         self.data = data
-        self.default = None
+        self.cmap = 'viridis'
 
-    def set_default(self,components):
-        self.default = components
-        return self.data
 
     def _get_default(self,components=None):
         if (components is None):
-            if self.default is not None:
-                components = self.default
-            else:
-                raise ValueError('Must pass components or use .set_default')
+            try:
+                components = self.data.attrs['components']
+            except KeyError:
+                raise ValueError('Must pass components or set "components" in Dataset attributes.')
         return components
 
     def get(self,components=None):
@@ -187,9 +187,21 @@ class CompositionTools:
         comp.name='compositions'
         comp = comp.assign_coords(component=components)
         return comp.transpose()#ensures columns are components
-        
-    def add_grid(self,components=None,pts_per_row=50,basis=100,dim_name='grid'):
+
+    def get_grid(self,components=None):
         components = self._get_default(components)
+
+        da_list = []
+        for k in components:
+            da_list.append(self.data[k+'_grid'])
+        comp = xr.concat(da_list,dim='component')
+        comp.name='compositions_grid'
+        comp = comp.assign_coords(component=components)
+        return comp.transpose()#ensures columns are components
+        
+    def add_grid(self,components=None,pts_per_row=50,basis=1.0,dim_name='grid',overwrite=False):
+        components = self._get_default(components)
+        print(f'--> Making grid for components {components} at {pts_per_row} pts_per_row')
 
         compositions = composition_grid(
                 pts_per_row = pts_per_row,
@@ -200,15 +212,55 @@ class CompositionTools:
         for component in components:
             name = component+'_grid'
             if name in self.data:
-                del self.data[name]
+                if overwrite:
+                    del self.data[name]
+                else:
+                    raise ValueError('Component {component} already in Dataset and overwrite is False.')
 
+        components_grid = []
         for component,comps in zip(components,compositions.T):
             name = component+'_grid'
             self.data[name] = (dim_name,comps)
+            components_grid.append(name)
+        self.data.attrs['components_grid'] = components_grid
         return self.data
-
     
-    def plot_scatter(self,components=None,labels=None,**mpl_kw):
+    def plot_continuous(self,components=None,labels=None,set_labels=True,**mpl_kw):
+        components = self._get_default(components)
+
+        if len(components)==3:
+            xy = self.to_xy(components)
+            ternary=True
+        elif len(components)==2:
+            xy = np.vstack(list(self.data[c].values for c in components)).T
+            ternary=False
+        else:
+            raise ValueError(f'Can only work with 2 or 3 components. You passed: {components}')
+        
+        if (labels is None):
+            if ('labels' in self.data.coords):
+                labels = self.data.coords['labels'].values
+            elif ('labels' in self.data):
+                labels = self.data['labels'].values
+            else:
+                labels = np.zeros(xy.shape[0])
+        elif isinstance(labels,str) and (labels in self.data):
+                labels = self.data[labels].values
+                
+        if ('cmap' not in mpl_kw) and ('color' not in mpl_kw):
+             mpl_kw['cmap'] = 'viridis'
+        if 'color' not in mpl_kw:
+            mpl_kw['c'] = labels
+        artists = plt.scatter(*xy.T,**mpl_kw)
+
+        if set_labels:
+            if ternary:
+                format_ternary(plt.gca(),*components)
+            else:
+                plt.gca().set(xlabel=components[0],ylabel=components[1])
+        return artists
+
+    def plot_discrete(self,components=None,labels=None,set_labels=True,**mpl_kw):
         components = self._get_default(components)
 
         if len(components)==3:
@@ -233,10 +285,11 @@ class CompositionTools:
             mask = (labels==label)
             artists.append(plt.scatter(*xy[mask].T,**mpl_kw))
             
-        if ternary:
-            format_ternary(plt.gca(),*components)
-        else:
-            plt.gca().set(xlabel=components[0],ylabel=components[1])
+        if set_labels:
+            if ternary:
+                format_ternary(plt.gca(),*components)
+            else:
+                plt.gca().set(xlabel=components[0],ylabel=components[1])
         return artists
             
         
@@ -251,6 +304,9 @@ class CompositionTools:
         comps = np.vstack(list(self.data[c].values for c in components)).T
         
         return to_xy(comps)
+
+    def plot_mask(self,mask_name='mask',components_name='components_grid'):
+        self.plot_discrete(self.data.attrs[components_name],labels=self.data[mask_name].astype(int),s=1)
             
     
 def to_xy(comps,normalize=True):
@@ -286,7 +342,9 @@ def format_ternary(ax=None,label_right=None,label_top=None,label_left=None):
         
 
 
-def composition_grid(pts_per_row=50,basis=100,dim=3,eps=1e-9):
+def composition_grid(pts_per_row=50,basis=1.0,dim=3,eps=1e-9):
+    warnings.warn('composition_grid assumes that only dim-1 points are indepenent',stacklevel=2)
+    #XXX Need to generalize for independent and non-indepedent coords
     try:
         from tqdm.contrib.itertools import product
     except ImportError:

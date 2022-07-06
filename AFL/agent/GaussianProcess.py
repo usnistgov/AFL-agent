@@ -12,6 +12,7 @@ import tensorflow as tf
 from scipy.stats import entropy
 from sklearn.neighbors import KernelDensity
 import tqdm
+import warnings
 
 from AFL.agent.PhaseMap import to_xy
 
@@ -35,12 +36,13 @@ class GP:
         self.final_monitor = lambda x: None
         
     def reset_GP(self,kernel=None):
+        warnings.warn('Code is not fully generalized for non-independent coordinates. Use with case...',stacklevel=2)
         
         if len(self.components)==3:
             xy = self.ds.afl.comp.to_xy(self.components)
             data = (xy, self.ds['labels_ordinal']) 
         else:
-            comp = self.ds.afl.comp.get(self.components).values[:,:-1]#only need N-1 compositions
+            comp = self.ds.afl.comp.get(self.components).values#[:,:-1]#only need N-1 compositions
             data = (comp, self.ds['labels_ordinal']) 
             
         if kernel is None:
@@ -98,7 +100,7 @@ class GP:
             self.y = self.model.predict_y(xy_dense)
         else:
             #throw out last composition as it's not linearly indepedent
-            self.y = self.model.predict_y(compositions.values[:,:-1]/100.0)
+            self.y = self.model.predict_y(compositions.values[:,:-1])
         
         y_mean = self.y[0].numpy() 
         y_var = self.y[1].numpy() 

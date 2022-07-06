@@ -4,6 +4,8 @@ import copy
 import scipy.spatial
 import random
 import logging
+from AFL.agent import PhaseMap
+import matplotlib.pyplot as plt
 
 #move dense_pm definition outside of this class
 #move to driver,make settable here and in driver
@@ -11,7 +13,7 @@ import logging
 
 class Acquisition:
     def __init__(self):
-        self.pm = None
+        self.phasemap = None
         self.mask = None
         self.y_mean = None
         self.y_var = None
@@ -19,24 +21,22 @@ class Acquisition:
         self.logger = logging.getLogger()
         self.composition_tol = 0.1
     
-    def reset_phasemap(self,pm):
-        self.pm = pm.copy()
+    def reset_phasemap(self,phasemap,components):
+        self.phasemap = phasemap
+        self.components = components
+        self.grid_components = [k+"_grid" for k in components]
         
     def reset_mask(self,mask):
         self.mask = mask
     
     def plot(self,**kwargs):
-        labels = self.pm.labels.copy()
-        if self.mask is not None:
-            labels[~self.mask] = np.nan
-            mask = self.mask
-            
-        pm = self.pm.copy(labels=labels)
-        ax = pm.plot(**kwargs)
-        
+        self.phasemap.afl.comp.plot_continuous(components=self.grid_components,labels='metric')
+        self.phasemap.afl.comp.plot_discrete(components=self.components,set_labels=False)
+
         if self.next_sample is not None:
-            pm.plot(compositions=self.next_sample,marker='x',color='white',ax=ax)
-        return ax
+            plt.plot(*PhaseMap.to_xy(np.array([self.next_sample.values])).T,marker='x',color='r')
+
+        return plt.gca()
         
     def copy(self):
         return copy.deepcopy(self)
@@ -45,32 +45,29 @@ class Acquisition:
         raise NotImplementedError('Subclasses must implement execute!')
 
     def get_next_sample(self,nth=0,composition_check=None):
-        metric = self.pm
-        
-        if np.all(np.isnan(metric.labels.unique())):
+
+        if np.all(np.isnan(np.unique(self.phasemap['metric']))):
             sample_randomly = True
         else:
             sample_randomly = False
 
 
-                  
+
         if self.mask is None:
             mask = slice(None)
         else:
             mask = self.mask
 
         while True:
-            if nth>=metric.labels.iloc[mask].shape[0]:
+            if nth>=self.phasemap.grid.shape[0]:
                 raise ValueError(f'No next sample found! Searched {nth} iterations from {metric.labels.iloc[mask].shape[0]} labels!')
-            
+
             if sample_randomly:
-                self.index=metric.labels.iloc[mask].sample(frac=1).index[0]
-                composition = metric.compositions.loc[self.index]
+                grid = acq.phasemap.afl.comp.get_grid(self.components)
+                composition = grid.isel(grid=np.random.choice(grid.grid,size=1))
             else:
-                self.argsort = metric.labels.iloc[mask].argsort()[::-1]
-                self.index = metric.labels.iloc[mask].iloc[self.argsort].index[0]
-                composition = metric.compositions.loc[self.index]
-                
+                composition = self.phasemap.sortby('metric').afl.comp.get_grid(self.components).isel(grid=-1)
+
             if composition_check is None:
                 break #all done
             elif (abs(composition_check-composition.values)<self.composition_tol).all(1).any():
@@ -80,8 +77,8 @@ class Acquisition:
 
             if nth>1000:
                 raise ValueError('Next sample finding failed to converge!')
-            
-        self.next_sample = composition.to_frame().T
+
+        self.next_sample = composition
         return self.next_sample
 
 class Variance(Acquisition):
@@ -90,13 +87,14 @@ class Variance(Acquisition):
         self.name = 'variance'
         
     def calculate_metric(self,GP):
-        if self.pm is None:
+        if self.phasemap is None:
             raise ValueError('No phase map set for acquisition! Call reset_phasemap!')
             
-        self.y_mean,self.y_var = GP.predict(self.pm.compositions.astype(float))
-        self.pm.labels = self.y_var.sum(1)
+        self.y_mean,self.y_var = GP.predict(self.phasemap.afl.comp.get_grid(self.components).values)
+        self.phasemap['metric'] = ('grid',self.y_var.sum(1))
+        self.phasemap.attrs['metric'] = self.name
 
-        return self.pm
+        return self.phasemap
     
 class Random(Acquisition):
     def __init__(self):
@@ -104,15 +102,16 @@ class Random(Acquisition):
         self.name = 'random'
         
     def calculate_metric(self,GP):
-        if self.pm is None:
+        if self.phasemap is None:
             raise ValueError('No phase map set for acquisition! Call reset_phasemap!')
             
-        self.y_mean,self.y_var = GP.predict(self.pm.compositions.astype(float))
+        self.y_mean,self.y_var = GP.predict(self.phasemap.afl.comp.get_grid(self.components).values)
             
-        indices = np.arange(self.pm.compositions.shape[0])
+        indices = np.arange(self.phasemap['grid'].shape[0])
         random.shuffle(indices)
-        self.pm.labels = pd.Series(indices)
-        return self.pm
+        self.phasemap['metric'] = ('grid',indices)
+        self.phasemap.attrs['metric'] = self.name
+        return self.phasemap
     
 class IterationCombined(Acquisition):
     def __init__(self,function1,function2,function2_frequency=5):
@@ -125,10 +124,12 @@ class IterationCombined(Acquisition):
         self.iteration = 1
         self.function2_frequency=function2_frequency
         
-    def reset_phasemap(self,pm):
-        self.function1.reset_phasemap(pm)
-        self.function2.reset_phasemap(pm)
-        self.pm = pm
+    def reset_phasemap(self,phasemap,components):
+        self.function1.reset_phasemap(phasemap,components)
+        self.function2.reset_phasemap(phasemap,components)
+        self.phasemap = phasemap
+        self.components = components
+        self.grid_components = [k+"_grid" for k in components]
         
     def reset_mask(self,mask):
         self.function1.reset_mask(mask)
@@ -136,17 +137,24 @@ class IterationCombined(Acquisition):
         self.mask = mask
         
     def calculate_metric(self,GP):
-        if self.function1.pm is None:
+        if self.function1.phasemap is None:
             raise ValueError('No phase map set for acquisition! Call reset_phasemap!')
 
-        self.y_mean,self.y_var = GP.predict(self.pm.compositions)
+        self.y_mean,self.y_var = GP.predict(self.phasemap.afl.comp.get_grid(self.components).values)
         
         if ((self.iteration%self.function2_frequency)==0):
             print(f'Using acquisition function {self.function2.name} of iteration {self.iteration}')
-            self.pm = self.function2.calculate_metric(GP)
+            self.phasemap = self.function2.calculate_metric(GP)
+            self.phasemap.attrs['current_metric'] = self.function1.name
         else:
             print(f'Using acquisition function {self.function1.name} of iteration {self.iteration}')
-            self.pm = self.function1.calculate_metric(GP)
+            self.phasemap = self.function1.calculate_metric(GP)
+            self.phasemap.attrs['current_metric'] = self.function2.name
+
+        self.phasemap.attrs['metric'] = self.name
+        self.phasemap.attrs['metric1'] = self.function1.name
+        self.phasemap.attrs['metric2'] = self.function2.name
+        self.phasemap.attrs['iteration'] = self.iteration
         self.iteration+=1
             
-        return self.pm
+        return self.phasemap

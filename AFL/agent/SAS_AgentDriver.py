@@ -15,14 +15,16 @@ import pickle,base64
 
 import pandas as pd
 import numpy as np
+import xarray as xr
 import pathlib
 
+import AFL.agent.PhaseMap
 from AFL.agent import AcquisitionFunction 
 from AFL.agent import GaussianProcess 
-from AFL.agent import PhaseMap
 from AFL.agent import Similarity 
 from AFL.agent import PhaseLabeler
 from AFL.agent.WatchDog import WatchDog
+
 
 import tensorflow as tf
 import gpflow
@@ -32,10 +34,11 @@ import uuid
 class SAS_AgentDriver(Driver):
     defaults={}
     defaults['compute_device'] = '/device:CPU:0'
-    defaults['data_path'] = '/Users/tbm/watchdog_testing/'
+    defaults['data_path'] = '~/'
     defaults['data_manifest_file'] = 'manifest.csv'
-    defaults['save_path'] = '/home/nistoroboto/'
+    defaults['save_path'] = '/home/AFL/'
     defaults['data_tag'] = 'default'
+    # defaults['grid_pts_per_row'] = 100
     def __init__(self,overrides=None):
         Driver.__init__(self,name='SAS_AgentDriver',defaults=self.gather_defaults(),overrides=overrides)
 
@@ -46,16 +49,13 @@ class SAS_AgentDriver(Driver):
 
         self.status_str = 'Fresh Server!'
 
-        self.phasemap_raw = None
         self.phasemap = None
-        self.phasemap_labelled = None
-        self.dense_pts_per_row = 100
         self.n_cluster = None
         self.similarity = None
-        self.stale = True #flag to determine if new point if available
         self.next_sample = None
         self.mask = None
         self.iteration = 0
+        self.acq_count = 0
         
     @property
     def app(self):
@@ -72,8 +72,8 @@ class SAS_AgentDriver(Driver):
         status.append(self.status_str)
         status.append(f'Using {self.config["compute_device"]}')
         status.append(f'Data Manifest:{self.config["data_manifest_file"]}')
-        status.append(f'Next sample prediction is stale: {self.stale}')
         status.append(f'Iteration {self.iteration}')
+        status.append(f'Acquisition Count {self.acq_count}')
         return status
     
     def reset_watchdog(self):
@@ -94,32 +94,6 @@ class SAS_AgentDriver(Driver):
         )
         self.watchdog.start()
         
-    def update_phasemap(self,predict=True):
-        self.app.logger.info(f'Updating phasemap with latest data in {self.config["data_manifest_file"]}')
-        path = pathlib.Path(self.config['data_path'])
-        
-        self.data_manifest = pd.read_csv(path/self.config['data_manifest_file'])
-        
-        compositions = self.data_manifest.drop(['label','fname'],errors='ignore',axis=1)
-        labels = pd.Series(np.ones(compositions.shape[0]))
-        measurements = []
-        for i,row in self.data_manifest.iterrows():
-            #measurement = pd.read_csv(path/row['fname'],comment='#').set_index('q').squeeze()
-            measurement = pd.read_csv(path/row['fname'],sep=',',comment='#',header=None,names=['q','I']).set_index('q').squeeze()
-            measurement.name = row['fname']
-            measurements.append(measurement)
-        measurements = pd.concat(measurements,axis=1).T #may need to reset_index...
-        
-        self.set_components(list(compositions.columns.values))
-        self.phasemap_raw.append(
-                compositions=compositions,
-                measurements=measurements,
-                labels=labels,
-                )
-        if predict:
-            self.predict()
-          
-
     def update_status(self,value):
         self.status_str = value
         self.app.logger.info(value)
@@ -130,176 +104,203 @@ class SAS_AgentDriver(Driver):
     def set_mask(self,mask,serialized=False):
         if serialized:
             mask = deserialize(mask)
-        self.mask = np.array(mask)
-        if mask.shape[0]!=self.phasemap_dense.compositions.shape[0]:
-            raise ValueError(f'Mask shape {mask.shape} doesn\'t match phasemap: {mask.shape[0]} vs {self.phasemap_dense.compositions.shape[0]}')
+        self.mask = mask
     
-    def set_components(self,components,pts_per_row=None):
-        if pts_per_row is None:
-            pts_per_row = self.dense_pts_per_row
-        else:
-            self.dense_pts_per_row = pts_per_row
-        self.app.logger.info(f'Setting components to {components} with dense pts_per_row={pts_per_row}')
-        self.phasemap_raw = PhaseMap.PhaseMap(components)
-        self.phasemap_dense = PhaseMap.phasemap_grid_factory(components,pts_per_row=pts_per_row)
-
     def set_similarity(self,name,similarity_params):
-        if name=='pairwise':
-            self.similarity = Similarity.Pairwise(params=similarity_params)
+        if isinstance(name,str):
+            if name=='pairwise':
+                self.similarity = Similarity.Pairwise(params=similarity_params)
+            else:
+                raise ValueError(f'Similarity type not recognized:{name}')
         else:
-            raise ValueError(f'Similarity type not recognized:{name}')
+            similarity = deserialize(name)
+            self.similarity = similarity
 
     def set_labeler(self,name):
-        if name=='gaussian_mixture_model':
-            self.labeler = PhaseLabeler.GaussianMixtureModel()
+        if isinstance(name,str):
+            if name=='gaussian_mixture_model':
+                self.labeler = PhaseLabeler.GaussianMixtureModel()
+            else:
+                raise ValueError(f'Similarity type not recognized:{name}')
         else:
-            raise ValueError(f'Similarity type not recognized:{name}')
+            labeler = deserialize(name)
+            self.labeler = labeler
             
     def set_acquisition(self,spec):
-        if spec['name']=='variance':
-            self.acquisition = AcquisitionFunction.Variance()
-        elif spec['name']=='random':
-            self.acquisition = AcquisitionFunction.Random()
-        elif spec['name']=='combined':
-            function1 = spec['function1_name']
-            function2 = spec['function2_name']
-            function2_frequency= spec['function2_frequency']
-            function1 = AcquisitionFunction.Variance()
-            function2 = AcquisitionFunction.Random()
-            self.acquisition = AcquisitionFunction.IterationCombined(
-                function1=function1,
-                function2=function2,
-                function2_frequency=function2_frequency,
-            )
-        else:
-            raise ValueError(f'Acquisition type not recognized:{name}')
-        
-    def append_data(self,compositions,measurements,labels):
-        compositions = deserialize(compositions)
-        measurements = deserialize(measurements)
-        labels = deserialize(labels)
-        self.phasemap_raw.append(
-                compositions=compositions,
-                measurements=measurements,
-                labels=labels,
+        if isinstance(spec,dict):
+            if spec['name']=='variance':
+                self.acquisition = AcquisitionFunction.Variance()
+            elif spec['name']=='random':
+                self.acquisition = AcquisitionFunction.Random()
+            elif spec['name']=='combined':
+                function1 = spec['function1_name']
+                function2 = spec['function2_name']
+                function2_frequency= spec['function2_frequency']
+                function1 = AcquisitionFunction.Variance()
+                function2 = AcquisitionFunction.Random()
+                self.acquisition = AcquisitionFunction.IterationCombined(
+                    function1=function1,
+                    function2=function2,
+                    function2_frequency=function2_frequency,
                 )
+            else:
+                raise ValueError(f'Acquisition type not recognized:{name}')
+        else:
+            acq = deserialize(spec)
+            self.acquisition = spec
+        
+    def append_data(self,data_dict):
+        data_dict = {k:deserialize(v) for k,v in data_dict.items()}
+        self.phasemap = self.phasemap.append(data_dict)
 
-    def get_measurements(self,process=True,pedestal=1e-12,serialize=False):
+    def read_data(self,predict=True):
+        self.update_status(f'Reading the latest data in {self.config["data_manifest_file"]}')
+        path = pathlib.Path(self.config['data_path'])
+        
+        self.data_manifest = pd.read_csv(path/self.config['data_manifest_file'])
+
+
+        self.phasemap = xr.Dataset()
+        measurements = []
+        for i,row in self.data_manifest.iterrows():
+            #measurement = pd.read_csv(path/row['fname'],comment='#'.set_index('q').squeeze()
+            measurement = pd.read_csv(path/row['fname'],sep=',',comment='#',header=None,names=['q','I']).set_index('q').squeeze().to_xarray()
+            measurement.name = row['fname']
+            measurements.append(measurement)
+        self.phasemap['raw_data'] = xr.concat(measurements,dim='sample')
+
+        compositions = self.data_manifest.drop(['label','fname'],errors='ignore',axis=1)
+        self.components = list(compositions.columns.values)
+        for component in self.components:
+            self.phasemap[component] = ('sample',compositions[component].values)
+
+        
+        if 'labels' in self.data_manifest:
+            self.phasemap['labels'] = ('sample',self.data_manifest['labels'])
+        else:
+            self.phasemap = self.phasemap.afl.labels.make_default()
+
+        self.phasemap.attrs['components'] = self.components
+        self.phasemap.attrs['components_grid'] = [i+'_grid' for i in self.components]
+        self.phasemap['mask'] = self.mask #should add grid dimensions automatically
+        #must reset for serlialization to netcdf to work
+        self.phasemap = self.phasemap.reset_index('grid').reset_coords(self.phasemap.attrs['components_grid'])
+
+        if predict:
+            self.predict()
+
+    def process_data(self,process=True,qlo=0.0001,qhi=0.3,pedestal=1e-12,serialize=False):
         # should this put the q on logscale? Should we resample data to the sample q-values? geomspaced?
-        measurements = self.phasemap_raw.measurements.copy()
+        measurements = self.phasemap['raw_data'].copy()
         
         #q-range masking
-        q = measurements.columns.values
-        mask = (q>0.007)&(q<0.11)
-        measurements = measurements.loc[:,mask]
+        q = measurements['q']
+        mask = (q>qlo)&(q<qhi)
+        measurements = measurements.where(mask,drop=True)
         
         #pedestal + log10 normalization
         measurements += pedestal 
         measurements = np.log10(measurements)
+        measurements['q'] = np.log10(measurements['q'])
+        measurements = measurements.rename(q='logq')
         
         #fixing Nan to pedestal values
-        measurements[np.isnan(measurements)] = pedestal
+        measurements = measurements.where(~np.isnan(measurements)).fillna(pedestal)
         
         #invariant scaling 
-        norm = np.trapz(measurements.values,x=measurements.columns.values,axis=1)
-        norm = abs(norm)
-        measurements = measurements.mul(1/norm,axis=0)
+        #norm = measurements.integrate('q')
+        #measurements = measurements/norm
 
-        self.phasemap = self.phasemap_raw.copy()
-        self.phasemap.measurements = measurements
+        self.phasemap['processed_data'] = measurements
         
         return measurements
     
-    def predict(self):
-        self.app.logger.info('Starting next sample prediction...')
-        measurements = self.get_measurements()
-        self.similarity.calculate(measurements)
 
+    def label(self):
+        self.update_status('Labelling data on iteration {self.iteration}')
+        self.similarity.calculate(self.phasemap['processed_data'])
+
+        ###XXX need to add cutoout for labelers that don't need silhouette or to use other methods
         self.n_cluster,labels,silh = PhaseLabeler.silhouette(self.similarity.W,self.labeler)
-        self.app.logger.info(f'Silhouette analysis found {self.n_cluster} clusters')
+        self.update_status(f'Silhouette analysis found {self.n_cluster} clusters')
 
-        self.phasemap_labelled = self.phasemap.copy(labels=labels)
+        self.phasemap.attrs['n_cluster'] = self.n_cluster
+        self.phasemap['labels'] = ('sample',labels)
+        self.phasemap = self.phasemap.afl.labels.make_ordinal()
         
+    def extrapolate(self):
         # Predict phase behavior at each point in the phase diagram
-        self.app.logger.info(f'Starting gaussian process calculation on {self.config["compute_device"]}')
+        self.update_status(f'Starting gaussian process calculation on {self.config["compute_device"]}')
         with tf.device(self.config['compute_device']):
             self.GP = GaussianProcess.GP(
-                self.phasemap_labelled,
+                self.phasemap,
+                self.components,
                 num_classes=self.n_cluster
             )
             kernel = gpflow.kernels.Matern32(variance=0.5,lengthscales=1.0) 
             self.GP.reset_GP(kernel = kernel)          
-            self.GP.optimize(1500,progress_bar=True)
-        
-        self.app.logger.info(f'Calculating acquisition function...')
-        check = self.data_manifest[self.phasemap.components].values
-        self.acquisition.reset_phasemap(self.phasemap_dense)
-        self.acquisition.reset_mask(self.mask)
-        self.acquisition.calculate_metric(self.GP)
+            self.GP.optimize(2000,progress_bar=True)
 
-        self.app.logger.info(f'Finding next sample composition based on acquisition function')
-        check = self.data_manifest[self.phasemap.components].values
+        self.acq_count   = 0
+        self.iteration  += 1 #iteration represents number of full calculations
+
+        self.update_status(f'Finished AL iteration {self.iteration}')
+        
+    @Driver.unqueued()
+    def get_next_sample(self):
+        self.update_status(f'Calculating acquisition function...')
+        check = self.data_manifest[self.components].values
+        self.acquisition.reset_phasemap(self.phasemap,self.components)
+        self.acquisition.reset_mask(self.mask)
+        self.phasemap = self.acquisition.calculate_metric(self.GP)
+
+        self.update_status(f'Finding next sample composition based on acquisition function')
+        check = self.data_manifest[self.components].values
         self.next_sample = self.acquisition.get_next_sample(composition_check=check)
-        self.app.logger.info(f'Next sample is found to be {self.next_sample.squeeze().to_dict()} by acquisition function {self.acquisition.name}')
-        self.stale = False
-                             
-        ## SAVE DATA ##
+        self.update_status(f'Next sample is found to be {self.next_sample.squeeze().to_dict()} by acquisition function {self.acquisition.name}')
+        self.acq_count+=1#acq represents number of times 'get_next_sample' is called
+        
+    @Driver.unqueued()
+    def save_results(self):
+        #write netcdf
         uuid_str = str(uuid.uuid4())
         save_path = pathlib.Path(self.config['save_path'])
-        params = {}
-        params['n_cluster'] = self.n_cluster
-        params['gp_y_var'] = self.acquisition.y_var
-        params['gp_y_mean'] = self.acquisition.y_mean
-        params['labels'] = labels
-        params['silh'] = silh
-        params['mask'] = self.mask
-        params['next_sample'] = self.next_sample
-        params['iteration'] = self.iteration
-        params['data_tag'] = self.config["data_tag"]
-        params['acquisition_object'] = self.acquisition
-        params['acquisition_name'] = self.acquisition.name
-        params['uuid'] = uuid_str
-        with open(save_path/f'parameters_{self.config["data_tag"]}_{uuid_str}.pkl','wb') as f:
-            pickle.dump(params,f,-1)
-        self.phasemap.save(save_path/f'phasemap_input_{self.config["data_tag"]}_{uuid_str}.pkl')
-        self.phasemap_labelled.save(save_path/f'phasemap_labelled_{self.config["data_tag"]}_{uuid_str}.pkl')
-        self.acquisition.pm.save(save_path/f'phasemap_acquisition_{self.config["data_tag"]}_{uuid_str}.pkl')
+        date =  datetime.datetime.now().strftime('%y%m%d')
+        time =  datetime.datetime.now().strftime('%H:%M:%S')
+        self.phasemap['gp_y_var'] = (('grid','phase_num'),self.acquisition.y_var)
+        self.phasemap['gp_y_mean'] = (('grid','phase_num'),self.acquisition.y_mean)
+        self.phasemap['next_sample'] = self.next_sample
+        self.phasemap.attrs['uuid'] = uuid_str
+        self.phasemap.attrs['date'] = date
+        self.phasemap.attrs['time'] = time
+        self.phasemap.attrs['data_tag'] = self.config["data_tag"]
+        self.phasemap.attrs['acq_count'] = self.acq_count
+        self.phasemap.attrs['iteration'] = self.iteration
+        self.phasemap.to_netcdf(save_path/f'phasemap_{self.config["data_tag"]}_{uuid_str}.nc')
         
+        #write manifest csv
         AL_manifest_path = save_path/'manifest.csv'
         if AL_manifest_path.exists():
             self.AL_manifest = pd.read_csv(AL_manifest_path)
         else:
-            self.AL_manifest = pd.DataFrame(columns=['uuid','date','time','data_tag','iteration'])
+            self.AL_manifest = pd.DataFrame(columns=['uuid','date','time','data_tag','iteration','acq_count'])
         
         row = {}
         row['uuid'] = uuid_str
-        row['date'] =  datetime.datetime.now().strftime('%y%m%d')
-        row['time'] =  datetime.datetime.now().strftime('%H:%M:%S')
+        row['date'] =  date
+        row['time'] =  time
         row['data_tag'] = self.config['data_tag']
         row['iteration'] = self.iteration
-        self.AL_manifest = self.AL_manifest.append(row,ignore_index=True)
+        row['acq_count'] = self.acq_count
+        self.AL_manifest = pd.concat([self.AL_manifest.T,pd.Series(row)],axis=1,ignore_index=True).T
         self.AL_manifest.to_csv(AL_manifest_path,index=False)
             
-        
-        self.iteration+=1
-        self.app.logger.info(f'Finished AL iteration {self.iteration}')
-    
-    @Driver.unqueued()
-    def get_next_sample(self):
-        self.app.logger.info(f'Calculating acquisition function...')
-        check = self.data_manifest[self.phasemap.components].values
-        self.acquisition.reset_phasemap(self.phasemap_dense)
-        self.acquisition.reset_mask(self.mask)
-        self.acquisition.calculate_metric(self.GP)
-
-        self.app.logger.info(f'Finding next sample composition based on acquisition function')
-        check = self.data_manifest[self.phasemap.components].values
-        self.next_sample = self.acquisition.get_next_sample(composition_check=check)
-        self.app.logger.info(f'Next sample is found to be {self.next_sample.squeeze().to_dict()} by acquisition function {self.acquisition.name}')
-        obj = serialize((self.next_sample,self.stale))
-        self.stale = True
-        return obj
-        
+    def predict(self):
+        self.process_data()
+        self.label()
+        self.extrapolate()
+        self.get_next_sample()
+        self.save_results()
     
 
 
