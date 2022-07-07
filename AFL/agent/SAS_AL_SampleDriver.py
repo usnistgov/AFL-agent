@@ -8,6 +8,7 @@ from AFL.automation.shared.units import units
 
 import pandas as pd
 import numpy as np
+import xarray as xr
 
 from math import ceil,sqrt
 import json

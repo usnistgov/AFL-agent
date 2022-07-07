@@ -8,6 +8,7 @@ from AFL.automation.shared.units import units
 
 import pandas as pd
 import numpy as np
+import xarray as xr
 
 from math import ceil,sqrt
 import json
@@ -21,7 +22,8 @@ import uuid
 import warnings
 
 import AFL.automation.prepare
-import AFL.automation.shared.units import units
+from AFL.automation.shared.units import units
+from AFL.automation import prepare
 import shutil
 import h5py
 
@@ -108,8 +110,6 @@ class SAS_AL_SampleDriver(Driver):
         self.stocks = None
         self.stock_loc = None
         
-        self.reset_deck()
-       
     def status(self):
         status = []
         status.append(f'Snapshots: {self.config["snapshot_directory"]}')
@@ -225,13 +225,13 @@ class SAS_AL_SampleDriver(Driver):
         stock_DEX.density = 1.06*units('g/ml')
         self.stocks['DEX'] = stock_DEX
 
-        self.stock_loc['SLES1'] = '1A1'
-        self.stock_loc['SLES3'] = '1A2'
-        self.stock_loc['CAPB'] = '1A3'
-        self.stock_loc['DEX'] = '1B2'
+        self.stock_loc['SLES1'] = '4A1'
+        self.stock_loc['SLES3'] = '4A2'
+        self.stock_loc['CAPB'] = '4B2'
+        self.stock_loc['DEX'] = '4B1'
         self.stock_loc['WATER'] = '1A1'
 
-    def make_protocol(SLES1_SLES3_frac,CAPB_SLES_frac,CD1_pct,load_pipette_kw,load_pipette_fast_kw,prep_volume=500*units('ul'),load_volume=300*units('ul'),tot_surfactant=tot_surfactant):
+    def make_protocol(self,SLES1_SLES3_frac,CAPB_SLES_frac,CD1_pct,sample_mass,load_pipette_kw,load_pipette_fast_kw,prep_volume=500*units('ul'),load_volume=300*units('ul'),tot_surfactant=0.05):
         if self.stocks is None:
             self.make_stocks()
 
@@ -264,10 +264,10 @@ class SAS_AL_SampleDriver(Driver):
         masses['WATER'] = WATER_mass
     
     
-        SLES1_stock_volume = (SLES1_mass/self.stock['SLES1'].mass_fraction['STEOLCS130']/self.stock['SLES1'].density).to('ul')
-        SLES3_stock_volume = (SLES3_mass/self.stock['SLES3'].mass_fraction['STEOLCS330']/self.stock['SLES3'].density).to('ul')
-        CAPB_stock_volume = (CAPB_mass/self.stock['CAPB'].mass_fraction['AMPHOSOL']/self.stock['CAPB'].density).to('ul')
-        DEXTRAN_stock_volume = (DEXTRAN_mass/self.stock['DEX'].mass_fraction['DEXTRAN']/self.stock['DEX'].density).to('ul')
+        SLES1_stock_volume = (SLES1_mass/self.stocks['SLES1'].mass_fraction['STEOLCS130']/self.stocks['SLES1'].density).to('ul')
+        SLES3_stock_volume = (SLES3_mass/self.stocks['SLES3'].mass_fraction['STEOLCS330']/self.stocks['SLES3'].density).to('ul')
+        CAPB_stock_volume = (CAPB_mass/self.stocks['CAPB'].mass_fraction['AMPHOSOL']/self.stocks['CAPB'].density).to('ul')
+        DEXTRAN_stock_volume = (DEXTRAN_mass/self.stocks['DEX'].mass_fraction['DEXTRAN']/self.stocks['DEX'].density).to('ul')
         WATER_stock_volume = (WATER_mass/(1.0*units('g/ml'))).to('ul')
     
         volumes = {}
@@ -299,14 +299,14 @@ class SAS_AL_SampleDriver(Driver):
         pa_list.append(pa)
     
         pa = prepare.PipetteAction(
-            source=self.stock_loc['WATER']
+            source=self.stock_loc['WATER'],
             dest='target',
             volume=WATER_stock_volume.magnitude,
             **load_pipette_fast_kw)
         pa_list.append(pa)
     
         pa = prepare.PipetteAction(
-            source=self.stock_loc['SLES1']
+            source=self.stock_loc['SLES1'],
             dest='target',
             volume=SLES1_stock_volume.magnitude,
             **load_pipette_kw)
@@ -475,10 +475,10 @@ class SAS_AL_SampleDriver(Driver):
     
     def active_learning_loop(self,**kwargs):
         self.AL_components = kwargs['AL_components']
-        sample_volume = kwargs['sample_volume']
+        #sample_volume = kwargs['sample_volume']
         exposure = kwargs['exposure']
-        mix_order = kwargs['mix_order']
-        custom_stock_settings = kwargs['custom_stock_settings']
+        #mix_order = kwargs['mix_order']
+        #custom_stock_settings = kwargs['custom_stock_settings']
         data_manifest_path = pathlib.Path(self.config['data_manifest_file'])
         data_path = pathlib.Path(self.config['data_path'])
         csv_data_path = pathlib.Path(self.config['csv_data_path'])
@@ -492,8 +492,9 @@ class SAS_AL_SampleDriver(Driver):
             self.app.logger.info(f'Starting new AL loop')
             
             #get prediction of next step
-            next_sample = self.agent_client.get_next_sample_queued()
-            self.app.logger.info(f'Preparing to make next sample: {next_sample_dict}')
+            #next_sample = self.agent_client.get_next_sample_queued()
+            next_sample = self.agent_client.get('next_sample')
+            self.app.logger.info(f'Preparing to make next sample: {next_sample}')
             
             if self.dummy_mode:
                 print(f'Pulling from {df_measurements.shape}')
@@ -521,7 +522,7 @@ class SAS_AL_SampleDriver(Driver):
             load_pipette_fast_kw = {}
             load_pipette_fast_kw['post_aspirate_delay'] = 5
             load_pipette_fast_kw['post_dispense_delay'] = 5
-            load_pipette_kw['aspirate_equilibration_delay'] = 2.
+            load_pipette_fast_kw['aspirate_equilibration_delay'] = 2.
             load_pipette_fast_kw['aspirate_rate'] = 500
             load_pipette_fast_kw['dispense_rate'] = 50
             load_pipette_fast_kw['mix_after'] = (3,50)
@@ -544,28 +545,29 @@ class SAS_AL_SampleDriver(Driver):
             sample_mass = (prep_volume*units('g/ml')).to('mg')
             tot_surfactant = 0.05*sample_mass
 
-            S1S3 = 0.0
-            SLES3_frac = next_sample.sel(component='SLES3').values[()]
-            SLES3_mass = tot_surfactant*SLES3_frac 
-            CAPB_frac = next_sample.sel(component='CAPB').values[()]
-            DEX_frac = next_sample.sel(component='DEX').values[()]
+            S1S3 = 1.0
+            SLES3_frac = next_sample.sel(component='SLES3').values[0]
+            CAPB_frac = next_sample.sel(component='CAPB').values[0]
+            DEX_frac = next_sample.sel(component='DEX').values[0]
+            self.app.logger.info(f'Preparing to make next sample with SLES3={SLES3_frac} CAPB={CAPB_frac} DEX={DEX_frac}')
 
             Cfr = CAPB_frac/(1-CAPB_frac)
             Dfr = DEX_frac/(1-DEX_frac)
             SLES3_mass = tot_surfactant/(1 + Cfr + S1S3 + Cfr*(Dfr+Cfr*Dfr)/(1-Cfr*Dfr))
             DEX_mass   = SLES3_mass*(Dfr + Dfr*Cfr)/(1-Dfr*Cfr)
             CAPB_mass  = tot_surfactant - SLES3_mass - SLES3_mass*S1S3
-            SLES1_mass = SLES3*S1S3
+            SLES1_mass = SLES3_mass*S1S3
             
-            CS = (CAPB_mass/(SLES3_mass+SLES1_mass).magnitude
+            CS = (CAPB_mass/(SLES3_mass+SLES1_mass)).magnitude
             CD = (DEX_mass/sample_mass).magnitude
 
-            self.update_status(f'Converted next sample to be S1S3={S1S3:4.3f) CS={CS:4.3f} CD={CD:4.3f}')
+            self.update_status(f'Converted next sample to be S1S3={S1S3:4.3f} CS={CS:4.3f} CD={CD:4.3f}')
 
             output = self.make_protocol(
                     S1S3,
                     CS,
                     CD,
+                    sample_mass = sample_mass,
                     load_pipette_kw=load_pipette_kw,
                     load_pipette_fast_kw=load_pipette_fast_kw,
                     prep_volume=prep_volume,
@@ -578,6 +580,9 @@ class SAS_AL_SampleDriver(Driver):
             else:
                 validated = True
                 name,prep_protocol,masses,volumes = output
+                DEX_mass   = SLES3_mass*(Dfr + Dfr*Cfr)/(1-Dfr*Cfr)
+                CAPB_mass  = tot_surfactant - SLES3_mass - SLES3_mass*S1S3
+                SLES1_mass = SLES3_mass*S1S3
 
 
             if validated:
@@ -586,7 +591,8 @@ class SAS_AL_SampleDriver(Driver):
             else:
                 self.app.logger.info(f'Validation FAILED')
                 self.AL_status_str = 'Last sample validation FAILED'
-            self.app.logger.info(f'Making next sample with mass fraction: {sample.target_check.mass_fraction}')
+
+            self.update_status(f'Making next sample to be S1S3={S1S3:4.3f} CS={CS:4.3f} CD={CD:4.3f}')
             
             if self.dummy_mode:
                 sample_name = next_sample_full['fname'].replace('_r1d','')
@@ -612,11 +618,18 @@ class SAS_AL_SampleDriver(Driver):
             data_files = list(data_path.glob(f'*{sample_uuid}*hs104*'))
             if len(data_files)==0:
                 raise ValueError(f'No data files found...')
-            elif len(data_files)>1:
+            elif len(data_files)>2:
                 raise ValueError(f'Too many data files found:{data_files}')
             else:
-                file_path = data_files[0]
+                file_path = None
+                for fname in data_files:
+                    if 'MT-' not in str(fname):
+                        file_path = fname
+                        break
+                if file_path is None:
+                    raise ValueError(f"No non-MT data file found: {data_files}")
 
+                
             # CHECK TRANMISSION OF LAST SAMPLE
             ds_data = self.read_data(file_path)
             transmission = ds_data['T']
@@ -631,7 +644,7 @@ class SAS_AL_SampleDriver(Driver):
             # write csv to csv_data path
             pd_I = ds_data.I.to_pandas()
             pd_I.name = 'I'
-            csv_fpath= base_path/f'{sample_name}.csv'
+            csv_fpath= csv_data_path/f'{sample_name}.csv'
             pd_I.to_csv(csv_fpath,header=False)
 
             
@@ -642,11 +655,12 @@ class SAS_AL_SampleDriver(Driver):
                 self.data_manifest = pd.DataFrame(columns=['fname','label',*self.AL_components])
             
             row = {}
-            row['fname'] = csv_fpath
+            row['fname'] = csv_fpath.parts[-1]
             row['label'] = -1
             row['SLES3'] = SLES3_frac
             row['CAPB'] = CAPB_frac
             row['DEX'] = DEX_frac
+            self.data_manifest = self.data_manifest.append(row,ignore_index=True)
             self.data_manifest.to_csv(data_manifest_path,index=False)
             
             # trigger AL
