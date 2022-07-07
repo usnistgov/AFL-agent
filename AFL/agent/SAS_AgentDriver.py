@@ -296,24 +296,24 @@ class SAS_AgentDriver(Driver):
         self.AL_manifest = pd.concat([self.AL_manifest.T,pd.Series(row)],axis=1,ignore_index=True).T
         self.AL_manifest.to_csv(AL_manifest_path,index=False)
 
-    @Driver.unqueued()
-    def get_image(self):
-        from io import StringIO
+    @Driver.unqueued(render_hint='img')
+    def get_acq(self,**kwargs):
+        import io
         import matplotlib.pyplot as plt
         import matplotlib
         from flask import send_file
         matplotlib.use('Agg')
         fig,ax = plt.subplots()
         self.acquisition.plot()
-        imgdata = StringIO()
+
+        #imgdata = io.StringIO()
+        imgdata = io.BytesIO()
         fig.savefig(imgdata, format='svg')
         imgdata.seek(0)  # rewind the data
 
         # return '<html>'+imgdata.read().replace('\n','')+"<\html>"
         return send_file(imgdata, mimetype='image/svg+xml')
 
-
-            
     def predict(self):
         self.process_data()
         self.label()
