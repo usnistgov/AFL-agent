@@ -4,7 +4,7 @@ git config --global credential.helper store
 
 conda activate afl_agent
 
-cd ~/NistoRoboto/
+cd ~/AFL-agent/
 git pull
 
-python ~/NistoRoboto/server_scripts/SampleServer_AL_SAS.py
+python ~/AFL-agent/server_scripts/SampleServer_AL_SAS.py

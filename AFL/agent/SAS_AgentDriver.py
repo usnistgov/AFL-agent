@@ -249,16 +249,17 @@ class SAS_AgentDriver(Driver):
     @Driver.unqueued()
     def get_next_sample(self):
         self.update_status(f'Calculating acquisition function...')
-        check = self.data_manifest[self.components].values
         self.acquisition.reset_phasemap(self.phasemap,self.components)
         self.acquisition.reset_mask(self.mask)
         self.phasemap = self.acquisition.calculate_metric(self.GP)
 
         self.update_status(f'Finding next sample composition based on acquisition function')
         check = self.data_manifest[self.components].values
+        print(f"--> Skipping values: {check}")
         self.next_sample = self.acquisition.get_next_sample(composition_check=check)
         self.update_status(f'Next sample is found to be {self.next_sample.squeeze().to_dict()} by acquisition function {self.acquisition.name}')
         self.acq_count+=1#acq represents number of times 'get_next_sample' is called
+        return self.next_sample
         
     @Driver.unqueued()
     def save_results(self):
@@ -269,7 +270,7 @@ class SAS_AgentDriver(Driver):
         time =  datetime.datetime.now().strftime('%H:%M:%S')
         self.phasemap['gp_y_var'] = (('grid','phase_num'),self.acquisition.y_var)
         self.phasemap['gp_y_mean'] = (('grid','phase_num'),self.acquisition.y_mean)
-        self.phasemap['next_sample'] = self.next_sample
+        self.phasemap['next_sample'] = ('component',self.next_sample.squeeze().values)#reset_index('grid').drop(['SLES3_grid','DEX_grid','CAPB_grid'])
         self.phasemap.attrs['uuid'] = uuid_str
         self.phasemap.attrs['date'] = date
         self.phasemap.attrs['time'] = time

@@ -19,7 +19,7 @@ class Acquisition:
         self.y_var = None
         self.next_sample = None
         self.logger = logging.getLogger()
-        self.composition_tol = 0.1
+        self.composition_tol = 0.05
     
     def reset_phasemap(self,phasemap,components):
         self.phasemap = phasemap
@@ -34,7 +34,7 @@ class Acquisition:
         self.phasemap.afl.comp.plot_discrete(components=self.components,set_labels=False)
 
         if self.next_sample is not None:
-            plt.plot(*PhaseMap.to_xy(np.array([self.next_sample.values])).T,marker='x',color='r')
+            plt.plot(*PhaseMap.to_xy(np.array([self.next_sample.squeeze().values])).T,marker='x',color='r')
 
         return plt.gca()
         
@@ -58,23 +58,31 @@ class Acquisition:
         else:
             mask = self.mask
 
+        print(f"Running get_next_sample with sample_randomly={sample_randomly}")
         while True:
+            #  print(f"Running {nth} iteration")
             if nth>=self.phasemap.grid.shape[0]:
                 raise ValueError(f'No next sample found! Searched {nth} iterations from {metric.labels.iloc[mask].shape[0]} labels!')
 
             if sample_randomly:
-                grid = acq.phasemap.where(mask,drop=True).copy()
+                raise NotImplemented
+                grid = acq.phasemap.where(mask,drop=True)#.copy()
                 grid = grid.afl.comp.get_grid(self.components)
                 composition = grid.isel(grid=np.random.choice(grid.grid,size=1))
             else:
-                metric = self.phasemap.where(mask,drop=True).copy()
-                metric = metric.sortby('metric')
+                metric = self.phasemap.where(mask,drop=True)
+                metric = metric.sortby("metric")
+                max_val= metric.metric.max()
+                metric = metric.where(metric.metric.copy(data=np.isclose(metric.metric,max_val,rtol=self.composition_tol,atol=self.composition_tol)),drop=True)
                 metric = metric.afl.comp.get_grid(self.components)
-                composition = metric.isel(grid=-1)
+                composition = metric.isel(grid=np.random.choice(metric.grid.shape[0],size=1))
 
             if composition_check is None:
                 break #all done
-            elif (abs(composition_check-composition.values)<self.composition_tol).all(1).any():
+
+            check = abs(composition_check-composition.values)
+            print(f'--> Composition Check: {check}')
+            if (check<self.composition_tol).all(1).any():
                 nth+=1
             else:
                 break
