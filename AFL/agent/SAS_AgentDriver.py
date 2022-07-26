@@ -3,6 +3,7 @@ from AFL.automation.prepare.OT2Client import OT2Client
 from AFL.automation.shared.utilities import listify
 from AFL.automation.APIServer.Driver import Driver
 from AFL.automation.shared.Serialize import serialize,deserialize
+from AFL.automation.shared.utilities import mpl_plot_to_bytes
 
 from math import ceil,sqrt
 import json
@@ -18,10 +19,14 @@ import numpy as np
 import xarray as xr
 import pathlib
 
+import io
+import matplotlib.pyplot as plt
+import matplotlib
+
 import AFL.agent.PhaseMap
 from AFL.agent import AcquisitionFunction 
 from AFL.agent import GaussianProcess 
-from AFL.agent import Similarity 
+from AFL.agent import Metric 
 from AFL.agent import PhaseLabeler
 from AFL.agent.WatchDog import WatchDog
 
@@ -38,6 +43,8 @@ class SAS_AgentDriver(Driver):
     defaults['data_manifest_file'] = 'manifest.csv'
     defaults['save_path'] = '/home/AFL/'
     defaults['data_tag'] = 'default'
+    defaults['qlo'] = 0.001
+    defaults['qhi'] = 1
     # defaults['grid_pts_per_row'] = 100
     def __init__(self,overrides=None):
         Driver.__init__(self,name='SAS_AgentDriver',defaults=self.gather_defaults(),overrides=overrides)
@@ -51,9 +58,11 @@ class SAS_AgentDriver(Driver):
 
         self.phasemap = None
         self.n_cluster = None
-        self.similarity = None
+        self.metric = None
+        self.acquisition = None
+        self.labeler = None
         self.next_sample = None
-        self.mask = None
+        self._mask = None
         self.iteration = 0
         self.acq_count = 0
         
@@ -70,6 +79,16 @@ class SAS_AgentDriver(Driver):
     def status(self):
         status = []
         status.append(self.status_str)
+        if self.metric is not None:
+            status.append(f'Metric: {self.metric.name}')
+        if self.acquisition is not None:
+            status.append(f'Acq.: {self.acquisition.name}')
+        if self.labeler is not None:
+            status.append(f'Labeler: {self.labeler.name}')
+        if self.mask is not None:
+            status.append(f'Masking {self.masked_points}/{self.total_points}')
+        else:
+            status.append(f'No mask loaded')
         status.append(f'Using {self.config["compute_device"]}')
         status.append(f'Data Manifest:{self.config["data_manifest_file"]}')
         status.append(f'Iteration {self.iteration}')
@@ -101,15 +120,28 @@ class SAS_AgentDriver(Driver):
     def get_object(self,name):
         return serialize(getattr(self,name))
     
+    def set_object(self,**kw):
+        for k,v in kw.items():
+            self.app.logger.info(f'Setting value for {k}')
+            setattr(self,k,deserialize(v))
+    
     def set_mask(self,mask,serialized=False):
         if serialized:
             mask = deserialize(mask)
         self.mask = mask
+        self.masked_points = int(mask.sum().values)
+        self.total_points = mask.size
     
-    def set_similarity(self,name,similarity_params):
-        if isinstance(name,str):
-            if name=='pairwise':
-                self.similarity = Similarity.Pairwise(params=similarity_params)
+    @property
+    def mask(self):
+        return self._mask
+    
+    @mask.setter
+    def mask(self,value):
+        self._mask=value
+        self.masked_points = int(value.sum().values)
+        self.total_points = value.size
+    
     def set_metric(self,value,**kw):
         if isinstance(value,str):
             if value=='pairwise':
@@ -120,26 +152,26 @@ class SAS_AgentDriver(Driver):
             metric = deserialize(value)
             self.metric = metric
 
-    def set_labeler(self,name):
-        if isinstance(name,str):
-            if name=='gaussian_mixture_model':
+    def set_labeler(self,value):
+        if isinstance(value,str):
+            if value=='gaussian_mixture_model':
                 self.labeler = PhaseLabeler.GaussianMixtureModel()
             else:
-                raise ValueError(f'Similarity type not recognized:{name}')
+                raise ValueError(f'Labeler type not recognized:{value}')
         else:
-            labeler = deserialize(name)
+            labeler = deserialize(value)
             self.labeler = labeler
             
-    def set_acquisition(self,spec):
-        if isinstance(spec,dict):
-            if spec['name']=='variance':
+    def set_acquisition(self,value):
+        if isinstance(value,dict):
+            if value['name']=='variance':
                 self.acquisition = AcquisitionFunction.Variance()
-            elif spec['name']=='random':
+            elif value['name']=='random':
                 self.acquisition = AcquisitionFunction.Random()
-            elif spec['name']=='combined':
-                function1 = spec['function1_name']
-                function2 = spec['function2_name']
-                function2_frequency= spec['function2_frequency']
+            elif value['name']=='combined':
+                function1 = value['function1_name']
+                function2 = value['function2_name']
+                function2_frequency= value['function2_frequency']
                 function1 = AcquisitionFunction.Variance()
                 function2 = AcquisitionFunction.Random()
                 self.acquisition = AcquisitionFunction.IterationCombined(
@@ -148,16 +180,16 @@ class SAS_AgentDriver(Driver):
                     function2_frequency=function2_frequency,
                 )
             else:
-                raise ValueError(f'Acquisition type not recognized:{name}')
+                raise ValueError(f'Acquisition type not recognized:{value}')
         else:
-            acq = deserialize(spec)
-            self.acquisition = spec
+            acq = deserialize(value)
+            self.acquisition = acq
         
     def append_data(self,data_dict):
         data_dict = {k:deserialize(v) for k,v in data_dict.items()}
         self.phasemap = self.phasemap.append(data_dict)
 
-    def read_data(self,predict=True):
+    def read_data(self):
         self.update_status(f'Reading the latest data in {self.config["data_manifest_file"]}')
         path = pathlib.Path(self.config['data_path'])
         
@@ -190,42 +222,18 @@ class SAS_AgentDriver(Driver):
         #must reset for serlialization to netcdf to work
         self.phasemap = self.phasemap.reset_index('grid').reset_coords(self.phasemap.attrs['components_grid'])
 
-        if predict:
-            self.predict()
-
-    def process_data(self,process=True,qlo=0.0001,qhi=0.3,pedestal=1e-12,serialize=False):
-        # should this put the q on logscale? Should we resample data to the sample q-values? geomspaced?
-        measurements = self.phasemap['raw_data'].copy()
+    def process_data(self,clean_params=None):
         
-        #q-range masking
-        q = measurements['q']
-        mask = (q>qlo)&(q<qhi)
-        measurements = measurements.where(mask,drop=True)
+        self.phasemap['data'] = self.phasemap.raw_data.afl.scatt.clean(derivative=0,qlo=self.config['qlo'],qhi=self.config['qhi'])
+        self.phasemap['deriv'] = self.phasemap.raw_data.afl.scatt.clean(derivative=1,qlo=self.config['qlo'],qhi=self.config['qhi'])
         
-        #pedestal + log10 normalization
-        measurements += pedestal 
-        measurements = np.log10(measurements)
-        measurements['q'] = np.log10(measurements['q'])
-        measurements = measurements.rename(q='logq')
-        
-        #fixing Nan to pedestal values
-        measurements = measurements.where(~np.isnan(measurements)).fillna(pedestal)
-        
-        #invariant scaling 
-        #norm = measurements.integrate('q')
-        #measurements = measurements/norm
-
-        self.phasemap['processed_data'] = measurements
-        
-        return measurements
-    
 
     def label(self):
         self.update_status('Labelling data on iteration {self.iteration}')
         self.metric.calculate(self.phasemap)
 
         ###XXX need to add cutoout for labelers that don't need silhouette or to use other methods
-        self.n_cluster,labels,silh = PhaseLabeler.silhouette(self.similarity.W,self.labeler)
+        self.n_cluster,labels,silh = PhaseLabeler.silhouette(self.metric.W,self.labeler)
         self.update_status(f'Silhouette analysis found {self.n_cluster} clusters')
 
         self.phasemap.attrs['n_cluster'] = self.n_cluster
@@ -261,9 +269,13 @@ class SAS_AgentDriver(Driver):
         check = self.data_manifest[self.components].values
         print(f"--> Skipping values: {check}")
         self.next_sample = self.acquisition.get_next_sample(composition_check=check)
-        self.update_status(f'Next sample is found to be {self.next_sample.squeeze().to_dict()} by acquisition function {self.acquisition.name}')
+        
+        next_dict = self.next_sample.drop('grid').squeeze().to_pandas().to_dict()
+        status_str = 'Next sample is '
+        for k,v in next_dict.items():
+            status_str += f'{k}: {v:4.3f} '
+        self.update_status(status_str.strip())
         self.acq_count+=1#acq represents number of times 'get_next_sample' is called
-        return self.next_sample
         
     @Driver.unqueued()
     def save_results(self):
@@ -274,13 +286,17 @@ class SAS_AgentDriver(Driver):
         time =  datetime.datetime.now().strftime('%H:%M:%S')
         self.phasemap['gp_y_var'] = (('grid','phase_num'),self.acquisition.y_var)
         self.phasemap['gp_y_mean'] = (('grid','phase_num'),self.acquisition.y_mean)
-        self.phasemap['next_sample'] = ('component',self.next_sample.squeeze().values)#reset_index('grid').drop(['SLES3_grid','DEX_grid','CAPB_grid'])
+        #self.phasemap['next_sample'] = ('component',self.next_sample.squeeze().values)
+        #reset_index('grid').drop(['SLES3_grid','DEX_grid','CAPB_grid'])
+        self.phasemap['next_sample'] = self.next_sample.drop('grid').squeeze()
+        self.phasemap['W'] = (('sample_i','sample_j'),self.metric.W)
         self.phasemap.attrs['uuid'] = uuid_str
         self.phasemap.attrs['date'] = date
         self.phasemap.attrs['time'] = time
         self.phasemap.attrs['data_tag'] = self.config["data_tag"]
         self.phasemap.attrs['acq_count'] = self.acq_count
         self.phasemap.attrs['iteration'] = self.iteration
+        self.phasemap.attrs['metric'] = str(self.metric.to_dict())
         self.phasemap.to_netcdf(save_path/f'phasemap_{self.config["data_tag"]}_{uuid_str}.nc')
         
         #write manifest csv
@@ -301,6 +317,7 @@ class SAS_AgentDriver(Driver):
         self.AL_manifest.to_csv(AL_manifest_path,index=False)
 
     def predict(self):
+        self.read_data()
         self.process_data()
         self.label()
         self.extrapolate()
