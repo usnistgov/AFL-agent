@@ -300,30 +300,108 @@ class SAS_AgentDriver(Driver):
         self.AL_manifest = pd.concat([self.AL_manifest.T,pd.Series(row)],axis=1,ignore_index=True).T
         self.AL_manifest.to_csv(AL_manifest_path,index=False)
 
-    @Driver.unqueued(render_hint='img')
-    def get_acq(self,**kwargs):
-        import io
-        import matplotlib.pyplot as plt
-        import matplotlib
-        from flask import send_file
-        matplotlib.use('Agg')
-        fig,ax = plt.subplots()
-        self.acquisition.plot()
-
-        #imgdata = io.StringIO()
-        imgdata = io.BytesIO()
-        fig.savefig(imgdata, format='svg')
-        imgdata.seek(0)  # rewind the data
-
-        # return '<html>'+imgdata.read().replace('\n','')+"<\html>"
-        return send_file(imgdata, mimetype='image/svg+xml')
-
     def predict(self):
         self.process_data()
         self.label()
         self.extrapolate()
         self.get_next_sample()
         self.save_results()
+
+    @Driver.unqueued(render_hint='precomposed_svg')
+    def plot_scatt(self,**kwargs):
+        if 'labels_ordinal' not in self.phasemap:
+            self.phasemap['labels_ordinal'] = ('system',np.zeros_like(self.phasemap.sizes['sample']))
+            labels = [0]
+        else:
+            labels = np.unique(self.phasemap.labels_ordinal.values)
+            
+        if 'precomposed' in kwargs['render_hint']:
+            matplotlib.use('Agg') #very important
+    
+            N = len(labels)
+            fig,axes = plt.subplots(N,2,figsize=(8,N*4))
+            for i,label in enumerate(labels):
+                spm = self.phasemap.set_index(sample='labels_ordinal').sel(sample=label)
+                plt.sca(axes[i,0])
+                spm.data.afl.scatt.plot_linlin(x='logq',legend=False);
+            
+                plt.sca(axes[i,1])
+                spm.afl.comp.plot_discrete(components=self.phasemap.attrs['components']);
+    
+            svg  = mpl_plot_to_bytes(fig,format='svg')
+            return svg
+        elif kwargs['render_hint']=='raw': 
+            # construct dict to send as json (all np.ndarrays must be converted to list!)
+            
+            out_dict = {}
+            out_dict['components'] = self.phasemap.attrs['components']
+            for i,label in enumerate(labels):
+                out_dict[f'phase_{i}'] = {}
+                
+                spm = self.phasemap.set_index(sample='labels_ordinal').sel(sample=label)
+                out_dict[f'phase_{i}']['labels'] = list(spm.labels.values)
+                out_dict[f'phase_{i}']['labels_ordinal'] = int(label)
+                out_dict[f'phase_{i}']['q'] = list(spm.q.values)
+                out_dict[f'phase_{i}']['raw_data'] = list(spm.raw_data.values)
+                out_dict[f'phase_{i}']['data'] = list(spm.data.values)
+                out_dict[f'phase_{i}']['compositions'] = {}
+                for component in self.phasemap.attrs['components']:
+                    out_dict[f'phase_{i}']['compositions'][component] = list(spm[component].values)
+            return out_dict
+        else:
+            raise ValueError(f'Cannot handle render_hint={kwargs["render_hint"]}')
+
+    @Driver.unqueued(render_hint='precomposed_svg')
+    def plot_acq(self,**kwargs):
+        matplotlib.use('Agg') #very important
+        fig,ax = plt.subplots()
+        self.acquisition.plot()
+        svg  = mpl_plot_to_bytes(fig,format='svg')
+        return svg
+
+    @Driver.unqueued(render_hint='precomposed_svg')
+    def plot_gp(self,**kwargs):
+        if 'gp_y_mean' not in self.phasemap:
+            raise ValueError('No GP results in phasemap. Run .predict()')
+
+        if 'precomposed' in kwargs['render_hint']:
+            matplotlib.use('Agg') #very important
+            N = self.phasemap.sizes['phase_num']
+            fig,axes = plt.subplots(self.phasemap.sizes['phase_num'],2,figsize=(12,N*6))
+            i = 0
+            for (_,labels1),(_,labels2) in zip(self.phasemap.gp_y_mean.groupby('phase_num'),self.phasemap.gp_y_var.groupby('phase_num')):
+                plt.sca(axes[i,0])
+                self.phasemap.where(self.phasemap.mask).afl.comp.plot_continuous(components=self.phasemap.attrs['components_grid'],cmap='magma',labels=labels1.values);
+                plt.sca(axes[i,1])
+                self.phasemap.where(self.phasemap.mask).afl.comp.plot_continuous(components=self.phasemap.attrs['components_grid'],labels=labels2.values);
+                i+=1
+
+            img  = mpl_plot_to_bytes(fig,format=kwargs['render_hint'].split('_')[1])
+            return img
+
+        elif kwargs['render_hint']=='raw': 
+            # construct dict to send as json (all np.ndarrays must be converted to list!)
+
+            out_dict = {}
+            out_dict['components'] = self.phasemap.attrs['components']
+            out_dict['components_grid'] = self.phasemap.attrs['components_grid']
+            for component in self.phasemap.attrs['components_grid']:
+                out_dict[component] = list(self.phasemap[component].values)
+
+            x,y = self.phasemap.afl.comp.to_xy(self.phasemap.attrs['components_grid']).T
+            out_dict['x'] = list(x)
+            out_dict['y'] = list(y)
+
+            i =0
+            for (_,labels1),(_,labels2) in zip(self.phasemap.gp_y_mean.groupby('phase_num'),self.phasemap.gp_y_var.groupby('phase_num')):
+                out_dict[f'phase_{i}'] = {'mean':list(labels1.values),'var':list(labels2.values)}
+                i+=1
+            return out_dict
+        else:
+            raise ValueError(f'Cannot handle render_hint={kwargs["render_hint"]}')
+
+
+
     
 
 
