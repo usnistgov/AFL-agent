@@ -141,24 +141,48 @@ class ScatteringTools:
             sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
         return lines
             
-    def derivative(self,order=1,qlo_isel=0,qhi_isel=-1,npts=500,sgf_window_length=31,sgf_polyorder=2):
-        #log scale
+    def clean(self,qlo=None,qhi=None,qlo_isel=None,qhi_isel=None,pedestal=1e-12,npts=250,derivative=0,sgf_window_length=31,sgf_polyorder=2,apply_log_scale=True):
         data2 =self.data.copy()
         data2.name='I'
-        data2 = data2.where(data2>0.0,drop=True).pipe(np.log10)
+        
+        if ((qlo is not None)or(qhi is not None)) and ((qlo_isel is not None)or(qhi_isel is not None)):
+            warnings.warn((
+                'Both value and index based indexing have been specified! '
+                'Value indexing will be applied first!'
+            )
+                ,stacklevel=2)
+            
+        data2 = data2.sel(q=slice(qlo,qhi))
         data2 = data2.isel(q=slice(qlo_isel,qhi_isel))
-        data2['q'] = np.log10(data2.q)
+        
+        if pedestal is not None:
+            data2+=pedestal
+            
+        qname = 'logq'
+        if apply_log_scale:
+            data2 = data2.where(data2>0.0,drop=True)
+            data2 = data2.pipe(np.log10)
+            data2['q'] = np.log10(data2.q)
+            data2 = data2.rename(q=qname)
+            
+        #need to remove duplicate values
+        data2 = data2.groupby(qname).mean()
+        
+        #set minimum value of scattering to pedestal value and fill nans with this value
+        if pedestal is not None:
+            data2 += pedestal
+            data2  = data2.where(~np.isnan(data2)).fillna(pedestal)
         
         #interpolate to constant log(dq) grid
-        qnew = np.geomspace(data2.q.min(),data2.q.max(),npts)
+        qnew = np.geomspace(data2[qname].min(),data2[qname].max(),npts)
         dq = qnew[1]-qnew[0]
-        data2 = data2.interp(q=qnew)
+        data2 = data2.interp({qname:qnew})
         
         #filter out any q that have NaN
-        data2 = data2.dropna('q','any')
+        data2 = data2.dropna(qname,'any')
         
         #take derivative
-        dI = savgol_filter(data2.values.T,window_length=sgf_window_length,polyorder=sgf_polyorder,delta=dq,axis=0,deriv=order)
+        dI = savgol_filter(data2.values.T,window_length=sgf_window_length,polyorder=sgf_polyorder,delta=dq,axis=0,deriv=derivative)
         data2_dI = data2.copy(data=dI.T)
         return data2_dI
     
