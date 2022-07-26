@@ -43,6 +43,13 @@ class AgentClient(Client):
         obj = deserialize(retval['return_val'])
         return obj
     
+    def set(self,**kw):
+        json = {}
+        json['task_name'] = 'set_object'
+        for k,v in kw.items():
+            json[k] = serialize(v)
+        self.enqueue(**json)
+    
     def _get_next_sample(self):
         response = requests.get(self.url+'/get_next_sample',headers=self.headers)
         if response.status_code != 200:
