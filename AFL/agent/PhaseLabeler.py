@@ -42,6 +42,10 @@ class PhaseLabeler:
         raise NotImplementedError('Sub-classes must implement label!')
         
 class GaussianMixtureModel(PhaseLabeler):
+    def __init__(self,params=None):
+        super().__init__(params)
+        self.name = f'GaussianMixtureModel'
+        
     def label(self,X,**params):
         if params:
             self.params.update(params)
@@ -50,6 +54,10 @@ class GaussianMixtureModel(PhaseLabeler):
         self.labels = self.clf.predict(X)
         
 class SpectralClustering(PhaseLabeler):
+    def __init__(self,params=None):
+        super().__init__(params)
+        self.name = f'SpectralClustering'
+        
     def label(self,X,**params):
         if params:
             self.params.update(params)
