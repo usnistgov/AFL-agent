@@ -74,10 +74,9 @@ class Acquisition:
                 raise ValueError(f'No next sample found! Searched {nth} iterations!')
 
             if sample_randomly:
-                raise NotImplemented
-                grid = acq.phasemap.where(mask,drop=True)#.copy()
-                grid = grid.afl.comp.get_grid(self.components)
-                composition = grid.isel(grid=np.random.choice(grid.grid,size=1))
+                metric = self.phasemap.where(mask,drop=True)
+                metric = metric.afl.comp.get_grid(self.components)
+                composition = metric.isel(grid=np.random.choice(metric.grid.shape[0],size=1))
             else:
                 metric = self.phasemap.where(mask,drop=True)
                 metric = metric.sortby('acq_metric')
