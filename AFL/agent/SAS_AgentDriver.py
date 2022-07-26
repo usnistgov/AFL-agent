@@ -110,11 +110,15 @@ class SAS_AgentDriver(Driver):
         if isinstance(name,str):
             if name=='pairwise':
                 self.similarity = Similarity.Pairwise(params=similarity_params)
+    def set_metric(self,value,**kw):
+        if isinstance(value,str):
+            if value=='pairwise':
+                self.metric = Metric.Similarity(params=kw)
             else:
-                raise ValueError(f'Similarity type not recognized:{name}')
+                raise ValueError(f'Metric type not recognized:{value}')
         else:
-            similarity = deserialize(name)
-            self.similarity = similarity
+            metric = deserialize(value)
+            self.metric = metric
 
     def set_labeler(self,name):
         if isinstance(name,str):
@@ -218,7 +222,7 @@ class SAS_AgentDriver(Driver):
 
     def label(self):
         self.update_status('Labelling data on iteration {self.iteration}')
-        self.similarity.calculate(self.phasemap['processed_data'])
+        self.metric.calculate(self.phasemap)
 
         ###XXX need to add cutoout for labelers that don't need silhouette or to use other methods
         self.n_cluster,labels,silh = PhaseLabeler.silhouette(self.similarity.W,self.labeler)
