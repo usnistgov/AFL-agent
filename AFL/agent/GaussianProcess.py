@@ -16,6 +16,12 @@ import warnings
 
 from AFL.agent.PhaseMap import to_xy
 
+class DummyGP:
+    def predict(self,compositions):
+        y_mean = np.zeros_like(compositions)
+        y_var = np.zeros_like(compositions)
+        return y_mean,y_var
+
     
 class GP:
     def __init__(self,ds,components,num_classes):
@@ -36,7 +42,7 @@ class GP:
         self.final_monitor = lambda x: None
         
     def reset_GP(self,kernel=None):
-        warnings.warn('Code is not fully generalized for non-independent coordinates. Use with case...',stacklevel=2)
+        warnings.warn('Code is not fully generalized for non-independent coordinates. Use with care...',stacklevel=2)
         
         if len(self.components)==3:
             xy = self.ds.afl.comp.to_xy(self.components)
