@@ -234,15 +234,16 @@ class SAS_AgentDriver(Driver):
     def process_data(self,clean_params=None):
         
         self.phasemap['data'] = self.phasemap.raw_data.afl.scatt.clean(derivative=0,qlo=self.config['qlo'],qhi=self.config['qhi'])
-        self.phasemap['deriv'] = self.phasemap.raw_data.afl.scatt.clean(derivative=1,qlo=self.config['qlo'],qhi=self.config['qhi'])
+        self.phasemap['deriv1'] = self.phasemap.raw_data.afl.scatt.clean(derivative=1,qlo=self.config['qlo'],qhi=self.config['qhi'])
+        self.phasemap['deriv2'] = self.phasemap.raw_data.afl.scatt.clean(derivative=2,qlo=self.config['qlo'],qhi=self.config['qhi'])
         
 
     def label(self):
-        self.update_status('Labelling data on iteration {self.iteration}')
         self.update_status(f'Labelling data on iteration {self.iteration}')
         self.metric.calculate(self.phasemap)
 
-        ###XXX need to add cutoout for labelers that don't need silhouette or to use other methods
+        ###XXX need to add cutonut for labelers that don't need silhouette or to use other methods
+        ## In reality the determination of number of clusters should be handled in the PhaseLabeler object
         self.n_cluster,labels,silh = PhaseLabeler.silhouette(self.metric.W,self.labeler)
         
         self.update_status(f'Found {self.n_cluster} phases')
@@ -253,16 +254,21 @@ class SAS_AgentDriver(Driver):
         
     def extrapolate(self):
         # Predict phase behavior at each point in the phase diagram
-        self.update_status(f'Starting gaussian process calculation on {self.config["compute_device"]}')
-        with tf.device(self.config['compute_device']):
-            self.GP = GaussianProcess.GP(
-                self.phasemap,
-                self.components,
-                num_classes=self.n_cluster
-            )
-            kernel = gpflow.kernels.Matern32(variance=0.5,lengthscales=1.0) 
-            self.GP.reset_GP(kernel = kernel)          
-            self.GP.optimize(2000,progress_bar=True)
+        
+        if self.n_cluster==1:
+            self.update_status(f'Using dummy GP for one phase')
+            self.GP = GaussianProcess.DummyGP()
+        else:
+            self.update_status(f'Starting gaussian process calculation on {self.config["compute_device"]}')
+            with tf.device(self.config['compute_device']):
+                self.GP = GaussianProcess.GP(
+                    self.phasemap,
+                    self.components,
+                    num_classes=self.n_cluster
+                )
+                kernel = gpflow.kernels.Matern32(variance=0.5,lengthscales=1.0) 
+                self.GP.reset_GP(kernel = kernel)          
+                self.GP.optimize(2000,progress_bar=True)
 
         self.acq_count   = 0
         self.iteration  += 1 #iteration represents number of full calculations
@@ -395,7 +401,7 @@ class SAS_AgentDriver(Driver):
         if 'precomposed' in kwargs['render_hint']:
             matplotlib.use('Agg') #very important
             N = self.phasemap.sizes['phase_num']
-            fig,axes = plt.subplots(self.phasemap.sizes['phase_num'],2,figsize=(12,N*6))
+            fig,axes = plt.subplots(self.phasemap.sizes['phase_num'],2,figsize=(8,N*4))
             i = 0
             for (_,labels1),(_,labels2) in zip(self.phasemap.gp_y_mean.groupby('phase_num'),self.phasemap.gp_y_var.groupby('phase_num')):
                 plt.sca(axes[i,0])
