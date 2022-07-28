@@ -17,7 +17,7 @@ def listify(obj):
     return obj
 
 class Metric:
-    def __init__(self,data_variable='data',params=None,name=None):
+    def __init__(self,data_variable='data',params=None,name=None,constrain_same=None,constrain_different=None):
         self.W = None
         if name is None:
             self.name = 'BaseMetric'
@@ -28,6 +28,17 @@ class Metric:
             self.params = {}
         else:
             self.params = params
+        
+        if constrain_same is None:
+            self.constrain_same = []
+        else:
+            self.constrain_same = constrain_same
+            
+        if constrain_different is None:
+            self.constrain_different = []
+        else:
+            self.constrain_different = constrain_different
+    
     
     def _get_X(self,dataset,transpose_var='sample'):
         X = dataset[listify(self.data_variable)].to_array().squeeze()
@@ -51,32 +62,37 @@ class Metric:
     def __array__(self,dtype=None):
         return self.W.astype(dtype)
         
-    def __mul__(self,other):
-        if (self.W is None) or (other.W is None):
-            raise ValueError('Must call .calculate before combining embeddings')
-        new = self.copy()
-        new.W = self.W*other.W
-        return new
-    
     def normalize1(self):
-        metric = self.copy()
-        diag = np.diag(metric.W)
-        metric.W = metric.W/np.sqrt(np.outer(diag,diag))
-        return metric
+        W = self.W.copy()
+        diag = np.diag(W)
+        W = W/np.sqrt(np.outer(diag,diag))
+        return W
     
     def normalize2(self):
-        metric = self.copy()
-        diag = np.diag(metric.W)
-        metric.W = (metric.W - metric.W.min())/(metric.W.max()-metric.W.min())
-        return metric
+        W = self.W.copy()
+        diag = np.diag(W)
+        W = (W - W.min())/(W.max()-W.min())
+        return W 
+    
+    def apply_constraints(self):
+        W = self.W.copy()
+        for i,j in self.constrain_same:
+            W[i,j] = 1.0
+            W[j,i] = 1.0
+            
+        for i,j in self.constrain_different:
+            W[i,j] = 0.0
+            W[j,i] = 0.0
+        return W
+            
     
     def calculate(self,*args,**kwargs):
         raise NotImplementedError('Sub-classes must implement calculate!')
         
         
 class Similarity(Metric):
-    def __init__(self,data_variable='data',params=None,name=None):
-        super().__init__(data_variable,params,name)
+    def __init__(self,data_variable='data',params=None,name=None,constrain_same=None,constrain_different=None):
+        super().__init__(data_variable,params,name,constrain_same,constrain_different)
         if name is None:
             self.name = f'Similarity:{params["metric"]}'
         
@@ -93,8 +109,8 @@ class Similarity(Metric):
         return self
     
 class Distance(Metric):
-    def __init__(self,data_variable='data',params=None,name=None):
-        super().__init__(data_variable,params,name)
+    def __init__(self,data_variable='data',params=None,name=None,constrain_same=None,constrain_different=None):
+        super().__init__(data_variable,params,name,constrain_same,constrain_different)
         if name is None:
             self.name = f'Distance:{params["metric"]}'
         
@@ -110,8 +126,18 @@ class Distance(Metric):
         return self
 
 class MultiMetric(Metric):
-    def __init__(self,metrics,data_variable='data',combine_by='prod',combine_by_powers=None,combine_by_coeffs=None,**params):
-        super().__init__(data_variable,params)
+    def __init__(
+        self, 
+        metrics,
+        data_variable='data',
+        combine_by='prod',
+        combine_by_powers=None,
+        combine_by_coeffs=None,
+        constrain_same=None,
+        constrain_different=None,
+        **params
+    ): 
+        super().__init__(data_variable,params,None,constrain_same,constrain_different)
         self.metrics=metrics
         self.update_name()
         
@@ -146,6 +172,7 @@ class MultiMetric(Metric):
         
         data_list = copy.deepcopy(data_list)
         
+        #np methods use the __array__ accessor and return W
         value = np.power(data_list.pop(0),powers.pop(0))
         for data,power in zip(data_list,powers):
             value*=np.power(data,power)
@@ -153,16 +180,18 @@ class MultiMetric(Metric):
     
     def sum(self,data_list):
         if self.combine_by_powers is not None:
-            assert len(self.combine_by_powers)==len(data_list)
+            assert len(self.combine_by_coeffs)==len(data_list)
             coeffs = copy.deepcopy(self.combine_by_coeffs)
         else:
             coeffs = [1]*len(data_list)
         
         data_list = copy.deepcopy(data_list)
         
-        value = data_list.pop(0)*coeffs.pop(0)
+        #np methods use the __array__ accessor and return W
+        value = np.multiply(data_list.pop(0),coeffs.pop(0))
         for data,coeff in zip(data_list,coeffs):
-            value += data*coeff
+            value += np.multiply(data,coeff)
+            
         return value
         
     def calculate(self,dataset):
@@ -171,6 +200,8 @@ class MultiMetric(Metric):
             W_list.append(metric.calculate(dataset))
         self.W_list = W_list
         self.W = self.combine(W_list)
+        self.W = self.normalize1()
+        self.W = self.apply_constraints()
         return self
     
 class Delaunay(Similarity):
