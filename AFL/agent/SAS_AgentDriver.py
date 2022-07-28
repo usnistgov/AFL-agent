@@ -81,14 +81,23 @@ class SAS_AgentDriver(Driver):
         status.append(self.status_str)
         if self.metric is not None:
             status.append(f'Metric: {self.metric.name}')
+        else:
+            status.append(f'Metric: No metric loaded')
         if self.acquisition is not None:
             status.append(f'Acq.: {self.acquisition.name}')
+        else:
+            status.append(f'Acq.: No acquisition function loaded')
         if self.labeler is not None:
             status.append(f'Labeler: {self.labeler.name}')
-        if self.mask is not None:
-            status.append(f'Masking {self.masked_points}/{self.total_points}')
         else:
-            status.append(f'No mask loaded')
+            status.append(f'Labeler: No labeler loaded')
+        if self.mask is not None:
+            status.append(f'Masking: {self.masked_points}/{self.total_points}')
+        else:
+            status.append(f'Masking: No mask loaded')
+        if self.n_cluster is not None:
+            status.append(f'Found {self.n_cluster} phases')
+            
         status.append(f'Using {self.config["compute_device"]}')
         status.append(f'Data Manifest:{self.config["data_manifest_file"]}')
         status.append(f'Iteration {self.iteration}')
@@ -230,11 +239,13 @@ class SAS_AgentDriver(Driver):
 
     def label(self):
         self.update_status('Labelling data on iteration {self.iteration}')
+        self.update_status(f'Labelling data on iteration {self.iteration}')
         self.metric.calculate(self.phasemap)
 
         ###XXX need to add cutoout for labelers that don't need silhouette or to use other methods
         self.n_cluster,labels,silh = PhaseLabeler.silhouette(self.metric.W,self.labeler)
-        self.update_status(f'Silhouette analysis found {self.n_cluster} clusters')
+        
+        self.update_status(f'Found {self.n_cluster} phases')
 
         self.phasemap.attrs['n_cluster'] = self.n_cluster
         self.phasemap['labels'] = ('sample',labels)
