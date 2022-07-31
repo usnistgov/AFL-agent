@@ -2,7 +2,7 @@ import requests
 import base64
 import pickle
 from AFL.automation.APIServer.Client import Client
-from AFL.automation.shared.Serialize import deserialize,serialize
+from AFL.automation.shared import serialization
 import time
 
 class AgentClient(Client):
@@ -34,21 +34,21 @@ class AgentClient(Client):
         phasemap= deserialize(retval['return_val'])
         return phasemap
 
-    def get(self,name):
-        json = {}
-        json['task_name']  = 'get_object'
-        json['name']  = name
-        json['interactive']  = True
-        retval = self.enqueue(**json)
-        obj = deserialize(retval['return_val'])
-        return obj
-    
-    def set(self,**kw):
-        json = {}
-        json['task_name'] = 'set_object'
-        for k,v in kw.items():
-            json[k] = serialize(v)
-        self.enqueue(**json)
+    # def get(self,name):
+    #     json = {}
+    #     json['task_name']  = 'get_object'
+    #     json['name']  = name
+    #     json['interactive']  = True
+    #     retval = self.enqueue(**json)
+    #     obj = deserialize(retval['return_val'])
+    #     return obj
+    # 
+    # def set(self,**kw):
+    #     json = {}
+    #     json['task_name'] = 'set_object'
+    #     for k,v in kw.items():
+    #         json[k] = serialize(v)
+    #     self.enqueue(**json)
     
     def _get_next_sample(self):
         response = requests.get(self.url+'/get_next_sample',headers=self.headers)

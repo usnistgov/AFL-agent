@@ -2,7 +2,7 @@ from AFL.automation.APIServer.Client import Client
 from AFL.automation.prepare.OT2Client import OT2Client
 from AFL.automation.shared.utilities import listify
 from AFL.automation.APIServer.Driver import Driver
-from AFL.automation.shared.Serialize import serialize,deserialize
+from AFL.automation.shared import serialization
 from AFL.automation.shared.utilities import mpl_plot_to_bytes
 
 from math import ceil,sqrt
@@ -126,17 +126,18 @@ class SAS_AgentDriver(Driver):
         self.status_str = value
         self.app.logger.info(value)
     
-    def get_object(self,name):
-        return serialize(getattr(self,name))
-    
-    def set_object(self,**kw):
-        for k,v in kw.items():
-            self.app.logger.info(f'Setting value for {k}')
-            setattr(self,k,deserialize(v))
+    # def get_object(self,name):
+    #     self.app.logger.info(f'Getting value for {name}')
+    #     return serialize(getattr(self,name))
+    # 
+    # def set_object(self,**kw):
+    #     for k,v in kw.items():
+    #         self.app.logger.info(f'Setting value for {k}')
+    #         setattr(self,k,deserialize(v))
     
     def set_mask(self,mask,serialized=False):
         if serialized:
-            mask = deserialize(mask)
+            mask = serialization.deserialize(mask)
         self.mask = mask
         self.masked_points = int(mask.sum().values)
         self.total_points = mask.size
@@ -158,7 +159,7 @@ class SAS_AgentDriver(Driver):
             else:
                 raise ValueError(f'Metric type not recognized:{value}')
         else:
-            metric = deserialize(value)
+            metric = serialization.deserialize(value)
             self.metric = metric
 
     def set_labeler(self,value):
@@ -168,7 +169,7 @@ class SAS_AgentDriver(Driver):
             else:
                 raise ValueError(f'Labeler type not recognized:{value}')
         else:
-            labeler = deserialize(value)
+            labeler = serialization.deserialize(value)
             self.labeler = labeler
             
     def set_acquisition(self,value):
@@ -191,11 +192,11 @@ class SAS_AgentDriver(Driver):
             else:
                 raise ValueError(f'Acquisition type not recognized:{value}')
         else:
-            acq = deserialize(value)
+            acq = serialization.deserialize(value)
             self.acquisition = acq
         
     def append_data(self,data_dict):
-        data_dict = {k:deserialize(v) for k,v in data_dict.items()}
+        data_dict = {k:serialization.deserialize(v) for k,v in data_dict.items()}
         self.phasemap = self.phasemap.append(data_dict)
 
     def read_data(self):

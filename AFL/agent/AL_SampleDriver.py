@@ -335,6 +335,7 @@ class SAS_AL_SampleDriver(Driver):
         data_path = pathlib.Path(self.config['data_path'])
         
         if self.dummy_mode:
+            raise ValueError('Dummy mode no longer supported')
             from AFL.automation.agent import PhaseMap
             df_measurements = pd.read_csv('/Users/tbm/projects/2001-NistoRoboto/2022-02-13-CodeDev/measurements.csv')
             
@@ -343,23 +344,23 @@ class SAS_AL_SampleDriver(Driver):
             self.app.logger.info(f'Starting new AL loop')
             
             #get prediction of next step
-            next_sample = self.agent_client.get_next_sample_queued()
-            next_sample_dict = next_sample.T.squeeze().to_dict()
-            self.app.logger.info(f'Preparing to make next sample: {next_sample_dict}')
+            #next_sample = self.agent_client.get_next_sample_queued()
+            next_sample = self.agent_client.get('next_sample')
+            self.app.logger.info(f'Preparing to make next sample: {next_sample}')
             
-            if self.dummy_mode:
-                print(f'Pulling from {df_measurements.shape}')
-                xy_all = PhaseMap.ternary2cart(df_measurements[self.AL_components].values)
-                xy_next = PhaseMap.ternary2cart(next_sample[self.AL_components])
-                dist = np.sqrt(np.sum(np.square(xy_all-xy_next),axis=1))
-                argmin = np.argmin(dist)
-                next_sample_full = df_measurements.iloc[argmin]
-                next_sample = next_sample_full[self.AL_components].to_frame().T
-                df_measurements = df_measurements.drop(argmin).reset_index(drop=True)
-                print('\n\n\n')
-                print(next_sample_full)
-                print(df_measurements)
-                print('\n\n\n')
+            # if self.dummy_mode:
+            #     print(f'Pulling from {df_measurements.shape}')
+            #     xy_all = PhaseMap.ternary2cart(df_measurements[self.AL_components].values)
+            #     xy_next = PhaseMap.ternary2cart(next_sample[self.AL_components])
+            #     dist = np.sqrt(np.sum(np.square(xy_all-xy_next),axis=1))
+            #     argmin = np.argmin(dist)
+            #     next_sample_full = df_measurements.iloc[argmin]
+            #     next_sample = next_sample_full[self.AL_components].to_frame().T
+            #     df_measurements = df_measurements.drop(argmin).reset_index(drop=True)
+            #     print('\n\n\n')
+            #     print(next_sample_full)
+            #     print(df_measurements)
+            #     print('\n\n\n')
                 
             #make target object
             target = AFL.automation.prepare.Solution('target',list(next_sample.columns.values))
@@ -390,14 +391,15 @@ class SAS_AL_SampleDriver(Driver):
             self.catch_protocol.source = sample.target_loc
             
             if self.dummy_mode:
-                sample_name = next_sample_full['fname'].replace('_r1d','')
-                sample.target_check.mass_fraction
-                sample.target_check.mass_fraction = next_sample_dict
-                sample.target_check.volume = sample_volume*units('ul')
-                print('SAMPLE_NAME:',sample_name)
-                time.sleep(5)
+                raise ValueError('Dummy mode no longer supported')
+                # sample_name = next_sample_full['fname'].replace('_r1d','')
+                # sample.target_check.mass_fraction
+                # sample.target_check.mass_fraction = next_sample_dict
+                # sample.target_check.volume = sample_volume*units('ul')
+                # print('SAMPLE_NAME:',sample_name)
+                # time.sleep(5)
             else:
-                sample_uuid = str(uuid.uuid4())
+                sample_uuid = str(uuid.uuid4())[-8:]
                 sample_name = f'AL_{self.config["data_tag"]}_{sample_uuid}'
                 self.process_sample(
                         dict(
@@ -411,6 +413,7 @@ class SAS_AL_SampleDriver(Driver):
         
 
             # CHECK TRANMISSION OF LAST SAMPLE
+            # XXX Need to update based on how files will be read
             file_path = data_path / (sample_name+'.txt')
             with h5py.File(h5_path,'r') as h5:
                 transmission = h5['entry/sample/transmission'][()]
@@ -443,7 +446,7 @@ class SAS_AL_SampleDriver(Driver):
             self.data_manifest.to_csv(data_manifest_path,index=False)
             
             # trigger AL
-            self.agent_uuid = self.agent_client.enqueue(task_name='update_phasemap',predict=True)
+            self.agent_uuid = self.agent_client.enqueue(task_name='predict')
             
             # wait for AL
             self.app.logger.info(f'Waiting for agent...')

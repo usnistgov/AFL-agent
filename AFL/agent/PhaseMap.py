@@ -193,12 +193,14 @@ class CompositionTools:
         self.cmap = 'viridis'
 
 
-    def _get_default(self,components=None):
+    def _get_default(self,components=None,add_grid=False):
         if (components is None):
             try:
                 components = self.data.attrs['components']
             except KeyError:
                 raise ValueError('Must pass components or set "components" in Dataset attributes.')
+        if add_grid:
+            components = [c if 'grid' in c else c+'_grid' for c in components]
         return components
 
     def get(self,components=None):
@@ -212,8 +214,8 @@ class CompositionTools:
         comp = comp.assign_coords(component=components)
         return comp.transpose()#ensures columns are components
 
-    def get_grid(self,components=None):
-        components = self._get_default(components)
+    def get_grid_old(self,components=None):
+        components = self._get_default(components,add_grid=True)
 
         da_list = []
         for k in components:
@@ -222,6 +224,17 @@ class CompositionTools:
         comp.name='compositions_grid'
         comp = comp.assign_coords(component=components)
         return comp.transpose()#ensures columns are components
+
+    def get_grid(self,components=None):
+        components = self._get_default(components,add_grid=False)
+        components_grid = self._get_default(components,add_grid=True)
+        
+        comp   = self.data.set_index(grid=components_grid).grid#.transpose(...,'component')
+        values = np.array([np.array(i) for i in comp.values])#need to convert to numpy array
+        comp = comp.expand_dims(axis=1,component=len(components)).copy(data=values)
+        comp = comp.assign_coords(component=components).transpose(...,'component')
+        comp.name = 'composition_grid'
+        return comp
         
     def add_grid(self,components=None,pts_per_row=50,basis=1.0,dim_name='grid',overwrite=False):
         components = self._get_default(components)
