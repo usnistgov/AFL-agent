@@ -57,7 +57,7 @@ class SAS_AgentDriver(Driver):
         self.status_str = 'Fresh Server!'
 
         self.phasemap = None
-        self.n_cluster = None
+        self.n_phases = None
         self.metric = None
         self.acquisition = None
         self.labeler = None
@@ -95,8 +95,8 @@ class SAS_AgentDriver(Driver):
             status.append(f'Masking: {self.masked_points}/{self.total_points}')
         else:
             status.append(f'Masking: No mask loaded')
-        if self.n_cluster is not None:
-            status.append(f'Found {self.n_cluster} phases')
+        if self.n_phases is not None:
+            status.append(f'Found {self.n_phases} phases')
             
         status.append(f'Using {self.config["compute_device"]}')
         status.append(f'Data Manifest:{self.config["data_manifest_file"]}')
@@ -242,21 +242,25 @@ class SAS_AgentDriver(Driver):
     def label(self):
         self.update_status(f'Labelling data on iteration {self.iteration}')
         self.metric.calculate(self.phasemap)
+        
+        self.labeler.label(self.metric)
+        self.n_phases = self.labeler.n_phases
 
         ###XXX need to add cutonut for labelers that don't need silhouette or to use other methods
         ## In reality the determination of number of clusters should be handled in the PhaseLabeler object
-        self.n_cluster,labels,silh = PhaseLabeler.silhouette(self.metric.W,self.labeler)
+        # self.n_cluster,labels,silh = PhaseLabeler.silhouette(self.metric.W,self.labeler)
+        # self.n_cluster,labels,silh = PhaseLabeler.silhouette(self.metric.W,self.labeler)
         
-        self.update_status(f'Found {self.n_cluster} phases')
+        self.update_status(f'Found {self.labeler.n_phases} phases')
 
-        self.phasemap.attrs['n_cluster'] = self.n_cluster
-        self.phasemap['labels'] = ('sample',labels)
+        self.phasemap.attrs['n_phases'] = self.n_phases
+        self.phasemap['labels'] = ('sample',self.labeler.labels)
         self.phasemap = self.phasemap.afl.labels.make_ordinal()
         
     def extrapolate(self):
         # Predict phase behavior at each point in the phase diagram
         
-        if self.n_cluster==1:
+        if self.n_phases==1:
             self.update_status(f'Using dummy GP for one phase')
             self.GP = GaussianProcess.DummyGP()
         else:
@@ -265,7 +269,7 @@ class SAS_AgentDriver(Driver):
                 self.GP = GaussianProcess.GP(
                     self.phasemap,
                     self.components,
-                    num_classes=self.n_cluster
+                    num_classes=self.n_phases
                 )
                 kernel = gpflow.kernels.Matern32(variance=0.5,lengthscales=1.0) 
                 self.GP.reset_GP(kernel = kernel)          
