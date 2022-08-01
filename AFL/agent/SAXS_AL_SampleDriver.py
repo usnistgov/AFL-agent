@@ -25,7 +25,7 @@ import shutil
 import h5py
 
 
-class SAS_AL_SampleDriver(Driver):
+class SAXS_AL_SampleDriver(Driver):
     defaults={}
     defaults['snapshot_directory'] = '/home/nistoroboto'
     defaults['data_path'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/'
@@ -42,7 +42,7 @@ class SAS_AL_SampleDriver(Driver):
             dummy_mode=False,
             ):
 
-        Driver.__init__(self,name='SAS_AL_SampleDriver',defaults=self.gather_defaults(),overrides=overrides)
+        Driver.__init__(self,name='SAXS_AL_SampleDriver',defaults=self.gather_defaults(),overrides=overrides)
 
         if not (len(load_url.split(':'))==2):
             raise ArgumentError('Need to specify both ip and port on load_url')
@@ -54,7 +54,7 @@ class SAS_AL_SampleDriver(Driver):
             raise ArgumentError('Need to specify both ip and port on agent_url')
 
         self.app = None
-        self.name = 'SAS_AL_SampleDriver'
+        self.name = 'SAXS_AL_SampleDriver'
 
         self.dummy_mode= dummy_mode
         if not self.dummy_mode:
@@ -175,7 +175,7 @@ class SAS_AL_SampleDriver(Driver):
     #def execute(self,**kwargs):
     #    if self.app is not None:
     #        self.app.logger.debug(f'Executing task {kwargs}')
-#
+    #
     #    if kwargs['task_name']=='sample':
     #        self.process_sample(kwargs)
     #    elif kwargs['task_name']=='measure':

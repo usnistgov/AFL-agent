@@ -7,11 +7,11 @@ except:
         print(f'Could not find NistoRoboto on system path, adding {os.path.abspath(Path(__file__).parent.parent)} to PYTHONPATH')
 
 from AFL.automation.APIServer.APIServer import APIServer
-# from AFL.automation.agent.SAS_AgentDriver import SAS_AgentDriver
-from AFL.agent.DowShampoo_SampleDriver import SAS_AL_SampleDriver
+from AFL.automation.agent.SAS_AgentDriver import SAS_AgentDriver
+from AFL.agent.SANS_AL_SampleDriver import SANS_AL_SampleDriver
 
 
-driver =SAS_AL_SampleDriver(
+driver =SANS_AL_SampleDriver(
         load_url='piloader:5000',
         prep_url='piot2:5000',
         sas_url='localhost:5000',
@@ -20,7 +20,7 @@ driver =SAS_AL_SampleDriver(
         dummy_mode=False,
         )
 
-server = APIServer('DowShampoo_AL_SampleDriver',index_template="index.html")
+server = APIServer('AL_SampleDriver',index_template="index.html")
 server.add_standard_routes()
 server.create_queue(driver)
 server.init_logging()
