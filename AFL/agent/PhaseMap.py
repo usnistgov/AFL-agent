@@ -297,11 +297,11 @@ class CompositionTools:
                 plt.gca().set(xlabel=components[0],ylabel=components[1])
         return artists
 
-    def plot_discrete(self,components=None,labels=None,set_labels=True,**mpl_kw):
+    def plot_discrete(self,components=None,labels=None,set_labels=True,normalize=True,**mpl_kw):
         components = self._get_default(components)
 
         if len(components)==3:
-            xy = self.to_xy(components)
+            xy = self.to_xy(components,normalize=normalize)
             ternary=True
         elif len(components)==2:
             xy = np.vstack(list(self.data[c].values for c in components)).T
@@ -360,7 +360,7 @@ class CompositionTools:
             
         
             
-    def to_xy(self,components=None):
+    def to_xy(self,components=None,normalize=True):
         '''Ternary composition to Cartesian coordinate'''
         components = self._get_default(components)
             
@@ -369,7 +369,7 @@ class CompositionTools:
         
         comps = np.vstack(list(self.data[c].values for c in components)).T
         
-        return to_xy(comps)
+        return to_xy(comps,normalize)
 
     def plot_mask(self,mask_name='mask',components_name='components_grid'):
         self.plot_discrete(self.data.attrs[components_name],labels=self.data[mask_name].astype(int),s=1)
