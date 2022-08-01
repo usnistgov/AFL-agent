@@ -38,13 +38,19 @@ class Acquisition:
     def add_exclusion(self,points):
         pass
     
-    def plot(self,**kwargs):
-        self.phasemap.afl.comp.plot_continuous(components=self.grid_components,labels='acq_metric')
-        self.phasemap.afl.comp.plot_discrete(components=self.components,set_labels=False)
-
+    def plot(self,masked=False,**kwargs):
+        if masked:
+            pm1 = self.phasemap[[var for var in self.phasemap if ('grid' in self.phasemap[var].dims)]].where(self.phasemap.mask,drop=True).copy()
+            pm = self.phasemap.copy()
+            pm = pm.drop_dims('grid').update(pm1)
+        else:
+            pm = self.phasemap.copy()
+            
+        pm.afl.comp.plot_continuous(components=self.grid_components,labels='acq_metric')
+        pm.afl.comp.plot_discrete(components=self.components,set_labels=False)
+        
         if self.next_sample is not None:
             plt.plot(*PhaseMap.to_xy(np.array([self.next_sample.squeeze().values])).T,marker='x',color='r')
-
         return plt.gca()
         
     def copy(self):
