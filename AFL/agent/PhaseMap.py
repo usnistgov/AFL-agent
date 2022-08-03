@@ -166,7 +166,7 @@ class ScatteringTools:
             data2 = data2.rename(q=qname)
             
         #need to remove duplicate values
-        data2 = data2.groupby(qname).mean()
+        data2 = data2.groupby(qname,squeeze=False).mean()
         
         #set minimum value of scattering to pedestal value and fill nans with this value
         if pedestal is not None:
