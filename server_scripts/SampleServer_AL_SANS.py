@@ -7,7 +7,7 @@ except:
         print(f'Could not find NistoRoboto on system path, adding {os.path.abspath(Path(__file__).parent.parent)} to PYTHONPATH')
 
 from AFL.automation.APIServer.APIServer import APIServer
-from AFL.automation.agent.SAS_AgentDriver import SAS_AgentDriver
+from AFL.agent.SAS_AgentDriver import SAS_AgentDriver
 from AFL.agent.SANS_AL_SampleDriver import SANS_AL_SampleDriver
 
 
@@ -17,7 +17,6 @@ driver =SANS_AL_SampleDriver(
         sas_url='localhost:5000',
         agent_url='localhost:5053',
         camera_urls = [],
-        dummy_mode=False,
         )
 
 server = APIServer('AL_SampleDriver',index_template="index.html")
