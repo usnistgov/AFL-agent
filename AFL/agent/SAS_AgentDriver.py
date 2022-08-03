@@ -207,13 +207,29 @@ class SAS_AgentDriver(Driver):
 
 
         self.phasemap = xr.Dataset()
-        measurements = []
+        data_list = []
+        deriv1_list = []
+        deriv2_list = []
         for i,row in self.data_manifest.iterrows():
             #measurement = pd.read_csv(path/row['fname'],comment='#'.set_index('q').squeeze()
-            measurement = pd.read_csv(path/row['fname'],sep=',',comment='#',header=None,names=['q','I']).set_index('q').squeeze().to_xarray()
-            measurement.name = row['fname']
-            measurements.append(measurement)
-        self.phasemap['raw_data'] = xr.concat(measurements,dim='sample')
+            measurement = pd.read_csv(path/row['fname'],sep=',',comment='#',header=None,names=['q','I'],usecols=[0,1]).set_index('q').squeeze().to_xarray()
+            measurement = measurement.dropna('q')
+
+            data   = measurement.afl.scatt.clean(derivative=0,qlo=self.config['qlo'],qhi=self.config['qhi'])
+            deriv1 = measurement.afl.scatt.clean(derivative=1,qlo=self.config['qlo'],qhi=self.config['qhi'])
+            deriv2 = measurement.afl.scatt.clean(derivative=2,qlo=self.config['qlo'],qhi=self.config['qhi'])
+
+            data   = data - data.min('logq')#put all of the data on the same baseline
+
+            data.name = row['fname']
+            deriv1.name = row['fname']
+            deriv2.name = row['fname']
+            data_list.append(data)
+            deriv1_list.append(deriv1)
+            deriv2_list.append(deriv2)
+        self.phasemap['data']   = xr.concat(data_list,dim='sample').bfill('logq').ffill('logq')
+        self.phasemap['deriv1'] = xr.concat(deriv1_list,dim='sample').bfill('logq').ffill('logq')
+        self.phasemap['deriv2'] = xr.concat(deriv2_list,dim='sample').bfill('logq').ffill('logq')
 
         compositions = self.data_manifest.drop(['label','fname'],errors='ignore',axis=1)
         self.components = list(compositions.columns.values)
@@ -340,7 +356,7 @@ class SAS_AgentDriver(Driver):
 
     def predict(self):
         self.read_data()
-        self.process_data()
+        # self.process_data()
         self.label()
         self.extrapolate()
         self.get_next_sample()
@@ -349,7 +365,7 @@ class SAS_AgentDriver(Driver):
     @Driver.unqueued(render_hint='precomposed_svg')
     def plot_scatt(self,**kwargs):
         if 'labels_ordinal' not in self.phasemap:
-            self.phasemap['labels_ordinal'] = ('system',np.zeros_like(self.phasemap.sizes['sample']))
+            self.phasemap['labels_ordinal'] = ('system',np.zeros(self.phasemap.sizes['sample']))
             labels = [0]
         else:
             labels = np.unique(self.phasemap.labels_ordinal.values)
@@ -381,7 +397,7 @@ class SAS_AgentDriver(Driver):
                 out_dict[f'phase_{i}']['labels'] = list(spm.labels.values)
                 out_dict[f'phase_{i}']['labels_ordinal'] = int(label)
                 out_dict[f'phase_{i}']['q'] = list(spm.q.values)
-                out_dict[f'phase_{i}']['raw_data'] = list(spm.raw_data.values)
+                #out_dict[f'phase_{i}']['raw_data'] = list(spm.raw_data.values)
                 out_dict[f'phase_{i}']['data'] = list(spm.data.values)
                 out_dict[f'phase_{i}']['compositions'] = {}
                 for component in self.phasemap.attrs['components']:
