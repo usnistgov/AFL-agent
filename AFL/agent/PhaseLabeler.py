@@ -46,7 +46,6 @@ class PhaseLabeler:
         silh_dict = defaultdict(list)
         max_n = min(X.shape[0],11)
         for n_phases in range(2,max_n):
-    
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 self._init(n_phases=n_phases)
@@ -64,7 +63,8 @@ class PhaseLabeler:
             silh_dict['all_scores'].append(silh_scores)
             silh_dict['avg_scores'].append(silh_scores.mean())
             silh_dict['n_phases'].append(n_phases)
-            silh_dict['labelers'].append(self.copy())
+            silh_dict['labels'].append(self.labels.copy())
+            # silh_dict['labelers'].append(self.copy())
     
         silh_avg = np.array(silh_dict['avg_scores'])
         found = False
@@ -80,7 +80,7 @@ class PhaseLabeler:
             self.labels=np.zeros(X.shape[0])
         else:
             self.n_phases = silh_dict['n_phases'][idx]
-            self.labels = silh_dict['labelers'][idx].labels
+            self.labels = silh_dict['labels'][idx]
         self.silh_dict = silh_dict
         
 class GaussianMixtureModel(PhaseLabeler):
