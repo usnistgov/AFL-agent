@@ -375,6 +375,10 @@ class SAS_AgentDriver(Driver):
     
             N = len(labels)
             fig,axes = plt.subplots(N,2,figsize=(8,N*4))
+
+            if N==1:
+                axes = np.array([axes])
+
             for i,label in enumerate(labels):
                 spm = self.phasemap.set_index(sample='labels_ordinal').sel(sample=label)
                 plt.sca(axes[i,0])
@@ -423,6 +427,8 @@ class SAS_AgentDriver(Driver):
             matplotlib.use('Agg') #very important
             N = self.phasemap.sizes['phase_num']
             fig,axes = plt.subplots(self.phasemap.sizes['phase_num'],2,figsize=(8,N*4))
+            if N==1:
+                axes = np.array([axes])
             i = 0
             for (_,labels1),(_,labels2) in zip(self.phasemap.gp_y_mean.groupby('phase_num'),self.phasemap.gp_y_var.groupby('phase_num')):
                 plt.sca(axes[i,0])
