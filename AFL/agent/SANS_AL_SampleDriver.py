@@ -2,14 +2,14 @@ from AFL.automation.APIServer.Client import Client
 from AFL.automation.prepare.OT2Client import OT2Client
 from AFL.automation.shared.utilities import listify
 from AFL.automation.APIServer.Driver import Driver
-from AFL.automation.shared.Serialize import serialize,deserialize
 from AFL.agent.AgentClient import AgentClient
 from AFL.automation.shared.units import units
 
-import pandas as pd
-import numpy as np
-import xarray as xr
+import warnings
 
+import pandas as pd
+import numpy as np 
+import xarray as xr 
 from math import ceil,sqrt
 import json
 import time
@@ -28,7 +28,7 @@ import h5py
 class SANS_AL_SampleDriver(Driver):
     defaults={}
     defaults['snapshot_directory'] = '/home/nistoroboto'
-    defaults['data_path'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/'
+    defaults['csv_data_path'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/'
     defaults['data_manifest_file'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/data_manifest.csv'
     defaults['data_tag'] = 'default'
     def __init__(self,
@@ -98,8 +98,35 @@ class SANS_AL_SampleDriver(Driver):
         self.AL_components = None
         self.components = None
         self.fixed_concs = None
-        
+
+
+        #XXX need to make deck inside this object because of 'different registries error in Pint
         self.reset_deck()
+       
+    def reset_deck(self):
+        self.deck = AFL.automation.prepare.Deck()
+        
+    def add_container(self,name,slot):
+        self.deck.add_container(name,slot)
+        
+    def add_catch(self,name,slot):
+        self.deck.add_catch(name,slot)
+        self.catch_loc=f"{slot}A1"
+    
+    def add_pipette(self,name,mount,tipracks):
+        self.deck.add_pipette(name,mount,tipracks=tipracks)
+        
+    def send_deck_config(self,home=True):
+        self.deck.init_remote_connection(
+            self.prep_url.split(":")[0],
+            home=home
+        )
+        self.deck.send_deck_config()
+        
+    def add_stock(self,stock_dict,loc):
+        soln = AFL.automation.prepare.Solution.from_dict(stock_dict)
+        self.deck.add_stock(soln,loc)
+        
        
     def status(self):
         status = []
@@ -185,7 +212,7 @@ class SANS_AL_SampleDriver(Driver):
         self.update_status(f'Cell is clean, measuring empty cell scattering...')
         empty = {}
         empty['name'] = 'MT-'+sample['name']
-        empty['exposure'] = sample['exposure']
+        empty['exposure'] = sample['empty_exposure']
         empty['wiggle'] = False
         self.sas_uuid = self.measure(empty)
         self.sas_client.wait(self.sas_uuid)
@@ -289,10 +316,11 @@ class SANS_AL_SampleDriver(Driver):
         self.fixed_concs = kwargs['fixed_concs']
         sample_volume = kwargs['sample_volume']
         exposure = kwargs['exposure']
-        mix_order = kwargs['mix_order']
-        custom_stock_settings = kwargs['custom_stock_settings']
+        empty_exposure = kwargs['empty_exposure']
+        # mix_order = kwargs['mix_order']
+        # custom_stock_settings = kwargs['custom_stock_settings']
         data_manifest_path = pathlib.Path(self.config['data_manifest_file'])
-        data_path = pathlib.Path(self.config['data_path'])
+        data_path = pathlib.Path(self.config['csv_data_path'])
         
         self.stop_AL = False
         while not self.stop_AL:
@@ -300,29 +328,63 @@ class SANS_AL_SampleDriver(Driver):
             
             #get prediction of next step
             #next_sample = self.agent_client.get_next_sample_queued()
-            next_sample = self.agent_client.get('next_sample')
-            self.app.logger.info(f'Preparing to make next sample: {next_sample}')
+            self.next_sample = self.agent_client.get_object('next_sample')
+            next_sample_dict = self.next_sample.squeeze().reset_coords('grid',drop=True).to_pandas().to_dict()
+            self.app.logger.info(f'Preparing to make next sample: {self.next_sample}')
+
+            conc_spec = {}
+            for name,value in self.fixed_concs.items():
+                conc_spec[name] = value['value']*units(value['units'])
             
-            #make target object
-            target = AFL.automation.prepare.Solution('target',self.components)
-            target.mass_fraction = next_sample_dict
-            target.volume = sample_volume*units('ul')
+            V = sample_volume*units('ul')
+            xPh = next_sample_dict['phenol_solute']*units('')
+            xPx = next_sample_dict['P188']*units('')
+            xB = next_sample_dict['benzyl_alcohol_solute']*units('')
+            XPh = xPh/(1-xPh)
+            Cpx = conc_spec["P188"]
             
-            if fixed_concs:
-                conc_spec = {}
-                for name,value in fixed_concs: 
-                    conc_spec = value['value']*units(value['units'])
-                self.app.logger.info(f'Setting fixed concentrations: {conc_spec}')
-                target.concentration = conc_spec
-                
+            vD2O = sample_volume*units('ul')
+            
+            mPx = (Cpx*vD2O).to_base_units()
+            mB = (((xB)/(1-xB-xB*XPh))*mPx*(1+XPh)).to_base_units()
+            mPh = (XPh*(mB+mPx)).to_base_units()
+            
+            self.target = AFL.automation.prepare.Solution('target',self.components)
+            self.target['D2O'].volume = vD2O
+            self.target['P188'].mass = mPx
+            self.target['phenol_solute'].mass = mPh
+            self.target['benzyl_alcohol_solute'].mass = mB
+            
             self.deck.reset_targets()
-            self.deck.add_target(target,name='target')
+            self.deck.add_target(self.target,name='target')
             self.deck.make_sample_series(reset_sample_series=True)
             self.deck.validate_sample_series(tolerance=0.15)
             self.deck.make_protocol(only_validated=False)
-            self.fix_protocol_order(mix_order,custom_stock_settings)
-            sample,validated = self.deck.sample_series[0]
+            # self.fix_protocol_order(mix_order,custom_stock_settings)
+            self.sample,validated = self.deck.sample_series[0]
             self.app.logger.info(self.deck.validation_report)
+            
+            # #make target object
+            # target = AFL.automation.prepare.Solution('target',self.components)
+            # ## need to handle other components? 
+            # target.mass_fraction = next_sample_dict
+            # target.volume = sample_volume*units('ul')
+            # 
+            # if fixed_concs:
+            #     conc_spec = {}
+            #     for name,value in fixed_concs.items(): 
+            #         conc_spec[name] = value['value']*units(value['units'])
+            #     self.app.logger.info(f'Setting fixed concentrations: {conc_spec}')
+            #     target.concentration = conc_spec
+            #     
+            # self.deck.reset_targets()
+            # self.deck.add_target(target,name='target')
+            # self.deck.make_sample_series(reset_sample_series=True)
+            # self.deck.validate_sample_series(tolerance=0.15)
+            # self.deck.make_protocol(only_validated=False)
+            # # self.fix_protocol_order(mix_order,custom_stock_settings)
+            # sample,validated = self.deck.sample_series[0]
+            # self.app.logger.info(self.deck.validation_report)
             
             if validated:
                 self.app.logger.info(f'Validation PASSED')
@@ -330,21 +392,23 @@ class SANS_AL_SampleDriver(Driver):
             else:
                 self.app.logger.info(f'Validation FAILED')
                 self.AL_status_str = 'Last sample validation FAILED'
-            self.app.logger.info(f'Making next sample with mass fraction: {sample.target_check.mass_fraction}')
+            self.app.logger.info(f'Making next sample with mass fraction: {self.sample.target_check.mass_fraction}')
             
-            self.catch_protocol.source = sample.target_loc
+            self.catch_protocol.source = self.sample.target_loc
             
             sample_uuid = str(uuid.uuid4())[-8:]
             sample_name = f'AL_{self.config["data_tag"]}_{sample_uuid}'
             self.process_sample(
                     dict(
                         name=sample_name,
-                        prep_protocol = sample.emit_protocol(),
+                        prep_protocol = self.sample.emit_protocol(),
                         catch_protocol =[self.catch_protocol.emit_protocol()],
                         volume = self.catch_protocol.volume/1000.0,
-                        exposure = exposure
+                        exposure = exposure,
+                        empty_exposure = empty_exposure
                 )
             )
+
 
             warnings.warn('Transmission check not implemented. NOT USING TRANSMISSIONS TO CHECK FOR MISSES!',stacklevel=2)
             # # CHECK TRANMISSION OF LAST SAMPLE
@@ -365,13 +429,14 @@ class SANS_AL_SampleDriver(Driver):
                 self.data_manifest = pd.read_csv(data_manifest_path)
             else:
                 self.data_manifest = pd.DataFrame(columns=['fname','label',*self.AL_components])
-            
+
             row = {}
-            row['fname'] = data_path/(sample_name+'_chosen_r1d.csv')
+            # row['fname'] = data_path/(sample_name+'_chosen_r1d.csv')
+            row['fname'] = sample_name+'_chosen_r1d.csv'
             row['label'] = -1
             total = 0
             for component in self.AL_components:
-                m = sample.target_check.mass_fraction[component].magnitude
+                m = self.sample.target_check.mass_fraction[component].magnitude
                 row[component] = m
                 total+=m
             for component in self.AL_components:
