@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from random import shuffle
 
 from sklearn.metrics import pairwise_distances
+from sklearn.neighbors import KernelDensity
 
 #move dense_pm definition outside of this class
 #move to driver,make settable here and in driver
@@ -26,7 +27,7 @@ class Acquisition:
         self.next_sample = None
         self.logger = logging.getLogger()
         self.composition_atol = 0.015#absolute distance tolerace
-        self.metric_rtol = 0.01 #pct tolerance
+        self.metric_rtol = 0.03 #pct tolerance
     
     def reset_phasemap(self,phasemap,components):
         self.phasemap = phasemap
@@ -83,7 +84,12 @@ class Acquisition:
             all_metric = self.phasemap.where(mask,drop=True).copy()
             metric_grid = all_metric.afl.comp.get_grid(self.components)
             
-            metric = all_metric.reset_index('grid').reset_coords(self.phasemap.attrs['components_grid'])
+            #sometimes all_metric has a 'grid' index...and sometimes it doesn't
+            try:
+                metric = all_metric.reset_index('grid').reset_coords(self.phasemap.attrs['components_grid']).copy()
+            except KeyError:
+                metric = all_metric.copy()
+                
             metric = metric.assign_coords(grid=np.arange(metric.sizes['grid']))
             metric = metric.sortby('acq_metric')
             
@@ -98,7 +104,6 @@ class Acquisition:
             far_metric = metric.where(~metric_mask,drop=True)
             far_metric_idex_list= list(far_metric.grid.values)
 
-        #shuffle close metric
         shuffle(close_metric_idex_list)
         print(f"Running get_next_sample with sample_randomly={sample_randomly}")
         i = 0
@@ -106,13 +111,15 @@ class Acquisition:
             print(f"Running iteration {i}")
             
             if close_metric_idex_list:
+                print(f"Getting \'close_metric'...")
                 idex = close_metric_idex_list.pop()
             elif far_metric_idex_list:
+                print(f"Getting \'far_metric'...")
                 idex = far_metric_idex_list.pop()
             else:
                 raise ValueError('No gridpoint found that satisfies constraints! Try increasing composition_rtol!')
             
-            composition = metric_grid.isel(grid=far_metric_idex_list[-1]).expand_dims('grid')
+            composition = metric_grid.isel(grid=idex).expand_dims('grid')
             
             if composition_check is None:
                 break #all done
@@ -128,6 +135,7 @@ class Acquisition:
             elif nth>1000:
                 raise ValueError('Find next sample failed to converge!')
 
+        print(f"Found that gridpoint {idex} satisfyings the acquistion function and all constraints")
         self.next_sample = composition
         return self.next_sample
 
@@ -210,4 +218,26 @@ class IterationCombined(Acquisition):
         self.phasemap.attrs['acq_iteration'] = self.iteration
         self.iteration+=1
             
+        return self.phasemap
+    
+class LowestDensity(Acquisition):
+    def __init__(self,bandwidth=0.075):
+        super().__init__()
+        self.name = 'LowestDensity'
+        self.bandwidth=bandwidth
+        
+    def calculate_metric(self,GP): 
+        if self.phasemap is None:
+            raise ValueError('No phase map set for acquisition! Call reset_phasemap!')
+            
+        #this must be calculated regardless of whether it is used
+        self.y_mean,self.y_var = GP.predict(self.phasemap.afl.comp.get_grid(self.components).values)
+            
+        xy = self.phasemap.afl.comp.to_xy()
+        xy_grid = self.phasemap.afl.comp.to_xy(self.phasemap.attrs['components_grid'])
+        kde = KernelDensity(bandwidth=self.bandwidth)
+        kde.fit(xy)
+        
+        acq_metric = -np.exp(kde.score_samples(xy_grid))
+        self.phasemap['acq_metric'] = ('grid',acq_metric)
         return self.phasemap
