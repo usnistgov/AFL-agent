@@ -6,6 +6,7 @@ import random
 import logging
 from AFL.agent import PhaseMap
 import matplotlib.pyplot as plt
+from random import shuffle
 
 from sklearn.metrics import pairwise_distances
 
@@ -66,43 +67,65 @@ class Acquisition:
         else:
             sample_randomly = False
 
-
-
         if self.mask is None:
             mask = slice(None)
         else:
             mask = self.mask
+            
+        print("Creating ordered metric lists....(this is more expensive than it sounds)")
+        if sample_randomly:
+            all_metric = self.phasemap.where(mask,drop=True)
+            metric_grid = all_metric.afl.comp.get_grid(self.components)
+            
+            close_metric_idex_list=np.arange(all_metric.sizes['grid'])#these are shuffled below
+            far_metric_idex_list = []
+        else:
+            all_metric = self.phasemap.where(mask,drop=True).copy()
+            metric_grid = all_metric.afl.comp.get_grid(self.components)
+            
+            metric = all_metric.reset_index('grid').reset_coords(self.phasemap.attrs['components_grid'])
+            metric = metric.assign_coords(grid=np.arange(metric.sizes['grid']))
+            metric = metric.sortby('acq_metric')
+            
+            #find samples within rtol of maximum metric value
+            max_val= metric['acq_metric'].max()
+            is_close = np.isclose(metric['acq_metric'],max_val,rtol=self.metric_rtol,atol=0)
+            metric_mask = metric['acq_metric'].copy(data=is_close)
+            
+            close_metric = metric.where(metric_mask,drop=True)
+            close_metric_idex_list= list(close_metric.grid.values)
+            
+            far_metric = metric.where(~metric_mask,drop=True)
+            far_metric_idex_list= list(far_metric.grid.values)
 
+        #shuffle close metric
+        shuffle(close_metric_idex_list)
         print(f"Running get_next_sample with sample_randomly={sample_randomly}")
+        i = 0
         while True:
-            #  print(f"Running {nth} iteration")
-            if nth>=self.phasemap.grid.shape[0]:
-                raise ValueError(f'No next sample found! Searched {nth} iterations!')
-
-            if sample_randomly:
-                metric = self.phasemap.where(mask,drop=True)
-                metric = metric.afl.comp.get_grid(self.components)
-                composition = metric.isel(grid=np.random.choice(metric.grid.shape[0],size=1))
+            print(f"Running iteration {i}")
+            
+            if close_metric_idex_list:
+                idex = close_metric_idex_list.pop()
+            elif far_metric_idex_list:
+                idex = far_metric_idex_list.pop()
             else:
-                metric = self.phasemap.where(mask,drop=True)
-                metric = metric.sortby('acq_metric')
-                max_val= metric['acq_metric'].max()
-                is_close = np.isclose(metric['acq_metric'],max_val,rtol=self.metric_rtol,atol=0)
-                metric_mask = metric['acq_metric'].copy(data=is_close)
-                metric = metric.where(metric_mask,drop=True)
-                metric = metric.afl.comp.get_grid(self.components)
-                composition = metric.isel(grid=np.random.choice(metric.grid.shape[0],size=1))
-
+                raise ValueError('No gridpoint found that satisfies constraints! Try increasing composition_rtol!')
+            
+            composition = metric_grid.isel(grid=far_metric_idex_list[-1]).expand_dims('grid')
+            
             if composition_check is None:
                 break #all done
 
             dist = pairwise_distances(composition_check,composition).squeeze()[()]
             if (dist<self.composition_atol).any():
-                nth+=1
+                i+=1
             else:
                 break
 
-            if nth>1000:
+            if nth>=self.phasemap.grid.shape[0]:
+                raise ValueError(f'No next sample found! Searched {nth} iterations!')
+            elif nth>1000:
                 raise ValueError('Find next sample failed to converge!')
 
         self.next_sample = composition
