@@ -232,7 +232,9 @@ class SANS_AL_SampleDriver(Driver):
             self.update_status(f'Waiting for sample prep/catch of {name} to finish: {self.catch_uuid}')
             self.prep_client.wait(self.catch_uuid)
             self.take_snapshot(prefix = f'03-after-catch-{name}')
-        
+
+        #homing robot to try to mitigate drift problems
+        self.prep_client.home()
         
         self.load_uuid = self.load_client.enqueue(task_name='loadSample',sampleVolume=sample['volume'])
         self.update_status(f'Loading sample into cell: {self.load_uuid}')
@@ -458,13 +460,17 @@ class SANS_AL_SampleDriver(Driver):
             
             self.data_manifest = self.data_manifest.append(row,ignore_index=True)
             self.data_manifest.to_csv(data_manifest_path,index=False)
-            
+
             # trigger AL
-            self.agent_uuid = self.agent_client.enqueue(task_name='predict')
+            if predict:
+                self.agent_uuid = self.agent_client.enqueue(task_name='predict')
             
-            # wait for AL
-            self.app.logger.info(f'Waiting for agent...')
-            self.agent_client.wait(self.agent_uuid)
+                # wait for AL
+                self.app.logger.info(f'Waiting for agent...')
+                self.agent_client.wait(self.agent_uuid)
+            else:
+                #used for intialization
+                return
             
             
     def fix_protocol_order(self,mix_order,custom_stock_settings):
