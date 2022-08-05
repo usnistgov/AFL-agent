@@ -89,7 +89,7 @@ class ScatteringTools:
             ax=ax)
         )
         plt.gca().set( xlabel=xlabel,  ylabel=ylabel, )
-        if legend:
+        if legend and (len(lines)>1):
             sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
         return lines
             
@@ -110,7 +110,7 @@ class ScatteringTools:
             ax=ax)
         )
         plt.gca().set( xlabel=xlabel,  ylabel=ylabel, )
-        if legend:
+        if legend and (len(lines)>1):
             sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
         return lines
             
@@ -125,7 +125,7 @@ class ScatteringTools:
             ax=ax,
             **mpl_kw)
         plt.gca().set( xlabel=xlabel,ylabel=ylabel)
-        if legend:
+        if legend and (len(lines)>1):
             sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
         return lines
     def plot_linlin(self,x='logq',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None,**mpl_kw):
@@ -137,7 +137,7 @@ class ScatteringTools:
             ax=ax,
             **mpl_kw)
         plt.gca().set( xlabel=xlabel,ylabel=ylabel)
-        if legend:
+        if legend and (len(lines)>1):
             sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
         return lines
             
