@@ -44,7 +44,7 @@ class PhaseLabeler:
     def silhouette(self,metric):
         X = metric.W.copy()
         silh_dict = defaultdict(list)
-        max_n = min(X.shape[0],11)
+        max_n = min(X.shape[0],15)
         for n_phases in range(2,max_n):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
@@ -125,4 +125,29 @@ class SpectralClustering(PhaseLabeler):
     def _label(self,metric):
         self.clf.fit(metric)
         self.labels = self.clf.labels_
+
+        
+    
+class DBSCAN(PhaseLabeler):#!!!
+
+    def __init__(self,params=None):
+        super().__init__(params)
+        self.name = f'DBSCAN'
+        if 'eps' not in self.params:
+            self.params['eps'] = 0.05
+        
+    def label(self,metric,**params):
+        if params:
+            self.params.update(params)
+            
+        self.clf = sklearn.cluster.DBSCAN(
+            eps=self.params['eps'],
+            metric='precomputed',
+            min_samples=1
+        )
+        #need something that works like distance, not similarty
+        self.clf.fit(1.0-metric.W)
+        self.labels = self.clf.labels_
+        self.n_phases = len(np.unique(self.labels))
+        return self.labels
 
