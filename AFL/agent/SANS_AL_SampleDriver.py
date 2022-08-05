@@ -317,6 +317,7 @@ class SANS_AL_SampleDriver(Driver):
         sample_volume = kwargs['sample_volume']
         exposure = kwargs['exposure']
         empty_exposure = kwargs['empty_exposure']
+        predict = kwargs.get('predict',True)
         # mix_order = kwargs['mix_order']
         # custom_stock_settings = kwargs['custom_stock_settings']
         data_manifest_path = pathlib.Path(self.config['data_manifest_file'])
@@ -336,17 +337,30 @@ class SANS_AL_SampleDriver(Driver):
             for name,value in self.fixed_concs.items():
                 conc_spec[name] = value['value']*units(value['units'])
             
+            # V = sample_volume*units('ul')
+            # xPh = next_sample_dict['phenol_solute']*units('')
+            # xPx = next_sample_dict['P188']*units('')
+            # xB = next_sample_dict['benzyl_alcohol_solute']*units('')
+            # XPh = xPh/(1-xPh)
+            # Cpx = conc_spec["P188"]
+            # 
+            # vD2O = sample_volume*units('ul')
+            # 
+            # mPx = (Cpx*vD2O).to_base_units()
+            # mB = (((xB)/(1-xB-xB*XPh))*mPx*(1+XPh)).to_base_units()
+            # mPh = (XPh*(mB+mPx)).to_base_units()
+
             V = sample_volume*units('ul')
             xPh = next_sample_dict['phenol_solute']*units('')
             xPx = next_sample_dict['P188']*units('')
-            xB = next_sample_dict['benzyl_alcohol_solute']*units('')
+            xB  = next_sample_dict['benzyl_alcohol_solute']*units('')
             XPh = xPh/(1-xPh)
-            Cpx = conc_spec["P188"]
+            CB = conc_spec["benzyl_alcohol_solute"]
             
             vD2O = sample_volume*units('ul')
             
-            mPx = (Cpx*vD2O).to_base_units()
-            mB = (((xB)/(1-xB-xB*XPh))*mPx*(1+XPh)).to_base_units()
+            mB = (CB*vD2O).to_base_units()
+            mPx = (((xPx)/(1-xPx-xPx*XPh))*mB*(1+XPh)).to_base_units()
             mPh = (XPh*(mB+mPx)).to_base_units()
             
             self.target = AFL.automation.prepare.Solution('target',self.components)
