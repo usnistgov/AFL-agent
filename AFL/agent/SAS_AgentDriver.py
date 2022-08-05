@@ -364,6 +364,9 @@ class SAS_AgentDriver(Driver):
 
     @Driver.unqueued(render_hint='precomposed_svg')
     def plot_scatt(self,**kwargs):
+        if self.phasemap is None:
+            return 'No phasemap loaded. Run read_data()'
+
         if 'labels_ordinal' not in self.phasemap:
             self.phasemap['labels_ordinal'] = ('system',np.zeros(self.phasemap.sizes['sample']))
             labels = [0]
@@ -412,6 +415,9 @@ class SAS_AgentDriver(Driver):
 
     @Driver.unqueued(render_hint='precomposed_svg')
     def plot_acq(self,**kwargs):
+        if self.phasemap is None:
+            return 'No phasemap loaded. Run read_data()'
+
         matplotlib.use('Agg') #very important
         fig,ax = plt.subplots()
         self.acquisition.plot()
@@ -420,6 +426,9 @@ class SAS_AgentDriver(Driver):
 
     @Driver.unqueued(render_hint='precomposed_svg')
     def plot_gp(self,**kwargs):
+        if self.phasemap is None:
+            return 'No phasemap loaded. Run read_data()'
+
         if 'gp_y_mean' not in self.phasemap:
             raise ValueError('No GP results in phasemap. Run .predict()')
 
