@@ -316,6 +316,8 @@ class CompositionTools:
                 labels = self.data['labels'].values
             else:
                 labels = np.zeros(xy.shape[0])
+        elif isinstance(labels,str) and (labels in self.data):
+                labels = self.data[labels].values
                 
         artists = []
         for label in np.unique(labels):
