@@ -232,7 +232,9 @@ class SANS_AL_SampleDriver(Driver):
             self.update_status(f'Waiting for sample prep/catch of {name} to finish: {self.catch_uuid}')
             self.prep_client.wait(self.catch_uuid)
             self.take_snapshot(prefix = f'03-after-catch-{name}')
-        
+
+        #homing robot to try to mitigate drift problems
+        self.prep_client.home()
         
         self.load_uuid = self.load_client.enqueue(task_name='loadSample',sampleVolume=sample['volume'])
         self.update_status(f'Loading sample into cell: {self.load_uuid}')
@@ -317,6 +319,7 @@ class SANS_AL_SampleDriver(Driver):
         sample_volume = kwargs['sample_volume']
         exposure = kwargs['exposure']
         empty_exposure = kwargs['empty_exposure']
+        predict = kwargs.get('predict',True)
         # mix_order = kwargs['mix_order']
         # custom_stock_settings = kwargs['custom_stock_settings']
         data_manifest_path = pathlib.Path(self.config['data_manifest_file'])
@@ -336,17 +339,30 @@ class SANS_AL_SampleDriver(Driver):
             for name,value in self.fixed_concs.items():
                 conc_spec[name] = value['value']*units(value['units'])
             
+            # V = sample_volume*units('ul')
+            # xPh = next_sample_dict['phenol_solute']*units('')
+            # xPx = next_sample_dict['P188']*units('')
+            # xB = next_sample_dict['benzyl_alcohol_solute']*units('')
+            # XPh = xPh/(1-xPh)
+            # Cpx = conc_spec["P188"]
+            # 
+            # vD2O = sample_volume*units('ul')
+            # 
+            # mPx = (Cpx*vD2O).to_base_units()
+            # mB = (((xB)/(1-xB-xB*XPh))*mPx*(1+XPh)).to_base_units()
+            # mPh = (XPh*(mB+mPx)).to_base_units()
+
             V = sample_volume*units('ul')
             xPh = next_sample_dict['phenol_solute']*units('')
             xPx = next_sample_dict['P188']*units('')
-            xB = next_sample_dict['benzyl_alcohol_solute']*units('')
+            xB  = next_sample_dict['benzyl_alcohol_solute']*units('')
             XPh = xPh/(1-xPh)
-            Cpx = conc_spec["P188"]
+            CB = conc_spec["benzyl_alcohol_solute"]
             
             vD2O = sample_volume*units('ul')
             
-            mPx = (Cpx*vD2O).to_base_units()
-            mB = (((xB)/(1-xB-xB*XPh))*mPx*(1+XPh)).to_base_units()
+            mB = (CB*vD2O).to_base_units()
+            mPx = (((xPx)/(1-xPx-xPx*XPh))*mB*(1+XPh)).to_base_units()
             mPh = (XPh*(mB+mPx)).to_base_units()
             
             self.target = AFL.automation.prepare.Solution('target',self.components)
@@ -444,13 +460,17 @@ class SANS_AL_SampleDriver(Driver):
             
             self.data_manifest = self.data_manifest.append(row,ignore_index=True)
             self.data_manifest.to_csv(data_manifest_path,index=False)
-            
+
             # trigger AL
-            self.agent_uuid = self.agent_client.enqueue(task_name='predict')
+            if predict:
+                self.agent_uuid = self.agent_client.enqueue(task_name='predict')
             
-            # wait for AL
-            self.app.logger.info(f'Waiting for agent...')
-            self.agent_client.wait(self.agent_uuid)
+                # wait for AL
+                self.app.logger.info(f'Waiting for agent...')
+                self.agent_client.wait(self.agent_uuid)
+            else:
+                #used for intialization
+                return
             
             
     def fix_protocol_order(self,mix_order,custom_stock_settings):
