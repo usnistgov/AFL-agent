@@ -198,10 +198,12 @@ class SANS_AL_SampleDriver(Driver):
             prep_target = self.prep_client.enqueue(task_name='get_prep_target',interactive=True)['return_val']
             target_map[t] = prep_target
 
-        for task in sample['prep_protocol']:
+        for i,task in enumerate(sample['prep_protocol']):
             #if the well isn't in the map, just use the well
             task['source'] = target_map.get(task['source'],task['source'])
             task['dest'] = target_map.get(task['dest'],task['dest'])
+            if i==(len(sample['prep_protocol'])-1):#last prepare
+                task['drop_tip']=False
             self.prep_uuid = self.prep_client.transfer(**task)
  
         if self.rinse_uuid is not None:
