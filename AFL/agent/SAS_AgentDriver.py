@@ -205,11 +205,12 @@ class SAS_AgentDriver(Driver):
         
         self.data_manifest = pd.read_csv(path/self.config['data_manifest_file'])
 
-
         self.phasemap = xr.Dataset()
+        raw_data_list = []
         data_list = []
         deriv1_list = []
         deriv2_list = []
+        fname_list = []
         for i,row in self.data_manifest.iterrows():
             #measurement = pd.read_csv(path/row['fname'],comment='#'.set_index('q').squeeze()
             measurement = pd.read_csv(path/row['fname'],sep=',',comment='#',header=None,names=['q','I'],usecols=[0,1]).set_index('q').squeeze().to_xarray()
@@ -224,22 +225,27 @@ class SAS_AgentDriver(Driver):
             data.name = row['fname']
             deriv1.name = row['fname']
             deriv2.name = row['fname']
+            raw_data_list.append(measurement.rename(q='rawq'))
             data_list.append(data)
             deriv1_list.append(deriv1)
             deriv2_list.append(deriv2)
-        self.phasemap['data']   = xr.concat(data_list,dim='sample').bfill('logq').ffill('logq')
-        self.phasemap['deriv1'] = xr.concat(deriv1_list,dim='sample').bfill('logq').ffill('logq')
-        self.phasemap['deriv2'] = xr.concat(deriv2_list,dim='sample').bfill('logq').ffill('logq')
+            fname_list.append(row['fname'])
+        self.phasemap['fname']   = ('sample',fname_list)
+        self.phasemap['raw_data']= xr.concat(raw_data_list,dim='sample')
+        self.phasemap['data']    = xr.concat(data_list,dim='sample').bfill('logq').ffill('logq')
+        self.phasemap['deriv1']  = xr.concat(deriv1_list,dim='sample').bfill('logq').ffill('logq')
+        self.phasemap['deriv2']  = xr.concat(deriv2_list,dim='sample').bfill('logq').ffill('logq')
 
-        compositions = self.data_manifest.drop(['label','fname'],errors='ignore',axis=1)
-        self.components = list(compositions.columns.values)
-        for component in self.components:
-            self.phasemap[component] = ('sample',compositions[component].values)
-
-        
-        if 'labels' in self.data_manifest:
-            self.phasemap['labels'] = ('sample',self.data_manifest['labels'])
-        else:
+        # compositions = self.data_manifest.drop(['label','fname'],errors='ignore',axis=1)
+        self.components = []
+        for column_name in self.data_manifest.columns.values:
+            if 'AL_mfrac' in column_name:
+                self.components.append(column_name.replace("AL_mfrac_",""))
+                self.phasemap[self.components[-1]] = ('sample',self.data_manifest[column_name].values)
+            else:
+                self.phasemap[column_name] = ('sample',self.data_manifest[column_name].values)
+                
+        if 'labels' not in self.phasemap:
             self.phasemap = self.phasemap.afl.labels.make_default()
 
         self.phasemap.attrs['components'] = self.components

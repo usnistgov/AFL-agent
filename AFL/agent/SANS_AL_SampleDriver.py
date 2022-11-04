@@ -486,19 +486,32 @@ class SANS_AL_SampleDriver(Driver):
             if data_manifest_path.exists():
                 self.data_manifest = pd.read_csv(data_manifest_path)
             else:
-                self.data_manifest = pd.DataFrame(columns=['fname','label',*self.AL_components])
+                AL_mfrac_comps = ['AL_mfrac_'+c for c in self.AL_components]
+                mfrac_comps = ['mfrac_'+c for c in self.components]
+                mass_comps = ['mass_'+c for c in self.components]
+                self.data_manifest = pd.DataFrame(columns=['fname','label',*AL_mfrac_comps,*mfrac_comps,*mass_comps,'validated'])
 
             row = {}
             # row['fname'] = data_path/(sample_name+'_chosen_r1d.csv')
             row['fname'] = sample_name+'_chosen_r1d.csv'
             row['label'] = -1
+            row['validated'] = validated
             total = 0
             for component in self.AL_components:
                 m = self.sample.target_check.mass_fraction[component].magnitude
-                row[component] = m
+                row['AL_mfrac_'+component] = m
                 total+=m
             for component in self.AL_components:
-                row[component] = row[component]/total
+                row['AL_mfrac_'+component] = row['AL_mfrac_'+component]/total
+                
+                total = 0
+            for component in self.components:
+                m = self.sample.target_check.mass_fraction[component].magnitude
+                row['mfrac_'+component] = m
+                row['mass_'+component] = m
+                total+=m
+            for component in self.components:
+                row['mfrac_'+component] = row['mfrac_'+component]/total
             
             self.data_manifest = self.data_manifest.append(row,ignore_index=True)
             self.data_manifest.to_csv(data_manifest_path,index=False)
