@@ -58,7 +58,7 @@ class SAS_AgentDriver(Driver):
 
         self.phasemap = None
         self.n_phases = None
-        self.metric = None
+        self.metric = Metric.Dummy()
         self.acquisition = None
         self.labeler = None
         self.next_sample = None
@@ -264,8 +264,10 @@ class SAS_AgentDriver(Driver):
     def label(self):
         self.update_status(f'Labelling data on iteration {self.iteration}')
         self.metric.calculate(self.phasemap)
+        self.phasemap['W'] = (('sample_i','sample_j'),self.metric.W)
+        self.phasemap.attrs['metric'] = str(self.metric.to_dict())
         
-        self.labeler.label(self.metric)
+        self.labeler.label(self.phasemap)
         self.n_phases = self.labeler.n_phases
 
         ###XXX need to add cutonut for labelers that don't need silhouette or to use other methods
@@ -333,14 +335,12 @@ class SAS_AgentDriver(Driver):
         #self.phasemap['next_sample'] = ('component',self.next_sample.squeeze().values)
         #reset_index('grid').drop(['SLES3_grid','DEX_grid','CAPB_grid'])
         self.phasemap['next_sample'] = self.next_sample.drop('grid').squeeze()
-        self.phasemap['W'] = (('sample_i','sample_j'),self.metric.W)
         self.phasemap.attrs['uuid'] = uuid_str
         self.phasemap.attrs['date'] = date
         self.phasemap.attrs['time'] = time
         self.phasemap.attrs['data_tag'] = self.config["data_tag"]
         self.phasemap.attrs['acq_count'] = self.acq_count
         self.phasemap.attrs['iteration'] = self.iteration
-        self.phasemap.attrs['metric'] = str(self.metric.to_dict())
         self.phasemap.to_netcdf(save_path/f'phasemap_{self.config["data_tag"]}_{uuid_str}.nc')
         
         #write manifest csv
