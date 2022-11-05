@@ -15,6 +15,7 @@ from sklearn.metrics import silhouette_samples, silhouette_score
 from collections import defaultdict
 
 try:
+    import tensorflow as tf
     import keras.models 
 except ImportError:
     warnings.warn('Keras not installed. KerasClassifier will not work!')
@@ -157,14 +158,18 @@ class DBSCAN(PhaseLabeler):#!!!
         return self.labels
 
 class KerasClassifier(PhaseLabeler):
-    def __init__(self,model_path,params=None):
+    def __init__(self,model_path,model_q,params=None):
         super().__init__(params)
         self.name = f'KerasClassifier'
 
         self.model_path = model_path
-        self.clf = keras.models.load_model(model_path)
+        self.model_q = model_q
+        self.clf = None
         
     def label(self,phasemap,data_variable='data',transpose_var='sample',**params):
-        X_data = phasemap[data_variable].transpose(transpose_var,...).to_array().squeeze()
-        self.labels = clf.predict(X_data).argmax(axis=1)
+        if self.clf is None:
+            with tf.device('/CPU:0'):
+                self.clf = keras.models.load_model(self.model_path)
+        X_data = phasemap[data_variable].transpose(transpose_var,...).interp(logq=np.log10(self.model_q)).values
+        self.labels = self.clf.predict(X_data).argmax(axis=1)
         self.n_phases = len(np.unique(self.labels))
