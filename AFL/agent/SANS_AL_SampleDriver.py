@@ -335,11 +335,11 @@ class SANS_AL_SampleDriver(Driver):
         mC = mA*(XC+XB*XC)/(1-XB*XC)
         mB = XB*(mA+mC)
         
-        mass = {}
-        mass[specified_component] = [(mA).to(output_units),]*len(mB)
-        mass[components[0]] = (mB).to(output_units)
-        mass[components[1]] = (mC).to(output_units)
-        return concs
+        mass_dict = {}
+        mass_dict[specified_component] = (mA).to(output_units)
+        mass_dict[components[0]] = (mB).to(output_units)
+        mass_dict[components[1]] = (mC).to(output_units)
+        return mass_dict
     
     def active_learning_loop(self,**kwargs):
         self.components = kwargs['components']
@@ -402,7 +402,7 @@ class SANS_AL_SampleDriver(Driver):
             # self.target['phenol_solute'].mass = mPh
             # self.target['benzyl_alcohol_solute'].mass = mB
             
-            mass_dict = mfrac_to_mass(
+            mass_dict = self.mfrac_to_mass(
                 mass_fractions=next_sample_dict,
                 specified_conc=conc_spec,
                 sample_volume=sample_volume,
@@ -411,7 +411,7 @@ class SANS_AL_SampleDriver(Driver):
             self.target = AFL.automation.prepare.Solution('target',self.components)
             self.target['D2O'].volume = sample_volume
             for k,v in mass_dict.items():
-                self.target[k] = v
+                self.target[k].mass = v
             
             self.deck.reset_targets()
             self.deck.add_target(self.target,name='target')
@@ -498,20 +498,15 @@ class SANS_AL_SampleDriver(Driver):
             row['validated'] = validated
             total = 0
             for component in self.AL_components:
-                m = self.sample.target_check.mass_fraction[component].magnitude
-                row['AL_mfrac_'+component] = m
-                total+=m
+                mf = self.sample.target_check.mass_fraction[component].magnitude
+                row['AL_mfrac_'+component] = mf
+                total+=mf
             for component in self.AL_components:
                 row['AL_mfrac_'+component] = row['AL_mfrac_'+component]/total
                 
-                total = 0
             for component in self.components:
-                m = self.sample.target_check.mass_fraction[component].magnitude
-                row['mfrac_'+component] = m
-                row['mass_'+component] = m
-                total+=m
-            for component in self.components:
-                row['mfrac_'+component] = row['mfrac_'+component]/total
+                row['mfrac_'+component] = self.sample.target_check.mass_fraction[component].magnitude
+                row['mass_'+component] = self.sample.target_check[component].mass.to('mg').magnitude
             
             self.data_manifest = self.data_manifest.append(row,ignore_index=True)
             self.data_manifest.to_csv(data_manifest_path,index=False)

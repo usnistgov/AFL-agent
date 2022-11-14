@@ -312,7 +312,7 @@ class SAS_AgentDriver(Driver):
         self.phasemap = self.acquisition.calculate_metric(self.GP)
 
         self.update_status(f'Finding next sample composition based on acquisition function')
-        check = self.data_manifest[self.components].values
+        check = self.data_manifest[['AL_mfrac_'+c for c in self.components]].values
         print(f"--> Skipping values: {check}")
         self.next_sample = self.acquisition.get_next_sample(composition_check=check)
         
