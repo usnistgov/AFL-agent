@@ -198,10 +198,12 @@ class SANS_AL_SampleDriver(Driver):
             prep_target = self.prep_client.enqueue(task_name='get_prep_target',interactive=True)['return_val']
             target_map[t] = prep_target
 
-        for task in sample['prep_protocol']:
+        for i,task in enumerate(sample['prep_protocol']):
             #if the well isn't in the map, just use the well
             task['source'] = target_map.get(task['source'],task['source'])
             task['dest'] = target_map.get(task['dest'],task['dest'])
+            if i==(len(sample['prep_protocol'])-1):#last prepare
+                task['drop_tip']=False
             self.prep_uuid = self.prep_client.transfer(**task)
  
         if self.rinse_uuid is not None:
@@ -312,11 +314,40 @@ class SANS_AL_SampleDriver(Driver):
     def set_catch_protocol(self,**kwargs): 
         self.catch_protocol = AFL.automation.prepare.PipetteAction(**kwargs)
     
+    
+    def mfrac_to_mass(self,mass_fractions,specified_conc,sample_volume,output_units='mg'):
+        if not (len(mass_fractions)==3):
+            raise ValueError('Only ternaries are currently supported. Need to pass three mass fractions')
+            
+        if len(specified_conc)>1:
+            raise ValueError('Only one concentration should be fixed!')
+        specified_component = list(specified_conc.keys())[0]
+        
+        components = list(mass_fractions.keys())
+        components.remove(specified_component)
+        
+        xB = mass_fractions[components[0]]*units('')
+        xC = mass_fractions[components[1]]*units('')
+        XB = xB/(1-xB)
+        XC = xC/(1-xC)
+        
+        mA = (specified_conc[specified_component]*sample_volume)
+        mC = mA*(XC+XB*XC)/(1-XB*XC)
+        mB = XB*(mA+mC)
+        
+        mass_dict = {}
+        mass_dict[specified_component] = (mA).to(output_units)
+        mass_dict[components[0]] = (mB).to(output_units)
+        mass_dict[components[1]] = (mC).to(output_units)
+        return mass_dict
+    
     def active_learning_loop(self,**kwargs):
         self.components = kwargs['components']
         self.AL_components = kwargs['AL_components']
         self.fixed_concs = kwargs['fixed_concs']
         sample_volume = kwargs['sample_volume']
+        sample_volume_units = kwargs['sample_volume_units']
+        sample_volume = sample_volume*units(sample_volume_units)
         exposure = kwargs['exposure']
         empty_exposure = kwargs['empty_exposure']
         predict = kwargs.get('predict',True)
@@ -352,24 +383,35 @@ class SANS_AL_SampleDriver(Driver):
             # mB = (((xB)/(1-xB-xB*XPh))*mPx*(1+XPh)).to_base_units()
             # mPh = (XPh*(mB+mPx)).to_base_units()
 
-            V = sample_volume*units('ul')
-            xPh = next_sample_dict['phenol_solute']*units('')
-            xPx = next_sample_dict['P188']*units('')
-            xB  = next_sample_dict['benzyl_alcohol_solute']*units('')
-            XPh = xPh/(1-xPh)
-            CB = conc_spec["benzyl_alcohol_solute"]
+            # V = sample_volume*units('ul')
+            # xPh = next_sample_dict['phenol_solute']*units('')
+            # xPx = next_sample_dict['P188']*units('')
+            # xB  = next_sample_dict['benzyl_alcohol_solute']*units('')
+            # XPh = xPh/(1-xPh)
+            # CB = conc_spec["benzyl_alcohol_solute"]
+            # 
+            # vD2O = sample_volume*units('ul')
+            # 
+            # mB = (CB*vD2O).to_base_units()
+            # mPx = (((xPx)/(1-xPx-xPx*XPh))*mB*(1+XPh)).to_base_units()
+            # mPh = (XPh*(mB+mPx)).to_base_units()
+            # 
+            # self.target = AFL.automation.prepare.Solution('target',self.components)
+            # self.target['D2O'].volume = vD2O
+            # self.target['P188'].mass = mPx
+            # self.target['phenol_solute'].mass = mPh
+            # self.target['benzyl_alcohol_solute'].mass = mB
             
-            vD2O = sample_volume*units('ul')
-            
-            mB = (CB*vD2O).to_base_units()
-            mPx = (((xPx)/(1-xPx-xPx*XPh))*mB*(1+XPh)).to_base_units()
-            mPh = (XPh*(mB+mPx)).to_base_units()
+            mass_dict = self.mfrac_to_mass(
+                mass_fractions=next_sample_dict,
+                specified_conc=conc_spec,
+                sample_volume=sample_volume,
+                output_units='mg')
             
             self.target = AFL.automation.prepare.Solution('target',self.components)
-            self.target['D2O'].volume = vD2O
-            self.target['P188'].mass = mPx
-            self.target['phenol_solute'].mass = mPh
-            self.target['benzyl_alcohol_solute'].mass = mB
+            self.target['D2O'].volume = sample_volume
+            for k,v in mass_dict.items():
+                self.target[k].mass = v
             
             self.deck.reset_targets()
             self.deck.add_target(self.target,name='target')
@@ -444,19 +486,27 @@ class SANS_AL_SampleDriver(Driver):
             if data_manifest_path.exists():
                 self.data_manifest = pd.read_csv(data_manifest_path)
             else:
-                self.data_manifest = pd.DataFrame(columns=['fname','label',*self.AL_components])
+                AL_mfrac_comps = ['AL_mfrac_'+c for c in self.AL_components]
+                mfrac_comps = ['mfrac_'+c for c in self.components]
+                mass_comps = ['mass_'+c for c in self.components]
+                self.data_manifest = pd.DataFrame(columns=['fname','label',*AL_mfrac_comps,*mfrac_comps,*mass_comps,'validated'])
 
             row = {}
             # row['fname'] = data_path/(sample_name+'_chosen_r1d.csv')
             row['fname'] = sample_name+'_chosen_r1d.csv'
             row['label'] = -1
+            row['validated'] = validated
             total = 0
             for component in self.AL_components:
-                m = self.sample.target_check.mass_fraction[component].magnitude
-                row[component] = m
-                total+=m
+                mf = self.sample.target_check.mass_fraction[component].magnitude
+                row['AL_mfrac_'+component] = mf
+                total+=mf
             for component in self.AL_components:
-                row[component] = row[component]/total
+                row['AL_mfrac_'+component] = row['AL_mfrac_'+component]/total
+                
+            for component in self.components:
+                row['mfrac_'+component] = self.sample.target_check.mass_fraction[component].magnitude
+                row['mass_'+component] = self.sample.target_check[component].mass.to('mg').magnitude
             
             self.data_manifest = self.data_manifest.append(row,ignore_index=True)
             self.data_manifest.to_csv(data_manifest_path,index=False)

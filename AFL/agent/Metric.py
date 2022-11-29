@@ -90,6 +90,18 @@ class Metric:
         raise NotImplementedError('Sub-classes must implement calculate!')
         
         
+class Dummy(Metric):
+    def __init__(self,data_variable='data',params=None,name=None,constrain_same=None,constrain_different=None):
+        super().__init__(data_variable,params,name,constrain_same,constrain_different)
+        if name is None:
+            self.name = f'Dummy'
+        
+    def calculate(self,dataset,**params):
+        n_samples = dataset.sizes['sample']
+        self.W = np.identity(n_samples)
+        return self
+        
+    
 class Similarity(Metric):
     def __init__(self,data_variable='data',params=None,name=None,constrain_same=None,constrain_different=None):
         super().__init__(data_variable,params,name,constrain_same,constrain_different)

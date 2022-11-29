@@ -14,6 +14,13 @@ import warnings
 from sklearn.metrics import silhouette_samples, silhouette_score
 from collections import defaultdict
 
+try:
+    import tensorflow as tf
+    import keras.models 
+except ImportError:
+    warnings.warn('Keras not installed. KerasClassifier will not work!')
+
+
 
 class PhaseLabeler:
     def __init__(self,params=None):
@@ -41,8 +48,8 @@ class PhaseLabeler:
     def label(self):
         raise NotImplementedError('Sub-classes must implement label!')
         
-    def silhouette(self,metric):
-        X = metric.W.copy()
+    def silhouette(self,W):
+        X = W.copy()
         silh_dict = defaultdict(list)
         max_n = min(X.shape[0],15)
         for n_phases in range(2,max_n):
@@ -88,9 +95,9 @@ class GaussianMixtureModel(PhaseLabeler):
         super().__init__(params)
         self.name = f'GaussianMixtureModel'
         
-    def label(self,metric,**params):
+    def label(self,phasemap,**params):
         self._init(**params)
-        self.silhouette(metric)
+        self.silhouette(phasemap.W.values)
         
     def _init(self,**params):
         if params:
@@ -106,9 +113,9 @@ class SpectralClustering(PhaseLabeler):
         super().__init__(params)
         self.name = f'SpectralClustering'
         
-    def label(self,metric,**params):
+    def label(self,phasemap,**params):
         self._init(**params)
-        self.silhouette(metric)
+        self.silhouette(phasemap.W.values)
         
     def _init(self,**params):
         if params:
@@ -129,14 +136,13 @@ class SpectralClustering(PhaseLabeler):
         
     
 class DBSCAN(PhaseLabeler):#!!!
-
     def __init__(self,params=None):
         super().__init__(params)
         self.name = f'DBSCAN'
         if 'eps' not in self.params:
             self.params['eps'] = 0.05
         
-    def label(self,metric,**params):
+    def label(self,phasemap,**params):
         if params:
             self.params.update(params)
             
@@ -146,8 +152,24 @@ class DBSCAN(PhaseLabeler):#!!!
             min_samples=1
         )
         #need something that works like distance, not similarty
-        self.clf.fit(1.0-metric.W)
+        self.clf.fit(1.0-phasemap.W.values)
         self.labels = self.clf.labels_
         self.n_phases = len(np.unique(self.labels))
         return self.labels
 
+class KerasClassifier(PhaseLabeler):
+    def __init__(self,model_path,model_q,params=None):
+        super().__init__(params)
+        self.name = f'KerasClassifier'
+
+        self.model_path = model_path
+        self.model_q = model_q
+        self.clf = None
+        
+    def label(self,phasemap,data_variable='data',transpose_var='sample',**params):
+        if self.clf is None:
+            with tf.device('/CPU:0'):
+                self.clf = keras.models.load_model(self.model_path)
+        X_data = phasemap[data_variable].transpose(transpose_var,...).interp(logq=np.log10(self.model_q)).values
+        self.labels = self.clf.predict(X_data).argmax(axis=1)
+        self.n_phases = len(np.unique(self.labels))
