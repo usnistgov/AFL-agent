@@ -1,6 +1,5 @@
 import numpy as np
 import gpflow
-from gpflow.ci_utils import ci_niter
 from gpflow.monitor import (
     ImageToTensorBoard,
     ModelToTensorBoard,
@@ -43,13 +42,15 @@ class GP:
         
     def reset_GP(self,kernel=None):
         warnings.warn('Code is not fully generalized for non-independent coordinates. Use with care...',stacklevel=2)
-        
+        labels = self.ds['labels_ordinal'].values
+        if len(labels.shape)==1:
+            labels = labels[:,np.newaxis]
         if len(self.components)==3:
             xy = self.ds.afl.comp.to_xy(self.components)
-            data = (xy, self.ds['labels_ordinal']) 
+            data = (xy,labels)
         else:
             comp = self.ds.afl.comp.get(self.components).values#[:,:-1]#only need N-1 compositions
-            data = (comp, self.ds['labels_ordinal']) 
+            data = (comp, labels)
             
         if kernel is None:
             kernel = gpflow.kernels.Matern32(variance=0.1,lengthscales=0.1) 
