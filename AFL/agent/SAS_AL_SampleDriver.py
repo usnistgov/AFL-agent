@@ -351,6 +351,8 @@ class SAS_AL_SampleDriver(Driver):
         exposure = kwargs['exposure']
         empty_exposure = kwargs['empty_exposure']
         predict = kwargs.get('predict',True)
+        pre_run_list = kwargs.get('pre_run_list',[])
+
         # mix_order = kwargs['mix_order']
         # custom_stock_settings = kwargs['custom_stock_settings']
         data_manifest_path = pathlib.Path(self.config['data_manifest_file'])
@@ -361,46 +363,18 @@ class SAS_AL_SampleDriver(Driver):
             self.app.logger.info(f'Starting new AL loop')
             
             #get prediction of next step
-            #next_sample = self.agent_client.get_next_sample_queued()
-            self.next_sample = self.agent_client.get_object('next_sample')
-            next_sample_dict = self.next_sample.squeeze().reset_coords('grid',drop=True).to_pandas().to_dict()
-            self.app.logger.info(f'Preparing to make next sample: {self.next_sample}')
+            if pre_run_list:
+                self.next_sample = None
+                next_sample_dict = pre_run_list.pop(0)
+            else:
+                #next_sample = self.agent_client.get_next_sample_queued()
+                self.next_sample = self.agent_client.get_object('next_sample')
+                next_sample_dict = self.next_sample.squeeze().reset_coords('grid',drop=True).to_pandas().to_dict()
+            self.app.logger.info(f'Preparing to make next sample: {next_sample_dict}')
 
             conc_spec = {}
             for name,value in self.fixed_concs.items():
                 conc_spec[name] = value['value']*units(value['units'])
-            
-            # V = sample_volume*units('ul')
-            # xPh = next_sample_dict['phenol_solute']*units('')
-            # xPx = next_sample_dict['P188']*units('')
-            # xB = next_sample_dict['benzyl_alcohol_solute']*units('')
-            # XPh = xPh/(1-xPh)
-            # Cpx = conc_spec["P188"]
-            # 
-            # vD2O = sample_volume*units('ul')
-            # 
-            # mPx = (Cpx*vD2O).to_base_units()
-            # mB = (((xB)/(1-xB-xB*XPh))*mPx*(1+XPh)).to_base_units()
-            # mPh = (XPh*(mB+mPx)).to_base_units()
-
-            # V = sample_volume*units('ul')
-            # xPh = next_sample_dict['phenol_solute']*units('')
-            # xPx = next_sample_dict['P188']*units('')
-            # xB  = next_sample_dict['benzyl_alcohol_solute']*units('')
-            # XPh = xPh/(1-xPh)
-            # CB = conc_spec["benzyl_alcohol_solute"]
-            # 
-            # vD2O = sample_volume*units('ul')
-            # 
-            # mB = (CB*vD2O).to_base_units()
-            # mPx = (((xPx)/(1-xPx-xPx*XPh))*mB*(1+XPh)).to_base_units()
-            # mPh = (XPh*(mB+mPx)).to_base_units()
-            # 
-            # self.target = AFL.automation.prepare.Solution('target',self.components)
-            # self.target['D2O'].volume = vD2O
-            # self.target['P188'].mass = mPx
-            # self.target['phenol_solute'].mass = mPh
-            # self.target['benzyl_alcohol_solute'].mass = mB
             
             mass_dict = self.mfrac_to_mass(
                 mass_fractions=next_sample_dict,
@@ -421,28 +395,6 @@ class SAS_AL_SampleDriver(Driver):
             # self.fix_protocol_order(mix_order,custom_stock_settings)
             self.sample,validated = self.deck.sample_series[0]
             self.app.logger.info(self.deck.validation_report)
-            
-            # #make target object
-            # target = AFL.automation.prepare.Solution('target',self.components)
-            # ## need to handle other components? 
-            # target.mass_fraction = next_sample_dict
-            # target.volume = sample_volume*units('ul')
-            # 
-            # if fixed_concs:
-            #     conc_spec = {}
-            #     for name,value in fixed_concs.items(): 
-            #         conc_spec[name] = value['value']*units(value['units'])
-            #     self.app.logger.info(f'Setting fixed concentrations: {conc_spec}')
-            #     target.concentration = conc_spec
-            #     
-            # self.deck.reset_targets()
-            # self.deck.add_target(target,name='target')
-            # self.deck.make_sample_series(reset_sample_series=True)
-            # self.deck.validate_sample_series(tolerance=0.15)
-            # self.deck.make_protocol(only_validated=False)
-            # # self.fix_protocol_order(mix_order,custom_stock_settings)
-            # sample,validated = self.deck.sample_series[0]
-            # self.app.logger.info(self.deck.validation_report)
             
             if validated:
                 self.app.logger.info(f'Validation PASSED')
@@ -512,14 +464,15 @@ class SAS_AL_SampleDriver(Driver):
             self.data_manifest.to_csv(data_manifest_path,index=False)
 
             # trigger AL
-            if predict:
+            if pre_run_list: #still have manually added samples to be run
+                pass
+            elif predict:
                 self.agent_uuid = self.agent_client.enqueue(task_name='predict')
             
                 # wait for AL
                 self.app.logger.info(f'Waiting for agent...')
                 self.agent_client.wait(self.agent_uuid)
-            else:
-                #used for intialization
+            else:#used for intialization
                 return
             
             
