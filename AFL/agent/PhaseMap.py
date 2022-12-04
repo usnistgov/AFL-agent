@@ -72,7 +72,7 @@ class ScatteringTools:
     def __init__(self,data):
         self.data = data
         
-    def plot_logwaterfall(self,x='q',dim='sample',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,base=10,ax=None):
+    def plot_logwaterfall(self,x='q',dim='sample',ylabel='Intensity [A.U.]',xlabel=r'q [$Å^{-1}$]',legend=True,base=10,ax=None):
         N = self.data[dim].shape[0]
         mul = self.data[dim].copy(data=np.geomspace(1,float(base)**(N+1),N))
         lines = (self
@@ -93,7 +93,7 @@ class ScatteringTools:
             sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
         return lines
             
-    def plot_waterfall(self,x='logq',dim='sample',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,base=1,ax=None):
+    def plot_waterfall(self,x='logq',dim='sample',ylabel='Intensity [A.U.]',xlabel=r'q [$Å^{-1}$]',legend=True,base=1,ax=None):
         N = self.data[dim].shape[0]
         mul = self.data[dim].copy(data=np.linspace(1,base*N,N))
         lines = (self
@@ -114,7 +114,7 @@ class ScatteringTools:
             sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
         return lines
             
-    def plot_loglog(self,x='q',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None,**mpl_kw):
+    def plot_loglog(self,x='q',ylabel='Intensity [A.U.]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None,**mpl_kw):
         lines = self.data.plot.line(
             x=x,
             xscale='log',
@@ -128,7 +128,7 @@ class ScatteringTools:
         if legend and (len(lines)>1):
             sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
         return lines
-    def plot_linlin(self,x='logq',ylabel='Intensity [$cm^{-1}$]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None,**mpl_kw):
+    def plot_linlin(self,x='logq',ylabel='Intensity [A.U.]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None,**mpl_kw):
         lines = self.data.plot.line(
             x=x,
             marker='.',
