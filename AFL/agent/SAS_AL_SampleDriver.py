@@ -19,6 +19,7 @@ import datetime
 import traceback
 import pathlib
 import uuid
+import copy
 
 import AFL.automation.prepare
 import shutil
@@ -31,6 +32,7 @@ class SAS_AL_SampleDriver(Driver):
     defaults['csv_data_path'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/'
     defaults['data_manifest_file'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/data_manifest.csv'
     defaults['data_tag'] = 'default'
+    defaults['max_sample_transmission'] = 0.6
     def __init__(self,
             load_url,
             prep_url,
@@ -420,19 +422,20 @@ class SAS_AL_SampleDriver(Driver):
             )
 
 
-            warnings.warn('Transmission check not implemented. NOT USING TRANSMISSIONS TO CHECK FOR MISSES!',stacklevel=2)
+            # warnings.warn('Transmission check not implemented. NOT USING TRANSMISSIONS TO CHECK FOR MISSES!',stacklevel=2)
             # # CHECK TRANMISSION OF LAST SAMPLE
             # # XXX Need to update based on how files will be read
             # file_path = data_path / (sample_name+'.txt')
-            # with h5py.File(h5_path,'r') as h5:
-            #     transmission = h5['entry/sample/transmission'][()]
+            h5_path = data_path / (sample_name+'.h5')
+            with h5py.File(h5_path,'r') as h5:
+                transmission = h5['entry/sample/transmission'][()]
   
-            # if transmission>0.9:
-            #     self.update_status(f'Last sample missed! (Transmission={transmission})')
-            #     self.app.logger.info('Dropping this sample from AL and hoping the next one hits...')
-            #     continue
-            # else:
-            #     self.update_status(f'Last Sample success! (Transmission={transmission})')
+            if transmission>self.config['max_sample_transmission']:
+                self.update_status(f'Last sample missed! (Transmission={transmission})')
+                self.app.logger.info('Dropping this sample from AL and hoping the next one hits...')
+                continue
+            else:
+                self.update_status(f'Last Sample success! (Transmission={transmission})')
             
             # update manifest
             if data_manifest_path.exists():
