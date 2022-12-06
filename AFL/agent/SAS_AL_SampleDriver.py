@@ -353,10 +353,11 @@ class SAS_AL_SampleDriver(Driver):
         exposure = kwargs['exposure']
         empty_exposure = kwargs['empty_exposure']
         predict = kwargs.get('predict',True)
-        pre_run_list = kwargs.get('pre_run_list',[])
+        pre_run_list = copy.deepcopy(kwargs.get('pre_run_list',[]))
 
-        # mix_order = kwargs['mix_order']
-        # custom_stock_settings = kwargs['custom_stock_settings']
+        mix_order = kwargs.get('mix_order',None)
+        custom_stock_settings = kwargs.get('custom_stock_settings',None)
+
         data_manifest_path = pathlib.Path(self.config['data_manifest_file'])
         data_path = pathlib.Path(self.config['csv_data_path'])
         
@@ -394,7 +395,10 @@ class SAS_AL_SampleDriver(Driver):
             self.deck.make_sample_series(reset_sample_series=True)
             self.deck.validate_sample_series(tolerance=0.15)
             self.deck.make_protocol(only_validated=False)
-            # self.fix_protocol_order(mix_order,custom_stock_settings)
+            if (mix_order is None) or (custom_stock_settings is None):
+                warnings.warn('No mix_order or custom_stock_settings applied as mix_order={mix_order} and custom_stock_settings={custom_stock_settings}')
+            else: 
+                self.fix_protocol_order(mix_order,custom_stock_settings)
             self.sample,validated = self.deck.sample_series[0]
             self.app.logger.info(self.deck.validation_report)
             
