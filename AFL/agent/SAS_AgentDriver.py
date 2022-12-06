@@ -19,6 +19,8 @@ import numpy as np
 import xarray as xr
 import pathlib
 
+import h5py
+
 import io
 import matplotlib.pyplot as plt
 import matplotlib
@@ -52,6 +54,7 @@ class SAS_AgentDriver(Driver):
     defaults['data_tag'] = 'default'
     defaults['qlo'] = 0.001
     defaults['qhi'] = 1
+    defaults['subtract_background'] = False
     # defaults['grid_pts_per_row'] = 100
     def __init__(self,overrides=None):
         Driver.__init__(self,name='SAS_AgentDriver',defaults=self.gather_defaults(),overrides=overrides)
@@ -206,6 +209,34 @@ class SAS_AgentDriver(Driver):
         data_dict = {k:serialization.deserialize(v) for k,v in data_dict.items()}
         self.phasemap = self.phasemap.append(data_dict)
 
+    def subtract_background(self,path,fname):
+
+        raw = self.read_csv(path,fname)
+        raw.name = 'raw'
+
+        empty_fname = 'MT-'+str(fname)
+        empty = self.read_csv(path,empty_fname)
+        empty.name = 'empty'
+
+        sample_name = fname.replace('_chosen_r1d.csv','')
+        h5_path = path / (sample_name+'.h5')
+        with h5py.File(h5_path,'r') as h5:
+            sample_transmission = h5['entry/sample/transmission'][()]
+
+        empty_name = empty_fname.replace('_chosen_r1d.csv','')
+        h5_path = path / (empty_name+'.h5')
+        with h5py.File(h5_path,'r') as h5:
+            empty_transmission = h5['entry/sample/transmission'][()]
+
+        corrected = raw#/sample_transmission - empty.interp_like(raw)/empty_transmission
+        corrected.name = 'corrected'
+        return corrected,raw,empty,sample_transmission,empty_transmission
+
+    def read_csv(self,path,fname):
+        measurement = pd.read_csv(path/fname,sep=',',comment='#',header=None,names=['q','I'],usecols=[0,1]).set_index('q').squeeze().to_xarray()
+        measurement = measurement.dropna('q')
+        return measurement
+
     def read_data(self):
         self.update_status(f'Reading the latest data in {self.config["data_manifest_file"]}')
         path = pathlib.Path(self.config['data_path'])
@@ -214,14 +245,29 @@ class SAS_AgentDriver(Driver):
 
         self.phasemap = xr.Dataset()
         raw_data_list = []
+        empty_data_list = []
+        corr_data_list = []
         data_list = []
         deriv1_list = []
         deriv2_list = []
         fname_list = []
+        transmission_list = []
+        empty_transmission_list = []
         for i,row in self.data_manifest.iterrows():
             #measurement = pd.read_csv(path/row['fname'],comment='#'.set_index('q').squeeze()
-            measurement = pd.read_csv(path/row['fname'],sep=',',comment='#',header=None,names=['q','I'],usecols=[0,1]).set_index('q').squeeze().to_xarray()
-            measurement = measurement.dropna('q')
+            if self.config['subtract_background']:
+                corrected,raw,empty,transmission,empty_transmission = self.subtract_background(path,row['fname'])
+            else:
+                raw = self.read_csv(path,row['fname'])
+                corrected=None
+                empty=None
+                transmission = None
+                empty_transmission = None
+
+            if corrected is not None:
+                measurement = corrected
+            else:
+                measurement = raw
 
             data   = measurement.afl.scatt.clean(derivative=0,qlo=self.config['qlo'],qhi=self.config['qhi'])
             deriv1 = measurement.afl.scatt.clean(derivative=1,qlo=self.config['qlo'],qhi=self.config['qhi'])
@@ -232,16 +278,40 @@ class SAS_AgentDriver(Driver):
             data.name = row['fname']
             deriv1.name = row['fname']
             deriv2.name = row['fname']
-            raw_data_list.append(measurement.rename(q='rawq'))
+
+            if corrected is not None:
+                corr_data_list.append(corrected.rename(q='rawq'))
+
+            if empty is not None:
+                empty_data_list.append(empty.rename(q='rawq'))
+
+            if transmission is not None:
+                transmission_list.append(transmission)
+
+            if empty_transmission is not None:
+                empty_transmission_list.append(empty_transmission)
+
+            raw_data_list.append(raw.rename(q='rawq'))
             data_list.append(data)
             deriv1_list.append(deriv1)
             deriv2_list.append(deriv2)
             fname_list.append(row['fname'])
         self.phasemap['fname']   = ('sample',fname_list)
-        self.phasemap['raw_data']= xr.concat(raw_data_list,dim='sample')
         self.phasemap['data']    = xr.concat(data_list,dim='sample').bfill('logq').ffill('logq')
         self.phasemap['deriv1']  = xr.concat(deriv1_list,dim='sample').bfill('logq').ffill('logq')
         self.phasemap['deriv2']  = xr.concat(deriv2_list,dim='sample').bfill('logq').ffill('logq')
+        self.phasemap['raw_data']= xr.concat(raw_data_list,dim='sample')
+        if corr_data_list:
+            self.phasemap['corrected_data']  = xr.concat(corr_data_list,dim='sample')
+        if empty_data_list:
+            self.phasemap['empty_data']  = xr.concat(empty_data_list,dim='sample')
+        if transmission_list:
+            self.phasemap['transmission']  = ('sample',transmission_list)
+            self.phasemap['transmission'].attrs['description'] = 'sample transmission'
+        if transmission_list:
+            self.phasemap['empty_transmission']  = ('sample',empty_transmission_list)
+            self.phasemap['empty_transmission'].attrs['description'] = 'sample transmission'
+
 
         # compositions = self.data_manifest.drop(['label','fname'],errors='ignore',axis=1)
         self.components = []
