@@ -447,63 +447,68 @@ class SAS_AgentDriver(Driver):
 
     @Driver.unqueued(render_hint='precomposed_svg')
     def plot_scatt(self,**kwargs):
-        if self.phasemap is None:
-            return 'No phasemap loaded. Run read_data()'
-
-        if 'labels_ordinal' not in self.phasemap:
-            self.phasemap['labels_ordinal'] = ('system',np.zeros(self.phasemap.sizes['sample']))
-            labels = [0]
-        else:
-            labels = np.unique(self.phasemap.labels_ordinal.values)
+        if self.phasemap is not None:
+            if 'labels_ordinal' not in self.phasemap:
+                self.phasemap['labels_ordinal'] = ('system',np.zeros(self.phasemap.sizes['sample']))
+                labels = [0]
+            else:
+                labels = np.unique(self.phasemap.labels_ordinal.values)
             
         if 'precomposed' in kwargs['render_hint']:
             matplotlib.use('Agg') #very important
-    
-            N = len(labels)
-            fig,axes = plt.subplots(N,2,figsize=(8,N*4))
+            if self.phasemap is None:
+                fig,ax = plt.subplots()
+                plt.text(1,5,'No phasemap loaded. Run .read_data()')
+                plt.gca().set(xlim=(0,10),ylim=(0,10))
+            else:
+                N = len(labels)
+                fig,axes = plt.subplots(N,2,figsize=(8,N*4))
 
-            if N==1:
-                axes = np.array([axes])
+                if N==1:
+                    axes = np.array([axes])
 
-            for i,label in enumerate(labels):
-                spm = self.phasemap.set_index(sample='labels_ordinal').sel(sample=label)
-                plt.sca(axes[i,0])
-                spm.data.afl.scatt.plot_linlin(x='logq',legend=False);
-            
-                plt.sca(axes[i,1])
-                spm.afl.comp.plot_discrete(components=self.phasemap.attrs['components']);
+                for i,label in enumerate(labels):
+                    spm = self.phasemap.set_index(sample='labels_ordinal').sel(sample=label)
+                    plt.sca(axes[i,0])
+                    spm.data.afl.scatt.plot_linlin(x='logq',legend=False);
+                
+                    plt.sca(axes[i,1])
+                    spm.afl.comp.plot_discrete(components=self.phasemap.attrs['components']);
     
             svg  = mpl_plot_to_bytes(fig,format='svg')
             return svg
         elif kwargs['render_hint']=='raw': 
             # construct dict to send as json (all np.ndarrays must be converted to list!)
-            
             out_dict = {}
-            out_dict['components'] = self.phasemap.attrs['components']
-            for i,label in enumerate(labels):
-                out_dict[f'phase_{i}'] = {}
-                
-                spm = self.phasemap.set_index(sample='labels_ordinal').sel(sample=label)
-                out_dict[f'phase_{i}']['labels'] = list(spm.labels.values)
-                out_dict[f'phase_{i}']['labels_ordinal'] = int(label)
-                out_dict[f'phase_{i}']['q'] = list(spm.q.values)
-                #out_dict[f'phase_{i}']['raw_data'] = list(spm.raw_data.values)
-                out_dict[f'phase_{i}']['data'] = list(spm.data.values)
-                out_dict[f'phase_{i}']['compositions'] = {}
-                for component in self.phasemap.attrs['components']:
-                    out_dict[f'phase_{i}']['compositions'][component] = list(spm[component].values)
+            if self.phasemap is None:
+                out_dict = {'Error': 'No phasemap loaded. Run .read_data()'}
+            else:
+                out_dict['components'] = self.phasemap.attrs['components']
+                for i,label in enumerate(labels):
+                    out_dict[f'phase_{i}'] = {}
+                    
+                    spm = self.phasemap.set_index(sample='labels_ordinal').sel(sample=label)
+                    out_dict[f'phase_{i}']['labels'] = list(spm.labels.values)
+                    out_dict[f'phase_{i}']['labels_ordinal'] = int(label)
+                    out_dict[f'phase_{i}']['q'] = list(spm.q.values)
+                    #out_dict[f'phase_{i}']['raw_data'] = list(spm.raw_data.values)
+                    out_dict[f'phase_{i}']['data'] = list(spm.data.values)
+                    out_dict[f'phase_{i}']['compositions'] = {}
+                    for component in self.phasemap.attrs['components']:
+                        out_dict[f'phase_{i}']['compositions'][component] = list(spm[component].values)
             return out_dict
         else:
             raise ValueError(f'Cannot handle render_hint={kwargs["render_hint"]}')
 
     @Driver.unqueued(render_hint='precomposed_svg')
     def plot_acq(self,**kwargs):
-        if self.phasemap is None:
-            return 'No phasemap loaded. Run read_data()'
-
         matplotlib.use('Agg') #very important
         fig,ax = plt.subplots()
-        self.acquisition.plot()
+        if self.phasemap is None:
+            plt.text(1,5,'No phasemap loaded. Run .read_data()')
+            plt.gca().set(xlim=(0,10),ylim=(0,10))
+        else:
+            self.acquisition.plot()
         svg  = mpl_plot_to_bytes(fig,format='svg')
         return svg
 
