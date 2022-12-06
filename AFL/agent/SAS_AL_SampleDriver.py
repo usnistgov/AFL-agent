@@ -386,9 +386,10 @@ class SAS_AL_SampleDriver(Driver):
                 output_units='mg')
             
             self.target = AFL.automation.prepare.Solution('target',self.components)
-            self.target['D2O'].volume = sample_volume
+            self.target.volume = sample_volume
             for k,v in mass_dict.items():
                 self.target[k].mass = v
+            self.target.volume = sample_volume
             
             self.deck.reset_targets()
             self.deck.add_target(self.target,name='target')
