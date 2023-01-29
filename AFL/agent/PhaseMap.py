@@ -8,6 +8,7 @@ import warnings
 
 import textwrap
 
+
 @xr.register_dataarray_accessor('afl')
 class AFL_DataArrayTools:
     def __init__(self,da):
@@ -262,7 +263,55 @@ class CompositionTools:
         self.data.attrs['components_grid'] = components_grid
         return self.data
     
+    def plot_surface(self,components=None,labels=None,set_axes_labels=True,**mpl_kw):
+        components = self._get_default(components)
+        
+        if len(components)==3:
+            try:
+                import mpltern
+            except ImportError as e:
+                raise ImportError('Could not import mpltern. Please install via conda or pip') from e
+                
+            projection = 'ternary'
+        elif len(components)==2:
+            projection = None
+        else:
+            raise ValueError(f'plot_surface only compatible with 2 or 3 components. You passed: {components}')
+            
+        coords = np.vstack(list(self.data[c].values for c in components)).T
+
+        if (labels is None):
+            if ('labels' in self.data.coords):
+                labels = self.data.coords['labels'].values
+            elif ('labels' in self.data):
+                labels = self.data['labels'].values
+            else:
+                labels = np.zeros(coords.shape[0])
+        elif isinstance(labels,str) and (labels in self.data):
+                labels = self.data[labels].values
+                
+        if ('cmap' not in mpl_kw) and ('color' not in mpl_kw):
+             mpl_kw['cmap'] = 'viridis'
+            
+        if ('ax' in mpl_kw):
+            ax = mpl_kw['ax']
+        else:  
+            fig,ax = plt.subplots(1,1,subplot_kw=dict(projection=projection))
+            
+        artists = ax.tripcolor(*coords.T,labels,**mpl_kw)
+
+        if set_axes_labels:
+            if projection=='ternary':
+                labels = {k:v for k,v in zip(['tlabel','llabel','rlabel'],components)}
+            else:
+                labels = {k:v for k,v in zip(['xlabel','ylabel'],components)}
+            ax.set(**labels)
+            ax.grid('on',color='black')
+        return artists
+    
     def plot_continuous(self,components=None,labels=None,set_labels=True,**mpl_kw):
+        warnings.warn('plot_continuous is deprecated and will be removed in a future release. Please use plot_surface.',DeprecationWarning,stacklevel=2)
+        
         components = self._get_default(components)
 
         if len(components)==3:
@@ -296,8 +345,56 @@ class CompositionTools:
             else:
                 plt.gca().set(xlabel=components[0],ylabel=components[1])
         return artists
+    
+    def plot_scatter(self,components=None,labels=None,set_axes_labels=True,**mpl_kw):
+        components = self._get_default(components)
+        
+        if len(components)==3:
+            try:
+                import mpltern
+            except ImportError as e:
+                raise ImportError('Could not import mpltern. Please install via conda or pip') from e
+                
+            projection = 'ternary'
+        elif len(components)==2:
+            projection = None
+        else:
+            raise ValueError(f'plot_surface only compatible with 2 or 3 components. You passed: {components}')
+            
+        coords = np.vstack(list(self.data[c].values for c in components)).T
+        
+        if (labels is None):
+            if ('labels' in self.data.coords):
+                labels = self.data.coords['labels'].values
+            elif ('labels' in self.data):
+                labels = self.data['labels'].values
+            else:
+                labels = np.zeros(coords.shape[0])
+        elif isinstance(labels,str) and (labels in self.data):
+                labels = self.data[labels].values
+                
+        if ('ax' in mpl_kw):
+            ax = mpl_kw.pop('ax')
+        else:  
+            fig,ax = plt.subplots(1,1,subplot_kw=dict(projection=projection))
+            
+        artists = []
+        for label in np.unique(labels):
+            mask = (labels==label)
+            artists.append(ax.scatter(*coords[mask].T,**mpl_kw))
+
+        if set_axes_labels:
+            if projection=='ternary':
+                labels = {k:v for k,v in zip(['tlabel','llabel','rlabel'],components)}
+            else:
+                labels = {k:v for k,v in zip(['xlabel','ylabel'],components)}
+            ax.set(**labels)
+            ax.grid('on',color='black')
+        return artists
 
     def plot_discrete(self,components=None,labels=None,set_labels=True,normalize=True,**mpl_kw):
+        warnings.warn('plot_discrete is deprecated and will be removed, please use plot_scatter.',DeprecationWarning,stacklevel=2)
+        
         components = self._get_default(components)
 
         if len(components)==3:
