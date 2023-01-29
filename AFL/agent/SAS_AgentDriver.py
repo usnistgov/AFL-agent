@@ -341,7 +341,13 @@ class SAS_AgentDriver(Driver):
         self.phasemap['gp_y_mean'] = (('grid','phase_num'),self.acquisition.y_mean)
         #self.phasemap['next_sample'] = ('component',self.next_sample.squeeze().values)
         #reset_index('grid').drop(['SLES3_grid','DEX_grid','CAPB_grid'])
-        self.phasemap['next_sample'] = self.next_sample.drop('grid').squeeze()
+        
+        from xarray.core.merge import MergeError
+        try:
+            self.phasemap['next_sample'] = self.next_sample.drop('grid').squeeze()
+        except MergeError:
+            self.phasemap['next_sample'] = self.next_sample.drop('grid').squeeze().reset_coords(drop=True)
+            
         self.phasemap.attrs['uuid'] = uuid_str
         self.phasemap.attrs['date'] = date
         self.phasemap.attrs['time'] = time
