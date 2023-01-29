@@ -19,6 +19,7 @@ import datetime
 import traceback
 import pathlib
 import uuid
+import copy
 
 import AFL.automation.prepare
 import shutil
@@ -31,6 +32,7 @@ class SAS_AL_SampleDriver(Driver):
     defaults['csv_data_path'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/'
     defaults['data_manifest_file'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/data_manifest.csv'
     defaults['data_tag'] = 'default'
+    defaults['max_sample_transmission'] = 0.6
     def __init__(self,
             load_url,
             prep_url,
@@ -351,10 +353,11 @@ class SAS_AL_SampleDriver(Driver):
         exposure = kwargs['exposure']
         empty_exposure = kwargs['empty_exposure']
         predict = kwargs.get('predict',True)
-        pre_run_list = kwargs.get('pre_run_list',[])
+        pre_run_list = copy.deepcopy(kwargs.get('pre_run_list',[]))
 
-        # mix_order = kwargs['mix_order']
-        # custom_stock_settings = kwargs['custom_stock_settings']
+        mix_order = kwargs.get('mix_order',None)
+        custom_stock_settings = kwargs.get('custom_stock_settings',None)
+
         data_manifest_path = pathlib.Path(self.config['data_manifest_file'])
         data_path = pathlib.Path(self.config['csv_data_path'])
         
@@ -383,16 +386,20 @@ class SAS_AL_SampleDriver(Driver):
                 output_units='mg')
             
             self.target = AFL.automation.prepare.Solution('target',self.components)
-            self.target['D2O'].volume = sample_volume
+            self.target.volume = sample_volume
             for k,v in mass_dict.items():
                 self.target[k].mass = v
+            self.target.volume = sample_volume
             
             self.deck.reset_targets()
             self.deck.add_target(self.target,name='target')
             self.deck.make_sample_series(reset_sample_series=True)
             self.deck.validate_sample_series(tolerance=0.15)
             self.deck.make_protocol(only_validated=False)
-            # self.fix_protocol_order(mix_order,custom_stock_settings)
+            if (mix_order is None) or (custom_stock_settings is None):
+                warnings.warn('No mix_order or custom_stock_settings applied as mix_order={mix_order} and custom_stock_settings={custom_stock_settings}')
+            else: 
+                self.fix_protocol_order(mix_order,custom_stock_settings)
             self.sample,validated = self.deck.sample_series[0]
             self.app.logger.info(self.deck.validation_report)
             
@@ -420,19 +427,20 @@ class SAS_AL_SampleDriver(Driver):
             )
 
 
-            warnings.warn('Transmission check not implemented. NOT USING TRANSMISSIONS TO CHECK FOR MISSES!',stacklevel=2)
+            # warnings.warn('Transmission check not implemented. NOT USING TRANSMISSIONS TO CHECK FOR MISSES!',stacklevel=2)
             # # CHECK TRANMISSION OF LAST SAMPLE
             # # XXX Need to update based on how files will be read
             # file_path = data_path / (sample_name+'.txt')
-            # with h5py.File(h5_path,'r') as h5:
-            #     transmission = h5['entry/sample/transmission'][()]
+            h5_path = data_path / (sample_name+'.h5')
+            with h5py.File(h5_path,'r') as h5:
+                transmission = h5['entry/sample/transmission'][()]
   
-            # if transmission>0.9:
-            #     self.update_status(f'Last sample missed! (Transmission={transmission})')
-            #     self.app.logger.info('Dropping this sample from AL and hoping the next one hits...')
-            #     continue
-            # else:
-            #     self.update_status(f'Last Sample success! (Transmission={transmission})')
+            if transmission>self.config['max_sample_transmission']:
+                self.update_status(f'Last sample missed! (Transmission={transmission})')
+                self.app.logger.info('Dropping this sample from AL and hoping the next one hits...')
+                continue
+            else:
+                self.update_status(f'Last Sample success! (Transmission={transmission})')
             
             # update manifest
             if data_manifest_path.exists():
