@@ -18,6 +18,7 @@ import pandas as pd
 import numpy as np
 import xarray as xr
 import pathlib
+import tqdm
 
 import h5py
 
@@ -238,6 +239,7 @@ class SAS_AgentDriver(Driver):
         return measurement
 
     def read_data(self):
+        '''Read a directory of csv files and create pm dataset'''
         self.update_status(f'Reading the latest data in {self.config["data_manifest_file"]}')
         path = pathlib.Path(self.config['data_path'])
         
@@ -253,7 +255,9 @@ class SAS_AgentDriver(Driver):
         fname_list = []
         transmission_list = []
         empty_transmission_list = []
-        for i,row in self.data_manifest.iterrows():
+        # for i,row in self.data_manifest.iterrows():
+        for i, row in tqdm.tqdm(self.data_manifest.iterrows(), total=self.data_manifest.shape[0]):
+
             #measurement = pd.read_csv(path/row['fname'],comment='#'.set_index('q').squeeze()
             if self.config['subtract_background']:
                 corrected,raw,empty,transmission,empty_transmission = self.subtract_background(path,row['fname'])
@@ -330,6 +334,26 @@ class SAS_AgentDriver(Driver):
         self.phasemap['mask'] = self.mask #should add grid dimensions automatically
         #must reset for serlialization to netcdf to work
         self.phasemap = self.phasemap.reset_index('grid').reset_coords(self.phasemap.attrs['components_grid'])
+        
+    def read_data_nc(self):
+        '''Read and process a dataset from a netcdf file'''
+        self.update_status(f'Reading the latest data in {self.config["data_manifest_file"]}')
+        path = pathlib.Path(self.config['data_path'])
+        
+        #self.data_manifest = pd.read_csv(path/self.config['data_manifest_file'])
+
+        self.phasemap = xr.load_dataset(self.config['data_manifest_file'])
+        measurement = self.phasemap[self.phasemap.attrs['AL_data']]
+        self.phasemap['data'] = measurement.afl.scatt.clean(derivative=0,qlo=self.config['qlo'],qhi=self.config['qhi'])
+        self.phasemap['deriv1'] = measurement.afl.scatt.clean(derivative=1,qlo=self.config['qlo'],qhi=self.config['qhi'])
+        self.phasemap['deriv2'] = measurement.afl.scatt.clean(derivative=2,qlo=self.config['qlo'],qhi=self.config['qhi'])
+        
+        self.phasemap['data'] = self.phasemap['data'] - self.phasemap['data'].min('logq')
+        
+        if 'labels' not in self.phasemap:
+            self.phasemap = self.phasemap.afl.labels.make_default()
+
+        self.components = self.phasemap.attrs['components']
 
     def process_data(self,clean_params=None):
         
@@ -384,16 +408,21 @@ class SAS_AgentDriver(Driver):
     @Driver.unqueued()
     def get_next_sample(self):
         self.update_status(f'Calculating acquisition function...')
-        self.acquisition.reset_phasemap(self.phasemap,self.components)
-        self.acquisition.reset_mask(self.mask)
+        self.acquisition.reset_phasemap(self.phasemap)
         self.phasemap = self.acquisition.calculate_metric(self.GP)
 
         self.update_status(f'Finding next sample composition based on acquisition function')
-        check = self.data_manifest[['AL_mfrac_'+c for c in self.components]].values
-        print(f"--> Skipping values: {check}")
-        self.next_sample = self.acquisition.get_next_sample(composition_check=check)
+        self.next_sample = self.acquisition.get_next_sample(
+            composition_check = (
+                self.phasemap[self.phasemap.attrs['components']]
+                .reset_index('sample')
+                .reset_coords(drop=True)
+                .to_array('component')
+                .transpose('sample',...)
+            )
+        )
         
-        next_dict = self.next_sample.drop('grid').squeeze().to_pandas().to_dict()
+        next_dict = self.next_sample.squeeze().to_pandas().to_dict()
         status_str = 'Next sample is '
         for k,v in next_dict.items():
             status_str += f'{k}: {v:4.3f} '
@@ -414,9 +443,9 @@ class SAS_AgentDriver(Driver):
         
         from xarray.core.merge import MergeError
         try:
-            self.phasemap['next_sample'] = self.next_sample.drop('grid').squeeze()
+            self.phasemap['next_sample'] = self.next_sample.squeeze()
         except MergeError:
-            self.phasemap['next_sample'] = self.next_sample.drop('grid').squeeze().reset_coords(drop=True)
+            self.phasemap['next_sample'] = self.next_sample.squeeze().reset_coords(drop=True)
             
         self.phasemap.attrs['uuid'] = uuid_str
         self.phasemap.attrs['date'] = date
@@ -443,9 +472,11 @@ class SAS_AgentDriver(Driver):
         self.AL_manifest = pd.concat([self.AL_manifest.T,pd.Series(row)],axis=1,ignore_index=True).T
         self.AL_manifest.to_csv(AL_manifest_path,index=False)
 
-    def predict(self):
-        self.read_data()
-        # self.process_data()
+    def predict(self,datatype=None):
+        if datatype in ('nc','netcdf','netcdf4'):
+            self.read_data_nc()
+        else: #assume csv
+            self.read_data()
         self.label()
         self.extrapolate()
         self.get_next_sample()
