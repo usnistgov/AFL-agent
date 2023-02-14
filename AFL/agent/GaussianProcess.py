@@ -23,7 +23,7 @@ class DummyGP:
 
     
 class GP:
-    def __init__(self,ds,components,num_classes):
+    def __init__(self,ds,components,num_classes,calculate_ternary=True):
         self.ds = ds
 
         if 'labels' not in ds:
@@ -34,6 +34,7 @@ class GP:
         
         self.components = components
         self.num_classes = num_classes
+        self.calculate_ternary = calculate_ternary
         
         self.reset_GP()
         
@@ -45,7 +46,7 @@ class GP:
         labels = self.ds['labels_ordinal'].values
         if len(labels.shape)==1:
             labels = labels[:,np.newaxis]
-        if len(self.components)==3:
+        if len(self.components)==3 and self.calculate_ternary:
             xy = self.ds.afl.comp.to_xy(self.components)
             data = (xy,labels)
         else:
@@ -102,12 +103,12 @@ class GP:
         self.iter_monitor(i)
     
     def predict(self,compositions):
-        if len(self.components)==3:
+        if len(self.components)==3 and self.calculate_ternary:
             xy_dense = to_xy(compositions)
             self.y = self.model.predict_y(xy_dense)
         else:
             #throw out last composition as it's not linearly indepedent
-            self.y = self.model.predict_y(compositions.values[:,:-1])
+            self.y = self.model.predict_y(compositions)
         
         y_mean = self.y[0].numpy() 
         y_var = self.y[1].numpy() 
