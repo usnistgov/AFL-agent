@@ -253,7 +253,7 @@ class CompositionTools:
                 if overwrite:
                     del self.data[name]
                 else:
-                    raise ValueError('Component {component} already in Dataset and overwrite is False.')
+                    raise ValueError(f'Component {component} already in Dataset and overwrite is False.')
 
         components_grid = []
         for component,comps in zip(components,compositions.T):
@@ -292,13 +292,17 @@ class CompositionTools:
                 
         if ('cmap' not in mpl_kw) and ('color' not in mpl_kw):
              mpl_kw['cmap'] = 'viridis'
+        if 'edgecolor' not in mpl_kw:
+            mpl_kw['edgecolor'] = 'face'
             
         if ('ax' in mpl_kw):
             ax = mpl_kw['ax']
         else:  
             fig,ax = plt.subplots(1,1,subplot_kw=dict(projection=projection))
             
+            
         artists = ax.tripcolor(*coords.T,labels,**mpl_kw)
+        
 
         if set_axes_labels:
             if projection=='ternary':
