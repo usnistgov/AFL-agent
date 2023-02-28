@@ -12,7 +12,7 @@ import requests
 import shutil
 import datetime
 import traceback
-import pickle,base64
+import warnings
 
 import pandas as pd
 import numpy as np
@@ -387,19 +387,17 @@ class SAS_AgentDriver(Driver):
         
         if self.n_phases==1:
             self.update_status(f'Using dummy GP for one phase')
-            self.GP = GaussianProcess.DummyGP()
+            self.GP = GaussianProcess.DummyGP(self.phasemap)
         else:
             self.update_status(f'Starting gaussian process calculation on {self.config["compute_device"]}')
             with tf.device(self.config['compute_device']):
-                self.GP = GaussianProcess.GP(
-                    self.phasemap,
-                    self.components,
-                    num_classes=self.n_phases
-                )
                 kernel = gpflow.kernels.Matern32(variance=0.5,lengthscales=1.0) 
-                self.GP.reset_GP(kernel = kernel)          
+                self.GP = GaussianProcess.GP(
+                    dataset = self.phasemap,
+                    kernel=kernel
+                )
                 self.GP.optimize(2000,progress_bar=True)
-
+                
         self.acq_count   = 0
         self.iteration  += 1 #iteration represents number of full calculations
 
@@ -442,10 +440,15 @@ class SAS_AgentDriver(Driver):
         #reset_index('grid').drop(['SLES3_grid','DEX_grid','CAPB_grid'])
         
         from xarray.core.merge import MergeError
+        
+        if 'component' in self.phasemap.dims:
+            warnings.warn('Dropping component dim (and all associated vars) from phasemap...')
+            self.phasemap = self.phasemap.drop_dims('component')
+            
         try:
-            self.phasemap['next_sample'] = self.next_sample.squeeze()
+            self.phasemap['next_sample'] = self.acquisition.next_sample.squeeze()
         except MergeError:
-            self.phasemap['next_sample'] = self.next_sample.squeeze().reset_coords(drop=True)
+            self.phasemap['next_sample'] = self.acquisition.next_sample.squeeze().reset_coords(drop=True)
             
         self.phasemap.attrs['uuid'] = uuid_str
         self.phasemap.attrs['date'] = date
