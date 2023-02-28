@@ -8,7 +8,6 @@ from AFL.agent import PhaseMap
 import matplotlib.pyplot as plt
 from random import shuffle
 
-from sklearn.metrics import pairwise_distances
 from sklearn.neighbors import KernelDensity
 
 #move dense_pm definition outside of this class
@@ -141,8 +140,10 @@ class Variance(Acquisition):
         if self.phasemap is None:
             raise ValueError('No phase map set for acquisition! Call reset_phasemap!')
             
-        self.y_mean,self.y_var = GP.predict(self.phasemap.afl.comp.get_grid(self.phasemap.attrs['components']).values)
-        self.phasemap['acq_metric'] = ('grid',self.y_var.sum(1))
+        predict = GP.predict(self.phasemap.attrs['components_grid'])
+        self.y_mean = predict['mean']
+        self.y_var = predict['var']
+        self.phasemap['acq_metric'] = ('grid',GP.y_var.sum(1))
         self.phasemap.attrs['acq_metric'] = self.name
 
         return self.phasemap
@@ -156,7 +157,9 @@ class Random(Acquisition):
         if self.phasemap is None:
             raise ValueError('No phase map set for acquisition! Call reset_phasemap!')
             
-        self.y_mean,self.y_var = GP.predict(self.phasemap.afl.comp.get_grid(self.phasemap.attrs['components_grid']).values)
+        predict = GP.predict(self.phasemap.attrs['components_grid'])
+        self.y_mean = predict['mean']
+        self.y_var = predict['var']
             
         indices = np.arange(self.phasemap['grid'].shape[0])
         random.shuffle(indices)
@@ -178,11 +181,18 @@ class IterationCombined(Acquisition):
         self.iteration = 1
         self.function2_frequency=function2_frequency
         
+    def reset_phasemap(self,phasemap):
+        self.phasemap = phasemap
+        self.function1.reset_phasemap(phasemap)
+        self.function2.reset_phasemap(phasemap)
+        
     def calculate_metric(self,GP):
         if self.function1.phasemap is None:
             raise ValueError('No phase map set for acquisition! Call reset_phasemap!')
 
-        self.y_mean,self.y_var = GP.predict(self.phasemap.afl.comp.get_grid(self.phasemap.attrs['components_grid']).values)
+        predict = GP.predict(self.phasemap.attrs['components_grid'])
+        self.y_mean = predict['mean']
+        self.y_var = predict['var']
         
         if ((self.iteration%self.function2_frequency)==0):
             print(f'Using acquisition function {self.function2.name} of iteration {self.iteration}')
@@ -212,7 +222,9 @@ class LowestDensity(Acquisition):
             raise ValueError('No phase map set for acquisition! Call reset_phasemap!')
             
         #this must be calculated regardless of whether it is used
-        self.y_mean,self.y_var = GP.predict(self.phasemap.afl.comp.get_grid(self.phasemap.attrs['components_grid']).values)
+        predict = GP.predict(self.phasemap.attrs['components_grid'])
+        self.y_mean = predict['mean']
+        self.y_var = predict['var']
             
         xy = self.phasemap.afl.comp.to_xy()
         xy_grid = self.phasemap.afl.comp.to_xy(self.phasemap.attrs['components_grid'])

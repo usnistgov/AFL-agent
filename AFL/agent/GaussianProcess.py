@@ -13,56 +13,79 @@ from sklearn.neighbors import KernelDensity
 import tqdm
 import warnings
 
-from AFL.agent.PhaseMap import to_xy
+from AFL.agent.util import ternary_to_xy
 
 class DummyGP:
-    def predict(self,compositions):
-        y_mean = np.zeros_like(compositions)
-        y_var = np.zeros_like(compositions)
-        return y_mean,y_var
+    def __init__(self,dataset,kernel=None):
+        self.dataset=dataset
+        self.kernel=kernel
+        
+    def predict(self,components):
+        domain = self.dataset.afl.comp.get(components)
+        self.y_mean = np.zeros_like(domain)
+        self.y_var = np.zeros_like(domain)
+        return {'mean':self.y_mean,'var':self.y_var}
 
     
 class GP:
-    def __init__(self,ds,components,num_classes,calculate_ternary=True):
-        self.ds = ds
-
-        if 'labels' not in ds:
-            raise ValueError('Must have labels in Dataset before making GP!')
-
-        if 'labels_ordinal' not in ds:
-            self.ds = self.ds.afl.labels.make_ordinal()
-        
-        self.components = components
-        self.num_classes = num_classes
-        self.calculate_ternary = calculate_ternary
-        
-        self.reset_GP()
-        
+    def __init__(self,dataset,kernel=None):
+        self.reset_GP(dataset,kernel)
         self.iter_monitor = lambda x: None
         self.final_monitor = lambda x: None
         
-    def reset_GP(self,kernel=None):
-        warnings.warn('Code is not fully generalized for non-independent coordinates. Use with care...',stacklevel=2)
-        labels = self.ds['labels_ordinal'].values
+    def construct_data(self):
+        if 'labels' not in self.dataset:
+            raise ValueError('Must have labels variable in Dataset before making GP!')
+
+        if 'labels_ordinal' not in self.dataset:
+            self.dataset = self.dataset.afl.labels.make_ordinal()
+            
+        labels = self.dataset['labels_ordinal'].values
         if len(labels.shape)==1:
             labels = labels[:,np.newaxis]
-        if len(self.components)==3 and self.calculate_ternary:
-            xy = self.ds.afl.comp.to_xy(self.components)
-            data = (xy,labels)
+            
+        domain = self.transform_domain()
+        
+        data = (domain,labels)
+        return data
+        
+    def transform_domain(self,components=None):
+            
+        if 'GP_domain_transform' in self.dataset.attrs:
+            if self.dataset.attrs['GP_domain_transform']=='ternary':
+                if not (len(self.dataset.attrs['components']==3)):   
+                    raise ValueError("Ternary domain transform specified but len(components)!=3") 
+                domain = self.dataset.afl.comp.ternary_to_xy(components=components)
+            elif self.dataset.attrs['GP_domain_transform']=='standard_scaled':
+                domain = self.dataset.afl.comp.get_standard_scaled(components=components)
+            elif self.dataset.attrs['GP_domain_transform']=='range_scaled':
+                components = self.dataset.afl.comp._get_default(components)
+                ranges = {}
+                for component in components:
+                    ranges[component] = self.dataset.attrs[component+'_range'][1] - self.dataset.attrs[component+'_range'][0]
+                domain = self.dataset.afl.comp.get_range_scaled(ranges=ranges,components=components)
+            else:
+                raise ValueError('Domain not recognized!')
         else:
-            comp = self.ds.afl.comp.get(self.components).values#[:,:-1]#only need N-1 compositions
-            data = (comp, labels)
+            domain = self.dataset.afl.comp.get(components=components)
+        return domain
+            
+    def reset_GP(self,dataset,kernel=None):
+        self.dataset = dataset
+        self.n_classes = dataset.attrs['n_phases']
+
+        data = self.construct_data()
             
         if kernel is None:
             kernel = gpflow.kernels.Matern32(variance=0.1,lengthscales=0.1) 
-            # kernel +=  gpflow.kernels.White(variance=0.01)   
-        invlink = gpflow.likelihoods.RobustMax(self.num_classes)  
-        likelihood = gpflow.likelihoods.MultiClass(self.num_classes, invlink=invlink)  
+            
+        invlink = gpflow.likelihoods.RobustMax(self.n_classes)  
+        likelihood = gpflow.likelihoods.MultiClass(self.n_classes, invlink=invlink)  
         self.model = gpflow.models.VGP(
             data=data, 
             kernel=kernel, 
             likelihood=likelihood, 
-            num_latent_gps=self.num_classes
+            num_latent_gps=self.n_classes
         ) 
         self.loss = self.model.training_loss_closure(compile=True)
         self.trainable_variables = self.model.trainable_variables
@@ -102,16 +125,11 @@ class GP:
         self.optimizer.minimize(self.loss,self.trainable_variables) 
         self.iter_monitor(i)
     
-    def predict(self,compositions):
-        if len(self.components)==3 and self.calculate_ternary:
-            xy_dense = to_xy(compositions)
-            self.y = self.model.predict_y(xy_dense)
-        else:
-            #throw out last composition as it's not linearly indepedent
-            self.y = self.model.predict_y(compositions)
-        
-        y_mean = self.y[0].numpy() 
-        y_var = self.y[1].numpy() 
-        return y_mean,y_var
+    def predict(self,components):
+        domain = self.transform_domain(components=components)
+        self.y = self.model.predict_y(domain)
+        self.y_mean = self.y[0].numpy() 
+        self.y_var = self.y[1].numpy() 
+        return {'mean':self.y_mean,'var':self.y_var}
 
     
