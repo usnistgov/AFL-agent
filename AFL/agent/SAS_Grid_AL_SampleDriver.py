@@ -108,12 +108,15 @@ class SAS_Grid_AL_SampleDriver(Driver):
         pre_run_list = copy.deepcopy(kwargs.get('pre_run_list',[]))
         exposure = kwargs['exposure']
         empty_exposure = kwargs['empty_exposure']
+        
         predict = kwargs.get('predict',True)
         master_manifest_path = pathlib.Path(self.config['master_manifest_file'])
         AL_manifest_path = pathlib.Path(self.config['AL_manifest_file'])
         data_path = pathlib.Path(self.config['csv_data_path'])
         
-        #load manifest and downselect
+        ################################
+        ## LOAD MANIFEST & DOWNSELECT ##
+        ################################
         master_manifest = xr.load_dataset(master_manifest)
         self.AL_selection['plate_name'] = list(self.loaded_plates.keys())
         master_manifest = self.mask_dataset(master_manifest,self.AL_selection)
@@ -157,7 +160,7 @@ class SAS_Grid_AL_SampleDriver(Driver):
             next_plate_name = next_sample.plate_name.values[()]
             _,next_well = parse_well(next_sample.dest.values[()])
             #XXX
-            sas_fpath = data_path/f'plate_{next_plate_name}-{next_well}.h5'
+            sas_fpath = data_path/f'p{next_plate_name}-{next_well}.h5'
             
             if not sas_fpath.exists():
                 #XXX measure!
