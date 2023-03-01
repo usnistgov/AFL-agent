@@ -5,6 +5,8 @@ from AFL.automation.APIServer.Driver import Driver
 from AFL.agent.AgentClient import AgentClient
 from AFL.automation.shared.units import units
 
+from AFL.agent.reduce_usaxs import reduce_uascan
+
 from scipy.spatial.distance import cdist
 
 import warnings
@@ -30,11 +32,11 @@ import h5py
 
 class SAS_Grid_AL_SampleDriver(Driver):
     defaults={}
-    defaults['data_path'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/'
-    defaults['master_manifest_file'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/data_manifest.csv'
-    defaults['AL_manifest_file'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/data_manifest.csv'
+    defaults['data_path'] = '/mnt/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/'
+    defaults['data_manifest_file'] = '/home/afl642/USAXS_data/usaxs_manifest.csv'
+    defaults['sample_manifest_file'] = '/home/afl642/USAXS_data/sample_manifest.nc'
+    defaults['AL_manifest_file'] = '/home/afl642/USAXS_data/AL_manifest.nc'
     defaults['data_tag'] = 'default'
-    defaults['max_sample_transmission'] = 0.6
     def __init__(self,
             sas_url,
             agent_url,
@@ -65,7 +67,9 @@ class SAS_Grid_AL_SampleDriver(Driver):
         
         self.catch_protocol=None
         self.AL_status_str = ''
+        self.sample_manifest  = None
         self.data_manifest  = None
+        self.AL_manifest  = None
         self.AL_components = None
         self.components = None
         
@@ -101,23 +105,28 @@ class SAS_Grid_AL_SampleDriver(Driver):
         
         
     def active_learning_loop(self,**kwargs):
-        self.components = kwargs['components']
+        self.components    = kwargs['components']
         self.AL_components = kwargs['AL_components']
-        self.AL_selection = kwargs['AL_selection']
-        
-        pre_run_list = copy.deepcopy(kwargs.get('pre_run_list',[]))
-        exposure = kwargs['exposure']
-        empty_exposure = kwargs['empty_exposure']
-        predict = kwargs.get('predict',True)
-        master_manifest_path = pathlib.Path(self.config['master_manifest_file'])
+        self.AL_component_ranges = kwargs['AL_component_ranges']
+        self.AL_selection  = kwargs['AL_selection']
+        pre_run_list       =  copy.deepcopy(kwargs.get('pre_run_list',[]))
+        exposure           = kwargs['exposure']
+        empty_exposure     = kwargs['empty_exposure']
+        predict            = kwargs.get('predict',True)
+        plate_to_slot      = kwargs['plate_to_slot']
+
+
+        # grab paths from config
         AL_manifest_path = pathlib.Path(self.config['AL_manifest_file'])
-        data_path = pathlib.Path(self.config['csv_data_path'])
+        sample_manifest_path = pathlib.Path(self.config['sample_manifest_file'])
+        data_path = pathlib.Path(self.config['data_path'])
+        data_manifest_path = pathlib.Path(self.config['data_manifest_file'])
         
-        #load manifest and downselect
-        master_manifest = xr.load_dataset(master_manifest)
+        # load sample manifest and downselect
+        self.sample_manifest = xr.load_dataset(sample_manifest_path)
         self.AL_selection['plate_name'] = list(self.loaded_plates.keys())
-        master_manifest = self.mask_dataset(master_manifest,self.AL_selection)
-        self.num_samples = master_manifest.sizes['sample']
+        self.sample_manifest = self.mask_dataset(self.sample_manifest,self.AL_selection)
+        self.num_samples = self.sample_manifest.sizes['sample']
         
         
         self.stop_AL = False
@@ -127,6 +136,7 @@ class SAS_Grid_AL_SampleDriver(Driver):
             ###########################
             ## GET NEXT STEP FROM AL ##
             ###########################
+            self.update_status('Getting next step from AL...')
             if pre_run_list:
                 self.next_sample = None
                 next_sample_dict = pre_run_list.pop(0)
@@ -140,53 +150,107 @@ class SAS_Grid_AL_SampleDriver(Driver):
             ##############################
             ## FIND CLOSEST IN MANIFEST ##
             ##############################
+            self.update_status('Finding closest sample in manifest...')
             
             # find closest in manifest
-            coords_available = master_manifest[self.AL_components].to_array('component')
+            coords_available = self.sample_manifest[self.AL_components].to_array('component')
             ds_next_sample = pd.DataFrame(next_sample_dict).to_xarray().rename_dims(index='sample')
             coords_new = ds_next_sample[self.AL_components].to_array('component').transpose(...,'component')
     
-            coords_available = master_manifest[AL_components].to_array('component').transpose(...,'component')
+            coords_available = self.sample_manifest[AL_components].to_array('component').transpose(...,'component')
             sample_distances = cdist(coords_new,coords_available)
-            next_sample = master_manifest.isel(sample=sample_distances.argmin())
+            next_sample = self.sample_manifest.isel(sample=sample_distances.argmin())
             
             ###############################
             ## MEASURE OR READ FROM DISK ##
             ###############################
             # check if already measured
-            next_plate_name = next_sample.plate_name.values[()]
+            next_plate_name = next_sample.plate.values[()]
             _,next_well = parse_well(next_sample.dest.values[()])
-            #XXX
-            sas_fpath = data_path/f'plate_{next_plate_name}-{next_well}.h5'
+            next_well_row = next_well[0]
+            next_well_col = next_well[1:]
+            sas_fname = 'p{next_plate_name}-{next_well}-y2'
+            slot_name = 
+
+            # reload data manifest and check if already measured
+            df_data_manifest = pd.read_csv(data_manifest_path)
+            try:
+                sel = df_data_manifest.set_index(['plate','well']).loc[next_plate_name,next_well]
+            except KeyError:
+                sel = None
+
             
-            if not sas_fpath.exists():
-                #XXX measure!
+            if sel is None:
+                raise ValueError('Not testing this yet....')
+                slot_name = plate_to_slot[next_plate_name]
+                self.update_status(f'Measuring well {next_well} on plate {next_plate_name} in slot {slot_name}')
+                sas_client.enqueue(task_name='setPosition',plate=slot_name,row=next_well_row,col=next_well_col,y_offset=2)
+                sas_client.enqueue(task_name='expose',name=sas_fname,block=True)
+
+                for i in range(25):
+                    sas_fpath = list(data_path.glob(f'{sas_fname}*.h5'))
+                    sas_fpath = sorted(sas_fpath,key = lambda x: str(x).split('_')[-1])
+                    if len(sas_fpath)==0:
+                        time.sleep(5)
+                    else:
+                        break
+
+                if len(sas_fpath)==0:
+                    raise ValueError('No file found after measurement...')
+                else:
+                    sas_fpath = sas_fpath([-1])
+
+
+                # add to manifest
+                row = {}
+                row['well'] = next_well
+                row['plate'] = next_plate_name
+                row['sample_name'] = next_sample.sample_name.values[()]
+                row['MOF'] = next_sample.MOF.values[()]
+                row['fpath'] = sas_fpath
+                df_data_manifest.append(row,ignore_index=True)
+                df_data_manifest.to_csv(data_manifest_path)
+
+            else:
+                self.update_status(f'Reading data for well {next_well} on plate {next_plate_name} in slot {slot_name}')
+                sas_fpath = sel.fpath
                 
-                #XXXS read in data file and push into new_data object
-                new_data = xxxxx
                 
             #read data and add to next_sample dict
             new_data = next_sample.copy()
             with h5py.File(sas_fpath,'r') as h5:
-                #XXX
-                sas_data = h5['x/y/z'][()]
-            new_data['I'] = sas_data
-            new_data.attrs['AL_data'] = 'I'
+                reduced = reduce_uascan(h5)
+                da = xr.DataArray(reduces['R'],coords={'q':reduced['Q']},dims=['q'])
+                da['q'] = da.q.pipe(np.abs)
+                da = da.groupby('q').mean()
+                da = da.interp(q=np.geomspace(1e-5,1e-1,500))
+
+
+            new_data['R'] = sas_data
+            new_data.attrs['AL_data'] = 'R'
             
             ########################
             ## UPDATE AL MANIFEST ##
             ########################
+            self.update_status(f'Updating manifest...')
             if AL_manifest_path.exists():
-                self.data_manifest = xr.read_dataset(data_manifest_path)
-                self.data_manifest = xr.concat([self.data_manifest,new_data],dim='sample')
+                self.AL_manifest = xr.read_dataset(AL_manifest_path)
+                self.AL_manifest = xr.concat([self.AL_manifest,new_data],dim='sample')
             else:
-                self.data_manifest = new_data
+                self.AL_manifest = new_data
             
-            self.data_manifest.to_netcdf(AL_manifest_path)
+            self.AL_manifest.attrs['AL_data'] = 'R'
+            self.AL_manifest.attrs['components'] = self.AL_components
+            self.AL_manifest.attrs['GP_domain_transform'] = 'range_scaled'
+            for component in self.AL_components:
+                self.AL_manifest.attrs[f'{component}_range'] = self.AL_component_ranges[component]
+                self.AL_manifest.attrs[f'{component}_grid_range'] = self.AL_component_ranges[component]
+            self.AL_manifest.to_netcdf(AL_manifest_path)
 
             ################
             ## TRIGGER AL ##
             ################
+            self.update_status(f'Triggering agent server...')
             if predict:
                 self.agent_uuid = self.agent_client.enqueue(task_name='predict',datatype='nc')
             
