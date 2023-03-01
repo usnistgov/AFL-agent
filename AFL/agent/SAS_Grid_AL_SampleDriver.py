@@ -122,7 +122,9 @@ class SAS_Grid_AL_SampleDriver(Driver):
         data_path = pathlib.Path(self.config['data_path'])
         data_manifest_path = pathlib.Path(self.config['data_manifest_file'])
         
-        # load sample manifest and downselect
+        ################################
+        ## LOAD MANIFEST & DOWNSELECT ##
+        ################################
         self.sample_manifest = xr.load_dataset(sample_manifest_path)
         self.AL_selection['plate_name'] = list(self.loaded_plates.keys())
         self.sample_manifest = self.mask_dataset(self.sample_manifest,self.AL_selection)
