@@ -8,7 +8,7 @@ import warnings
 
 import textwrap
 
-from AFL.agent.util import ternary_to_xy,composition_grid,mpl_format_ternary
+from AFL.agent.util import ternary_to_xy,composition_grid,composition_grid_ternary,mpl_format_ternary
 
 from sklearn.preprocessing import StandardScaler
 
@@ -271,7 +271,7 @@ class CompositionTools:
                     # 'max':self.data.attrs[component+'_grid_range'][1],
                     'min':self.data.attrs[component+'_range'][0],
                     'max':self.data.attrs[component+'_range'][1],
-                    'steps':pts_per_row
+                    'steps': self.data.attrs.get(component+'_npts',pts_per_row)
                 }
             print(range_spec)
             compositions = composition_grid(components,range_spec)
@@ -294,22 +294,22 @@ class CompositionTools:
             self.data.attrs[component+'_grid_range'] = self.data.attrs[component+'_range']
         return self.data
     
-    def plot_surface(self,components=None,labels=None,set_axes_labels=True,**mpl_kw):
+    def plot_surface(self,components=None,labels=None,set_axes_labels=True,ternary=True,**mpl_kw):
         components = self._get_default(components)
         
-        if len(components)==3:
+        if len(components)==3 and ternary:
             try:
                 import mpltern
             except ImportError as e:
                 raise ImportError('Could not import mpltern. Please install via conda or pip') from e
-                
             projection = 'ternary'
         elif len(components)==2:
             projection = None
         else:
             raise ValueError(f'plot_surface only compatible with 2 or 3 components. You passed: {components}')
             
-        coords = np.vstack(list(self.data[c].values for c in components)).T
+        #coords = np.vstack(list(self.data[c].values for c in components)).T
+        coords = self.data[components].to_array('component').transpose(...,'component').values
 
         if (labels is None):
             if ('labels' in self.data.coords):
@@ -322,12 +322,13 @@ class CompositionTools:
                 labels = self.data[labels].values
                 
         if ('cmap' not in mpl_kw) and ('color' not in mpl_kw):
-             mpl_kw['cmap'] = 'viridis'
+             mpl_kw['cmap'] = self.cmap
         if 'edgecolor' not in mpl_kw:
             mpl_kw['edgecolor'] = 'face'
             
         if ('ax' in mpl_kw):
-            ax = mpl_kw['ax']
+            ax = mpl_kw.pop('ax')
+            
         else:  
             fig,ax = plt.subplots(1,1,subplot_kw=dict(projection=projection))
             
@@ -351,6 +352,8 @@ class CompositionTools:
 
         if ternary and len(components)==3:
             xy = self.ternary_to_xy(components)
+        elif len(components)==3:
+            xy = np.vstack(list(self.data[c].values for c in components)).T
         elif len(components)==2:
             xy = np.vstack(list(self.data[c].values for c in components)).T
         else:
@@ -379,16 +382,18 @@ class CompositionTools:
                 plt.gca().set(xlabel=components[0],ylabel=components[1])
         return artists
     
-    def plot_scatter(self,components=None,labels=None,set_axes_labels=True,**mpl_kw):
+    def plot_scatter(self,components=None,labels=None,set_axes_labels=True,ternary=True,**mpl_kw):
         components = self._get_default(components)
         
-        if len(components)==3:
+        if len(components)==3 and ternary:
             try:
                 import mpltern
             except ImportError as e:
                 raise ImportError('Could not import mpltern. Please install via conda or pip') from e
                 
             projection = 'ternary'
+        elif len(components)==3:
+            projection = None
         elif len(components)==2:
             projection = None
         else:
