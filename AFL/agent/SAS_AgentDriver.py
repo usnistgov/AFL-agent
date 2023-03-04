@@ -50,7 +50,7 @@ class SAS_AgentDriver(Driver):
     defaults={}
     defaults['compute_device'] = '/device:CPU:0'
     defaults['data_path'] = '~/'
-    defaults['data_manifest_file'] = 'manifest.csv'
+    defaults['AL_manifest_file'] = 'manifest.csv'
     defaults['save_path'] = '/home/AFL/'
     defaults['data_tag'] = 'default'
     defaults['qlo'] = 0.001
@@ -61,7 +61,7 @@ class SAS_AgentDriver(Driver):
         Driver.__init__(self,name='SAS_AgentDriver',defaults=self.gather_defaults(),overrides=overrides)
 
         self.watchdog = None 
-        self.data_manifest = None
+        self.AL_manifest = None
         self._app = None
         self.name = 'SAS_AgentDriver'
 
@@ -110,7 +110,7 @@ class SAS_AgentDriver(Driver):
             status.append(f'Found {self.n_phases} phases')
             
         status.append(f'Using {self.config["compute_device"]}')
-        status.append(f'Data Manifest:{self.config["data_manifest_file"]}')
+        status.append(f'Data Manifest:{self.config["AL_manifest_file"]}')
         status.append(f'Iteration {self.iteration}')
         status.append(f'Acquisition Count {self.acq_count}')
         return status
@@ -124,7 +124,7 @@ class SAS_AgentDriver(Driver):
         else:
             logger = None
         
-        path = pathlib.Path(self.config['data_manifest_file'])
+        path = pathlib.Path(self.config['AL_manifest_file'])
         self.watchdog = WatchDog(
             path=path.parent,
             fname=path.name,
@@ -240,10 +240,10 @@ class SAS_AgentDriver(Driver):
 
     def read_data(self):
         '''Read a directory of csv files and create pm dataset'''
-        self.update_status(f'Reading the latest data in {self.config["data_manifest_file"]}')
+        self.update_status(f'Reading the latest data in {self.config["AL_manifest_file"]}')
         path = pathlib.Path(self.config['data_path'])
         
-        self.data_manifest = pd.read_csv(path/self.config['data_manifest_file'])
+        self.AL_manifest = pd.read_csv(path/self.config['AL_manifest_file'])
 
         self.phasemap = xr.Dataset()
         raw_data_list = []
@@ -255,8 +255,8 @@ class SAS_AgentDriver(Driver):
         fname_list = []
         transmission_list = []
         empty_transmission_list = []
-        # for i,row in self.data_manifest.iterrows():
-        for i, row in tqdm.tqdm(self.data_manifest.iterrows(), total=self.data_manifest.shape[0]):
+        # for i,row in self.AL_manifest.iterrows():
+        for i, row in tqdm.tqdm(self.AL_manifest.iterrows(), total=self.AL_manifest.shape[0]):
 
             #measurement = pd.read_csv(path/row['fname'],comment='#'.set_index('q').squeeze()
             if self.config['subtract_background']:
@@ -317,14 +317,14 @@ class SAS_AgentDriver(Driver):
             self.phasemap['empty_transmission'].attrs['description'] = 'sample transmission'
 
 
-        # compositions = self.data_manifest.drop(['label','fname'],errors='ignore',axis=1)
+        # compositions = self.AL_manifest.drop(['label','fname'],errors='ignore',axis=1)
         self.components = []
-        for column_name in self.data_manifest.columns.values:
+        for column_name in self.AL_manifest.columns.values:
             if 'AL_mfrac' in column_name:
                 self.components.append(column_name.replace("AL_mfrac_",""))
-                self.phasemap[self.components[-1]] = ('sample',self.data_manifest[column_name].values)
+                self.phasemap[self.components[-1]] = ('sample',self.AL_manifest[column_name].values)
             else:
-                self.phasemap[column_name] = ('sample',self.data_manifest[column_name].values)
+                self.phasemap[column_name] = ('sample',self.AL_manifest[column_name].values)
                 
         if 'labels' not in self.phasemap:
             self.phasemap = self.phasemap.afl.labels.make_default()
@@ -337,14 +337,14 @@ class SAS_AgentDriver(Driver):
         
     def read_data_nc(self):
         '''Read and process a dataset from a netcdf file'''
-        self.update_status(f'Reading the latest data in {self.config["data_manifest_file"]}')
+        self.update_status(f'Reading the latest data in {self.config["AL_manifest_file"]}')
         path = pathlib.Path(self.config['data_path'])
         
-        #self.data_manifest = pd.read_csv(path/self.config['data_manifest_file'])
+        #self.AL_manifest = pd.read_csv(path/self.config['AL_manifest_file'])
 
-        self.phasemap = xr.load_dataset(self.config['data_manifest_file'])
+        self.phasemap = xr.load_dataset(self.config['AL_manifest_file'])
         measurement = self.phasemap[self.phasemap.attrs['AL_data']]
-        self.phasemap['data'] = measurement.afl.scatt.clean(derivative=0,qlo=self.config['qlo'],qhi=self.config['qhi'])
+        self.phasemap['data']   = measurement.afl.scatt.clean(derivative=0,qlo=self.config['qlo'],qhi=self.config['qhi'])
         self.phasemap['deriv1'] = measurement.afl.scatt.clean(derivative=1,qlo=self.config['qlo'],qhi=self.config['qhi'])
         self.phasemap['deriv2'] = measurement.afl.scatt.clean(derivative=2,qlo=self.config['qlo'],qhi=self.config['qhi'])
         
@@ -410,14 +410,12 @@ class SAS_AgentDriver(Driver):
         self.phasemap = self.acquisition.calculate_metric(self.GP)
 
         self.update_status(f'Finding next sample composition based on acquisition function')
+        composition_check = self.phasemap[self.phasemap.attrs['components']]
+        if 'sample' in composition_check.indexes:
+            composition_check = composition_check.reset_index('sample').reset_coords(drop=True)
+        composition_check = composition_check.to_array('component').transpose('sample',...)
         self.next_sample = self.acquisition.get_next_sample(
-            composition_check = (
-                self.phasemap[self.phasemap.attrs['components']]
-                .reset_index('sample')
-                .reset_coords(drop=True)
-                .to_array('component')
-                .transpose('sample',...)
-            )
+            composition_check = composition_check
         )
         
         next_dict = self.next_sample.squeeze().to_pandas().to_dict()
