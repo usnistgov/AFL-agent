@@ -290,8 +290,9 @@ class CompositionTools:
             self.data[name] = (dim_name,comps)
             components_grid.append(name)
         self.data.attrs['components_grid'] = components_grid
-        for component in components:
-            self.data.attrs[component+'_grid_range'] = self.data.attrs[component+'_range']
+        if not ternary:
+            for component in components:
+                self.data.attrs[component+'_grid_range'] = self.data.attrs[component+'_range']
         return self.data
     
     def plot_surface(self,components=None,labels=None,set_axes_labels=True,ternary=True,**mpl_kw):
@@ -382,7 +383,7 @@ class CompositionTools:
                 plt.gca().set(xlabel=components[0],ylabel=components[1])
         return artists
     
-    def plot_scatter(self,components=None,labels=None,set_axes_labels=True,ternary=True,**mpl_kw):
+    def plot_scatter(self,components=None,labels=None,set_axes_labels=True,ternary=True,discrete_labels=True,**mpl_kw):
         components = self._get_default(components)
         
         if len(components)==3 and ternary:
@@ -416,10 +417,13 @@ class CompositionTools:
         else:  
             fig,ax = plt.subplots(1,1,subplot_kw=dict(projection=projection))
             
-        artists = []
-        for label in np.unique(labels):
-            mask = (labels==label)
-            artists.append(ax.scatter(*coords[mask].T,**mpl_kw))
+        if discrete_labels:
+            artists = []
+            for label in np.unique(labels):
+                mask = (labels==label)
+                artists.append(ax.scatter(*coords[mask].T,**mpl_kw))
+        else:
+            artists = ax.scatter(*coords.T,c=labels,**mpl_kw)
 
         if set_axes_labels:
             if projection=='ternary':
