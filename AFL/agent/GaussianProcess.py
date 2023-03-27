@@ -53,7 +53,7 @@ class GP:
             
         if 'GP_domain_transform' in self.dataset.attrs:
             if self.dataset.attrs['GP_domain_transform']=='ternary':
-                if not (len(self.dataset.attrs['components']==3)):   
+                if not (len(self.dataset.attrs['components'])==3):   
                     raise ValueError("Ternary domain transform specified but len(components)!=3") 
                 domain = self.dataset.afl.comp.ternary_to_xy(components=components)
             elif self.dataset.attrs['GP_domain_transform']=='standard_scaled':
