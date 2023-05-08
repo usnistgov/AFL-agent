@@ -41,9 +41,10 @@ class SAS_Grid_AL_SampleDriver(Driver):
             sas_url,
             agent_url,
             overrides=None, 
+            data=None,
             ):
 
-        Driver.__init__(self,name='_AL_SampleDriver',defaults=self.gather_defaults(),overrides=overrides)
+        Driver.__init__(self,name='_AL_SampleDriver',defaults=self.gather_defaults(),overrides=overrides,data=data)
 
         if not (len(agent_url.split(':'))==2):
             raise ArgumentError('Need to specify both ip and port on agent_url')

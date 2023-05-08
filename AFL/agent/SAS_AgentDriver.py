@@ -57,8 +57,8 @@ class SAS_AgentDriver(Driver):
     defaults['qhi'] = 1
     defaults['subtract_background'] = False
     # defaults['grid_pts_per_row'] = 100
-    def __init__(self,overrides=None):
-        Driver.__init__(self,name='SAS_AgentDriver',defaults=self.gather_defaults(),overrides=overrides)
+    def __init__(self,overrides=None,data=None):
+        Driver.__init__(self,name='SAS_AgentDriver',defaults=self.gather_defaults(),overrides=overrides,data=data)
 
         self.watchdog = None 
         self.AL_manifest = None

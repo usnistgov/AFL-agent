@@ -39,9 +39,10 @@ class SANS_AL_SampleDriver(Driver):
             camera_urls = None,
             snapshot_directory =None,
             overrides=None, 
+            data=None,
             ):
 
-        Driver.__init__(self,name='SANS_AL_SampleDriver',defaults=self.gather_defaults(),overrides=overrides)
+        Driver.__init__(self,name='SANS_AL_SampleDriver',defaults=self.gather_defaults(),overrides=overrides,data=data)
 
         if not (len(load_url.split(':'))==2):
             raise ArgumentError('Need to specify both ip and port on load_url')
