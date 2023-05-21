@@ -172,7 +172,7 @@ class pseudoUCB(Acquisition):
         super().__init__()
         self.name = 'pseudo UCB'
 
-    def calculate_metric(self,GP,GPR,scaling=0.5):
+    def calculate_metric(self,GP,GPR,scaling=0.5,thompson_sampling):
         if self.phasemap is None:
             raise ValueError('No phase maps set for acquisition! Call reset_phasemap!')
 
@@ -185,8 +185,14 @@ class pseudoUCB(Acquisition):
         regressor_prediction = GPR.predict(self.phasemap.attrs['components_grid'])
         self.y_mean_GPR = regressor_prediction['mean']
         self.y_var_GPR  = regressor_prediction['var']
-        self.phasemap['acq_metric'] = ('grid',self.y_mean_GPR.squeeze() + scaling * self.y_var_GP.sum(1))
-        self.phasemap.attrs['acq_metric'] = self.name
+        
+        regressor_sample = GPR.model.predict_f_samples(self.phasemap.attrs['components_grid'],1)
+        if thompson_sampling:
+            self.phasemap['acq_metric'] = ('grid', regressor_sample.squeeze() + scaling * self.y_var_GP.sum(1))
+            self.phasemap.attrs['acq_metric'] = self.name + '_TS'
+        else:
+            self.phasemap['acq_metric'] = ('grid',self.y_mean_GPR.squeeze() + scaling * self.y_var_GP.sum(1))
+            self.phasemap.attrs['acq_metric'] = self.name
 
         return self.phasemap
         
