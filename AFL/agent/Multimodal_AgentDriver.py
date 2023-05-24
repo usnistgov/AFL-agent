@@ -26,9 +26,10 @@ import io
 import matplotlib.pyplot as plt
 import matplotlib
 
-import AFL.agent.PhaseMap
+import AFL.agent.xarray_extensions
 from AFL.agent import AcquisitionFunction 
 from AFL.agent import GaussianProcess 
+from AFL.agent import HschedGaussianProcess 
 from AFL.agent import Metric 
 from AFL.agent import PhaseLabeler
 from AFL.agent.WatchDog import WatchDog
@@ -40,7 +41,7 @@ import gpflow
 
 import uuid
 
-class SAS_AgentDriver(Driver):
+class Multimodal_AgentDriver(Driver):
     defaults={}
     defaults['compute_device'] = '/device:CPU:0'
     defaults['data_path'] = '~/'
@@ -198,52 +199,42 @@ class SAS_AgentDriver(Driver):
 
     def label(self):
 
-        #!!!!!!need to handle combining similarities
-        #!!!!!!need to handle combining similarities
-        #!!!!!!need to handle combining similarities
-        #!!!!!!need to handle combining similarities
-        #!!!!!!need to handle combining similarities
+        self.update_status(f'Labeling data on iteration {self.iteration}')
 
-
-        for AL_data in self.dataset.attrs['AL_data']:
-            if self.dataset.attrs[AL_data+'_AL_method']=='classification':
-                self.update_status(f'Similarity clustering AL_data: {AL_data} on iteration {self.iteration}')
-
-                self.metric.calculate(self.dataset)
-                self.dataset['W'] = (('sample_i','sample_j'),self.metric.W)
-                self.dataset.attrs['metric'] = str(self.metric.to_dict())
+        self.metric.calculate(self.dataset)
+        self.dataset['W'] = (('sample_i','sample_j'),self.metric.W)
+        self.dataset.attrs['metric'] = str(self.metric.to_dict())
         
-                self.labeler.label(self.dataset)
-                self.n_phases = self.labeler.n_phases
+        self.labeler.label(self.dataset)
+        self.n_phases = self.labeler.n_phases
 
-                ###XXX need to add cutonut for labelers that don't need silhouette or to use other methods
-                ## In reality the determination of number of clusters should be handled in the PhaseLabeler object
-                # self.n_cluster,labels,silh = PhaseLabeler.silhouette(self.metric.W,self.labeler)
-                # self.n_cluster,labels,silh = PhaseLabeler.silhouette(self.metric.W,self.labeler)
-                
-                self.update_status(f'Found {self.labeler.n_phases} phases')
+        self.update_status(f'Found {self.labeler.n_phases} phases')
 
-                self.dataset.attrs[AL_data+'_n_phases'] = self.n_phases
-                self.dataset[AL_data+'_labels'] = ('sample',self.labeler.labels)
-                self.dataset = self.dataset.afl.labels.make_ordinal()
-            elif self.dataset.attrs[AL_data+'_AL_method']=='regression':
-                pass
+        self.dataset.attrs['_n_phases'] = self.n_phases
+        self.dataset['labels'] = ('sample',self.labeler.labels)
+        self.dataset = self.dataset.afl.labels.make_ordinal()
         
     def extrapolate(self):
         # Predict phase behavior at each point in the phase diagram
         
         if self.n_phases==1:
             self.update_status(f'Using dummy GP for one phase')
-            self.GP = GaussianProcess.DummyGP(self.dataset)
+            self.classifier_GP = GaussianProcess.DummyGP(self.dataset)
         else:
             self.update_status(f'Starting gaussian process calculation on {self.config["compute_device"]}')
             with tf.device(self.config['compute_device']):
                 kernel = gpflow.kernels.Matern32(variance=0.5,lengthscales=1.0) 
-                self.GP = GaussianProcess.GP(
+                self.classifier_GP = GaussianProcess.GP(
                     dataset = self.dataset,
                     kernel=kernel
                 )
-                self.GP.optimize(2000,progress_bar=True)
+                self.classifier_GP.optimize(2000,progress_bar=True)
+
+
+        for AL_data in self.dataset.attrs['AL_data']:
+            if self.dataset.attrs[AL_data+'_AL_mode'] == 'regression':
+        
+            self.regression_GP = Hsched....
                 
         self.acq_count   = 0
         self.iteration  += 1 #iteration represents number of full calculations
