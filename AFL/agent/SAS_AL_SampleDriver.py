@@ -182,21 +182,21 @@ class SAS_AL_SampleDriver(Driver):
         exposure = sample.get('exposure',None)
 
         if self.spec_client is not None:
-            self.spec.set_config(
+            self.spec_client.set_config(
                     filepath=self.config['csv_data_path'],
                     filename=f'{sample["name"]}-beforeSAS-spec.h5'
                 )
-            self.spec.enqueue(task_name='collectContinuous',duration=5,interactive=False)
+            self.spec_client.enqueue(task_name='collectContinuous',duration=5,interactive=False)
 
         sas_uuid = self.sas_client.enqueue(task_name='expose',name=sample['name'],block=True,exposure=exposure)
         self.sas_client.wait(sas_uuid)
 
         if self.spec_client is not None:
-            self.spec.set_config(
+            self.spec_client.set_config(
                     filepath=self.config['csv_data_path'],
                     filename=f'{sample["name"]}-afterSAS-spec.h5'
                 )
-            spec_uuid = self.spec.enqueue(task_name='collectContinuous',duration=5,interactive=False)
+            spec_uuid = self.spec_client.enqueue(task_name='collectContinuous',duration=5,interactive=False)
             self.spec_client.wait(spec_uuid)
 
         return sas_uuid
@@ -238,6 +238,13 @@ class SAS_AL_SampleDriver(Driver):
             self.load_client.wait(self.rinse_uuid)
             self.update_status(f'Rinse done!')
 
+        if self.spec_client is not None:
+            self.spec_client.set_config(
+                    filepath=self.config['csv_data_path'],
+                    filename=f'{sample["name"]}-MT-spec.h5'
+                )
+            self.spec_client.enqueue(task_name='collectContinuous',duration=5,interactive=False)
+
         self.update_status(f'Cell is clean, measuring empty cell scattering...')
         empty = {}
         empty['name'] = 'MT-'+sample['name']
@@ -249,6 +256,7 @@ class SAS_AL_SampleDriver(Driver):
         if self.prep_uuid is not None: 
             self.prep_client.wait(self.prep_uuid)
             self.take_snapshot(prefix = f'02-after-prep-{name}')
+
         
         self.update_status(f'Queueing sample {name} load into syringe loader')
         for task in sample['catch_protocol']:
@@ -264,6 +272,13 @@ class SAS_AL_SampleDriver(Driver):
 
         #homing robot to try to mitigate drift problems
         self.prep_client.home()
+
+        if self.spec_client is not None:
+            self.spec_client.set_config(
+                    filepath=self.config['csv_data_path'],
+                    filename=f'{sample["name"]}-duringLoad-spec.h5'
+                )
+            self.spec_client.enqueue(task_name='collectContinuous',duration=15,interactive=False)
         
         self.load_uuid = self.load_client.enqueue(task_name='loadSample',sampleVolume=sample['volume'])
         self.update_status(f'Loading sample into cell: {self.load_uuid}')
