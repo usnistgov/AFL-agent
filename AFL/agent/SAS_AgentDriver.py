@@ -353,6 +353,11 @@ class SAS_AgentDriver(Driver):
         if 'labels' not in self.phasemap:
             self.phasemap = self.phasemap.afl.labels.make_default()
 
+        if (self.mask is not None):
+            if mask in self.phasemap:
+                raise ValueError('Both AgentServer and phasemap from netcdf have mask!')
+            self.phasemap['mask'] = self.mask.copy()
+
         self.components = self.phasemap.attrs['components']
 
     def process_data(self,clean_params=None):
