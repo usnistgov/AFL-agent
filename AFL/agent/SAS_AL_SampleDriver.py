@@ -38,6 +38,7 @@ class SAS_AL_SampleDriver(Driver):
             prep_url,
             sas_url,
             agent_url,
+            spec_url=None
             camera_urls = None,
             snapshot_directory =None,
             overrides=None, 
@@ -79,6 +80,15 @@ class SAS_AL_SampleDriver(Driver):
         self.agent_client = AgentClient(agent_url.split(':')[0],port=agent_url.split(':')[1])
         self.agent_client.login('SampleServer_AgentClient')
         self.agent_client.debug(False)
+
+        if spec_url is not None:
+            self.spec_url = spec_url
+            self.spec_client = Client(spec_url.split(':')[0],port=spec_url.split(':')[1])
+            self.spec_client.login('SampleServer_LSClient')
+            self.spec_client.debug(False)
+            self.spec_client.enqueue(task_name='setExposure',time=0.1)
+        else:
+            self.spec_client = None
 
         self.camera_urls = camera_urls
 
@@ -171,8 +181,23 @@ class SAS_AL_SampleDriver(Driver):
     def measure(self,sample):
         exposure = sample.get('exposure',None)
 
+        if self.spec_client is not None:
+            self.spec_client.set_config(
+                    filepath=self.config['csv_data_path'],
+                    filename=f'{sample["name"]}-beforeSAS-spec.h5'
+                )
+            self.spec_client.enqueue(task_name='collectContinuous',duration=5,interactive=False)
+
         sas_uuid = self.sas_client.enqueue(task_name='expose',name=sample['name'],block=True,exposure=exposure)
         self.sas_client.wait(sas_uuid)
+
+        if self.spec_client is not None:
+            self.spec_client.set_config(
+                    filepath=self.config['csv_data_path'],
+                    filename=f'{sample["name"]}-afterSAS-spec.h5'
+                )
+            spec_uuid = self.spec_client.enqueue(task_name='collectContinuous',duration=5,interactive=False)
+            self.spec_client.wait(spec_uuid)
 
         return sas_uuid
 
@@ -213,6 +238,13 @@ class SAS_AL_SampleDriver(Driver):
             self.load_client.wait(self.rinse_uuid)
             self.update_status(f'Rinse done!')
 
+        if self.spec_client is not None:
+            self.spec_client.set_config(
+                    filepath=self.config['csv_data_path'],
+                    filename=f'{sample["name"]}-MT-spec.h5'
+                )
+            self.spec_client.enqueue(task_name='collectContinuous',duration=5,interactive=False)
+
         self.update_status(f'Cell is clean, measuring empty cell scattering...')
         empty = {}
         empty['name'] = 'MT-'+sample['name']
@@ -224,6 +256,7 @@ class SAS_AL_SampleDriver(Driver):
         if self.prep_uuid is not None: 
             self.prep_client.wait(self.prep_uuid)
             self.take_snapshot(prefix = f'02-after-prep-{name}')
+
         
         self.update_status(f'Queueing sample {name} load into syringe loader')
         for task in sample['catch_protocol']:
@@ -239,6 +272,13 @@ class SAS_AL_SampleDriver(Driver):
 
         #homing robot to try to mitigate drift problems
         self.prep_client.home()
+
+        if self.spec_client is not None:
+            self.spec_client.set_config(
+                    filepath=self.config['csv_data_path'],
+                    filename=f'{sample["name"]}-duringLoad-spec.h5'
+                )
+            self.spec_client.enqueue(task_name='collectContinuous',duration=15,interactive=False)
         
         self.load_uuid = self.load_client.enqueue(task_name='loadSample',sampleVolume=sample['volume'])
         self.update_status(f'Loading sample into cell: {self.load_uuid}')
@@ -367,8 +407,9 @@ class SAS_AL_SampleDriver(Driver):
         self.stop_AL = False
         while not self.stop_AL:
             self.app.logger.info(f'Starting new AL loop')
-            
-            #get prediction of next step
+            #####################
+            ## GET NEXT SAMPLE ##
+            #####################
             if pre_run_list:
                 self.next_sample = None
                 next_sample_dict = pre_run_list.pop(0)
@@ -378,6 +419,9 @@ class SAS_AL_SampleDriver(Driver):
                 next_sample_dict = {k:{'value':v,'units':self.next_sample.attrs[k+'_units']} for k,v in next_sample_dict.items()}
             self.app.logger.info(f'Preparing to make next sample: {next_sample_dict}')
 
+            ##############################
+            ## PROTOCOL FOR NEXT SAMPLE ##
+            ##############################
             if ternary:
                 conc_spec = {}
                 for name,value in self.fixed_concs.items():
@@ -402,7 +446,11 @@ class SAS_AL_SampleDriver(Driver):
             for k,v in mass_dict.items():
                 self.target[k].mass = v
             self.target.volume = sample_volume
-            
+
+
+            ######################
+            ## MAKE NEXT SAMPLE ##
+            ######################
             self.deck.reset_targets()
             self.deck.add_target(self.target,name='target')
             self.deck.make_sample_series(reset_sample_series=True)
@@ -425,8 +473,17 @@ class SAS_AL_SampleDriver(Driver):
             
             self.catch_protocol.source = self.sample.target_loc
             
-            sample_uuid = str(uuid.uuid4())[-8:]
-            sample_name = f'AL_{self.config["data_tag"]}_{sample_uuid}'
+            sample_uuid = str(uuid.uuid4())
+            sample_name = f'AL_{self.config["data_tag"]}_{sample_uuid[-8:]}'
+
+            sample_data = self.set_sample(sample_name=name,sample_uuid=sample_uuid)
+            self.prep_client.enqueue(task_name='set_sample',**sample_data)
+            self.load_client.enqueue(task_name='set_sample',**sample_data)
+            self.sas_client.enqueue(task_name='set_sample',**sample_data)
+            self.agent_client.enqueue(task_name='set_sample',**sample_data)
+            if self.spec_client is not None:
+                self.spec_client.enqueue(task_name='set_sample',**sample_data)
+
             self.process_sample(
                     dict(
                         name=sample_name,
@@ -439,10 +496,9 @@ class SAS_AL_SampleDriver(Driver):
             )
 
 
-            # warnings.warn('Transmission check not implemented. NOT USING TRANSMISSIONS TO CHECK FOR MISSES!',stacklevel=2)
-            # # CHECK TRANMISSION OF LAST SAMPLE
-            # # XXX Need to update based on how files will be read
-            # file_path = data_path / (sample_name+'.txt')
+            ################################
+            ## VERIFY SAMPLE TRANSMISSION ##
+            ################################
             h5_path = data_path / (sample_name+'.h5')
             with h5py.File(h5_path,'r') as h5:
                 transmission = h5['entry/sample/transmission'][()]
@@ -522,7 +578,7 @@ class SAS_AL_SampleDriver(Driver):
             self.AL_manifest.attrs['AL_data'] = 'SAS'
             self.AL_manifest.attrs['components'] = self.AL_components
 
-            self.AL_manifest  = self.AL_manifest.afl.comp.add_grid(pts_per_row=pts_per_row)
+            #self.AL_manifest  = self.AL_manifest.afl.comp.add_grid(pts_per_row=pts_per_row)
 
             self.AL_manifest.to_netcdf(AL_manifest_path)
 

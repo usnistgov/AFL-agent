@@ -12,10 +12,11 @@ from AFL.agent.SAS_AL_SampleDriver import SAS_AL_SampleDriver
 
 
 driver =SAS_AL_SampleDriver(
-        load_url='piloader:5000',
-        prep_url='piot2:5000',
-        sas_url='id3b.classe.cornell.edu:5000',
+        load_url ='piloader:5000',
+        prep_url ='piot2:5000',
+        sas_url  ='id3b.classe.cornell.edu:5000',
         agent_url='localhost:5053',
+        spec_url ='pispectrometer:5050',
         camera_urls = [],
         )
 
