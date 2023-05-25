@@ -19,6 +19,7 @@ class AFL_DataArrayTools:
         self.da = da
         self.comp = CompositionTools(da)
         self.scatt = ScatteringTools(da)
+        self.util = Utilities(da)
         
 @xr.register_dataset_accessor('afl')
 class AFL_DatasetTools:
@@ -190,6 +191,71 @@ class ScatteringTools:
         dI = savgol_filter(data2.values.T,window_length=sgf_window_length,polyorder=sgf_polyorder,delta=dq,axis=0,deriv=derivative)
         data2_dI = data2.copy(data=dI.T)
         return data2_dI
+
+class Utilities:
+    def __init__(self,data):
+        self.data = data
+        
+    def preprocess_data(self,
+            xname,
+            yname,
+            xlo=None,
+            xhi=None,
+            xlo_isel=None,
+            xhi_isel=None,
+            pedestal=None,
+            npts=250,
+            derivative=0,
+            sgf_window_length=31,
+            sgf_polyorder=2,
+            logx=False,
+            logy=False
+            ):
+        data2 =self.data.copy()
+        data2.name=yname
+        
+        if ((xlo is not None)or(xhi is not None)) and ((xlo_isel is not None)or(xhi_isel is not None)):
+            warnings.warn((
+                'Both value and index based indexing have been specified! '
+                'Value indexing will be applied first!'
+            )
+                ,stacklevel=2)
+            
+        data2 = data2.sel(**{xname:slice(qlo,qhi)})
+        data2 = data2.isel(**{xname:slice(qlo_isel,qhi_isel)})
+        
+        if logy:
+            log_xname = 'log'+xname
+            data2 = data2.where(data2>0.0,drop=True)
+            data2 = data2.pipe(np.log10)
+            data2[xname] = np.log10(data2[xname])
+            data2 = data2.rename(**{xname:logxname})
+            
+        #need to remove duplicate values
+        data2 = data2.groupby(qname,squeeze=False).mean()
+        
+        #set minimum value of scattering to pedestal value and fill nans with this value
+        if pedestal is not None:
+            data2 += pedestal
+            data2  = data2.where(~np.isnan(data2)).fillna(pedestal)
+        
+        #interpolate to constant log(dq) grid
+        if logx:
+            xnew = np.geomspace(data2[xname].min(),data2[xname].max(),npts)
+            dx = xnew[1]-xnew[0]
+            data2 = data2.interp({xname:xnew})
+        else:
+            xnew = np.linspace(data2[xname].min(),data2[xname].max(),npts)
+            dx = xnew[1]-xnew[0]
+            data2 = data2.interp({xname:xnew})
+        
+        #filter out any q that have NaN
+        data2 = data2.dropna(xname,'any')
+        
+        #take derivative
+        dy = savgol_filter(data2.values.T,window_length=sgf_window_length,polyorder=sgf_polyorder,delta=dq,axis=0,deriv=derivative)
+        data2_dy = data2.copy(data=dy.T)
+        return data2_dy
     
         
 class CompositionTools:
