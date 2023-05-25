@@ -1,4 +1,5 @@
 import numpy as np
+        self.GPR = None
 import gpflow
 from gpflow.monitor import (
     ImageToTensorBoard,
@@ -20,7 +21,7 @@ from AFL.agent.util import ternary_to_xy
 
 class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
     """
-    Defines the heteroskedastic gaussian likelihood in 
+    Defines the heteroskedastic gaussian likelihood 
 	"""
     def __init__(self, **kwargs):
         # this likelihood expects a single latent function F, and two columns in the data matrix Y:
@@ -71,10 +72,15 @@ class GPR:
 #	-------------
 #	The data construct needs to point to the values being regressed over, Y_i
 #	If uncertainties are known for each value, set the heteroskedastic flag to True
-#	This is different than classification and uses a different likelihood to do prediction
+#	
+#   Pass the inputs and uncertainties into the initialization
 #    '''	
 #
-    def __init__(self,dataset,kernel=None,heteroskedastic=False):
+    def __init__(self,inputs=None,uncertainties=None,kernel=None,heteroskedastic=False):
+        self.inputs = inputs
+        self.uncertainties = uncertainties
+        self.kernel = kernel
+        self.heteroskedastic = heteroskedastic
         self.reset_GP(dataset=dataset,kernel=kernel,heteroskedastic=True)
         self.iter_monitor = lambda x: None
         self.final_monitor = lambda x: None
@@ -83,19 +89,13 @@ class GPR:
             
         domain = self.transform_domain()
         if heteroskedastic==False:
-            targets = self.dataset[self.dataset.attrs['AL_data']]
+            targets = self.dataset[self.inputs]
         else:
-    	    targets = np.stack(
-				(self.dataset[self.dataset.attrs['AL_data']],
-				self.dataset[self.dataset.attrs['input_uncert']]
-				), axis=1)
+    	    targets = np.stack((self.inputs,self.uncertainties), axis=1)
 
         if preprocess:
-            #xarray notation
             targets[:,0] = (targets[:,0] - targets[:,0].mean())/targets[:,0].std()
             targets[:,1] = targets[:,1]/targets[:,1].std()
-            #targets[:,0] = (targets[:,0] - np.mean(targets[:,0]))/np.std(targets[:,0])
-            #targets[:,1] = targets[:,1]/np.std(targets[:,1])
         data = (domain,targets)
         return data
         
