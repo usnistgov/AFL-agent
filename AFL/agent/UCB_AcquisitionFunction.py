@@ -21,8 +21,10 @@ class Acquisition:
     def __init__(self):
         self.phasemap = None
         self.mask = None
-        self.y_mean = None
-        self.y_var = None
+        self.y_mean_GPR = None
+        self.y_var_GPR = None
+        self.y_mean_GPC = None
+        self.y_var_GPC = None
         self.next_sample = None
         self.logger = logging.getLogger()
         self.composition_atol = 0.015#absolute distance tolerace
@@ -132,6 +134,10 @@ class Acquisition:
         return self.next_sample
 
 class pseudoUCB(Acquisition):
+    """
+    This acquisition function works on two GPs only. One has to be a classifier and the other has to be a regressor
+    This needs to be generalizable and requires some thought...
+    """
     def __init__(self,scaling =1.0, Thompson_sampling=False):
         super().__init__()
         self.name = 'pseudo UCB'
@@ -144,8 +150,8 @@ class pseudoUCB(Acquisition):
 
         #needs to have some flexibility. for every GP or GPR in this calculation, 
         classifier_prediction = GP.predict(self.phasemap.attrs['components_grid'])
-        self.y_mean_GP = classifier_prediction['mean']
-        self.y_var_GP = classifier_prediction['var']
+        self.y_mean_GPC = classifier_prediction['mean']
+        self.y_var_GPC = classifier_prediction['var']
         
 
         regressor_prediction = GPR.predict(self.phasemap.attrs['components_grid'])
@@ -154,10 +160,10 @@ class pseudoUCB(Acquisition):
         
         if self.Thompson_sampling:
             regressor_sample = GPR.model.predict_f_samples(GPR.transform_domain(components=self.phasemap.attrs['components_grid']),1)
-            self.phasemap['acq_metric'] = ('grid', regressor_sample.numpy().squeeze() + self.scaling * self.y_var_GP.sum(1))
+            self.phasemap['acq_metric'] = ('grid', regressor_sample.numpy().squeeze() + self.scaling * self.y_var_GPC.sum(1))
             self.phasemap.attrs['acq_metric'] = self.name + '_TS'
         else:
-            self.phasemap['acq_metric'] = ('grid',self.y_mean_GPR.squeeze() + self.scaling * self.y_var_GP.sum(1))
+            self.phasemap['acq_metric'] = ('grid',self.y_mean_GPR.squeeze() + self.scaling * self.y_var_GPC.sum(1))
             self.phasemap.attrs['acq_metric'] = self.name
 
         return self.phasemap
