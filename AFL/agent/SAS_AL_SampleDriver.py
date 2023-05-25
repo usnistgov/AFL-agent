@@ -446,6 +446,7 @@ class SAS_AL_SampleDriver(Driver):
                 self.target[k].mass = v
             self.target.volume = sample_volume
 
+
             ######################
             ## MAKE NEXT SAMPLE ##
             ######################
@@ -471,8 +472,17 @@ class SAS_AL_SampleDriver(Driver):
             
             self.catch_protocol.source = self.sample.target_loc
             
-            sample_uuid = str(uuid.uuid4())[-8:]
-            sample_name = f'AL_{self.config["data_tag"]}_{sample_uuid}'
+            sample_uuid = str(uuid.uuid4())
+            sample_name = f'AL_{self.config["data_tag"]}_{sample_uuid[-8:]}'
+
+            sample_data = self.set_sample(sample_name=name,sample_uuid=sample_uuid)
+            self.prep_client.enqueue(task_name='set_sample',**sample_data)
+            self.load_client.enqueue(task_name='set_sample',**sample_data)
+            self.sas_client.enqueue(task_name='set_sample',**sample_data)
+            self.agent_client.enqueue(task_name='set_sample',**sample_data)
+            if self.spec_client is not None:
+                self.spec_client.enqueue(task_name='set_sample',**sample_data)
+
             self.process_sample(
                     dict(
                         name=sample_name,
