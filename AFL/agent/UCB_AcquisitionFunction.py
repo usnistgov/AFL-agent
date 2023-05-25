@@ -131,48 +131,14 @@ class Acquisition:
         self.next_sample = composition
         return self.next_sample
 
-class Variance(Acquisition):
-    def __init__(self):
-        super().__init__()
-        self.name = 'variance'
-        
-    def calculate_metric(self,GP):
-        if self.phasemap is None:
-            raise ValueError('No phase map set for acquisition! Call reset_phasemap!')
-            
-        predict = GP.predict(self.phasemap.attrs['components_grid'])
-        self.y_mean = predict['mean']
-        self.y_var = predict['var']
-        self.phasemap['acq_metric'] = ('grid',GP.y_var.sum(1))
-        self.phasemap.attrs['acq_metric'] = self.name
-
-        return self.phasemap
-    
-class Random(Acquisition):
-    def __init__(self):
-        super().__init__()
-        self.name = 'random'
-        
-    def calculate_metric(self,GP):
-        if self.phasemap is None:
-            raise ValueError('No phase map set for acquisition! Call reset_phasemap!')
-            
-        predict = GP.predict(self.phasemap.attrs['components_grid'])
-        self.y_mean = predict['mean']
-        self.y_var = predict['var']
-            
-        indices = np.arange(self.phasemap['grid'].shape[0])
-        random.shuffle(indices)
-        self.phasemap['acq_metric'] = ('grid',indices)
-        self.phasemap.attrs['acq_metric'] = self.name
-        return self.phasemap
-
 class pseudoUCB(Acquisition):
-    def __init__(self):
+    def __init__(self,scaling =1.0, Thompson_sampling=False):
         super().__init__()
         self.name = 'pseudo UCB'
+        self.scaling = scaling
+        self.Thompson_sampling = Thompson_sampling
 
-    def calculate_metric(self,GP,GPR,scaling=0.5,thompson_sampling=False):
+    def calculate_metric(self,GP,GPR):
         if self.phasemap is None:
             raise ValueError('No phase maps set for acquisition! Call reset_phasemap!')
 
@@ -186,94 +152,12 @@ class pseudoUCB(Acquisition):
         self.y_mean_GPR = regressor_prediction['mean']
         self.y_var_GPR  = regressor_prediction['var']
         
-        regressor_sample = GPR.model.predict_f_samples(GPR.transform_domain(components=self.phasemap.attrs['components_grid']),1)
-        if thompson_sampling:
-            self.phasemap['acq_metric'] = ('grid', regressor_sample.numpy().squeeze() + scaling * self.y_var_GP.sum(1))
+        if self.Thompson_sampling:
+            regressor_sample = GPR.model.predict_f_samples(GPR.transform_domain(components=self.phasemap.attrs['components_grid']),1)
+            self.phasemap['acq_metric'] = ('grid', regressor_sample.numpy().squeeze() + self.scaling * self.y_var_GP.sum(1))
             self.phasemap.attrs['acq_metric'] = self.name + '_TS'
         else:
-            self.phasemap['acq_metric'] = ('grid',self.y_mean_GPR.squeeze() + scaling * self.y_var_GP.sum(1))
+            self.phasemap['acq_metric'] = ('grid',self.y_mean_GPR.squeeze() + self.scaling * self.y_var_GP.sum(1))
             self.phasemap.attrs['acq_metric'] = self.name
 
-        return self.phasemap
-        
-
-
-class IterationCombined(Acquisition):
-    def __init__(self,function1,function2,function2_frequency=5):
-        super().__init__()
-        self.function1 = function1
-        self.function2 = function2
-        # self.name = 'IterationCombined'  
-        # self.name += '-'+function1.name
-        # self.name += '-'+function2.name
-        self.name = function1.name
-        self.name += '-'+function2.name
-        self.name += '@'+str(function2_frequency)
-        self.iteration = 1
-        self.function2_frequency=function2_frequency
-        
-    def reset_phasemap(self,phasemap):
-        self.phasemap = phasemap
-        self.function1.reset_phasemap(phasemap)
-        self.function2.reset_phasemap(phasemap)
-        
-    def calculate_metric(self,GP):
-        if self.function1.phasemap is None:
-            raise ValueError('No phase map set for acquisition! Call reset_phasemap!')
-
-        predict = GP.predict(self.phasemap.attrs['components_grid'])
-        self.y_mean = predict['mean']
-        self.y_var = predict['var']
-        
-        if ((self.iteration%self.function2_frequency)==0):
-            print(f'Using acquisition function {self.function2.name} of iteration {self.iteration}')
-            self.phasemap = self.function2.calculate_metric(GP)
-            self.phasemap.attrs['acq_current_metric'] = self.function2.name
-        else:
-            print(f'Using acquisition function {self.function1.name} of iteration {self.iteration}')
-            self.phasemap = self.function1.calculate_metric(GP)
-            self.phasemap.attrs['acq_current_metric'] = self.function1.name
-
-        self.phasemap.attrs['acq_metric'] = self.name
-        self.phasemap.attrs['acq_metric1'] = self.function1.name
-        self.phasemap.attrs['acq_metric2'] = self.function2.name
-        self.phasemap.attrs['acq_iteration'] = self.iteration
-        self.iteration+=1
-            
-        return self.phasemap
-    
-class LowestDensity(Acquisition):
-    def __init__(self,bandwidth=0.075):
-        super().__init__()
-        self.name = 'LowestDensity'
-        self.bandwidth=bandwidth
-        
-    def calculate_metric(self,GP=None,y_mean=None,y_var=None): 
-        if self.phasemap is None:
-            raise ValueError('No phase map set for acquisition! Call reset_phasemap!')
-            
-        #this must be calculated regardless of whether it is used
-        if GP is not None:
-            predict = GP.predict(self.phasemap.attrs['components_grid'])
-            self.y_mean = predict['mean']
-            self.y_var = predict['var']
-        elif (y_mean is not None) and (y_var is not None):
-            self.y_mean = y_mean
-            self.y_var = y_var
-        else:
-            raise ValueError('Need to pass either GP or y_mean/y_var into calcualte_metric!')
-            
-
-        if self.phasemap.attrs['GP_domain_transform']=='ternary':
-            xy = self.phasemap.afl.comp.to_ternary_xy()
-            xy_grid = self.phasemap.afl.comp.to_xy(self.phasemap.attrs['components_grid'])
-        else:
-            xy = self.phasemap[self.phasemap.attrs['components']].to_array('component').transpose(...,'component')
-            xy_grid = self.phasemap[self.phasemap.attrs['components_grid']].to_array('component').transpose(...,'component')
-
-        kde = KernelDensity(bandwidth=self.bandwidth)
-        kde.fit(xy)
-        
-        acq_metric = -np.exp(kde.score_samples(xy_grid))
-        self.phasemap['acq_metric'] = ('grid',acq_metric)
         return self.phasemap
