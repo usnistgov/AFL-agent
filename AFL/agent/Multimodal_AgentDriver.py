@@ -169,7 +169,7 @@ class Multimodal_AgentDriver(Driver):
         self.update_status(f'Reading the latest data in {self.config["AL_manifest_file"]}')
         path = pathlib.Path(self.config['data_path'])
         
-        self.dataset = xr.load_dataset(self.config['AL_manifest_file'])
+        self.dataset = xr.load_dataset(path / self.config['AL_manifest_file'])
         # look for multimodal_method, and AL_data+'_method'
 
         for AL_data in self.dataset.attrs['AL_data']:
@@ -181,7 +181,7 @@ class Multimodal_AgentDriver(Driver):
                 xhi_isel=self.dataset.attrs.get(AL_data+'_prep_xhi_isel',None)
                 pedestal=self.dataset.attrs.get(AL_data+'_prep_pedestal',None)
                 npts=self.dataset.attrs.get(AL_data+'_prep_npts',None)
-                sgf_window_length=self.dataset.attrs.get(AL_data+'__rep_sgf_window_length',2)
+                sgf_window_length=self.dataset.attrs.get(AL_data+'__rep_sgf_window_length',3)
                 sgf_polyorder=self.dataset.attrs.get(AL_data+'_prep_sgf_polyorder',2)
                 logx=self.dataset.attrs.get(AL_data+'_prep_logx',False)
                 logy=self.dataset.attrs.get(AL_data+'_prep_logy',False)
@@ -216,25 +216,31 @@ class Multimodal_AgentDriver(Driver):
         
     def extrapolate(self):
         # Predict phase behavior at each point in the phase diagram
-        
         if self.n_phases==1:
             self.update_status(f'Using dummy GP for one phase')
             self.classifier_GP = GaussianProcess.DummyGP(self.dataset)
         else:
             self.update_status(f'Starting gaussian process calculation on {self.config["compute_device"]}')
             with tf.device(self.config['compute_device']):
-                kernel = gpflow.kernels.Matern32(variance=0.5,lengthscales=1.0) 
+
+
+                #the defalut AL mode is multimodal_similarity
+                kernel_classifier = gpflow.kernels.Matern32(variance=0.5,lengthscales=1.0) 
                 self.classifier_GP = GaussianProcess.GP(
                     dataset = self.dataset,
-                    kernel=kernel
+                    kernel  = kernel_classifier
                 )
                 self.classifier_GP.optimize(2000,progress_bar=True)
+                
+
+                if self.dataset.attrs['AL_mode'] == 'bimodal_UCB':  
+                    kernel_regressor =  gpflow.kernels.Matern52(variance=0.5,lengthscales=2.0) + gpflow.kernels.White(1e-1)
+					self.regressor_GP = HscedGaussianProcess.GPR(
+					dataset = self.dataset,
+					kernel  = kernel_regressor
+				)
 
 
-        for AL_data in self.dataset.attrs['AL_data']:
-            if self.dataset.attrs[AL_data+'_AL_mode'] == 'regression':
-        
-            self.regression_GP = Hsched....
                 
         self.acq_count   = 0
         self.iteration  += 1 #iteration represents number of full calculations
@@ -245,7 +251,14 @@ class Multimodal_AgentDriver(Driver):
     def get_next_sample(self):
         self.update_status(f'Calculating acquisition function...')
         self.acquisition.reset_phasemap(self.dataset)
-        self.dataset = self.acquisition.calculate_metric(self.GP)
+        if self.dataset.attrs['AL_mode'] == 'multimodal_similarity':
+            self.dataset = self.acquisition.calculate_metric(self.classifier_GP)
+
+        elif self.dataset.attrs['AL_mode'] == 'UCB':
+            self.dataset = self.acquisition.calculate_metric(
+                    GP  = self.classifier_GP,
+                    GPR = self.regressor_GP,
+                    )
 
         self.update_status(f'Finding next sample composition based on acquisition function')
         composition_check = self.dataset[self.dataset.attrs['components']]
@@ -270,8 +283,12 @@ class Multimodal_AgentDriver(Driver):
         save_path = pathlib.Path(self.config['save_path'])
         date =  datetime.datetime.now().strftime('%y%m%d')
         time =  datetime.datetime.now().strftime('%H:%M:%S')
-        self.dataset['gp_y_var'] = (('grid','phase_num'),self.acquisition.y_var)
-        self.dataset['gp_y_mean'] = (('grid','phase_num'),self.acquisition.y_mean)
+        self.dataset['gp_classifier_y_var'] = (('grid','phase_num'),self.acquisition.y_var_GPC)
+        self.dataset['gp_classifier_y_mean'] = (('grid','phase_num'),self.acquisition.y_mean_GPC)
+        if self.dataset['AL_mode'] == 'bimodal_UCB':
+            self.dataset['gp_regressor_y_mean'] = (('grid',self.acquisition.y_mean_GPR)
+            self.dataset['gp_regressor_y_var']  = (('grid',self.acquisition.y_var_GPR)
+
         #self.dataset['next_sample'] = ('component',self.next_sample.squeeze().values)
         #reset_index('grid').drop(['SLES3_grid','DEX_grid','CAPB_grid'])
         
@@ -390,7 +407,7 @@ class Multimodal_AgentDriver(Driver):
         if self.dataset is None:
             return 'No phasemap loaded. Run read_data()'
 
-        if 'gp_y_mean' not in self.dataset:
+        if 'gp_classifier_y_mean' not in self.dataset:
             raise ValueError('No GP results in phasemap. Run .predict()')
 
         if 'precomposed' in kwargs['render_hint']:
@@ -400,7 +417,7 @@ class Multimodal_AgentDriver(Driver):
             if N==1:
                 axes = np.array([axes])
             i = 0
-            for (_,labels1),(_,labels2) in zip(self.dataset.gp_y_mean.groupby('phase_num'),self.dataset.gp_y_var.groupby('phase_num')):
+            for (_,labels1),(_,labels2) in zip(self.dataset.gp_classifier_y_mean.groupby('phase_num'),self.dataset.gp_classifier_y_var.groupby('phase_num')):
                 plt.sca(axes[i,0])
                 self.dataset.where(self.dataset.mask).afl.comp.plot_continuous(components=self.dataset.attrs['components_grid'],cmap='magma',labels=labels1.values);
                 plt.sca(axes[i,1])
@@ -424,7 +441,7 @@ class Multimodal_AgentDriver(Driver):
             out_dict['y'] = list(y)
 
             i =0
-            for (_,labels1),(_,labels2) in zip(self.dataset.gp_y_mean.groupby('phase_num'),self.dataset.gp_y_var.groupby('phase_num')):
+            for (_,labels1),(_,labels2) in zip(self.dataset.gp_classifier_y_mean.groupby('phase_num'),self.dataset.gp_classifier_y_var.groupby('phase_num')):
                 out_dict[f'phase_{i}'] = {'mean':list(labels1.values),'var':list(labels2.values)}
                 i+=1
             return out_dict
