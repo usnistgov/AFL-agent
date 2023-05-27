@@ -1,5 +1,4 @@
 import numpy as np
-        self.GPR = None
 import gpflow
 from gpflow.monitor import (
     ImageToTensorBoard,
@@ -76,7 +75,7 @@ class GPR:
 #   Pass the inputs and uncertainties into the initialization
 #    '''	
 #
-    def __init__(self,inputs=None,uncertainties=None,kernel=None,heteroskedastic=False):
+    def __init__(self,dataset,inputs=None,uncertainties=None,kernel=None,heteroskedastic=False):
         self.inputs = inputs
         self.uncertainties = uncertainties
         self.kernel = kernel
