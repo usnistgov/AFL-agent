@@ -30,7 +30,7 @@ class SAS_AL_SampleDriver(Driver):
     defaults={}
     defaults['snapshot_directory'] = '/home/nistoroboto'
     defaults['csv_data_path'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/'
-    defaults['data_manifest_file'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/data_manifest.csv'
+    defaults['AL_manifest_file'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/data_manifest.csv'
     defaults['data_tag'] = 'default'
     defaults['max_sample_transmission'] = 0.6
     def __init__(self,
@@ -38,7 +38,7 @@ class SAS_AL_SampleDriver(Driver):
             prep_url,
             sas_url,
             agent_url,
-            spec_url=None
+            spec_url=None,
             camera_urls = None,
             snapshot_directory =None,
             overrides=None, 
@@ -69,7 +69,7 @@ class SAS_AL_SampleDriver(Driver):
         self.load_client.login('SampleServer_LoadClient')
         self.load_client.debug(False)
 # 
-        #load samples
+        #measure samples
         self.sas_url = sas_url
         self.sas_client = Client(sas_url.split(':')[0],port=sas_url.split(':')[1])
         self.sas_client.login('SampleServer_SASClient')
@@ -183,7 +183,7 @@ class SAS_AL_SampleDriver(Driver):
 
         if self.spec_client is not None:
             self.spec_client.set_config(
-                    filepath=self.config['csv_data_path'],
+                    filepath='/home/pi/2305_SINQ_data_reduced/',
                     filename=f'{sample["name"]}-beforeSAS-spec.h5'
                 )
             self.spec_client.enqueue(task_name='collectContinuous',duration=5,interactive=False)
@@ -193,7 +193,7 @@ class SAS_AL_SampleDriver(Driver):
 
         if self.spec_client is not None:
             self.spec_client.set_config(
-                    filepath=self.config['csv_data_path'],
+                    filepath='/home/pi/2305_SINQ_data_reduced/',
                     filename=f'{sample["name"]}-afterSAS-spec.h5'
                 )
             spec_uuid = self.spec_client.enqueue(task_name='collectContinuous',duration=5,interactive=False)
@@ -229,6 +229,8 @@ class SAS_AL_SampleDriver(Driver):
             #if the well isn't in the map, just use the well
             task['source'] = target_map.get(task['source'],task['source'])
             task['dest'] = target_map.get(task['dest'],task['dest'])
+            if i==0:
+                task['force_new_tip']=True
             if i==(len(sample['prep_protocol'])-1):#last prepare
                 task['drop_tip']=False
             self.prep_uuid = self.prep_client.transfer(**task)
@@ -240,7 +242,7 @@ class SAS_AL_SampleDriver(Driver):
 
         if self.spec_client is not None:
             self.spec_client.set_config(
-                    filepath=self.config['csv_data_path'],
+                    filepath='/home/pi/2305_SINQ_data_reduced/',
                     filename=f'{sample["name"]}-MT-spec.h5'
                 )
             self.spec_client.enqueue(task_name='collectContinuous',duration=5,interactive=False)
@@ -275,7 +277,7 @@ class SAS_AL_SampleDriver(Driver):
 
         if self.spec_client is not None:
             self.spec_client.set_config(
-                    filepath=self.config['csv_data_path'],
+                    filepath='/home/pi/2305_SINQ_data_reduced/',
                     filename=f'{sample["name"]}-duringLoad-spec.h5'
                 )
             self.spec_client.enqueue(task_name='collectContinuous',duration=15,interactive=False)
@@ -395,13 +397,14 @@ class SAS_AL_SampleDriver(Driver):
         exposure            = kwargs['exposure']
         empty_exposure      = kwargs['empty_exposure']
         predict             = kwargs.get('predict',True)
+        start_new_manifest  = kwargs.get('start_new_manifest',False)
         ternary             = kwargs['ternary']#should be bool
         pre_run_list        = copy.deepcopy(kwargs.get('pre_run_list',[]))
 
         mix_order = kwargs.get('mix_order',None)
         custom_stock_settings = kwargs.get('custom_stock_settings',None)
 
-        data_manifest_path = pathlib.Path(self.config['data_manifest_file'])
+        AL_manifest_path = pathlib.Path(self.config['AL_manifest_file'])
         data_path = pathlib.Path(self.config['csv_data_path'])
         
         self.stop_AL = False
@@ -415,7 +418,10 @@ class SAS_AL_SampleDriver(Driver):
                 next_sample_dict = pre_run_list.pop(0)
             else:
                 self.next_sample = self.agent_client.get_object('next_sample')
-                next_sample_dict = self.next_sample.squeeze().reset_coords('grid',drop=True).to_pandas().to_dict()
+                next_sample_dict = self.next_sample.squeeze()
+                if 'grid' in next_sample_dict:
+                    next_sample_dict = next_sample_dict.reset_coords('grid',drop=True)
+                next_sample_dict = next_sample_dict.to_pandas().to_dict()
                 next_sample_dict = {k:{'value':v,'units':self.next_sample.attrs[k+'_units']} for k,v in next_sample_dict.items()}
             self.app.logger.info(f'Preparing to make next sample: {next_sample_dict}')
 
@@ -476,7 +482,7 @@ class SAS_AL_SampleDriver(Driver):
             sample_uuid = str(uuid.uuid4())
             sample_name = f'AL_{self.config["data_tag"]}_{sample_uuid[-8:]}'
 
-            sample_data = self.set_sample(sample_name=name,sample_uuid=sample_uuid)
+            sample_data = self.set_sample(sample_name=sample_name,sample_uuid=sample_uuid)
             self.prep_client.enqueue(task_name='set_sample',**sample_data)
             self.load_client.enqueue(task_name='set_sample',**sample_data)
             self.sas_client.enqueue(task_name='set_sample',**sample_data)
@@ -523,6 +529,7 @@ class SAS_AL_SampleDriver(Driver):
             self.new_data['label']     = -1
             self.new_data['validated'] = validated
             self.new_data['transmission'] = transmission
+            self.new_data['sample_uuid']      = sample_uuid
 
             if ternary:
                 total = 0
@@ -534,7 +541,7 @@ class SAS_AL_SampleDriver(Driver):
                     self.new_data[component] = self.new_data[component]/total
             else:
                 for component in self.AL_components:
-                    self.new_data[component] = self.sample.target_check.concentration[component].to("mg/ml")
+                    self.new_data[component] = self.sample.target_check.concentration[component].to("mg/ml").magnitude
                     self.new_data[component].attrs['units'] = 'mg/ml'
                 
             for component in self.components:
