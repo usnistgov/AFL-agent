@@ -173,3 +173,27 @@ class KerasClassifier(PhaseLabeler):
         X_data = phasemap[data_variable].transpose(transpose_var,...).interp(logq=np.log10(self.model_q)).values
         self.labels = self.clf.predict(X_data).argmax(axis=1)
         self.n_phases = len(np.unique(self.labels))
+
+class AffinityPropagation(PhaseLabeler):
+    def __init__(self,params=None):
+        super().__init__(params)
+        self.name = f'AffinityPropagation'
+        self.params['damping'] = 0.75
+        self.params['max_iter'] = 5000
+        self.params['convergence_iter'] = 250
+        self.params['affinity'] = 'precomputed'
+        if 'n_phases' in self.params:
+            del self.params['n_phases']
+        self.params.update(params)
+        
+    def label(self,phasemap,**params):
+        self._init(**params)
+        self.clf.fit(metric)
+        self.labels = self.clf.labels_
+        self.n_phases = len(np.unique(self.labels))
+        
+    def _init(self,**params):
+        if params:
+            self.params.update(params)
+            
+        self.clf = sklearn.cluster.AffinityPropagation(**self.params)
