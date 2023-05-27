@@ -416,6 +416,7 @@ class SAS_AL_SampleDriver(Driver):
             else:
                 self.next_sample = self.agent_client.get_object('next_sample')
                 next_sample_dict = self.next_sample.squeeze().reset_coords('grid',drop=True).to_pandas().to_dict()
+                next_sample_dict = {k:{'value':v,'units':self.next_sample.attrs[k+'_units']} for k,v in next_sample_dict.items()}
             self.app.logger.info(f'Preparing to make next sample: {next_sample_dict}')
 
             ##############################
@@ -437,8 +438,8 @@ class SAS_AL_SampleDriver(Driver):
                     raise ValueError('System under specified...')
 
                 mass_dict = {}
-                for name,conc in next_sample_dict.items():
-                    mass_dict[name] = (conc*units(self.next_sample.attrs[name+'_units'])*sample_volume).to('mg')
+                for name,comp in next_sample_dict.items():
+                    mass_dict[name] = (comp['value']*units(comp['units'])*sample_volume).to('mg')
             
             self.target = AFL.automation.prepare.Solution('target',self.components)
             self.target.volume = sample_volume
