@@ -7,6 +7,7 @@ from gpflow.monitor import (
     MonitorTaskGroup,
     ScalarToTensorBoard
 )
+import xarray as xr
 from gpflow.optimizers import NaturalGradient
 from gpflow.ci_utils import ci_niter
 from gpflow import set_trainable
@@ -18,9 +19,9 @@ import warnings
 
 from AFL.agent.util import ternary_to_xy
 
-class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
+class HeteroscedasticGaussian(gpflow.likelihoods.Likelihood):
     """
-    Defines the heteroskedastic gaussian likelihood 
+    Defines the heteroscedastic gaussian likelihood 
 	"""
     def __init__(self, **kwargs):
         # this likelihood expects a single latent function F, and two columns in the data matrix Y:
@@ -70,31 +71,32 @@ class GPR:
 #	This is a class for doing regression. 
 #	-------------
 #	The data construct needs to point to the values being regressed over, Y_i
-#	If uncertainties are known for each value, set the heteroskedastic flag to True
+#	If uncertainties are known for each value, set the heteroscedastic flag to True
 #	
 #   Pass the inputs and uncertainties into the initialization
 #    '''	
 #
-    def __init__(self,dataset,inputs=None,uncertainties=None,kernel=None,heteroskedastic=False):
+    def __init__(self,dataset,inputs=None,uncertainties=None,kernel=None,heteroscedastic=False):
         self.kernel = kernel
-        self.heteroskedastic = heteroskedastic
-        self.reset_GP(dataset=dataset,kernel=kernel,heteroskedastic=heteroskedastic)
+        self.heteroscedastic = heteroscedastic
+        self.reset_GP(dataset=dataset,kernel=kernel,heteroscedastic=heteroscedastic)
         self.iter_monitor = lambda x: None
         self.final_monitor = lambda x: None
         
-    def construct_data(self,heteroskedastic=True, preprocess=True):
+    def construct_data(self,heteroscedastic=True, preprocess=True):
            
         domain = self.transform_domain()
-        if heteroskedastic==False:
-            #targets = self.dataset(self.inputs)
-            targets = self.dataset[self.dataset.attrs['AL_regression_data']]
-            targets = (targets - targets.mean())/targets.std()
-        else:
+        if heteroscedastic:
             inputs = self.dataset[self.dataset.attrs['AL_regression_data']]
             uncertainties = self.dataset[self.dataset.attrs['AL_regression_uncertainties']]
             targets = np.stack((inputs,uncertainties), axis=1)
             targets[:,0] = (targets[:,0] - targets[:,0].mean())/targets[:,0].std()
             targets[:,1] = targets[:,1]/targets[:,1].std()
+
+        else:
+            #targets = self.dataset(self.inputs)
+            targets = xr.DataArray(np.expand_dims(np.array(self.dataset[self.dataset.attrs['AL_regression_data']].values),axis=1))
+            targets = (targets - targets.mean())/targets.std()
         data = (domain,targets)
         return data
         
@@ -123,19 +125,19 @@ class GPR:
             domain = self.dataset.afl.comp.get(components=components)
         return domain
             
-    def reset_GP(self,dataset,kernel=None,heteroskedastic=False):
+    def reset_GP(self,dataset,kernel=None,heteroscedastic=False):
     #    """
     #   Constructs the GP model given a likelihood, the input data, a kernel function, and establishes an optimizer
 	#	-------------
 	#	
 	#	"""
         self.dataset = dataset
-        data = self.construct_data(heteroskedastic)
+        data = self.construct_data(heteroscedastic)
             
         if kernel is None:
             kernel = gpflow.kernels.Matern32(variance=0.1,lengthscales=0.1) 
         
-        if heteroskedastic:
+        if heteroscedastic:
             likelihood = HeteroskedasticGaussian()
             
             #instantiate the model with the data, kernel, and likelihood
@@ -148,18 +150,18 @@ class GPR:
 
             #This is from the aforementioned example. 
             #the adam optimizer algorithm is already implemented
-            #the natgrad optimizer is necessary for the heteroskedastic regression, gamma is a fixed parameter here. may need to be optimized
+            #the natgrad optimizer is necessary for the heteroscedastic regression, gamma is a fixed parameter here. may need to be optimized
             self.natgrad = NaturalGradient(gamma=0.5) 
             self.adam = tf.optimizers.Adam()
             set_trainable(self.model.q_mu, False)
             set_trainable(self.model.q_sqrt, False)
             
-            else:
-                 self.model = gpflow.models.GaussianProcess(
-                         data = data,
-                         kernel = kernel,
-                         )
-            self.optimizer = tf.optimizers.Adam(learning_rate=0.001)
+        else:
+             self.model = gpflow.models.GPR(
+                     data = data,
+                     kernel = kernel,
+                     )
+             self.optimizer = tf.optimizers.Adam(learning_rate=0.001)
             
 
     def reset_monitoring(self,log_dir='test/',iter_period=1):
@@ -192,9 +194,9 @@ class GPR:
         self.final_monitor(final_monitor_step)
 	       
     def _step(self,i):
-        #the optimizers in the heteroskedastic GPFlow example
+        #the optimizers in the heteroscedastic GPFlow example
 
-        if self.heteroskedastic:
+        if self.heteroscedastic:
 
             self.natgrad.minimize(self.model.training_loss, [(self.model.q_mu, self.model.q_sqrt)])
             self.adam.minimize(self.model.training_loss, self.model.trainable_variables)
