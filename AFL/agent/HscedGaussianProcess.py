@@ -76,23 +76,23 @@ class GPR:
 #    '''	
 #
     def __init__(self,dataset,inputs=None,uncertainties=None,kernel=None,heteroskedastic=False):
-        self.inputs = inputs
-        self.uncertainties = uncertainties
         self.kernel = kernel
         self.heteroskedastic = heteroskedastic
-        self.reset_GP(dataset=dataset,kernel=kernel,heteroskedastic=True)
+        self.reset_GP(dataset=dataset,kernel=kernel,heteroskedastic=heteroskedastic)
         self.iter_monitor = lambda x: None
         self.final_monitor = lambda x: None
         
     def construct_data(self,heteroskedastic=True, preprocess=True):
-            
+           
         domain = self.transform_domain()
         if heteroskedastic==False:
-            targets = self.dataset[self.inputs]
+            #targets = self.dataset(self.inputs)
+            targets = self.dataset[self.dataset.attrs['AL_regression_data']]
+            targets = (targets - targets.mean())/targets.std()
         else:
-    	    targets = np.stack((self.inputs,self.uncertainties), axis=1)
-
-        if preprocess:
+            inputs = self.dataset[self.dataset.attrs['AL_regression_data']]
+            uncertainties = self.dataset[self.dataset.attrs['AL_regression_uncertainties']]
+            targets = np.stack((inputs,uncertainties), axis=1)
             targets[:,0] = (targets[:,0] - targets[:,0].mean())/targets[:,0].std()
             targets[:,1] = targets[:,1]/targets[:,1].std()
         data = (domain,targets)
@@ -125,7 +125,7 @@ class GPR:
             
     def reset_GP(self,dataset,kernel=None,heteroskedastic=False):
     #    """
-	#	Constructs the GP model given a likelihood, the input data, a kernel function, and establishes an optimizer
+    #   Constructs the GP model given a likelihood, the input data, a kernel function, and establishes an optimizer
 	#	-------------
 	#	
 	#	"""
@@ -137,26 +137,31 @@ class GPR:
         
         if heteroskedastic:
             likelihood = HeteroskedasticGaussian()
-        else:
-            #unsure of what to put here in a default case.
-            likelihood = gpflow.likelihoods.Gaussian()
+            
+            #instantiate the model with the data, kernel, and likelihood
+            self.model = gpflow.models.VGP(
+                data=data, 
+                kernel=kernel, 
+                likelihood=likelihood, 
+                num_latent_gps=1
+                )
 
-        #instantiate the model with the data, kernel, and likelihood
-        self.model = gpflow.models.VGP(
-            data=data, 
-            kernel=kernel, 
-            likelihood=likelihood, 
-            num_latent_gps=1
-            )
+            #This is from the aforementioned example. 
+            #the adam optimizer algorithm is already implemented
+            #the natgrad optimizer is necessary for the heteroskedastic regression, gamma is a fixed parameter here. may need to be optimized
+            self.natgrad = NaturalGradient(gamma=0.5) 
+            self.adam = tf.optimizers.Adam()
+            set_trainable(self.model.q_mu, False)
+            set_trainable(self.model.q_sqrt, False)
+            
+            else:
+                 self.model = gpflow.models.GaussianProcess(
+                         data = data,
+                         kernel = kernel,
+                         )
+            self.optimizer = tf.optimizers.Adam(learning_rate=0.001)
+            
 
-        #This is from the aforementioned example. 
-        #the adam optimizer algorithm is already implemented
-        #the natgrad optimizer is necessary for the heteroskedastic regression, gamma is a fixed parameter here. may need to be optimized
-        self.natgrad = NaturalGradient(gamma=0.5) 
-        self.adam = tf.optimizers.Adam()
-        set_trainable(self.model.q_mu, False)
-        set_trainable(self.model.q_sqrt, False)
-        
     def reset_monitoring(self,log_dir='test/',iter_period=1):
         model_task = ModelToTensorBoard(log_dir, self.model,keywords_to_monitor=['*'])
         lml_task   = ScalarToTensorBoard(log_dir, lambda: self.loss(), "Training Loss")
@@ -188,9 +193,13 @@ class GPR:
 	       
     def _step(self,i):
         #the optimizers in the heteroskedastic GPFlow example
-        self.natgrad.minimize(self.model.training_loss, [(self.model.q_mu, self.model.q_sqrt)])
-        self.adam.minimize(self.model.training_loss, self.model.trainable_variables)
-        
+
+        if self.heteroskedastic:
+
+            self.natgrad.minimize(self.model.training_loss, [(self.model.q_mu, self.model.q_sqrt)])
+            self.adam.minimize(self.model.training_loss, self.model.trainable_variables)
+        else:
+            self.optimizer.minimize(self.model.training_loss, self.model.trainable_variables)
         self.iter_monitor(i)
     
     def predict(self,components):
