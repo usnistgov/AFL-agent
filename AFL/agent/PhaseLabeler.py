@@ -158,19 +158,20 @@ class DBSCAN(PhaseLabeler):#!!!
         return self.labels
 
 class KerasClassifier(PhaseLabeler):
-    def __init__(self,model_path,model_q,params=None):
+    def __init__(self,model_path,model_q,params=None,data_variable='deriv0'):
         super().__init__(params)
         self.name = f'KerasClassifier'
 
         self.model_path = model_path
         self.model_q = model_q
         self.clf = None
+        self.data_variable = data_variable
         
-    def label(self,phasemap,data_variable='data',transpose_var='sample',**params):
+    def label(self,phasemap,transpose_var='sample',**params):
         if self.clf is None:
             with tf.device('/CPU:0'):
                 self.clf = keras.models.load_model(self.model_path)
-        X_data = phasemap[data_variable].transpose(transpose_var,...).interp(logq=np.log10(self.model_q)).values
+        X_data = phasemap[self.data_variable].transpose(transpose_var,...).interp(logq=np.log10(self.model_q)).values
         self.labels = self.clf.predict(X_data).argmax(axis=1)
         self.n_phases = len(np.unique(self.labels))
 

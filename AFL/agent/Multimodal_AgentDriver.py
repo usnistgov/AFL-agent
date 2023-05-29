@@ -4,6 +4,7 @@ from AFL.automation.shared.utilities import listify
 from AFL.automation.APIServer.Driver import Driver
 from AFL.automation.shared import serialization
 from AFL.automation.shared.utilities import mpl_plot_to_bytes
+from AFL.automation.shared.utilities import listify
 
 from math import ceil,sqrt
 import json
@@ -79,7 +80,7 @@ class Multimodal_AgentDriver(Driver):
         self._app = value
         # if value is not None:
         #     self.reset_watchdog()
-        
+
     def status(self):
         status = []
         status.append(self.status_str)
@@ -170,27 +171,27 @@ class Multimodal_AgentDriver(Driver):
         path = pathlib.Path(self.config['data_path'])
         
         self.dataset = xr.load_dataset(path / self.config['AL_manifest_file'])
-        # look for multimodal_method, and AL_data+'_method'
 
-        for AL_data in self.dataset.attrs['AL_data']:
-            measurement = self.dataset[AL_data]
-            kwargs = {
-                xlo=self.dataset.attrs.get(AL_data+'_prep_xlo',None)
-                xhi=self.dataset.attrs.get(AL_data+'_prep_xhi',None)
-                xlo_isel=self.dataset.attrs.get(AL_data+'_prep_xlo_isel',None)
-                xhi_isel=self.dataset.attrs.get(AL_data+'_prep_xhi_isel',None)
-                pedestal=self.dataset.attrs.get(AL_data+'_prep_pedestal',None)
-                npts=self.dataset.attrs.get(AL_data+'_prep_npts',None)
-                sgf_window_length=self.dataset.attrs.get(AL_data+'__rep_sgf_window_length',3)
-                sgf_polyorder=self.dataset.attrs.get(AL_data+'_prep_sgf_polyorder',2)
-                logx=self.dataset.attrs.get(AL_data+'_prep_logx',False)
-                logy=self.dataset.attrs.get(AL_data+'_prep_logy',False)
+        if 'savgol_filter' in self.dataset.attrs:
+            for AL_data in listify(self.dataset.attrs['savgol_filter']):
+                measurement = self.dataset[AL_data]
+                kwargs = {
+                    xlo=self.dataset.attrs.get(AL_data+'_savgol_xlo',None)
+                    xhi=self.dataset.attrs.get(AL_data+'_savgol_xhi',None)
+                    xlo_isel=self.dataset.attrs.get(AL_data+'_savgol_xlo_isel',None)
+                    xhi_isel=self.dataset.attrs.get(AL_data+'_savgol_xhi_isel',None)
+                    pedestal=self.dataset.attrs.get(AL_data+'_savgol_pedestal',None)
+                    npts=self.dataset.attrs.get(AL_data+'_savgol_npts',None)
+                    sgf_window_length=self.dataset.attrs.get(AL_data+'_savgol_window_length',3)
+                    sgf_polyorder=self.dataset.attrs.get(AL_data+'_savgol_polyorder',2)
+                    logx=self.dataset.attrs.get(AL_data+'_savgol_logx',False)
+                    logy=self.dataset.attrs.get(AL_data+'_savgol_logy',False)
                 }
-            self.dataset[AL_data+'_deriv0'] = measurement.util.preprocess_data(derivative=0,**kwargs)
-            self.dataset[AL_data+'_deriv1'] = measurement.util.preprocess_data(derivative=1,**kwargs)
-            self.dataset[AL_data+'_deriv2'] = measurement.util.preprocess_data(derivative=2,**kwargs)
-        
-        self.dataset['data'] = self.dataset['data'] - self.dataset['data'].min('logq')
+                self.dataset[AL_data+'_deriv0'] = measurement.util.preprocess_data(derivative=0,**kwargs)
+                self.dataset[AL_data+'_deriv1'] = measurement.util.preprocess_data(derivative=1,**kwargs)
+                self.dataset[AL_data+'_deriv2'] = measurement.util.preprocess_data(derivative=2,**kwargs)
+
+                self.dataset[AL_data+'_deriv0'] = self.dataset[AL_data+'_deriv0'] - self.dataset[AL_data+'_deriv0'].min('logq')
         
         if 'labels' not in self.dataset:
             self.dataset = self.dataset.afl.labels.make_default()
@@ -376,7 +377,7 @@ class Multimodal_AgentDriver(Driver):
                     spm.data.afl.scatt.plot_linlin(x='logq',legend=False);
                 
                     plt.sca(axes[i,1])
-                    spm.afl.comp.plot_discrete(components=self.dataset.attrs['components']);
+                    spm.afl.comp.plot_discrete(components=self.dataset.attrs['components'][:3]);
     
             svg  = mpl_plot_to_bytes(fig,format='svg')
             return svg
