@@ -185,11 +185,12 @@ class AffinityPropagation(PhaseLabeler):
         self.params['affinity'] = 'precomputed'
         if 'n_phases' in self.params:
             del self.params['n_phases']
-        self.params.update(params)
+        if params is not None:
+            self.params.update(params)
         
     def label(self,phasemap,**params):
         self._init(**params)
-        self.clf.fit(metric)
+        self.clf.fit(phasemap.W.values)
         self.labels = self.clf.labels_
         self.n_phases = len(np.unique(self.labels))
         
