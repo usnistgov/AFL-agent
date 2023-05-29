@@ -221,18 +221,20 @@ class Utilities:
             )
                 ,stacklevel=2)
             
-        data2 = data2.sel(**{xname:slice(qlo,qhi)})
-        data2 = data2.isel(**{xname:slice(qlo_isel,qhi_isel)})
+        data2 = data2.sel(**{xname:slice(xlo,xhi)})
+        data2 = data2.isel(**{xname:slice(xlo_isel,xhi_isel)})
         
         if logy:
             log_xname = 'log'+xname
             data2 = data2.where(data2>0.0,drop=True)
             data2 = data2.pipe(np.log10)
             data2[xname] = np.log10(data2[xname])
-            data2 = data2.rename(**{xname:logxname})
-            
-        #need to remove duplicate values
-        data2 = data2.groupby(qname,squeeze=False).mean()
+            data2 = data2.rename(**{xname:log_xname})
+
+            data2 = data2.groupby(log_xname,squeeze=False).mean()
+        else:
+            #need to remove duplicate values
+            data2 = data2.groupby(xname,squeeze=False).mean()
         
         #set minimum value of scattering to pedestal value and fill nans with this value
         if pedestal is not None:
@@ -241,19 +243,18 @@ class Utilities:
         
         #interpolate to constant log(dq) grid
         if logx:
-            xnew = np.geomspace(data2[xname].min(),data2[xname].max(),npts)
+            xnew = np.geomspace(data2[log_xname].min(),data2[log_xname].max(),npts)
             dx = xnew[1]-xnew[0]
-            data2 = data2.interp({xname:xnew})
+            data2 = data2.interp({log_xname:xnew})
+            data2 = data2.dropna(log_xname,'any')
         else:
             xnew = np.linspace(data2[xname].min(),data2[xname].max(),npts)
             dx = xnew[1]-xnew[0]
             data2 = data2.interp({xname:xnew})
-        
-        #filter out any q that have NaN
-        data2 = data2.dropna(xname,'any')
+            data2 = data2.dropna(xname,'any')
         
         #take derivative
-        dy = savgol_filter(data2.values.T,window_length=sgf_window_length,polyorder=sgf_polyorder,delta=dq,axis=0,deriv=derivative)
+        dy = savgol_filter(data2.values.T,window_length=sgf_window_length,polyorder=sgf_polyorder,delta=dx,axis=0,deriv=derivative)
         data2_dy = data2.copy(data=dy.T)
         return data2_dy
     

@@ -174,6 +174,8 @@ class Multimodal_AgentDriver(Driver):
             for AL_data in listify(self.dataset.attrs['savgol_filter']):
                 measurement = self.dataset[AL_data]
                 kwargs = {
+                    "xname":self.dataset.attrs.get(AL_data+'_savgol_xname','q'),
+                    "yname":self.dataset.attrs.get(AL_data+'_savgol_yname','SAS'),
                     "xlo":self.dataset.attrs.get(AL_data+'_savgol_xlo',None),
                     "xhi":self.dataset.attrs.get(AL_data+'_savgol_xhi',None),
                     "xlo_isel":self.dataset.attrs.get(AL_data+'_savgol_xlo_isel',None),
@@ -185,14 +187,19 @@ class Multimodal_AgentDriver(Driver):
                     "logx":self.dataset.attrs.get(AL_data+'_savgol_logx',False),
                     "logy":self.dataset.attrs.get(AL_data+'_savgol_logy',False),
                 }
-                self.dataset[AL_data+'_deriv0'] = measurement.util.preprocess_data(derivative=0,**kwargs)
-                self.dataset[AL_data+'_deriv1'] = measurement.util.preprocess_data(derivative=1,**kwargs)
-                self.dataset[AL_data+'_deriv2'] = measurement.util.preprocess_data(derivative=2,**kwargs)
+                self.dataset[AL_data+'_deriv0'] = measurement.afl.util.preprocess_data(derivative=0,**kwargs)
+                self.dataset[AL_data+'_deriv1'] = measurement.afl.util.preprocess_data(derivative=1,**kwargs)
+                self.dataset[AL_data+'_deriv2'] = measurement.afl.util.preprocess_data(derivative=2,**kwargs)
 
                 self.dataset[AL_data+'_deriv0'] = self.dataset[AL_data+'_deriv0'] - self.dataset[AL_data+'_deriv0'].min('logq')
         
         if 'labels' not in self.dataset:
             self.dataset = self.dataset.afl.labels.make_default()
+
+        if self.mask is not None:
+            if 'mask' in self.dataset:
+                raise ValueError('Both AgentServer and phasemap from netcdf have mask!')
+            self.dataset.update(self.mask)
 
         self.components = self.dataset.attrs['components']
 
@@ -209,7 +216,7 @@ class Multimodal_AgentDriver(Driver):
 
         self.update_status(f'Found {self.labeler.n_phases} phases')
 
-        self.dataset.attrs['_n_phases'] = self.n_phases
+        self.dataset.attrs['n_phases'] = self.n_phases
         self.dataset['labels'] = ('sample',self.labeler.labels)
         self.dataset = self.dataset.afl.labels.make_ordinal()
         
@@ -221,8 +228,6 @@ class Multimodal_AgentDriver(Driver):
         else:
             self.update_status(f'Starting gaussian process calculation on {self.config["compute_device"]}')
             with tf.device(self.config['compute_device']):
-
-
                 #the defalut AL mode is multimodal_similarity
                 kernel_classifier = gpflow.kernels.Matern32(variance=0.5,lengthscales=1.0) 
                 self.classifier_GP = GaussianProcess.GP(
@@ -235,7 +240,7 @@ class Multimodal_AgentDriver(Driver):
                 if self.dataset.attrs['AL_mode'] == 'bimodal_UCB':  
                     kernel_regressor =  gpflow.kernels.Matern52(variance=0.5,lengthscales=2.0) + gpflow.kernels.White(1e-1)
 					
-                    if self.dataset.attrs['regressor_mode'] == 'heteroscedastic':
+                    if self.dataset.attrs['regression_mode'] == 'heteroscedastic':
 
                        self.regressor_GP = HscedGaussianProcess.GPR(
 				           dataset = self.dataset,
@@ -243,7 +248,7 @@ class Multimodal_AgentDriver(Driver):
                            )
 
 
-                    elif self.dataset.attrs['regressor_mode'] == 'homoscedastic':
+                    elif self.dataset.attrs['regression_mode'] == 'homoscedastic':
                         self.regressor_GP = HscedGaussianProcess.GPR(
                             dataset = self.dataset,
                             kernel = kernel_regressor,
@@ -297,9 +302,10 @@ class Multimodal_AgentDriver(Driver):
         time =  datetime.datetime.now().strftime('%H:%M:%S')
         self.dataset['gp_classifier_y_var'] = (('grid','phase_num'),self.acquisition.y_var_GPC)
         self.dataset['gp_classifier_y_mean'] = (('grid','phase_num'),self.acquisition.y_mean_GPC)
-        if self.dataset['AL_mode'] == 'bimodal_UCB':
-            self.dataset['gp_regressor_y_mean'] = (('grid',self.acquisition.y_mean_GPR))
-            self.dataset['gp_regressor_y_var']  = (('grid',self.acquisition.y_var_GPR))
+        if self.dataset.attrs['AL_mode'] == 'bimodal_UCB':
+            print(self.acquisition.y_mean_GPR.shape)
+            self.dataset['gp_regressor_y_mean'] = (('grid',self.acquisition.y_mean_GPR.squeeze()))
+            self.dataset['gp_regressor_y_var']  = (('grid',self.acquisition.y_var_GPR.squeeze()))
 
         #self.dataset['next_sample'] = ('component',self.next_sample.squeeze().values)
         #reset_index('grid').drop(['SLES3_grid','DEX_grid','CAPB_grid'])
