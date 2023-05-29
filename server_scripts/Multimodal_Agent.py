@@ -9,9 +9,12 @@ except:
 
 from AFL.automation.APIServer.APIServer import APIServer
 from AFL.agent.Multimodal_AgentDriver import Multimodal_AgentDriver
+from AFL.automation.APIServer.data.DataTiled import DataTiled
 
-server = APIServer('SAS_Agent',index_template="index.html")
+data = DataTiled('http://10.42.0.1:8000',api_key = os.environ['TILED_API_KEY'],backup_path='/home/afl642/.afl/json-backup')
+
+server = APIServer('Multimodal_Agent',index_template="index.html",data=data)
 server.add_standard_routes()
-server.create_queue(SAS_AgentDriver())
+server.create_queue(Multimodal_AgentDriver())
 server.init_logging()
 server.run(host='0.0.0.0', port=5053)#, debug=True)

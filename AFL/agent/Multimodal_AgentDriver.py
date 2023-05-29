@@ -30,7 +30,7 @@ import matplotlib
 import AFL.agent.xarray_extensions
 from AFL.agent import AcquisitionFunction 
 from AFL.agent import GaussianProcess 
-from AFL.agent import HschedGaussianProcess 
+from AFL.agent import HscedGaussianProcess 
 from AFL.agent import Metric 
 from AFL.agent import PhaseLabeler
 from AFL.agent.WatchDog import WatchDog
@@ -96,10 +96,10 @@ class Multimodal_AgentDriver(Driver):
             status.append(f'Labeler: {self.labeler.name}')
         else:
             status.append(f'Labeler: No labeler loaded')
-        if self.mask is not None:
-            status.append(f'Masking: {self.masked_points}/{self.total_points}')
-        else:
-            status.append(f'Masking: No mask loaded')
+        #if self.mask is not None:
+        #    status.append(f'Masking: {self.masked_points}/{self.total_points}')
+        #else:
+        #    status.append(f'Masking: No mask loaded')
         if self.n_phases is not None:
             status.append(f'Found {self.n_phases} phases')
             
@@ -138,8 +138,6 @@ class Multimodal_AgentDriver(Driver):
     @mask.setter
     def mask(self,value):
         self._mask=value
-        self.masked_points = int(value.sum().values)
-        self.total_points = value.size
     
     def subtract_background(self,path,fname):
 
@@ -176,16 +174,16 @@ class Multimodal_AgentDriver(Driver):
             for AL_data in listify(self.dataset.attrs['savgol_filter']):
                 measurement = self.dataset[AL_data]
                 kwargs = {
-                    xlo=self.dataset.attrs.get(AL_data+'_savgol_xlo',None)
-                    xhi=self.dataset.attrs.get(AL_data+'_savgol_xhi',None)
-                    xlo_isel=self.dataset.attrs.get(AL_data+'_savgol_xlo_isel',None)
-                    xhi_isel=self.dataset.attrs.get(AL_data+'_savgol_xhi_isel',None)
-                    pedestal=self.dataset.attrs.get(AL_data+'_savgol_pedestal',None)
-                    npts=self.dataset.attrs.get(AL_data+'_savgol_npts',None)
-                    sgf_window_length=self.dataset.attrs.get(AL_data+'_savgol_window_length',3)
-                    sgf_polyorder=self.dataset.attrs.get(AL_data+'_savgol_polyorder',2)
-                    logx=self.dataset.attrs.get(AL_data+'_savgol_logx',False)
-                    logy=self.dataset.attrs.get(AL_data+'_savgol_logy',False)
+                    "xlo":self.dataset.attrs.get(AL_data+'_savgol_xlo',None),
+                    "xhi":self.dataset.attrs.get(AL_data+'_savgol_xhi',None),
+                    "xlo_isel":self.dataset.attrs.get(AL_data+'_savgol_xlo_isel',None),
+                    "xhi_isel":self.dataset.attrs.get(AL_data+'_savgol_xhi_isel',None),
+                    "pedestal":self.dataset.attrs.get(AL_data+'_savgol_pedestal',None),
+                    "npts":self.dataset.attrs.get(AL_data+'_savgol_npts',None),
+                    "sgf_window_length":self.dataset.attrs.get(AL_data+'_savgol_window_length',3),
+                    "sgf_polyorder":self.dataset.attrs.get(AL_data+'_savgol_polyorder',2),
+                    "logx":self.dataset.attrs.get(AL_data+'_savgol_logx',False),
+                    "logy":self.dataset.attrs.get(AL_data+'_savgol_logy',False),
                 }
                 self.dataset[AL_data+'_deriv0'] = measurement.util.preprocess_data(derivative=0,**kwargs)
                 self.dataset[AL_data+'_deriv1'] = measurement.util.preprocess_data(derivative=1,**kwargs)
@@ -245,12 +243,12 @@ class Multimodal_AgentDriver(Driver):
                            )
 
 
-                   elif self.dataset.attrs['regressor_mode'] == 'homoscedastic':
-                       self.regressor_GP = HscedGaussianProcess.GPR(
-                               dataset = self.dataset,
-                               kernel = kernel_regressor,
-                               heteroscedastic = False
-                               )
+                    elif self.dataset.attrs['regressor_mode'] == 'homoscedastic':
+                        self.regressor_GP = HscedGaussianProcess.GPR(
+                            dataset = self.dataset,
+                            kernel = kernel_regressor,
+                            heteroscedastic = False
+                            )
 
                     
                     self.regressor_GP.optimize(2000,progress_bar=True)
@@ -268,7 +266,7 @@ class Multimodal_AgentDriver(Driver):
         if self.dataset.attrs['AL_mode'] == 'multimodal_similarity':
             self.dataset = self.acquisition.calculate_metric(self.classifier_GP)
 
-        elif self.dataset.attrs['AL_mode'] == 'UCB':
+        elif self.dataset.attrs['AL_mode'] == 'bimodal_UCB':
             self.dataset = self.acquisition.calculate_metric(
                     GP  = self.classifier_GP,
                     GPR = self.regressor_GP,
@@ -300,8 +298,8 @@ class Multimodal_AgentDriver(Driver):
         self.dataset['gp_classifier_y_var'] = (('grid','phase_num'),self.acquisition.y_var_GPC)
         self.dataset['gp_classifier_y_mean'] = (('grid','phase_num'),self.acquisition.y_mean_GPC)
         if self.dataset['AL_mode'] == 'bimodal_UCB':
-            self.dataset['gp_regressor_y_mean'] = (('grid',self.acquisition.y_mean_GPR)
-            self.dataset['gp_regressor_y_var']  = (('grid',self.acquisition.y_var_GPR)
+            self.dataset['gp_regressor_y_mean'] = (('grid',self.acquisition.y_mean_GPR))
+            self.dataset['gp_regressor_y_var']  = (('grid',self.acquisition.y_var_GPR))
 
         #self.dataset['next_sample'] = ('component',self.next_sample.squeeze().values)
         #reset_index('grid').drop(['SLES3_grid','DEX_grid','CAPB_grid'])
