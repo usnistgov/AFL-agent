@@ -226,9 +226,9 @@ class Multimodal_AgentDriver(Driver):
             self.update_status(f'Using dummy GP for one phase')
             self.classifier_GP = GaussianProcess.DummyGP(self.dataset)
         else:
-            self.update_status(f'Starting gaussian process calculation on {self.config["compute_device"]}')
             with tf.device(self.config['compute_device']):
                 #the defalut AL mode is multimodal_similarity
+                self.update_status(f'Starting gaussian process classifier calculation on {self.config["compute_device"]}')
                 kernel_classifier = gpflow.kernels.Matern32(variance=0.5,lengthscales=1.0) 
                 self.classifier_GP = GaussianProcess.GP(
                     dataset = self.dataset,
@@ -241,6 +241,7 @@ class Multimodal_AgentDriver(Driver):
                     kernel_regressor =  gpflow.kernels.Matern52(variance=0.5,lengthscales=2.0) + gpflow.kernels.White(1e-1)
 					
                     if self.dataset.attrs['regression_mode'] == 'heteroscedastic':
+                       self.update_status(f'Starting heteroscedastic gaussian process regression calculation on {self.config["compute_device"]}')
 
                        self.regressor_GP = HscedGaussianProcess.GPR(
 				           dataset = self.dataset,
@@ -249,6 +250,7 @@ class Multimodal_AgentDriver(Driver):
 
 
                     elif self.dataset.attrs['regression_mode'] == 'homoscedastic':
+                        self.update_status(f'Starting homoscedastic gaussian process regression calculation on {self.config["compute_device"]}')
                         self.regressor_GP = HscedGaussianProcess.GPR(
                             dataset = self.dataset,
                             kernel = kernel_regressor,
@@ -303,9 +305,10 @@ class Multimodal_AgentDriver(Driver):
         self.dataset['gp_classifier_y_var'] = (('grid','phase_num'),self.acquisition.y_var_GPC)
         self.dataset['gp_classifier_y_mean'] = (('grid','phase_num'),self.acquisition.y_mean_GPC)
         if self.dataset.attrs['AL_mode'] == 'bimodal_UCB':
-            print(self.acquisition.y_mean_GPR.shape)
             self.dataset['gp_regressor_y_mean'] = (('grid',self.acquisition.y_mean_GPR.squeeze()))
             self.dataset['gp_regressor_y_var']  = (('grid',self.acquisition.y_var_GPR.squeeze()))
+            if self.acquisition.regressor_sample is not None:
+                self.dataset['gp_regressor_y_mean_sample']  = (('grid',self.acquisition.regressor_sample))
 
         #self.dataset['next_sample'] = ('component',self.next_sample.squeeze().values)
         #reset_index('grid').drop(['SLES3_grid','DEX_grid','CAPB_grid'])
@@ -320,6 +323,9 @@ class Multimodal_AgentDriver(Driver):
             self.dataset['next_sample'] = self.acquisition.next_sample.squeeze()
         except MergeError:
             self.dataset['next_sample'] = self.acquisition.next_sample.squeeze().reset_coords(drop=True)
+
+        if 'mask' in self.dataset:
+            self.dataset['mask'] = self.dataset['mask'].astype(int)
             
         self.dataset.attrs['uuid'] = uuid_str
         self.dataset.attrs['date'] = date
@@ -335,6 +341,7 @@ class Multimodal_AgentDriver(Driver):
             self.AL_manifest = pd.read_csv(AL_manifest_path)
         else:
             self.AL_manifest = pd.DataFrame(columns=['uuid','date','time','data_tag','iteration','acq_count'])
+
         
         row = {}
         row['uuid'] = uuid_str

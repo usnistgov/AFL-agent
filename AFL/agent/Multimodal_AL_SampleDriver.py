@@ -20,40 +20,44 @@ import traceback
 import pathlib
 import uuid
 import copy
+import os
 
 import AFL.automation.prepare
 import shutil
 import h5py
 
+from tiled.client import from_uri
+from tiled.queries import Eq,Contains
+from scipy.stats import iqr
 
-class SAS_AL_SampleDriver(Driver):
+class Multimodal_AL_SampleDriver(Driver):
     defaults={}
     defaults['snapshot_directory'] = '/home/nistoroboto'
     defaults['csv_data_path'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/'
-    defaults['data_manifest_file'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/data_manifest.csv'
+    defaults['AL_manifest_file'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/data_manifest.csv'
     defaults['data_tag'] = 'default'
     defaults['max_sample_transmission'] = 0.6
+    defaults['spec_data_path'] = '/home/pi/2305_SINQ_data_reduced/'
     def __init__(self,
             load_url,
             prep_url,
             sas_url,
-            ls_url,
             agent_url,
+            tiled_url,
+            turb_url,
+            spec_url=None,
             camera_urls = None,
             snapshot_directory =None,
             overrides=None, 
             ):
 
-        Driver.__init__(self,name='SAS_AL_SampleDriver',defaults=self.gather_defaults(),overrides=overrides)
+        Driver.__init__(self,name='Multimodal_AL_SampleDriver',defaults=self.gather_defaults(),overrides=overrides)
 
         if not (len(load_url.split(':'))==2):
             raise ArgumentError('Need to specify both ip and port on load_url')
 
         if not (len(prep_url.split(':'))==2):
             raise ArgumentError('Need to specify both ip and port on prep_url')
-
-        if not (len(ls_url.split(':'))==2):
-            raise ArgumentError('Need to specify both ip and port on ls_url')
 
         if not (len(agent_url.split(':'))==2):
             raise ArgumentError('Need to specify both ip and port on agent_url')
@@ -72,23 +76,34 @@ class SAS_AL_SampleDriver(Driver):
         self.load_client.login('SampleServer_LoadClient')
         self.load_client.debug(False)
 # 
-        #measure sas of samples
+        #measure samples
         self.sas_url = sas_url
         self.sas_client = Client(sas_url.split(':')[0],port=sas_url.split(':')[1])
         self.sas_client.login('SampleServer_SASClient')
         self.sas_client.debug(False)
-
-        #measure ls of samples
-        self.ls_url = ls_url
-        self.ls_client = Client(ls_url.split(':')[0],port=ls_url.split(':')[1])
-        self.ls_client.login('SampleServer_LSClient')
-        self.ls_client.debug(False)
         
         #agent
         self.agent_url = agent_url
         self.agent_client = AgentClient(agent_url.split(':')[0],port=agent_url.split(':')[1])
         self.agent_client.login('SampleServer_AgentClient')
         self.agent_client.debug(False)
+
+        # start tiled catalog connection
+        self.tiled_cat = from_uri(tiled_url,api_key=os.environ['TILED_API_KEY'])
+
+        if spec_url is not None:
+            self.spec_url = spec_url
+            self.spec_client = Client(spec_url.split(':')[0],port=spec_url.split(':')[1])
+            self.spec_client.login('SampleServer_LSClient')
+            self.spec_client.debug(False)
+            self.spec_client.enqueue(task_name='setExposure',time=0.1)
+        else:
+            self.spec_client = None
+
+        self.turb_url = turb_url
+        self.turb_client = Client(turb_url.split(':')[0],port=turb_url.split(':')[1])
+        self.turb_client.login('SampleServer_TurbClient')
+        self.turb_client.debug(False)
 
         self.camera_urls = camera_urls
 
@@ -110,6 +125,8 @@ class SAS_AL_SampleDriver(Driver):
         self.AL_components = None
         self.components = None
         self.fixed_concs = None
+
+        self.turbidity=None
 
 
         #XXX need to make deck inside this object because of 'different registries error in Pint
@@ -178,15 +195,22 @@ class SAS_AL_SampleDriver(Driver):
                 output_str  = f'take_snapshot failed with error: {error.__repr__()}\n\n'+traceback.format_exc()+'\n\n'
                 self.app.logger.warning(output_str)
 
-    def measure(self,sample):
-        a = # break compliation of file
-
+    def measure_SAS(self,sample):
         exposure = sample.get('exposure',None)
-
         sas_uuid = self.sas_client.enqueue(task_name='expose',name=sample['name'],block=True,exposure=exposure)
         self.sas_client.wait(sas_uuid)
-
         return sas_uuid
+
+    def measure_spec(self,sample):
+        if self.spec_client is None:
+            raise ValueError('No spec client to do spec measurement with! Restart server with spec IP:port specified!')
+
+        self.spec_client.set_config(
+                filepath=self.config['spec_data_path'],
+                filename=sample['name']
+            )
+        spec_uuid = self.spec_client.enqueue(task_name='collectContinuous',duration=sample['duration'],interactive=False)
+        return spec_uuid
 
     def sample(self,sample):
         return self.process_sample(sample)
@@ -216,6 +240,8 @@ class SAS_AL_SampleDriver(Driver):
             #if the well isn't in the map, just use the well
             task['source'] = target_map.get(task['source'],task['source'])
             task['dest'] = target_map.get(task['dest'],task['dest'])
+            if i==0:
+                task['force_new_tip']=True
             if i==(len(sample['prep_protocol'])-1):#last prepare
                 task['drop_tip']=False
             self.prep_uuid = self.prep_client.transfer(**task)
@@ -225,21 +251,30 @@ class SAS_AL_SampleDriver(Driver):
             self.load_client.wait(self.rinse_uuid)
             self.update_status(f'Rinse done!')
 
+        #calibrate sensor to avoid drift
+        self.load_client.enqueue(task_name='calibrate_sensor')
+
+        self.turb_client.enqueue(task_name='measure',plotting=True,set_empty=True)
+
         self.update_status(f'Cell is clean, measuring empty cell scattering...')
         empty = {}
-        empty['name'] = 'MT-'+sample['name']
-        empty['exposure'] = sample['empty_exposure']
-        empty['wiggle'] = False
-        self.sas_uuid = self.measure(empty)
-        self.sas_client.wait(self.sas_uuid)
+        empty['name']     = 'MT-'+sample['name']+'-spec.h5'
+        empty['duration'] = 5
+        self.spec_uuid = self.measure_spec(empty)
+        self.spec_client.wait(self.spec_uuid)
 
-        #!!! Need to add in ls empty
-        a = #dummy to break compliation check of file
-
+        ## TEMPORARILY REMOVED TO SPEED UP MEASUREMENT!!!
+        # empty = {}
+        # empty['name'] = 'MT-'+sample['name']
+        # empty['exposure'] = sample['empty_exposure']
+        # empty['wiggle'] = False
+        # self.sas_uuid = self.measure_SAS(empty)
+        # self.sas_client.wait(self.sas_uuid)
             
         if self.prep_uuid is not None: 
             self.prep_client.wait(self.prep_uuid)
             self.take_snapshot(prefix = f'02-after-prep-{name}')
+
         
         self.update_status(f'Queueing sample {name} load into syringe loader')
         for task in sample['catch_protocol']:
@@ -255,76 +290,44 @@ class SAS_AL_SampleDriver(Driver):
 
         #homing robot to try to mitigate drift problems
         self.prep_client.home()
-        
-        self.load_uuid = self.load_client.enqueue(task_name='loadSample',sampleVolume=sample['volume'])
-        self.update_status(f'Loading sample into cell: {self.load_uuid}')
+
+        self.update_status(f'Loading sample into spectrometer cell...')
+        self.load_uuid = self.load_client.enqueue(task_name='loadSample',load_dest_label='afterSPEC')
         self.load_client.wait(self.load_uuid)
-        self.take_snapshot(prefix = f'05-after-load-{name}')
-        
-        self.update_status(f'Sample is loaded, asking the instrument for exposure...')
-        self.sas_uuid = self.measure(sample)
+        self.take_snapshot(prefix = f'05-after-load-spec-{name}')
+
+        self.update_status(f'Sample is loaded into cell, asking the spectrometer for exposure...')
+        spec_sample = {}
+        spec_sample['name'] = sample['name']+'-beforeSAS-spec.h5'
+        spec_sample['duration'] = 5
+        self.spec_uuid = self.measure_spec(spec_sample)
+        self.spec_client.wait(self.spec_uuid)
+
+        self.update_status(f'Loading sample into SAS cell...(while taking spec)')
+        spec_sample = {}
+        spec_sample['name'] = sample['name']+'-SPECToSAS-spec.h5'
+        spec_sample['duration'] = 15
+        self.load_uuid = self.load_client.enqueue(task_name='advanceSample',load_dest_label='afterSANS')
+        self.spec_uuid = self.measure_spec(spec_sample)
+        self.load_client.wait(self.load_uuid)
+        self.take_snapshot(prefix = f'06-after-load-sans-{name}')
+
+        #measure turbidity
+        self.turbidity = self.turb_client.enqueue(task_name='measure',plotting=True,interactive=True)['return_val'][0]
+
+        self.update_status(f'Sample is loaded into cell, asking the SAS instrument for exposure...')
+        self.sas_uuid = self.measure_SAS(sample)
+        self.sas_client.wait(self.sas_uuid)
 
         self.update_status(f'Cleaning up sample {name}...')
         self.rinse_uuid = self.load_client.enqueue(task_name='rinseCell')
 
         self.update_status(f'Waiting for instrument to measure scattering of {name} with UUID {self.sas_uuid}...')
-        self.sas_client.wait(self.sas_uuid)
-        self.take_snapshot(prefix = f'06-after-measure-{name}')
+        self.take_snapshot(prefix = f'07-after-measure-{name}')
             
         self.update_status(f'All done for {name}!')
 
 
-    def process_sample_outoforder(self,sample):
-        name = sample['name']
-
-        targets = set()
-        for task in sample['prep_protocol']:
-            if 'target' in task['source'].lower():
-                targets.add(task['source'])
-            if 'target' in task['dest'].lower():
-                targets.add(task['dest'])
-
-        for task in sample['catch_protocol']:
-            if 'target' in task['source'].lower():
-                targets.add(task['source'])
-            if 'target' in task['dest'].lower():
-                targets.add(task['dest'])
-
-        target_map = {}
-        for t in targets:
-            prep_target = self.prep_client.enqueue(task_name='get_prep_target',interactive=True)['return_val']
-            target_map[t] = prep_target
-
-        for task in sample['prep_protocol']:
-            #if the well isn't in the map, just use the well
-            task['source'] = target_map.get(task['source'],task['source'])
-            task['dest'] = target_map.get(task['dest'],task['dest'])
-            self.prep_uuid = self.prep_client.transfer(**task)
-        
-        if self.load_uuid is not None:
-            self.load_client.wait(self.load_uuid)
-            last_name = self.last_sample['name']
-            self.take_snapshot(prefix = f'05-after-load-{last_name}')
-
-            self.update_status(f'Sample is loaded, asking the instrument for exposure...')
-            self.sas_uuid = self.measure(self.last_sample)#self.measure blocks...
-            self.take_snapshot(prefix = f'06-after-measure-{last_name}')
-            
-            self.update_status(f'Cleaning up sample {last_name}...')
-            self.rinse_uuid = self.load_client.enqueue(task_name='rinseCell')
-            self.load_client.wait(self.rinse_uuid)
-
-            self.update_status(f'Waiting for rinse...')
-            self.load_client.wait(self.rinse_uuid)
-            self.update_status(f'Rinse done!')
-            
-        self.update_status(f'Queueing sample {name} load into syringe loader')
-        for task in sample['catch_protocol']:
-            #if the well isn't in the map, just use the well
-            task['source'] = target_map.get(task['source'],task['source'])
-            task['dest'] = target_map.get(task['dest'],task['dest'])
-            self.catch_uuid = self.prep_client.transfer(**task)
-    
     @Driver.unqueued()
     def stop_active_learning(self):
         self.stop_AL = True
@@ -360,53 +363,77 @@ class SAS_AL_SampleDriver(Driver):
         return mass_dict
     
     def active_learning_loop(self,**kwargs):
-        self.components = kwargs['components']
-        self.AL_components = kwargs['AL_components']
-        self.fixed_concs = kwargs['fixed_concs']
-        sample_volume = kwargs['sample_volume']
+        # grid must have units for each component specified, hopefully this will progate to next_sample....
+        self.components     = kwargs['components']
+        self.AL_components  = kwargs['AL_components']
+        self.AL_kwargs      = kwargs.get('AL_kwargs',{})
+        self.fixed_concs    = kwargs.get('fixed_concs',{})
+        sample_volume       = kwargs['sample_volume']
         sample_volume_units = kwargs['sample_volume_units']
-        sample_volume = sample_volume*units(sample_volume_units)
-        exposure = kwargs['exposure']
-        empty_exposure = kwargs['empty_exposure']
-        predict = kwargs.get('predict',True)
-        pre_run_list = copy.deepcopy(kwargs.get('pre_run_list',[]))
+        sample_volume       = sample_volume*units(sample_volume_units)
+        exposure            = kwargs['exposure']
+        empty_exposure      = kwargs['empty_exposure']
+        predict             = kwargs.get('predict',True)
+        start_new_manifest  = kwargs.get('start_new_manifest',False)
+        ternary             = kwargs['ternary']#should be bool
+        pre_run_list        = copy.deepcopy(kwargs.get('pre_run_list',[]))
 
         mix_order = kwargs.get('mix_order',None)
         custom_stock_settings = kwargs.get('custom_stock_settings',None)
 
-        data_manifest_path = pathlib.Path(self.config['data_manifest_file'])
+        AL_manifest_path = pathlib.Path(self.config['AL_manifest_file'])
         data_path = pathlib.Path(self.config['csv_data_path'])
         
         self.stop_AL = False
         while not self.stop_AL:
             self.app.logger.info(f'Starting new AL loop')
-            
-            #get prediction of next step
+            #####################
+            ## GET NEXT SAMPLE ##
+            #####################
             if pre_run_list:
                 self.next_sample = None
                 next_sample_dict = pre_run_list.pop(0)
             else:
-                #next_sample = self.agent_client.get_next_sample_queued()
                 self.next_sample = self.agent_client.get_object('next_sample')
-                next_sample_dict = self.next_sample.squeeze().reset_coords('grid',drop=True).to_pandas().to_dict()
+                next_sample_dict = self.next_sample.squeeze()
+                if 'grid' in next_sample_dict:
+                    next_sample_dict = next_sample_dict.reset_coords('grid',drop=True)
+                next_sample_dict = next_sample_dict.to_pandas().to_dict()
+                next_sample_dict = {k:{'value':v,'units':self.next_sample.attrs[k+'_units']} for k,v in next_sample_dict.items()}
             self.app.logger.info(f'Preparing to make next sample: {next_sample_dict}')
 
-            conc_spec = {}
-            for name,value in self.fixed_concs.items():
-                conc_spec[name] = value['value']*units(value['units'])
-            
-            mass_dict = self.mfrac_to_mass(
-                mass_fractions=next_sample_dict,
-                specified_conc=conc_spec,
-                sample_volume=sample_volume,
-                output_units='mg')
+            ##############################
+            ## PROTOCOL FOR NEXT SAMPLE ##
+            ##############################
+            if ternary:
+                conc_spec = {}
+                for name,value in self.fixed_concs.items():
+                    conc_spec[name] = value['value']*units(value['units'])
+                
+                mass_dict = self.mfrac_to_mass(
+                    mass_fractions=next_sample_dict,
+                    specified_conc=conc_spec,
+                    sample_volume=sample_volume,
+                    output_units='mg')
+            else:
+                #assume concs for now...
+                if len(next_sample_dict)<(len(self.components)-1):
+                    raise ValueError('System under specified...')
+
+                mass_dict = {}
+                for name,comp in next_sample_dict.items():
+                    mass_dict[name] = (comp['value']*units(comp['units'])*sample_volume).to('mg')
             
             self.target = AFL.automation.prepare.Solution('target',self.components)
             self.target.volume = sample_volume
             for k,v in mass_dict.items():
                 self.target[k].mass = v
             self.target.volume = sample_volume
-            
+
+
+            ######################
+            ## MAKE NEXT SAMPLE ##
+            ######################
             self.deck.reset_targets()
             self.deck.add_target(self.target,name='target')
             self.deck.make_sample_series(reset_sample_series=True)
@@ -429,8 +456,18 @@ class SAS_AL_SampleDriver(Driver):
             
             self.catch_protocol.source = self.sample.target_loc
             
-            sample_uuid = str(uuid.uuid4())[-8:]
-            sample_name = f'AL_{self.config["data_tag"]}_{sample_uuid}'
+            sample_uuid = str(uuid.uuid4())
+            sample_name = f'AL_{self.config["data_tag"]}_{sample_uuid[-8:]}'
+
+            sample_data = self.set_sample(sample_name=sample_name,sample_uuid=sample_uuid)
+            self.prep_client.enqueue(task_name='set_sample',**sample_data)
+            self.load_client.enqueue(task_name='set_sample',**sample_data)
+            self.sas_client.enqueue(task_name='set_sample',**sample_data)
+            self.agent_client.enqueue(task_name='set_sample',**sample_data)
+            self.turb_client.enqueue(task_name='set_sample',**sample_data)
+            if self.spec_client is not None:
+                self.spec_client.enqueue(task_name='set_sample',**sample_data)
+
             self.process_sample(
                     dict(
                         name=sample_name,
@@ -443,61 +480,153 @@ class SAS_AL_SampleDriver(Driver):
             )
 
 
-            # warnings.warn('Transmission check not implemented. NOT USING TRANSMISSIONS TO CHECK FOR MISSES!',stacklevel=2)
-            # # CHECK TRANMISSION OF LAST SAMPLE
-            # # XXX Need to update based on how files will be read
-            # file_path = data_path / (sample_name+'.txt')
+            ################################
+            ## VERIFY SAMPLE TRANSMISSION ##
+            ################################
             h5_path = data_path / (sample_name+'.h5')
             with h5py.File(h5_path,'r') as h5:
-                transmission = h5['entry/sample/transmission'][()]
+                SAS_transmission = h5['entry/sample/transmission'][()]
   
-            if transmission>self.config['max_sample_transmission']:
-                self.update_status(f'Last sample missed! (Transmission={transmission})')
+            if SAS_transmission>self.config['max_sample_transmission']:
+                self.update_status(f'Last sample missed! (Transmission={SAS_transmission})')
                 self.app.logger.info('Dropping this sample from AL and hoping the next one hits...')
                 continue
             else:
-                self.update_status(f'Last Sample success! (Transmission={transmission})')
-            
-            # update manifest
-            if data_manifest_path.exists():
-                self.data_manifest = pd.read_csv(data_manifest_path)
-            else:
-                AL_mfrac_comps = ['AL_mfrac_'+c for c in self.AL_components]
-                mfrac_comps = ['mfrac_'+c for c in self.components]
-                mass_comps = ['mass_'+c for c in self.components]
-                self.data_manifest = pd.DataFrame(columns=['fname','label',*AL_mfrac_comps,*mfrac_comps,*mass_comps,'validated'])
+                self.update_status(f'Last Sample success! (Transmission={SAS_transmission})')
 
-            row = {}
-            # row['fname'] = data_path/(sample_name+'_chosen_r1d.csv')
-            row['fname'] = sample_name+'_chosen_r1d.csv'
-            row['label'] = -1
-            row['validated'] = validated
-            total = 0
-            for component in self.AL_components:
-                mf = self.sample.target_check.mass_fraction[component].magnitude
-                row['AL_mfrac_'+component] = mf
-                total+=mf
-            for component in self.AL_components:
-                row['AL_mfrac_'+component] = row['AL_mfrac_'+component]/total
+            ###############################
+            ## GRAB SPEC DATA FROM TILED ##
+            ###############################
+            res = self.tiled_cat.search(Eq('sample_uuid',sample_uuid)).search(Eq('task_name','collectContinuous'))
+            res = [v for k,v in res.items() if 'beforeSAS' in v.metadata['driver_config']['filename']]
+            if not (len(res)==1):
+                raise ValueError(f'Bad tiled return: Found {len(res)} results matching query')
+            wl = res[0].metadata['wavelength']      
+            data = res[0].read()
+            spec_measurement = xr.DataArray(data,dims=['spec_time','wavelength'],coords={'wavelength':wl})
+
+            ##################################
+            ## BUILD DATASET FOR NEW SAMPLE ##
+            ##################################
+            data_fname = sample_name+'_chosen_r1d.csv'
+            SAS_measurement = pd.read_csv(data_path/data_fname,sep=',',comment='#',header=None,names=['q','I'],usecols=[0,1]).set_index('q').squeeze().to_xarray()
+            SAS_measurement = SAS_measurement.dropna('q')
+
+            self.new_data                     = xr.Dataset()
+            self.new_data['fname']            = data_fname
+            self.new_data['SAS']              = SAS_measurement
+            self.new_data['turbidity']        = -self.turbidity # now high turbidity is positive
+            self.new_data['spec']             = spec_measurement.median('spec_time')
+            self.new_data['spec_error']       = ('wavelength',iqr(spec_measurement,axis=0))
+            self.new_data['label']            = -1
+            self.new_data['validated']        = validated
+            self.new_data['SAS_transmission'] = SAS_transmission
+            self.new_data['sample_uuid']      = sample_uuid
+
+            sample_composition = {}
+            if ternary:
+                total = 0
+                for component in self.AL_components:
+                    mf = self.sample.target_check.mass_fraction[component].magnitude
+                    self.new_data[component] = mf
+                    total+=mf
+                for component in self.AL_components:
+                    self.new_data[component] = self.new_data[component]/total
+
+                    #for tiled
+                    sample_composition['ternary_mfrac_'+component] = self.sample.target_check.concentration[component].to("mg/ml").magnitude
+            else:
+                for component in self.AL_components:
+                    # if component=='P188':
+                    #     self.new_data[component] = 10.0
+                    #     self.new_data[component].attrs['units'] = 'mg/ml'
+                    #     real_value = self.sample.target_check.concentration[component].to("mg/ml").magnitude
+                    #     self.new_data[component].attrs['real_value'] = real_value
+                    #     self.new_data[component].attrs['explanation'] = 'Fixing P188 value to 10.0 mg/ml for GP reasons'
+                    #     print(f'Fixing P188={real_value} to 10.0')
+                    # else:
+                    #     real_value = -1
+                    #     self.new_data[component] = self.sample.target_check.concentration[component].to("mg/ml").magnitude
+                    #     self.new_data[component].attrs['units'] = 'mg/ml'
+                    real_value = -1
+                    self.new_data[component] = self.sample.target_check.concentration[component].to("mg/ml").magnitude
+                    self.new_data[component].attrs['units'] = 'mg/ml'
+
+
+                    #for tiled
+                    sample_composition['conc_'+component] = self.sample.target_check.concentration[component].to("mg/ml").magnitude
                 
             for component in self.components:
-                row['mfrac_'+component] = self.sample.target_check.mass_fraction[component].magnitude
-                row['mass_'+component] = self.sample.target_check[component].mass.to('mg').magnitude
-            
-            self.data_manifest = self.data_manifest.append(row,ignore_index=True)
-            self.data_manifest.to_csv(data_manifest_path,index=False)
+                self.new_data['mfrac_'+component] = self.sample.target_check.mass_fraction[component].magnitude
+                self.new_data['mass_'+component]  = self.sample.target_check[component].mass.to('mg').magnitude
+                self.new_data['mass_'+component].attrs['units'] = 'mg'
 
-            # trigger AL
-            if pre_run_list: #still have manually added samples to be run
-                pass
-            elif predict:
-                self.agent_uuid = self.agent_client.enqueue(task_name='predict')
+                #for tiled
+                sample_composition['mfrac_'+component] = self.sample.target_check.mass_fraction[component].magnitude
+                sample_composition['mass_'+component]  = self.sample.target_check[component].mass.to('mg').magnitude
+
+            sample_composition['components'] = self.components
+            sample_composition['conc_units'] = 'mg/ml'
+            sample_composition['mass_units'] = 'mg'
+            if self.data is not None:
+                self.data['sample_composition'] = sample_composition
+                self.data['time'] = datetime.datetime.now().strftime('%m/%d/%y %H:%M:%S-%f %Z%z')
+                self.data.finalize()
+
             
-                # wait for AL
-                self.app.logger.info(f'Waiting for agent...')
-                self.agent_client.wait(self.agent_uuid)
-            else:#used for intialization
-                return
+            ########################
+            ## UPDATE AL MANIFEST ##
+            ########################
+            if start_new_manifest and AL_manifest_path.exists():
+                self.update_status(f'Backing up old and then starting new manifest...')
+                AL_manifest_backup = xr.load_dataset(AL_manifest_path)
+                i=0
+                while True:
+                    AL_manifest_backup_path = pathlib.Path(str(AL_manifest_path)+f'.bak{i}')
+                    if AL_manifest_backup_path.exists():
+                        i+=1
+                    else:
+                        print(f'--> Writing backup AL file to {AL_manifest_backup_path}')
+                        AL_manifest_backup.to_netcdf(AL_manifest_backup_path)
+                        break
+
+                self.AL_manifest = self.new_data.expand_dims('sample')
+                start_new_manifest=False
+
+            elif AL_manifest_path.exists():
+                self.update_status(f'Updating manifest...')
+                self.AL_manifest = xr.load_dataset(AL_manifest_path)
+
+                if 'grid' in self.AL_manifest.dims:
+                    self.AL_manifest = self.AL_manifest.drop_dims('grid')
+
+                self.AL_manifest = xr.concat([self.AL_manifest,self.new_data],dim='sample')
+
+            else:
+                self.update_status(f'Starting new manifest...')
+                self.AL_manifest = self.new_data.expand_dims('sample')
+            
+            self.AL_manifest.attrs.update(self.AL_kwargs)
+            self.AL_manifest.attrs['AL_data'] = 'SAS'
+            self.AL_manifest.attrs['components'] = self.AL_components
+
+            #self.AL_manifest  = self.AL_manifest.afl.comp.add_grid(pts_per_row=pts_per_row)
+
+            self.AL_manifest.to_netcdf(AL_manifest_path)
+
+            ################
+            ## TRIGGER AL ##
+            ################
+            self.update_status(f'Triggering agent server...')
+            if len(pre_run_list)==0:
+                if predict:
+                    self.agent_uuid = self.agent_client.enqueue(task_name='predict',datatype='nc')
+                
+                    # wait for AL
+                    self.app.logger.info(f'Waiting for agent...')
+                    self.agent_client.wait(self.agent_uuid)
+                else:#used for intialization
+                    return
             
             
     def fix_protocol_order(self,mix_order,custom_stock_settings):
