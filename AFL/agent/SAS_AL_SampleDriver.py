@@ -68,7 +68,7 @@ class SAS_AL_SampleDriver(Driver):
         self.load_client = Client(load_url.split(':')[0],port=load_url.split(':')[1])
         self.load_client.login('SampleServer_LoadClient')
         self.load_client.debug(False)
-# 
+ 
         #measure samples
         self.sas_url = sas_url
         self.sas_client = Client(sas_url.split(':')[0],port=sas_url.split(':')[1])

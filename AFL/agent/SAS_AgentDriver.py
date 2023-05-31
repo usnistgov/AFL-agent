@@ -86,7 +86,7 @@ class SAS_AgentDriver(Driver):
         self._app = value
         # if value is not None:
         #     self.reset_watchdog()
-        
+
     def status(self):
         status = []
         status.append(self.status_str)
@@ -102,10 +102,10 @@ class SAS_AgentDriver(Driver):
             status.append(f'Labeler: {self.labeler.name}')
         else:
             status.append(f'Labeler: No labeler loaded')
-        if self.mask is not None:
-            status.append(f'Masking: {self.masked_points}/{self.total_points}')
-        else:
-            status.append(f'Masking: No mask loaded')
+        #if self.mask is not None:
+        #    status.append(f'Masking: {self.masked_points}/{self.total_points}')
+        #else:
+        #    status.append(f'Masking: No mask loaded')
         if self.n_phases is not None:
             status.append(f'Found {self.n_phases} phases')
             
@@ -143,9 +143,9 @@ class SAS_AgentDriver(Driver):
     
     @mask.setter
     def mask(self,value):
-        self._mask=value
-        self.masked_points = int(value.sum().values)
-        self.total_points = value.size
+        self._mask = value
+        #self.masked_points = int(value.mask.values.sum())
+        #self.total_points = value.sizes['grid']
     
         
     def append_data(self,data_dict):
@@ -296,9 +296,10 @@ class SAS_AgentDriver(Driver):
             self.dataset = self.dataset.afl.labels.make_default()
 
         if (self.mask is not None):
-            if mask in self.dataset:
+            if 'mask' in self.dataset:
                 raise ValueError('Both AgentServer and phasemap from netcdf have mask!')
-            self.dataset['mask'] = self.mask.copy()
+            #self.dataset['mask'] = self.mask.copy()
+            self.dataset.update(self.mask)#assumes self.mask is a dataset
 
         self.components = self.dataset.attrs['components']
 
@@ -380,6 +381,9 @@ class SAS_AgentDriver(Driver):
         except MergeError:
             self.dataset['next_sample'] = self.acquisition.next_sample.squeeze().reset_coords(drop=True)
             
+        if 'mask' in self.dataset:
+            self.dataset['mask'] = self.dataset['mask'].astype(int)
+
         self.dataset.attrs['uuid'] = uuid_str
         self.dataset.attrs['date'] = date
         self.dataset.attrs['time'] = time
