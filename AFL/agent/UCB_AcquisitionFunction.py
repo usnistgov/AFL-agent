@@ -78,7 +78,8 @@ class Acquisition:
                 .to_array('component')
             )
         else:
-            metric = self.phasemap.sel(grid=mask,drop=True)#.copy()
+            # metric = self.phasemap.sel(grid=mask,drop=True)#.copy()
+            metric = self.phasemap.set_index(grid='mask').sel(grid=True,drop=True).reset_index('grid').reset_coords(drop=True)
             metric = metric[['acq_metric']+metric.attrs['components_grid']]
             metric = metric.sortby('acq_metric')
             
@@ -143,6 +144,7 @@ class pseudoUCB(Acquisition):
         self.name = 'pseudo UCB'
         self.scaling = scaling
         self.Thompson_sampling = Thompson_sampling
+        self.regressor_sample = None
 
     def calculate_metric(self,GP,GPR):
         if self.phasemap is None:
@@ -152,18 +154,27 @@ class pseudoUCB(Acquisition):
         classifier_prediction = GP.predict(self.phasemap.attrs['components_grid'])
         self.y_mean_GPC = classifier_prediction['mean']
         self.y_var_GPC = classifier_prediction['var']
-        
 
+        y_var_GPC_scaled =  self.y_var_GPC.sum(1)
+        y_var_GPC_scaled = (y_var_GPC_scaled - y_var_GPC_scaled.mean())/y_var_GPC_scaled.std()
+
+        
         regressor_prediction = GPR.predict(self.phasemap.attrs['components_grid'])
         self.y_mean_GPR = regressor_prediction['mean']
         self.y_var_GPR  = regressor_prediction['var']
+
+        y_mean_GPR_scaled =  self.y_mean_GPR.squeeze()
+        y_mean_GPR_scaled = (y_mean_GPR_scaled - y_mean_GPR_scaled.mean())/y_mean_GPR_scaled.std()
         
         if self.Thompson_sampling:
-            regressor_sample = GPR.model.predict_f_samples(GPR.transform_domain(components=self.phasemap.attrs['components_grid']),1)
-            self.phasemap['acq_metric'] = ('grid', regressor_sample.numpy().squeeze() + self.scaling * self.y_var_GPC.sum(1))
+            self.regressor_sample = GPR.model.predict_f_samples(GPR.transform_domain(components=self.phasemap.attrs['components_grid']),1)
+            self.regressor_sample = self.regressor_sample.numpy().squeeze()
+            regressor_sample_scaled = (self.regressor_sample - y_mean_GPR_scaled.mean())/y_mean_GPR_scaled.std()
+            self.phasemap['acq_metric'] = ('grid', regressor_sample_scaled + self.scaling * y_var_GPC_scaled)
             self.phasemap.attrs['acq_metric'] = self.name + '_TS'
         else:
-            self.phasemap['acq_metric'] = ('grid',self.y_mean_GPR.squeeze() + self.scaling * self.y_var_GPC.sum(1))
+            self.phasemap['acq_metric'] = ('grid',y_mean_GPR_scaled + self.scaling * y_var_GPC_scaled)
             self.phasemap.attrs['acq_metric'] = self.name
+        self.phasemap.attrs['UCB_scaling'] = self.scaling
 
         return self.phasemap
