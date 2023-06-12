@@ -213,14 +213,14 @@ class CompositionTools:
         comp_scaled = comp.copy(data=StandardScaler().fit_transform(comp))
         return comp_scaled
         
-    def get_range_scaled(self,ranges,components=None):
+    def get_range_scaled(self,spec,components=None):
         components = self._get_default(components)
         comp = self.get(components)
         
         for component in components:
-            if component not in ranges:
+            if component not in spec:
                 raise ValueError('Cannot scale components without grid ranges specified. Call dataset.afl.comp.set_grid_range()')
-            comp.loc[dict(component=component)] = comp.sel(component=component).pipe(lambda x: x/ranges[component])
+            comp.loc[dict(component=component)] = comp.sel(component=component).pipe(lambda x: (x-spec[component]['min'])/(spec[component]['range']) )
         return comp
         
         
@@ -273,7 +273,6 @@ class CompositionTools:
                     'max':self.data.attrs[component+'_range'][1],
                     'steps': self.data.attrs.get(component+'_npts',pts_per_row)
                 }
-            print(range_spec)
             compositions = composition_grid(components,range_spec)
 
         for component in components:
