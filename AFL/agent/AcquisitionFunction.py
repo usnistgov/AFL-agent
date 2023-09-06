@@ -197,11 +197,11 @@ class IterationCombined(Acquisition):
         if ((self.iteration%self.function2_frequency)==0):
             print(f'Using acquisition function {self.function2.name} of iteration {self.iteration}')
             self.phasemap = self.function2.calculate_metric(GP)
-            self.phasemap.attrs['acq_current_metric'] = self.function1.name
+            self.phasemap.attrs['acq_current_metric'] = self.function2.name
         else:
             print(f'Using acquisition function {self.function1.name} of iteration {self.iteration}')
             self.phasemap = self.function1.calculate_metric(GP)
-            self.phasemap.attrs['acq_current_metric'] = self.function2.name
+            self.phasemap.attrs['acq_current_metric'] = self.function1.name
 
         self.phasemap.attrs['acq_metric'] = self.name
         self.phasemap.attrs['acq_metric1'] = self.function1.name
@@ -217,17 +217,29 @@ class LowestDensity(Acquisition):
         self.name = 'LowestDensity'
         self.bandwidth=bandwidth
         
-    def calculate_metric(self,GP): 
+    def calculate_metric(self,GP=None,y_mean=None,y_var=None): 
         if self.phasemap is None:
             raise ValueError('No phase map set for acquisition! Call reset_phasemap!')
             
         #this must be calculated regardless of whether it is used
-        predict = GP.predict(self.phasemap.attrs['components_grid'])
-        self.y_mean = predict['mean']
-        self.y_var = predict['var']
+        if GP is not None:
+            predict = GP.predict(self.phasemap.attrs['components_grid'])
+            self.y_mean = predict['mean']
+            self.y_var = predict['var']
+        elif (y_mean is not None) and (y_var is not None):
+            self.y_mean = y_mean
+            self.y_var = y_var
+        else:
+            raise ValueError('Need to pass either GP or y_mean/y_var into calcualte_metric!')
             
-        xy = self.phasemap.afl.comp.to_xy()
-        xy_grid = self.phasemap.afl.comp.to_xy(self.phasemap.attrs['components_grid'])
+
+        if self.phasemap.attrs['GP_domain_transform']=='ternary':
+            xy = self.phasemap.afl.comp.to_ternary_xy()
+            xy_grid = self.phasemap.afl.comp.to_xy(self.phasemap.attrs['components_grid'])
+        else:
+            xy = self.phasemap[self.phasemap.attrs['components']].to_array('component').transpose(...,'component')
+            xy_grid = self.phasemap[self.phasemap.attrs['components_grid']].to_array('component').transpose(...,'component')
+
         kde = KernelDensity(bandwidth=self.bandwidth)
         kde.fit(xy)
         
