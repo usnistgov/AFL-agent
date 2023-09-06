@@ -4,6 +4,7 @@ from AFL.automation.shared.utilities import listify
 from AFL.automation.APIServer.Driver import Driver
 from AFL.automation.shared import serialization
 from AFL.automation.shared.utilities import mpl_plot_to_bytes
+from AFL.automation.shared.utilities import listify
 
 from math import ceil,sqrt
 import json
@@ -26,35 +27,28 @@ import io
 import matplotlib.pyplot as plt
 import matplotlib
 
-import AFL.agent.PhaseMap
+import AFL.agent.xarray_extensions
 from AFL.agent import AcquisitionFunction 
 from AFL.agent import GaussianProcess 
+from AFL.agent import HscedGaussianProcess 
 from AFL.agent import Metric 
 from AFL.agent import PhaseLabeler
 from AFL.agent.WatchDog import WatchDog
 
 
 import tensorflow as tf
-# from tensorflow.compat.v1 import ConfigProto
-# from tensorflow.compat.v1 import InteractiveSession
-# config = ConfigProto()
-# config.gpu_options.per_process_gpu_memory_fraction = 0.45
-## config.gpu_options.allow_growth = True
-# session = InteractiveSession(config=config)
 
 import gpflow
 
 import uuid
 
-class SAS_AgentDriver(Driver):
+class Multimodal_AgentDriver(Driver):
     defaults={}
     defaults['compute_device'] = '/device:CPU:0'
     defaults['data_path'] = '~/'
     defaults['AL_manifest_file'] = 'manifest.csv'
     defaults['save_path'] = '/home/AFL/'
     defaults['data_tag'] = 'default'
-    defaults['qlo'] = 0.001
-    defaults['qhi'] = 1
     defaults['subtract_background'] = False
     # defaults['grid_pts_per_row'] = 100
     def __init__(self,overrides=None):
@@ -143,15 +137,8 @@ class SAS_AgentDriver(Driver):
     
     @mask.setter
     def mask(self,value):
-        self._mask = value
-        #self.masked_points = int(value.mask.values.sum())
-        #self.total_points = value.sizes['grid']
+        self._mask=value
     
-        
-    def append_data(self,data_dict):
-        data_dict = {k:serialization.deserialize(v) for k,v in data_dict.items()}
-        self.dataset = self.dataset.append(data_dict)
-
     def subtract_background(self,path,fname):
 
         raw = self.read_csv(path,fname)
@@ -175,136 +162,51 @@ class SAS_AgentDriver(Driver):
         corrected.name = 'corrected'
         return corrected,raw,empty,sample_transmission,empty_transmission
 
-    def read_csv(self,path,fname):
-        measurement = pd.read_csv(path/fname,sep=',',comment='#',header=None,names=['q','I'],usecols=[0,1]).set_index('q').squeeze().to_xarray()
-        measurement = measurement.dropna('q')
-        return measurement
-
+        
     def read_data(self):
-        '''Read a directory of csv files and create pm dataset'''
-        self.update_status(f'Reading the latest data in {self.config["AL_manifest_file"]}')
-        path = pathlib.Path(self.config['data_path'])
-        
-        self.AL_manifest = pd.read_csv(path/self.config['AL_manifest_file'])
-
-        self.dataset = xr.Dataset()
-        raw_data_list = []
-        empty_data_list = []
-        corr_data_list = []
-        data_list = []
-        deriv1_list = []
-        deriv2_list = []
-        fname_list = []
-        transmission_list = []
-        empty_transmission_list = []
-        # for i,row in self.AL_manifest.iterrows():
-        for i, row in tqdm.tqdm(self.AL_manifest.iterrows(), total=self.AL_manifest.shape[0]):
-
-            #measurement = pd.read_csv(path/row['fname'],comment='#'.set_index('q').squeeze()
-            if self.config['subtract_background']:
-                corrected,raw,empty,transmission,empty_transmission = self.subtract_background(path,row['fname'])
-            else:
-                raw = self.read_csv(path,row['fname'])
-                corrected=None
-                empty=None
-                transmission = None
-                empty_transmission = None
-
-            if corrected is not None:
-                measurement = corrected
-            else:
-                measurement = raw
-
-            data   = measurement.afl.scatt.clean(derivative=0,qlo=self.config['qlo'],qhi=self.config['qhi'])
-            deriv1 = measurement.afl.scatt.clean(derivative=1,qlo=self.config['qlo'],qhi=self.config['qhi'])
-            deriv2 = measurement.afl.scatt.clean(derivative=2,qlo=self.config['qlo'],qhi=self.config['qhi'])
-
-            data   = data - data.min('logq')#put all of the data on the same baseline
-
-            data.name = row['fname']
-            deriv1.name = row['fname']
-            deriv2.name = row['fname']
-
-            if corrected is not None:
-                corr_data_list.append(corrected.rename(q='rawq'))
-
-            if empty is not None:
-                empty_data_list.append(empty.rename(q='rawq'))
-
-            if transmission is not None:
-                transmission_list.append(transmission)
-
-            if empty_transmission is not None:
-                empty_transmission_list.append(empty_transmission)
-
-            raw_data_list.append(raw.rename(q='rawq'))
-            data_list.append(data)
-            deriv1_list.append(deriv1)
-            deriv2_list.append(deriv2)
-            fname_list.append(row['fname'])
-        self.dataset['fname']   = ('sample',fname_list)
-        self.dataset['deriv0']    = xr.concat(data_list,dim='sample').bfill('logq').ffill('logq')
-        self.dataset['deriv1']  = xr.concat(deriv1_list,dim='sample').bfill('logq').ffill('logq')
-        self.dataset['deriv2']  = xr.concat(deriv2_list,dim='sample').bfill('logq').ffill('logq')
-        self.dataset['raw_data']= xr.concat(raw_data_list,dim='sample')
-        if corr_data_list:
-            self.dataset['corrected_data']  = xr.concat(corr_data_list,dim='sample')
-        if empty_data_list:
-            self.dataset['empty_data']  = xr.concat(empty_data_list,dim='sample')
-        if transmission_list:
-            self.dataset['transmission']  = ('sample',transmission_list)
-            self.dataset['transmission'].attrs['description'] = 'sample transmission'
-        if transmission_list:
-            self.dataset['empty_transmission']  = ('sample',empty_transmission_list)
-            self.dataset['empty_transmission'].attrs['description'] = 'sample transmission'
-
-
-        # compositions = self.AL_manifest.drop(['label','fname'],errors='ignore',axis=1)
-        self.components = []
-        for column_name in self.AL_manifest.columns.values:
-            if 'AL_mfrac' in column_name:
-                self.components.append(column_name.replace("AL_mfrac_",""))
-                self.dataset[self.components[-1]] = ('sample',self.AL_manifest[column_name].values)
-            else:
-                self.dataset[column_name] = ('sample',self.AL_manifest[column_name].values)
-                
-        if 'labels' not in self.dataset:
-            self.dataset = self.dataset.afl.labels.make_default()
-
-        self.dataset.attrs['components'] = self.components
-        self.dataset.attrs['components_grid'] = [i+'_grid' for i in self.components]
-        self.dataset['mask'] = self.mask #should add grid dimensions automatically
-        #must reset for serlialization to netcdf to work
-        self.dataset = self.dataset.reset_index('grid').reset_coords(self.dataset.attrs['components_grid'])
-        
-    def read_data_nc(self):
         '''Read and process a dataset from a netcdf file'''
         self.update_status(f'Reading the latest data in {self.config["AL_manifest_file"]}')
         path = pathlib.Path(self.config['data_path'])
         
-        #self.AL_manifest = pd.read_csv(path/self.config['AL_manifest_file'])
+        self.dataset = xr.load_dataset(path / self.config['AL_manifest_file'])
 
-        self.dataset = xr.load_dataset(self.config['AL_manifest_file'])
-        measurement = self.dataset[self.dataset.attrs['AL_data']]
-        self.dataset['deriv0'] = measurement.afl.scatt.clean(derivative=0,qlo=self.config['qlo'],qhi=self.config['qhi'])
-        self.dataset['deriv1'] = measurement.afl.scatt.clean(derivative=1,qlo=self.config['qlo'],qhi=self.config['qhi'])
-        self.dataset['deriv2'] = measurement.afl.scatt.clean(derivative=2,qlo=self.config['qlo'],qhi=self.config['qhi'])
-        
-        self.dataset['deriv0'] = self.dataset['deriv0'] - self.dataset['deriv0'].min('logq')
+        if 'savgol_filter' in self.dataset.attrs:
+            for AL_data in listify(self.dataset.attrs['savgol_filter']):
+                measurement = self.dataset[AL_data]
+                kwargs = {
+                    "xname":self.dataset.attrs.get(AL_data+'_savgol_xname','q'),
+                    "yname":self.dataset.attrs.get(AL_data+'_savgol_yname','SAS'),
+                    "xlo":self.dataset.attrs.get(AL_data+'_savgol_xlo',None),
+                    "xhi":self.dataset.attrs.get(AL_data+'_savgol_xhi',None),
+                    "xlo_isel":self.dataset.attrs.get(AL_data+'_savgol_xlo_isel',None),
+                    "xhi_isel":self.dataset.attrs.get(AL_data+'_savgol_xhi_isel',None),
+                    "pedestal":self.dataset.attrs.get(AL_data+'_savgol_pedestal',None),
+                    "npts":self.dataset.attrs.get(AL_data+'_savgol_npts',None),
+                    "sgf_window_length":self.dataset.attrs.get(AL_data+'_savgol_window_length',3),
+                    "sgf_polyorder":self.dataset.attrs.get(AL_data+'_savgol_polyorder',2),
+                    "logx":self.dataset.attrs.get(AL_data+'_savgol_logx',False),
+                    "logy":self.dataset.attrs.get(AL_data+'_savgol_logy',False),
+                }
+                self.dataset[AL_data+'_deriv0'] = measurement.afl.util.preprocess_data(derivative=0,**kwargs)
+                self.dataset[AL_data+'_deriv1'] = measurement.afl.util.preprocess_data(derivative=1,**kwargs)
+                self.dataset[AL_data+'_deriv2'] = measurement.afl.util.preprocess_data(derivative=2,**kwargs)
+
+                self.dataset[AL_data+'_deriv0'] = self.dataset[AL_data+'_deriv0'] - self.dataset[AL_data+'_deriv0'].min('logq')
         
         if 'labels' not in self.dataset:
             self.dataset = self.dataset.afl.labels.make_default()
 
-        if (self.mask is not None):
+        if self.mask is not None:
             if 'mask' in self.dataset:
                 raise ValueError('Both AgentServer and phasemap from netcdf have mask!')
-            #self.dataset['mask'] = self.mask.copy()
-            self.dataset.update(self.mask)#assumes self.mask is a dataset
+            self.dataset.update(self.mask)
 
         self.components = self.dataset.attrs['components']
 
     def label(self):
-        self.update_status(f'Labelling data on iteration {self.iteration}')
+
+        self.update_status(f'Labeling data on iteration {self.iteration}')
+
         self.metric.calculate(self.dataset)
         self.dataset['W'] = (('sample_i','sample_j'),self.metric.W)
         self.dataset.attrs['metric'] = str(self.metric.to_dict())
@@ -322,16 +224,42 @@ class SAS_AgentDriver(Driver):
         # Predict phase behavior at each point in the phase diagram
         if self.n_phases==1:
             self.update_status(f'Using dummy GP for one phase')
-            self.GP = GaussianProcess.DummyGP(self.dataset)
+            self.classifier_GP = GaussianProcess.DummyGP(self.dataset)
         else:
-            self.update_status(f'Starting gaussian process calculation on {self.config["compute_device"]}')
             with tf.device(self.config['compute_device']):
-                self.kernel = gpflow.kernels.Matern32(variance=0.5,lengthscales=1.0) 
-                self.GP = GaussianProcess.GP(
+                #the defalut AL mode is multimodal_similarity
+                self.update_status(f'Starting gaussian process classifier calculation on {self.config["compute_device"]}')
+                kernel_classifier = gpflow.kernels.Matern32(variance=0.5,lengthscales=1.0) 
+                self.classifier_GP = GaussianProcess.GP(
                     dataset = self.dataset,
-                    kernel=self.kernel
+                    kernel  = kernel_classifier
                 )
-                self.GP.optimize(2000,progress_bar=True)
+                self.classifier_GP.optimize(2000,progress_bar=True)
+                
+
+                if self.dataset.attrs['AL_mode'] == 'bimodal_UCB':  
+                    kernel_regressor =  gpflow.kernels.Matern52(variance=0.5,lengthscales=2.0) + gpflow.kernels.White(1e-1)
+					
+                    if self.dataset.attrs['regression_mode'] == 'heteroscedastic':
+                       self.update_status(f'Starting heteroscedastic gaussian process regression calculation on {self.config["compute_device"]}')
+
+                       self.regressor_GP = HscedGaussianProcess.GPR(
+				           dataset = self.dataset,
+                           kernel  = kernel_regressor
+                           )
+
+
+                    elif self.dataset.attrs['regression_mode'] == 'homoscedastic':
+                        self.update_status(f'Starting homoscedastic gaussian process regression calculation on {self.config["compute_device"]}')
+                        self.regressor_GP = HscedGaussianProcess.GPR(
+                            dataset = self.dataset,
+                            kernel = kernel_regressor,
+                            heteroscedastic = False
+                            )
+
+                    
+                    self.regressor_GP.optimize(2000,progress_bar=True)
+
                 
         self.acq_count   = 0
         self.iteration  += 1 #iteration represents number of full calculations
@@ -342,7 +270,14 @@ class SAS_AgentDriver(Driver):
     def get_next_sample(self):
         self.update_status(f'Calculating acquisition function...')
         self.acquisition.reset_phasemap(self.dataset)
-        self.dataset = self.acquisition.calculate_metric(self.GP)
+        if self.dataset.attrs['AL_mode'] == 'multimodal_similarity':
+            self.dataset = self.acquisition.calculate_metric(self.classifier_GP)
+
+        elif self.dataset.attrs['AL_mode'] == 'bimodal_UCB':
+            self.dataset = self.acquisition.calculate_metric(
+                    GP  = self.classifier_GP,
+                    GPR = self.regressor_GP,
+                    )
 
         self.update_status(f'Finding next sample composition based on acquisition function')
         composition_check = self.dataset[self.dataset.attrs['components']]
@@ -367,8 +302,16 @@ class SAS_AgentDriver(Driver):
         save_path = pathlib.Path(self.config['save_path'])
         date =  datetime.datetime.now().strftime('%y%m%d')
         time =  datetime.datetime.now().strftime('%H:%M:%S')
-        self.dataset['gp_y_var'] = (('grid','phase_num'),self.acquisition.y_var)
-        self.dataset['gp_y_mean'] = (('grid','phase_num'),self.acquisition.y_mean)
+        self.dataset['gp_classifier_y_var'] = (('grid','phase_num'),self.acquisition.y_var_GPC)
+        self.dataset['gp_classifier_y_mean'] = (('grid','phase_num'),self.acquisition.y_mean_GPC)
+        if self.dataset.attrs['AL_mode'] == 'bimodal_UCB':
+            self.dataset['gp_regressor_y_mean'] = (('grid',self.acquisition.y_mean_GPR.squeeze()))
+            self.dataset['gp_regressor_y_var']  = (('grid',self.acquisition.y_var_GPR.squeeze()))
+            if self.acquisition.regressor_sample is not None:
+                self.dataset['gp_regressor_y_mean_sample']  = (('grid',self.acquisition.regressor_sample))
+
+        #self.dataset['next_sample'] = ('component',self.next_sample.squeeze().values)
+        #reset_index('grid').drop(['SLES3_grid','DEX_grid','CAPB_grid'])
         
         from xarray.core.merge import MergeError
         
@@ -380,10 +323,10 @@ class SAS_AgentDriver(Driver):
             self.dataset['next_sample'] = self.acquisition.next_sample.squeeze()
         except MergeError:
             self.dataset['next_sample'] = self.acquisition.next_sample.squeeze().reset_coords(drop=True)
-            
+
         if 'mask' in self.dataset:
             self.dataset['mask'] = self.dataset['mask'].astype(int)
-
+            
         self.dataset.attrs['uuid'] = uuid_str
         self.dataset.attrs['date'] = date
         self.dataset.attrs['time'] = time
@@ -398,6 +341,7 @@ class SAS_AgentDriver(Driver):
             self.AL_manifest = pd.read_csv(AL_manifest_path)
         else:
             self.AL_manifest = pd.DataFrame(columns=['uuid','date','time','data_tag','iteration','acq_count'])
+
         
         row = {}
         row['uuid'] = uuid_str
@@ -410,10 +354,7 @@ class SAS_AgentDriver(Driver):
         self.AL_manifest.to_csv(AL_manifest_path,index=False)
 
     def predict(self,datatype=None):
-        if datatype in ('nc','netcdf','netcdf4'):
-            self.read_data_nc()
-        else: #assume csv
-            self.read_data()
+        self.read_data()
         self.label()
         self.extrapolate()
         self.get_next_sample()
@@ -444,10 +385,10 @@ class SAS_AgentDriver(Driver):
                 for i,label in enumerate(labels):
                     spm = self.dataset.set_index(sample='labels_ordinal').sel(sample=label)
                     plt.sca(axes[i,0])
-                    spm.deriv0.afl.scatt.plot_linlin(x='logq',legend=False);
+                    spm.data.afl.scatt.plot_linlin(x='logq',legend=False);
                 
                     plt.sca(axes[i,1])
-                    spm.afl.comp.plot_discrete(components=self.dataset.attrs['components']);
+                    spm.afl.comp.plot_discrete(components=self.dataset.attrs['components'][:3]);
     
             svg  = mpl_plot_to_bytes(fig,format='svg')
             return svg
@@ -466,7 +407,7 @@ class SAS_AgentDriver(Driver):
                     out_dict[f'phase_{i}']['labels_ordinal'] = int(label)
                     out_dict[f'phase_{i}']['q'] = list(spm.q.values)
                     #out_dict[f'phase_{i}']['raw_data'] = list(spm.raw_data.values)
-                    out_dict[f'phase_{i}']['deriv0'] = list(spm.deriv0.values)
+                    out_dict[f'phase_{i}']['data'] = list(spm.data.values)
                     out_dict[f'phase_{i}']['compositions'] = {}
                     for component in self.dataset.attrs['components']:
                         out_dict[f'phase_{i}']['compositions'][component] = list(spm[component].values)
@@ -491,7 +432,7 @@ class SAS_AgentDriver(Driver):
         if self.dataset is None:
             return 'No phasemap loaded. Run read_data()'
 
-        if 'gp_y_mean' not in self.dataset:
+        if 'gp_classifier_y_mean' not in self.dataset:
             raise ValueError('No GP results in phasemap. Run .predict()')
 
         if 'precomposed' in kwargs['render_hint']:
@@ -501,7 +442,7 @@ class SAS_AgentDriver(Driver):
             if N==1:
                 axes = np.array([axes])
             i = 0
-            for (_,labels1),(_,labels2) in zip(self.dataset.gp_y_mean.groupby('phase_num'),self.dataset.gp_y_var.groupby('phase_num')):
+            for (_,labels1),(_,labels2) in zip(self.dataset.gp_classifier_y_mean.groupby('phase_num'),self.dataset.gp_classifier_y_var.groupby('phase_num')):
                 plt.sca(axes[i,0])
                 self.dataset.where(self.dataset.mask).afl.comp.plot_continuous(components=self.dataset.attrs['components_grid'],cmap='magma',labels=labels1.values);
                 plt.sca(axes[i,1])
@@ -525,7 +466,7 @@ class SAS_AgentDriver(Driver):
             out_dict['y'] = list(y)
 
             i =0
-            for (_,labels1),(_,labels2) in zip(self.dataset.gp_y_mean.groupby('phase_num'),self.dataset.gp_y_var.groupby('phase_num')):
+            for (_,labels1),(_,labels2) in zip(self.dataset.gp_classifier_y_mean.groupby('phase_num'),self.dataset.gp_classifier_y_var.groupby('phase_num')):
                 out_dict[f'phase_{i}'] = {'mean':list(labels1.values),'var':list(labels2.values)}
                 i+=1
             return out_dict

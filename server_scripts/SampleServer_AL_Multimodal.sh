@@ -1,7 +1,8 @@
 #!/bin/bash -i
 
+git config --global credential.helper store
+
 conda activate afl_agent
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-11.0/lib64/
 
 if [[ -z "${TILED_API_KEY}" ]]; then
   export TILED_API_KEY=$(cat ~/.afl/tiled_api_key)
@@ -16,4 +17,7 @@ else
 fi
 
 
-python ~/AFL-agent/server_scripts/SAS_Agent.py
+cd ~/AFL-agent/
+git pull
+
+python ~/AFL-agent/server_scripts/SampleServer_AL_Multimodal.py

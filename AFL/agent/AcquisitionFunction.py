@@ -76,7 +76,8 @@ class Acquisition:
                 .to_array('component')
             )
         else:
-            metric = self.phasemap.sel(grid=mask,drop=True)#.copy()
+            #metric = self.phasemap.sel(grid=mask,drop=True)#.copy()
+            metric = self.phasemap.set_index(grid='mask').sel(grid=True,drop=True).reset_index('grid').reset_coords(drop=True)
             metric = metric[['acq_metric']+metric.attrs['components_grid']]
             metric = metric.sortby('acq_metric')
             
@@ -233,9 +234,16 @@ class LowestDensity(Acquisition):
             raise ValueError('Need to pass either GP or y_mean/y_var into calcualte_metric!')
             
 
-        if self.phasemap.attrs['GP_domain_transform']=='ternary':
+        GP_domain_transform = self.phasemap.attrs.get('GP_domain_transform',None)
+        if GP_domain_transform=='ternary':
             xy = self.phasemap.afl.comp.to_ternary_xy()
             xy_grid = self.phasemap.afl.comp.to_xy(self.phasemap.attrs['components_grid'])
+        # elif GP_domain_transform=='range_scaled':
+        #     ranges = {}
+        #     for component in components:
+        #         ranges[component] = self.dataset.attrs[component+'_range'][1] - self.dataset.attrs[component+'_range'][0]
+        #     xy  = self.dataset.afl.comp.get_range_scaled(ranges=ranges,components=self.phasemap.attrs['components'])
+        #     xy_grid = self.dataset.afl.comp.get_range_scaled(ranges=ranges,components=self.phasemap.attrs['components_grid'])
         else:
             xy = self.phasemap[self.phasemap.attrs['components']].to_array('component').transpose(...,'component')
             xy_grid = self.phasemap[self.phasemap.attrs['components_grid']].to_array('component').transpose(...,'component')
@@ -245,4 +253,5 @@ class LowestDensity(Acquisition):
         
         acq_metric = -np.exp(kde.score_samples(xy_grid))
         self.phasemap['acq_metric'] = ('grid',acq_metric)
+        self.phasemap.attrs['acq_metric'] = 'LowestDensity'
         return self.phasemap

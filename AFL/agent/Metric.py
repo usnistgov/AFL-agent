@@ -113,11 +113,15 @@ class Similarity(Metric):
             self.params.update(params)
             
         X = self._get_X(dataset)
+        if len(X.shape) == 1:
+            print('reshaping input to similarity')
+            X = X.expand_dims("feature",axis=1)
         self.W = pairwise.pairwise_kernels(
             X, 
             filter_params=True,  
             **self.params
         )
+        
         return self
     
 class Distance(Metric):

@@ -15,5 +15,4 @@ else
   export AFL_SYSTEM_SERIAL="${AFL_SYSTEM_SERIAL}"
 fi
 
-
-python ~/AFL-agent/server_scripts/SAS_Agent.py
+python ~/AFL-agent/server_scripts/Multimodal_Agent.py
