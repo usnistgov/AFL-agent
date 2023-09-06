@@ -411,9 +411,11 @@ class CompositionTools:
         else:  
             fig,ax = plt.subplots(1,1,subplot_kw=dict(projection=projection))
             
+        markers = ['^','v','<','>','o','d','p','x']
         artists = []
         for label in np.unique(labels):
             mask = (labels==label)
+            mpl_kw['marker'] = markers.pop(0)
             artists.append(ax.scatter(*coords[mask].T,**mpl_kw))
 
         if set_axes_labels:
