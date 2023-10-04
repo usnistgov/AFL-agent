@@ -1,3 +1,5 @@
+import itertools
+
 import xarray as xr
 import numpy as np
 import seaborn as sns
@@ -8,27 +10,28 @@ import warnings
 
 import textwrap
 
-from AFL.agent.util import ternary_to_xy,composition_grid,composition_grid_ternary,mpl_format_ternary
+from AFL.agent.util import ternary_to_xy, composition_grid, composition_grid_ternary, mpl_format_ternary
 
 from sklearn.preprocessing import StandardScaler
 
 
 @xr.register_dataarray_accessor('afl')
 class AFL_DataArrayTools:
-    def __init__(self,da):
+    def __init__(self, da):
         self.da = da
         self.comp = CompositionTools(da)
         self.scatt = ScatteringTools(da)
         self.util = Utilities(da)
-        
+
+
 @xr.register_dataset_accessor('afl')
 class AFL_DatasetTools:
-    def __init__(self,ds):
+    def __init__(self, ds):
         self.ds = ds
         self.comp = CompositionTools(ds)
         self.labels = LabelTools(ds)
 
-    def append(self,data_dict,concat_dim='sample'):
+    def append(self, data_dict, concat_dim='sample'):
         '''Append data to current dataset (warning: much copying and data loss)'''
 
         # need to make sure all DataArrays have concat_dim
@@ -43,70 +46,75 @@ class AFL_DatasetTools:
 
             # make sure all DataArrays have concat_dim
             v = data_dict[k]
-            if isinstance(v,xr.DataArray):
+            if isinstance(v, xr.DataArray):
                 if concat_dim not in v.coords:
-                    data_dict[k] =  xr.DataArray([v],dims=[concat_dim,*v.dims],coords=v.coords)
+                    data_dict[k] = xr.DataArray([v], dims=[concat_dim, *v.dims], coords=v.coords)
 
         ds_new = xr.Dataset()
-        for k,v in data_dict.items():
-            if isinstance(v,xr.DataArray):
-                ds_new[k] = xr.concat([self.ds[k].copy(),v.copy()],dim=concat_dim)
+        for k, v in data_dict.items():
+            if isinstance(v, xr.DataArray):
+                ds_new[k] = xr.concat([self.ds[k].copy(), v.copy()], dim=concat_dim)
             else:
-                v_xr = xr.DataArray([v],dims=concat_dim)
-                ds_new[k] = xr.concat([self.ds[k].copy(),v_xr],dim=concat_dim)
+                v_xr = xr.DataArray([v], dims=concat_dim)
+                ds_new[k] = xr.concat([self.ds[k].copy(), v_xr], dim=concat_dim)
         return ds_new
 
+
 class LabelTools:
-    def __init__(self,data):
+    def __init__(self, data):
         self.data = data
 
-    def make_default(self,name='labels',dim='sample'):
+    def make_default(self, name='labels', dim='sample'):
         data = self.data.copy()
-        data['labels'] = xr.DataArray(np.ones(self.data[dim].shape[0]),dims=dim,coords=self.data[dim].coords)
+        data['labels'] = xr.DataArray(np.ones(self.data[dim].shape[0]), dims=dim, coords=self.data[dim].coords)
         return data
 
-    def make_ordinal(self,ordinal_name='labels_ordinal',labels_name='labels',sortby=None):
+    def make_ordinal(self, ordinal_name='labels_ordinal', labels_name='labels', sortby=None):
         encoder = OrdinalEncoder()
         data = self.data.copy()
         if sortby is not None:
             data = data.sortby(sortby)
-        labels_ordinal = encoder.fit_transform(data[labels_name].values.reshape(-1,1)).flatten()
-        data[ordinal_name]  = data[labels_name].copy(data=labels_ordinal)
+        labels_ordinal = encoder.fit_transform(data[labels_name].values.reshape(-1, 1)).flatten()
+        data[ordinal_name] = data[labels_name].copy(data=labels_ordinal)
         return data
-        
+
+
 class ScatteringTools:
-    def __init__(self,data):
+    def __init__(self, data):
         self.data = data
-        
-    def plot_logwaterfall(self,x='q',dim='sample',ylabel='Intensity [A.U.]',xlabel=r'q [$Å^{-1}$]',legend=True,base=10,ax=None):
+
+    def plot_logwaterfall(self, x='q', dim='sample', ylabel='Intensity [A.U.]', xlabel=r'q [$Å^{-1}$]', legend=True,
+                          base=10, ax=None):
         N = self.data[dim].shape[0]
-        mul = self.data[dim].copy(data=np.geomspace(1,float(base)**(N+1),N))
-        lines = (self
-         .data
-         .pipe(lambda x:x*mul)
-         .plot
-         .line(
-            x=x,
-            xscale='log',
-            yscale='log',
-            marker='.',
-            ls='None',
-            add_legend=legend,
-            ax=ax)
+        mul = self.data[dim].copy(data=np.geomspace(1, float(base) ** (N + 1), N))
+        lines = (
+            self
+            .data
+            .pipe(lambda x: x * mul)
+            .plot
+            .line(
+                x=x,
+                xscale='log',
+                yscale='log',
+                marker='.',
+                ls='None',
+                add_legend=legend,
+                ax=ax)
         )
-        plt.gca().set( xlabel=xlabel,  ylabel=ylabel, )
-        if legend and (len(lines)>1):
-            sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
+        plt.gca().set(xlabel=xlabel, ylabel=ylabel, )
+        if legend and (len(lines) > 1):
+            sns.move_legend(plt.gca(), loc=6, bbox_to_anchor=(1.05, 0.5))
         return lines
-            
-    def plot_waterfall(self,x='logq',dim='sample',ylabel='Intensity [A.U.]',xlabel=r'q [$Å^{-1}$]',legend=True,base=1,ax=None):
+
+    def plot_waterfall(self, x='logq', dim='sample', ylabel='Intensity [A.U.]', xlabel=r'q [$Å^{-1}$]', legend=True,
+                       base=1, ax=None):
         N = self.data[dim].shape[0]
-        mul = self.data[dim].copy(data=np.linspace(1,base*N,N))
+        mul = self.data[dim].copy(data=np.linspace(1, base * N, N))
         lines = (self
-         .data
-         .pipe(lambda x:x+mul)
-         .plot
-         .line(
+        .data
+        .pipe(lambda x: x + mul)
+        .plot
+        .line(
             x=x,
             xscale='linear',
             yscale='linear',
@@ -115,12 +123,12 @@ class ScatteringTools:
             add_legend=legend,
             ax=ax)
         )
-        plt.gca().set( xlabel=xlabel,  ylabel=ylabel, )
-        if legend and (len(lines)>1):
-            sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
+        plt.gca().set(xlabel=xlabel, ylabel=ylabel, )
+        if legend and (len(lines) > 1):
+            sns.move_legend(plt.gca(), loc=6, bbox_to_anchor=(1.05, 0.5))
         return lines
-            
-    def plot_loglog(self,x='q',ylabel='Intensity [A.U.]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None,**mpl_kw):
+
+    def plot_loglog(self, x='q', ylabel='Intensity [A.U.]', xlabel=r'q [$Å^{-1}$]', legend=True, ax=None, **mpl_kw):
         lines = self.data.plot.line(
             x=x,
             xscale='log',
@@ -130,11 +138,12 @@ class ScatteringTools:
             add_legend=legend,
             ax=ax,
             **mpl_kw)
-        plt.gca().set( xlabel=xlabel,ylabel=ylabel)
-        if legend and (len(lines)>1):
-            sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
+        plt.gca().set(xlabel=xlabel, ylabel=ylabel)
+        if legend and (len(lines) > 1):
+            sns.move_legend(plt.gca(), loc=6, bbox_to_anchor=(1.05, 0.5))
         return lines
-    def plot_linlin(self,x='logq',ylabel='Intensity [A.U.]',xlabel=r'q [$Å^{-1}$]',legend=True,ax=None,**mpl_kw):
+
+    def plot_linlin(self, x='logq', ylabel='Intensity [A.U.]', xlabel=r'q [$Å^{-1}$]', legend=True, ax=None, **mpl_kw):
         lines = self.data.plot.line(
             x=x,
             marker='.',
@@ -142,208 +151,213 @@ class ScatteringTools:
             add_legend=legend,
             ax=ax,
             **mpl_kw)
-        plt.gca().set( xlabel=xlabel,ylabel=ylabel)
-        if legend and (len(lines)>1):
-            sns.move_legend(plt.gca(),loc=6,bbox_to_anchor=(1.05,0.5))
+        plt.gca().set(xlabel=xlabel, ylabel=ylabel)
+        if legend and (len(lines) > 1):
+            sns.move_legend(plt.gca(), loc=6, bbox_to_anchor=(1.05, 0.5))
         return lines
-            
-    def clean(self,qlo=None,qhi=None,qlo_isel=None,qhi_isel=None,pedestal=1e-12,npts=250,derivative=0,sgf_window_length=31,sgf_polyorder=2,apply_log_scale=True):
-        data2 =self.data.copy()
-        data2.name='I'
-        
-        if ((qlo is not None)or(qhi is not None)) and ((qlo_isel is not None)or(qhi_isel is not None)):
+
+    def clean(self, qlo=None, qhi=None, qlo_isel=None, qhi_isel=None, pedestal=1e-12, npts=250, derivative=0,
+              sgf_window_length=31, sgf_polyorder=2, apply_log_scale=True):
+        data2 = self.data.copy()
+        data2.name = 'I'
+
+        if ((qlo is not None) or (qhi is not None)) and ((qlo_isel is not None) or (qhi_isel is not None)):
             warnings.warn((
                 'Both value and index based indexing have been specified! '
                 'Value indexing will be applied first!'
             )
-                ,stacklevel=2)
-            
-        data2 = data2.sel(q=slice(qlo,qhi))
-        data2 = data2.isel(q=slice(qlo_isel,qhi_isel))
-        
+                , stacklevel=2)
+
+        data2 = data2.sel(q=slice(qlo, qhi))
+        data2 = data2.isel(q=slice(qlo_isel, qhi_isel))
+
         if pedestal is not None:
-            data2+=pedestal
-            
+            data2 += pedestal
+
         qname = 'logq'
         if apply_log_scale:
-            data2 = data2.where(data2>0.0,drop=True)
+            data2 = data2.where(data2 > 0.0, drop=True)
             data2 = data2.pipe(np.log10)
             data2['q'] = np.log10(data2.q)
             data2 = data2.rename(q=qname)
-            
-        #need to remove duplicate values
-        data2 = data2.groupby(qname,squeeze=False).mean()
-        
-        #set minimum value of scattering to pedestal value and fill nans with this value
+
+        # need to remove duplicate values
+        data2 = data2.groupby(qname, squeeze=False).mean()
+
+        # set minimum value of scattering to pedestal value and fill nans with this value
         if pedestal is not None:
             data2 += pedestal
-            data2  = data2.where(~np.isnan(data2)).fillna(pedestal)
-        
-        #interpolate to constant log(dq) grid
-        qnew = np.geomspace(data2[qname].min(),data2[qname].max(),npts)
-        dq = qnew[1]-qnew[0]
-        data2 = data2.interp({qname:qnew})
-        
-        #filter out any q that have NaN
-        data2 = data2.dropna(qname,'any')
-        
-        #take derivative
-        dI = savgol_filter(data2.values.T,window_length=sgf_window_length,polyorder=sgf_polyorder,delta=dq,axis=0,deriv=derivative)
+            data2 = data2.where(~np.isnan(data2)).fillna(pedestal)
+
+        # interpolate to constant log(dq) grid
+        qnew = np.geomspace(data2[qname].min(), data2[qname].max(), npts)
+        dq = qnew[1] - qnew[0]
+        data2 = data2.interp({qname: qnew})
+
+        # filter out any q that have NaN
+        data2 = data2.dropna(qname, 'any')
+
+        # take derivative
+        dI = savgol_filter(data2.values.T, window_length=sgf_window_length, polyorder=sgf_polyorder, delta=dq, axis=0,
+                           deriv=derivative)
         data2_dI = data2.copy(data=dI.T)
         return data2_dI
 
+
 class Utilities:
-    def __init__(self,data):
+    def __init__(self, data):
         self.data = data
-        
+
     def preprocess_data(self,
-            xname,
-            yname,
-            xlo=None,
-            xhi=None,
-            xlo_isel=None,
-            xhi_isel=None,
-            pedestal=None,
-            npts=250,
-            derivative=0,
-            sgf_window_length=31,
-            sgf_polyorder=2,
-            logx=False,
-            logy=False
-            ):
-        data2 =self.data.copy()
-        data2.name=yname
-        
-        if ((xlo is not None)or(xhi is not None)) and ((xlo_isel is not None)or(xhi_isel is not None)):
+                        xname,
+                        yname,
+                        xlo=None,
+                        xhi=None,
+                        xlo_isel=None,
+                        xhi_isel=None,
+                        pedestal=None,
+                        npts=250,
+                        derivative=0,
+                        sgf_window_length=31,
+                        sgf_polyorder=2,
+                        logx=False,
+                        logy=False
+                        ):
+        data2 = self.data.copy()
+        data2.name = yname
+
+        if ((xlo is not None) or (xhi is not None)) and ((xlo_isel is not None) or (xhi_isel is not None)):
             warnings.warn((
                 'Both value and index based indexing have been specified! '
                 'Value indexing will be applied first!'
             )
-                ,stacklevel=2)
-            
-        data2 = data2.sel(**{xname:slice(xlo,xhi)})
-        data2 = data2.isel(**{xname:slice(xlo_isel,xhi_isel)})
-        
+                , stacklevel=2)
+
+        data2 = data2.sel(**{xname: slice(xlo, xhi)})
+        data2 = data2.isel(**{xname: slice(xlo_isel, xhi_isel)})
+
         if logy:
-            log_xname = 'log'+xname
-            data2 = data2.where(data2>0.0,drop=True)
+            log_xname = 'log' + xname
+            data2 = data2.where(data2 > 0.0, drop=True)
             data2 = data2.pipe(np.log10)
             data2[xname] = np.log10(data2[xname])
-            data2 = data2.rename(**{xname:log_xname})
+            data2 = data2.rename(**{xname: log_xname})
 
-            data2 = data2.groupby(log_xname,squeeze=False).mean()
+            data2 = data2.groupby(log_xname, squeeze=False).mean()
         else:
-            #need to remove duplicate values
-            data2 = data2.groupby(xname,squeeze=False).mean()
-        
-        #set minimum value of scattering to pedestal value and fill nans with this value
+            # need to remove duplicate values
+            data2 = data2.groupby(xname, squeeze=False).mean()
+
+        # set minimum value of scattering to pedestal value and fill nans with this value
         if pedestal is not None:
             data2 += pedestal
-            data2  = data2.where(~np.isnan(data2)).fillna(pedestal)
-        
-        #interpolate to constant log(dq) grid
+            data2 = data2.where(~np.isnan(data2)).fillna(pedestal)
+
+        # interpolate to constant log(dq) grid
         if logx:
-            xnew = np.geomspace(data2[log_xname].min(),data2[log_xname].max(),npts)
-            dx = xnew[1]-xnew[0]
-            data2 = data2.interp({log_xname:xnew})
-            data2 = data2.dropna(log_xname,'any')
+            xnew = np.geomspace(data2[log_xname].min(), data2[log_xname].max(), npts)
+            dx = xnew[1] - xnew[0]
+            data2 = data2.interp({log_xname: xnew})
+            data2 = data2.dropna(log_xname, 'any')
         else:
-            xnew = np.linspace(data2[xname].min(),data2[xname].max(),npts)
-            dx = xnew[1]-xnew[0]
-            data2 = data2.interp({xname:xnew})
-            data2 = data2.dropna(xname,'any')
-        
-        #take derivative
-        dy = savgol_filter(data2.values.T,window_length=sgf_window_length,polyorder=sgf_polyorder,delta=dx,axis=0,deriv=derivative)
+            xnew = np.linspace(data2[xname].min(), data2[xname].max(), npts)
+            dx = xnew[1] - xnew[0]
+            data2 = data2.interp({xname: xnew})
+            data2 = data2.dropna(xname, 'any')
+
+        # take derivative
+        dy = savgol_filter(data2.values.T, window_length=sgf_window_length, polyorder=sgf_polyorder, delta=dx, axis=0,
+                           deriv=derivative)
         data2_dy = data2.copy(data=dy.T)
         return data2_dy
-    
-        
+
+
 class CompositionTools:
-    def __init__(self,data):
+    def __init__(self, data):
         self.data = data
         self.cmap = 'viridis'
         self.ranges = {}
-    
-    def _get_default(self,components=None,add_grid=False):
+
+    def _get_default(self, components=None, add_grid=False):
         if (components is None):
             try:
                 components = self.data.attrs['components']
             except KeyError:
                 raise ValueError('Must pass components or set "components" in Dataset attributes.')
         if add_grid:
-            components = [c if 'grid' in c else c+'_grid' for c in components]
+            components = [c if 'grid' in c else c + '_grid' for c in components]
         return components
 
-    def get_standard_scaled(self,components=None):
+    def get_standard_scaled(self, components=None):
         comp = self.get(components)
         comp_scaled = comp.copy(data=StandardScaler().fit_transform(comp))
         return comp_scaled
-        
-    def get_range_scaled(self,spec,components=None):
+
+    def get_range_scaled(self, spec, components=None):
         components = self._get_default(components)
         comp = self.get(components)
-        
+
         for component in components:
             if component not in spec:
-                raise ValueError('Cannot scale components without grid ranges specified. Call dataset.afl.comp.set_grid_range()')
-            comp.loc[dict(component=component)] = comp.sel(component=component).pipe(lambda x: (x-spec[component]['min'])/(spec[component]['range']) )
+                raise ValueError(
+                    'Cannot scale components without grid ranges specified. Call dataset.afl.comp.set_grid_range()')
+            comp.loc[dict(component=component)] = comp.sel(component=component).pipe(
+                lambda x: (x - spec[component]['min']) / (spec[component]['range']))
         return comp
-        
-        
-    def get(self,components=None):
+
+    def get(self, components=None):
         components = self._get_default(components)
-        
+
         comp = self.data[components].to_array('component')
         comp.name = 'compositions'
-        return comp.transpose(...,'component')
+        return comp.transpose(..., 'component')
 
-    def get_grid_old(self,components=None):
-        components = self._get_default(components,add_grid=True)
+    def get_grid_old(self, components=None):
+        components = self._get_default(components, add_grid=True)
 
         da_list = []
         for k in components:
-            da_list.append(self.data[k+'_grid'])
-        comp = xr.concat(da_list,dim='component')
-        comp.name='compositions_grid'
+            da_list.append(self.data[k + '_grid'])
+        comp = xr.concat(da_list, dim='component')
+        comp.name = 'compositions_grid'
         comp = comp.assign_coords(component=components)
-        return comp.transpose()#ensures columns are components
+        return comp.transpose()  # ensures columns are components
 
-    def get_grid(self,components=None):
-        components = self._get_default(components,add_grid=False)
-        components_grid = self._get_default(components,add_grid=True)
-        
-        comp   = self.data.set_index(grid=components_grid).grid#.transpose(...,'component')
-        values = np.array([np.array(i) for i in comp.values])#need to convert to numpy array
-        comp = comp.expand_dims(axis=1,component=len(components)).copy(data=values)
-        comp = comp.assign_coords(component=components).transpose(...,'component')
+    def get_grid(self, components=None):
+        components = self._get_default(components, add_grid=False)
+        components_grid = self._get_default(components, add_grid=True)
+
+        comp = self.data.set_index(grid=components_grid).grid  # .transpose(...,'component')
+        values = np.array([np.array(i) for i in comp.values])  # need to convert to numpy array
+        comp = comp.expand_dims(axis=1, component=len(components)).copy(data=values)
+        comp = comp.assign_coords(component=components).transpose(..., 'component')
         comp.name = 'composition_grid'
         return comp
-        
-    def add_grid(self,components=None,pts_per_row=50,basis=1.0,dim_name='grid',ternary=False,overwrite=False):
+
+    def add_grid(self, components=None, pts_per_row=50, basis=1.0, dim_name='grid', ternary=False, overwrite=False):
         components = self._get_default(components)
         print(f'--> Making grid for components {components} at {pts_per_row} pts_per_row')
 
         if ternary:
             compositions = composition_grid_ternary(
-                    pts_per_row = pts_per_row,
-                    basis = basis,
-                    dim=len(components),
-                    )
+                pts_per_row=pts_per_row,
+                basis=basis,
+                dim=len(components),
+            )
         else:
             range_spec = {}
             for component in components:
                 range_spec[component] = {
                     # 'min':self.data.attrs[component+'_grid_range'][0],
                     # 'max':self.data.attrs[component+'_grid_range'][1],
-                    'min':self.data.attrs[component+'_range'][0],
-                    'max':self.data.attrs[component+'_range'][1],
-                    'steps': self.data.attrs.get(component+'_npts',pts_per_row)
+                    'min': self.data.attrs[component + '_range'][0],
+                    'max': self.data.attrs[component + '_range'][1],
+                    'steps': self.data.attrs.get(component + '_npts', pts_per_row)
                 }
-            compositions = composition_grid(components,range_spec)
+            compositions = composition_grid(components, range_spec)
 
         for component in components:
-            name = component+'_grid'
+            name = component + '_grid'
             if name in self.data:
                 if overwrite:
                     del self.data[name]
@@ -351,32 +365,32 @@ class CompositionTools:
                     raise ValueError(f'Component {name} already in Dataset and overwrite is False.')
 
         components_grid = []
-        for component,comps in zip(components,compositions.T):
-            name = component+'_grid'
-            self.data[name] = (dim_name,comps)
+        for component, comps in zip(components, compositions.T):
+            name = component + '_grid'
+            self.data[name] = (dim_name, comps)
             components_grid.append(name)
         self.data.attrs['components_grid'] = components_grid
         if not ternary:
             for component in components:
-                self.data.attrs[component+'_grid_range'] = self.data.attrs[component+'_range']
+                self.data.attrs[component + '_grid_range'] = self.data.attrs[component + '_range']
         return self.data
-    
-    def plot_surface(self,components=None,labels=None,set_axes_labels=True,ternary=True,**mpl_kw):
+
+    def plot_surface(self, components=None, labels=None, set_axes_labels=True, ternary=True, **mpl_kw):
         components = self._get_default(components)
-        
-        if len(components)==3 and ternary:
+
+        if len(components) == 3 and ternary:
             try:
                 import mpltern
             except ImportError as e:
                 raise ImportError('Could not import mpltern. Please install via conda or pip') from e
             projection = 'ternary'
-        elif len(components)==2:
+        elif len(components) == 2:
             projection = None
         else:
             raise ValueError(f'plot_surface only compatible with 2 or 3 components. You passed: {components}')
-            
-        #coords = np.vstack(list(self.data[c].values for c in components)).T
-        coords = self.data[components].to_array('component').transpose(...,'component').values
+
+        # coords = np.vstack(list(self.data[c].values for c in components)).T
+        coords = self.data[components].to_array('component').transpose(..., 'component').values
 
         if (labels is None):
             if ('labels' in self.data.coords):
@@ -385,47 +399,46 @@ class CompositionTools:
                 labels = self.data['labels'].values
             else:
                 labels = np.zeros(coords.shape[0])
-        elif isinstance(labels,str) and (labels in self.data):
-                labels = self.data[labels].values
-                
+        elif isinstance(labels, str) and (labels in self.data):
+            labels = self.data[labels].values
+
         if ('cmap' not in mpl_kw) and ('color' not in mpl_kw):
-             mpl_kw['cmap'] = self.cmap
+            mpl_kw['cmap'] = self.cmap
         if 'edgecolor' not in mpl_kw:
             mpl_kw['edgecolor'] = 'face'
-            
+
         if ('ax' in mpl_kw):
             ax = mpl_kw.pop('ax')
-            
-        else:  
-            fig,ax = plt.subplots(1,1,subplot_kw=dict(projection=projection))
-            
-            
-        artists = ax.tripcolor(*coords.T,labels,**mpl_kw)
-        
+
+        else:
+            fig, ax = plt.subplots(1, 1, subplot_kw=dict(projection=projection))
+
+        artists = ax.tripcolor(*coords.T, labels, **mpl_kw)
 
         if set_axes_labels:
-            if projection=='ternary':
-                labels = {k:v for k,v in zip(['tlabel','llabel','rlabel'],components)}
+            if projection == 'ternary':
+                labels = {k: v for k, v in zip(['tlabel', 'llabel', 'rlabel'], components)}
             else:
-                labels = {k:v for k,v in zip(['xlabel','ylabel'],components)}
+                labels = {k: v for k, v in zip(['xlabel', 'ylabel'], components)}
             ax.set(**labels)
-            ax.grid('on',color='black')
+            ax.grid('on', color='black')
         return artists
-    
-    def plot_continuous(self,components=None,labels=None,set_labels=True,ternary=True,**mpl_kw):
-        warnings.warn('plot_continuous is deprecated and will be removed in a future release. Please use plot_surface.',DeprecationWarning,stacklevel=2)
-        
+
+    def plot_continuous(self, components=None, labels=None, set_labels=True, ternary=True, **mpl_kw):
+        warnings.warn('plot_continuous is deprecated and will be removed in a future release. Please use plot_surface.',
+                      DeprecationWarning, stacklevel=2)
+
         components = self._get_default(components)
 
-        if ternary and len(components)==3:
+        if ternary and len(components) == 3:
             xy = self.ternary_to_xy(components)
-        elif len(components)==3:
+        elif len(components) == 3:
             xy = np.vstack(list(self.data[c].values for c in components)).T
-        elif len(components)==2:
+        elif len(components) == 2:
             xy = np.vstack(list(self.data[c].values for c in components)).T
         else:
             raise ValueError(f'Can only work with 2 or 3 components. You passed: {components}')
-        
+
         if (labels is None):
             if ('labels' in self.data.coords):
                 labels = self.data.coords['labels'].values
@@ -433,41 +446,42 @@ class CompositionTools:
                 labels = self.data['labels'].values
             else:
                 labels = np.zeros(xy.shape[0])
-        elif isinstance(labels,str) and (labels in self.data):
-                labels = self.data[labels].values
-                
+        elif isinstance(labels, str) and (labels in self.data):
+            labels = self.data[labels].values
+
         if ('cmap' not in mpl_kw) and ('color' not in mpl_kw):
-             mpl_kw['cmap'] = 'viridis'
+            mpl_kw['cmap'] = 'viridis'
         if 'color' not in mpl_kw:
             mpl_kw['c'] = labels
-        artists = plt.scatter(*xy.T,**mpl_kw)
+        artists = plt.scatter(*xy.T, **mpl_kw)
 
         if set_labels:
             if ternary:
-                mpl_format_ternary(plt.gca(),*components)
+                mpl_format_ternary(plt.gca(), *components)
             else:
-                plt.gca().set(xlabel=components[0],ylabel=components[1])
+                plt.gca().set(xlabel=components[0], ylabel=components[1])
         return artists
-    
-    def plot_scatter(self,components=None,labels=None,set_axes_labels=True,ternary=True,discrete_labels=True,**mpl_kw):
+
+    def plot_scatter(self, components=None, labels=None, set_axes_labels=True, ternary=True, discrete_labels=True,
+                     **mpl_kw):
         components = self._get_default(components)
-        
-        if len(components)==3 and ternary:
+
+        if len(components) == 3 and ternary:
             try:
                 import mpltern
             except ImportError as e:
                 raise ImportError('Could not import mpltern. Please install via conda or pip') from e
-                
+
             projection = 'ternary'
-        elif len(components)==3:
+        elif len(components) == 3:
             projection = None
-        elif len(components)==2:
+        elif len(components) == 2:
             projection = None
         else:
             raise ValueError(f'plot_surface only compatible with 2 or 3 components. You passed: {components}')
-            
+
         coords = np.vstack(list(self.data[c].values for c in components)).T
-        
+
         if (labels is None):
             if ('labels' in self.data.coords):
                 labels = self.data.coords['labels'].values
@@ -475,77 +489,79 @@ class CompositionTools:
                 labels = self.data['labels'].values
             else:
                 labels = np.zeros(coords.shape[0])
-        elif isinstance(labels,str) and (labels in self.data):
-                labels = self.data[labels].values
-                
+        elif isinstance(labels, str) and (labels in self.data):
+            labels = self.data[labels].values
+
         if ('ax' in mpl_kw):
             ax = mpl_kw.pop('ax')
-        else:  
-            fig,ax = plt.subplots(1,1,subplot_kw=dict(projection=projection))
-            
+        else:
+            fig, ax = plt.subplots(1, 1, subplot_kw=dict(projection=projection))
+
         if discrete_labels:
-            markers = ['^','v','<','>','o','d','p','x']
+            if 'markers' not in mpl_kw:
+                markers = itertools.cycle(['^', 'v', '<', '>', 'o', 'd', 'p', 'x'])
             artists = []
             for label in np.unique(labels):
-                mask = (labels==label)
-                mpl_kw['marker'] = markers.pop(0)
-                artists.append(ax.scatter(*coords[mask].T,**mpl_kw))
+                mask = (labels == label)
+                mpl_kw['marker'] = next(markers)
+                artists.append(ax.scatter(*coords[mask].T, **mpl_kw))
         else:
-            artists = ax.scatter(*coords.T,c=labels,**mpl_kw)
+            artists = ax.scatter(*coords.T, c=labels, **mpl_kw)
 
         if set_axes_labels:
-            if projection=='ternary':
-                labels = {k:v for k,v in zip(['tlabel','llabel','rlabel'],components)}
+            if projection == 'ternary':
+                labels = {k: v for k, v in zip(['tlabel', 'llabel', 'rlabel'], components)}
             else:
-                labels = {k:v for k,v in zip(['xlabel','ylabel'],components)}
+                labels = {k: v for k, v in zip(['xlabel', 'ylabel'], components)}
             ax.set(**labels)
-            ax.grid('on',color='black')
+            ax.grid('on', color='black')
         return artists
 
-    def plot_discrete(self,components=None,labels=None,set_labels=True,normalize=True,ternary=True,**mpl_kw):
-        warnings.warn('plot_discrete is deprecated and will be removed, please use plot_scatter.',DeprecationWarning,stacklevel=2)
-        
+    def plot_discrete(self, components=None, labels=None, set_labels=True, normalize=True, ternary=True, **mpl_kw):
+        warnings.warn('plot_discrete is deprecated and will be removed, please use plot_scatter.', DeprecationWarning,
+                      stacklevel=2)
+
         components = self._get_default(components)
 
-        if ternary and len(components)==3:
-            xy = self.ternary_to_xy(components,normalize=normalize)
-        elif len(components)==2:
+        if ternary and len(components) == 3:
+            xy = self.ternary_to_xy(components, normalize=normalize)
+        elif len(components) == 2:
             xy = np.vstack(list(self.data[c].values for c in components)).T
         else:
             raise ValueError(f'Can only work with 2 or 3 components. You passed: {components}')
-        
-        if (labels is None):
-            if ('labels' in self.data.coords):
+
+        if labels is None:
+            if 'labels' in self.data.coords:
                 labels = self.data.coords['labels'].values
-            elif ('labels' in self.data):
+            elif 'labels' in self.data:
                 labels = self.data['labels'].values
             else:
                 labels = np.zeros(xy.shape[0])
-        elif isinstance(labels,str) and (labels in self.data):
-                labels = self.data[labels].values
-                
+        elif isinstance(labels, str) and (labels in self.data):
+            labels = self.data[labels].values
+
         artists = []
         for label in np.unique(labels):
-            mask = (labels==label)
-            artists.append(plt.scatter(*xy[mask].T,**mpl_kw))
-            
+            mask = (labels == label)
+            artists.append(plt.scatter(*xy[mask].T, **mpl_kw))
+
         if set_labels:
             if ternary:
-                mpl_format_ternary(plt.gca(),*components)
+                mpl_format_ternary(plt.gca(), *components)
             else:
-                plt.gca().set(xlabel=components[0],ylabel=components[1])
+                plt.gca().set(xlabel=components[0], ylabel=components[1])
         return artists
 
-    def plot_3D(self,components=None,labels=None,set_labels=True,**mpl_kw):
+    def plot_3D(self, components=None, labels=None, set_labels=True, **mpl_kw):
         from mpl_toolkits import mplot3d
 
         components = self._get_default(components)
 
-        if not (len(components)==3):
+        if not (len(components) == 3):
             raise ValueError(f'Can only work with  3 components. You passed: {components}')
 
         xy = np.vstack(list(self.data[c].values for c in components)).T
-        
+
         if (labels is None):
             if ('labels' in self.data.coords):
                 labels = self.data.coords['labels'].values
@@ -554,30 +570,26 @@ class CompositionTools:
             else:
                 labels = np.zeros(xy.shape[0])
 
-
         fig = plt.figure()
         ax = plt.axes(projection='3d')
-                
+
         artists = []
         for label in np.unique(labels):
-            mask = (labels==label)
-            artists.append(ax.scatter3D(*xy[mask].T,**mpl_kw))
+            mask = (labels == label)
+            artists.append(ax.scatter3D(*xy[mask].T, **mpl_kw))
 
-        ax.set(xlabel=components[0],ylabel=components[1],zlabel=components[2])
-            
-    def ternary_to_xy(self,components=None,normalize=True):
+        ax.set(xlabel=components[0], ylabel=components[1], zlabel=components[2])
+
+    def ternary_to_xy(self, components=None, normalize=True):
         '''Ternary composition to Cartesian coordinate'''
         components = self._get_default(components)
-            
-        if not (len(components)==3):
-            raise ValueError('Must specify exactly three components')
-        
-        comps = np.vstack(list(self.data[c].values for c in components)).T
-        
-        return ternary_to_xy(comps,normalize)
-    
-        
 
-    def plot_mask(self,mask_name='mask',components_name='components_grid'):
-        self.plot_discrete(self.data.attrs[components_name],labels=self.data[mask_name].astype(int),s=1)
-    
+        if not (len(components) == 3):
+            raise ValueError('Must specify exactly three components')
+
+        comps = np.vstack(list(self.data[c].values for c in components)).T
+
+        return ternary_to_xy(comps, normalize)
+
+    def plot_mask(self, mask_name='mask', components_name='components_grid'):
+        self.plot_discrete(self.data.attrs[components_name], labels=self.data[mask_name].astype(int), s=1)
