@@ -10,7 +10,7 @@ import plotly.express as px
 import ipywidgets
 from sklearn.preprocessing import OrdinalEncoder
 
-class DiffractionLabeler:
+class ALPlot:
     def __init__(self,saxs_data,composition_data,possible_phase_labels):
         self.data_view = DiffractionLabelerView()
         self.data_model = DiffractionLabelerModel(saxs_data,composition_data,possible_phase_labels)
