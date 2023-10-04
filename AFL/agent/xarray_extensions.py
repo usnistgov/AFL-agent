@@ -478,7 +478,7 @@ class CompositionTools:
         elif len(components) == 2:
             projection = None
         else:
-            raise ValueError(f'plot_surface only compatible with 2 or 3 components. You passed: {components}')
+            raise ValueError(f'plot_scatter only compatible with 2 or 3 components. You passed: {components}')
 
         coords = np.vstack(list(self.data[c].values for c in components)).T
 
