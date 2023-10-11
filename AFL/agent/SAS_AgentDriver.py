@@ -5,6 +5,8 @@ from AFL.automation.APIServer.Driver import Driver
 from AFL.automation.shared import serialization
 from AFL.automation.shared.utilities import mpl_plot_to_bytes
 
+from gpflow.utilities.traversal import leaf_components
+
 from math import ceil,sqrt
 import json
 import time
@@ -318,6 +320,10 @@ class SAS_AgentDriver(Driver):
         self.dataset['labels'] = ('sample',self.labeler.labels)
         self.dataset = self.dataset.afl.labels.make_ordinal()
         
+        if self.data is not None:
+            self.data['n_phases'] = self.n_phases
+            self.data.add_array('labels',np.array(self.labeler.labels))
+        
     def extrapolate(self):
         # Predict phase behavior at each point in the phase diagram
         if self.n_phases==1:
@@ -332,6 +338,16 @@ class SAS_AgentDriver(Driver):
                     kernel=self.kernel
                 )
                 self.GP.optimize(2000,progress_bar=True)
+                
+            
+        if self.data is not None:
+            from gpflow.utilities.traversal import leaf_components
+            for name,value in leaf_components(self.GP.model).items():
+                value_numpy = value.numpy()
+                if value_numpy.dtype=='object':
+                    self.data[f'GP-{name}'] = value_numpy
+                else:
+                    self.data.add_array(f'GP-{name}',value_numpy)
                 
         self.acq_count   = 0
         self.iteration  += 1 #iteration represents number of full calculations
@@ -383,6 +399,7 @@ class SAS_AgentDriver(Driver):
             
         if 'mask' in self.dataset:
             self.dataset['mask'] = self.dataset['mask'].astype(int)
+        
 
         self.dataset.attrs['uuid'] = uuid_str
         self.dataset.attrs['date'] = date
@@ -391,6 +408,15 @@ class SAS_AgentDriver(Driver):
         self.dataset.attrs['acq_count'] = self.acq_count
         self.dataset.attrs['iteration'] = self.iteration
         self.dataset.to_netcdf(save_path/f'phasemap_{self.config["data_tag"]}_{uuid_str}.nc')
+        
+        array_data = ['gp_y_var', 'gp_y_mean', 'acq_metric', '']
+        if self.data is not None:
+            for key,value in self.dataset.items():
+                if value.dtype=='object':
+                    self.data[key] = {'dims':value.dims,'values':value.values}
+                else:
+                    self.data.add_array(key,value.values)
+                    self.data['array_dims'] = value.dims
         
         #write manifest csv
         AL_manifest_path = save_path/'calculation_manifest.csv'

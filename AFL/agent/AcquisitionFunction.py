@@ -46,7 +46,9 @@ class Acquisition:
         pm.afl.comp.plot_discrete(components=self.phasemap.attrs['components'],set_labels=False)
         
         if self.next_sample is not None:
-            plt.plot(*PhaseMap.to_xy(np.array([self.next_sample.squeeze().values])).T,marker='x',color='r')
+            from AFL.agent.util import ternary_to_xy
+            xy = ternary_to_xy(np.array([self.next_sample.squeeze().values]))
+            plt.plot(*xy.T,marker='x',color='r')
         return plt.gca()
         
     def copy(self):
