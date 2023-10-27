@@ -101,11 +101,32 @@ class GPR:
         return data
         
 
+   # def transform_domain(self,components=None):
+   ##     """
+   ##     Transforms the evaluated space (i.e. compositions axes) to a range from 0-1. 
+   ##     --------
+   ##     """    
+   #     if 'GP_domain_transform' in self.dataset.attrs:
+   #         if self.dataset.attrs['GP_domain_transform']=='ternary':
+   #             if not (len(self.dataset.attrs['components'])==3):   
+   #                 raise ValueError("Ternary domain transform specified but len(components)!=3") 
+   #             domain = self.dataset.afl.comp.ternary_to_xy(components=components)
+   #         elif self.dataset.attrs['GP_domain_transform']=='standard_scaled':
+   #             domain = self.dataset.afl.comp.get_standard_scaled(components=components)
+   #         elif self.dataset.attrs['GP_domain_transform']=='range_scaled':
+   #             components = self.dataset.afl.comp._get_default(components)
+   #             ranges = {}
+   #             for component in components:
+   #                 ranges[component] = self.dataset.attrs[component+'_range'][1] - self.dataset.attrs[component+'_range'][0]
+   #             domain = self.dataset.afl.comp.get_range_scaled(ranges=ranges,components=components)
+   #         else:
+   #             raise ValueError('Domain not recognized!')
+   #     else:
+   #         domain = self.dataset.afl.comp.get(components=components)
+   #     return domain
+            
     def transform_domain(self,components=None):
-   #     """
-   #     Transforms the evaluated space (i.e. compositions axes) to a range from 0-1. 
-   #     --------
-   #     """    
+            
         if 'GP_domain_transform' in self.dataset.attrs:
             if self.dataset.attrs['GP_domain_transform']=='ternary':
                 if not (len(self.dataset.attrs['components'])==3):   
@@ -117,14 +138,17 @@ class GPR:
                 components = self.dataset.afl.comp._get_default(components)
                 ranges = {}
                 for component in components:
-                    ranges[component] = self.dataset.attrs[component+'_range'][1] - self.dataset.attrs[component+'_range'][0]
-                domain = self.dataset.afl.comp.get_range_scaled(ranges=ranges,components=components)
+                    ranges[component] = {}
+                    ranges[component]['min'] = self.dataset.attrs[component+'_range'][0]
+                    ranges[component]['max'] = self.dataset.attrs[component+'_range'][1]
+                    ranges[component]['range'] = self.dataset.attrs[component+'_range'][1] - self.dataset.attrs[component+'_range'][0]
+                domain = self.dataset.afl.comp.get_range_scaled(ranges,components=components)
             else:
                 raise ValueError('Domain not recognized!')
         else:
             domain = self.dataset.afl.comp.get(components=components)
         return domain
-            
+
     def reset_GP(self,dataset,kernel=None,heteroscedastic=False):
     #    """
     #   Constructs the GP model given a likelihood, the input data, a kernel function, and establishes an optimizer

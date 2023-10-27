@@ -62,8 +62,11 @@ class GP:
                 components = self.dataset.afl.comp._get_default(components)
                 ranges = {}
                 for component in components:
-                    ranges[component] = self.dataset.attrs[component+'_range'][1] - self.dataset.attrs[component+'_range'][0]
-                domain = self.dataset.afl.comp.get_range_scaled(ranges=ranges,components=components)
+                    ranges[component] = {}
+                    ranges[component]['min'] = self.dataset.attrs[component+'_range'][0]
+                    ranges[component]['max'] = self.dataset.attrs[component+'_range'][1]
+                    ranges[component]['range'] = self.dataset.attrs[component+'_range'][1] - self.dataset.attrs[component+'_range'][0]
+                domain = self.dataset.afl.comp.get_range_scaled(ranges,components=components)
             else:
                 raise ValueError('Domain not recognized!')
         else:

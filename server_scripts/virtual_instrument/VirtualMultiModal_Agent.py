@@ -17,4 +17,4 @@ server = APIServer('VirtualMultimodal_Agent',index_template="index.html",data=da
 server.add_standard_routes()
 server.create_queue(Virtual_Multimodal_AgentDriver())
 server.init_logging()
-server.run(host='0.0.0.0', port=5055)#, debug=True)
+server.run(host='0.0.0.0', port=5057)#, debug=True)

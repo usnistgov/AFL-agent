@@ -20,4 +20,5 @@ fi
 cd ~/AFL-agent/
 git pull
 
-python ~/AFL-agent/server_scripts/virtual_AL/Virtual_Multimodal_SampleServer.py
+python ~/AFL-agent/server_scripts/virtual_instrument/Virtual_Multimodal_SampleServer.py
+

@@ -38,6 +38,7 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
     defaults['data_tag'] = 'default'
     defaults['max_sample_transmission'] = 0.6
     defaults['spec_data_path'] = '/home/pi/2305_SINQ_data_reduced/'
+    defaults['mass_tolerance'] = 0.00
     def __init__(self,
             load_url,
             prep_url,
@@ -46,7 +47,7 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
             tiled_url,
             turb_url,
             spec_url=None,
-            camera_urls = None,
+            camera_urls = [],
             snapshot_directory =None,
             overrides=None, 
             ):
@@ -89,7 +90,8 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
         self.agent_client.debug(False)
 
         # start tiled catalog connection
-        self.tiled_cat = from_uri(tiled_url,api_key=os.environ['TILED_API_KEY'])
+        self.tiled_url = tiled_url
+        self.tiled_catalogue = from_uri(tiled_url,api_key='NistoRoboto642')
 
         if spec_url is not None:
             self.spec_url = spec_url
@@ -99,6 +101,7 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
             self.spec_client.enqueue(task_name='setExposure',time=0.1)
         else:
             self.spec_client = None
+            
         if turb_url is not None:
             self.turb_url = turb_url
             self.turb_client = Client(turb_url.split(':')[0],port=turb_url.split(':')[1])
@@ -116,7 +119,7 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
         self.agent_uuid = None
 
         self.status_str = 'Fresh Server!'
-        self.wait_time = 30.0 #seconds
+        self.wait_time = 0.01 #seconds
         
         
         self.catch_protocol=None
@@ -198,7 +201,7 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
     def measure_SAS(self,sample):
         exposure = sample.get('exposure',None)
         sas_uuid = self.sas_client.enqueue(task_name='expose',name=sample['name'],block=True,exposure=exposure)
-        self.sas_client.wait(sas_uuid)
+        # self.sas_client.wait(sas_uuid)
         return sas_uuid
 
     def measure_spec(self,sample):
@@ -210,6 +213,7 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
                 filename=sample['name']
             )
         spec_uuid = self.spec_client.enqueue(task_name='collectContinuous',duration=sample['duration'],interactive=False)
+        
         return spec_uuid
 
     def sample(self,sample):
@@ -248,7 +252,7 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
  
         if self.rinse_uuid is not None:
             self.update_status(f'Waiting for rinse...')
-            self.load_client.wait(self.rinse_uuid)
+            # self.load_client.wait(self.rinse_uuid)
             self.update_status(f'Rinse done!')
 
         #calibrate sensor to avoid drift
@@ -256,14 +260,20 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
 
 
         #The turbidity client uses the cameras and calculates a turbidity metric based on the difference between the blank and filled cells. The virtual turbidity server just needs to respond a number...
-        self.turb_client.enqueue(task_name='measure',plotting=True,set_empty=True)
-
-        self.update_status(f'Cell is clean, measuring empty cell scattering...')
-        empty = {}
-        empty['name']     = 'MT-'+sample['name']+'-spec.h5'
-        empty['duration'] = 5
-        self.spec_uuid = self.measure_spec(empty)
-        self.spec_client.wait(self.spec_uuid)
+        turb_uuid = self.turb_client.enqueue(task_name='measure')
+        
+        query = self.tiled_catalogue.search(Eq('task_name','measure'))
+        key, value = query.items()[-1]
+        # print(key, value)
+        # print(np.array(value))
+        self.turbidity = np.array(value)
+        print(f'simulated turbidity is {self.turbidity}')
+        # self.update_status(f'Cell is clean, measuring empty cell scattering...')
+        # empty = {}
+        # empty['name']     = 'MT-'+sample['name']+'-spec.h5'
+        # empty['duration'] = 5
+        # self.spec_uuid = self.measure_spec(empty)
+        # self.spec_client.wait(self.spec_uuid)
 
         ## TEMPORARILY REMOVED TO SPEED UP MEASUREMENT!!!
         # empty = {}
@@ -287,7 +297,7 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
         
         if self.catch_uuid is not None:
             self.update_status(f'Waiting for sample prep/catch of {name} to finish: {self.catch_uuid}')
-            self.prep_client.wait(self.catch_uuid)
+            # self.prep_client.wait(self.catch_uuid)
             self.take_snapshot(prefix = f'03-after-catch-{name}')
 
         #homing robot to try to mitigate drift problems
@@ -295,39 +305,36 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
 
         self.update_status(f'Loading sample into spectrometer cell...')
         self.load_uuid = self.load_client.enqueue(task_name='loadSample',load_dest_label='afterSPEC')
-        self.load_client.wait(self.load_uuid)
-        self.take_snapshot(prefix = f'05-after-load-spec-{name}')
+        # self.load_client.wait(self.load_uuid)
+        # self.take_snapshot(prefix = f'05-after-load-spec-{name}')
 
         self.update_status(f'Sample is loaded into cell, asking the spectrometer for exposure...')
-        spec_sample = {}
-        spec_sample['name'] = sample['name']+'-beforeSAS-spec.h5'
-        spec_sample['duration'] = 5
-        self.spec_uuid = self.measure_spec(spec_sample)
-        self.spec_client.wait(self.spec_uuid)
+#         spec_sample = {}
+#         spec_sample['name'] = sample['name']+'-beforeSAS-spec.h5'
+#         spec_sample['duration'] = 5
+#         self.spec_uuid = self.measure_spec(spec_sample)
+#         self.spec_client.wait(self.spec_uuid)
 
         self.update_status(f'Loading sample into SAS cell...(while taking spec)')
-        spec_sample = {}
-        spec_sample['name'] = sample['name']+'-SPECToSAS-spec.h5'
-        spec_sample['duration'] = 15
-        self.load_uuid = self.load_client.enqueue(task_name='advanceSample',load_dest_label='afterSANS')
-        self.spec_uuid = self.measure_spec(spec_sample)
-        self.load_client.wait(self.load_uuid)
-        self.take_snapshot(prefix = f'06-after-load-sans-{name}')
+#         spec_sample = {}
+#         spec_sample['name'] = sample['name']+'-SPECToSAS-spec.h5'
+#         spec_sample['duration'] = 15
+#         self.load_uuid = self.load_client.enqueue(task_name='advanceSample',load_dest_label='afterSANS')
+#         self.spec_uuid = self.measure_spec(spec_sample)
+#         self.load_client.wait(self.load_uuid)
+#         self.take_snapshot(prefix = f'06-after-load-sans-{name}')
 
         #measure turbidity
         #in the virtual case, this can come from either the spectrometer or the turbidity client. the turbidity client is talking to the cameras though.
-        self.turbidity = self.turb_client.enqueue(task_name='measure',plotting=True,interactive=True)['return_val'][0]
+        # self.turbidity = self.turb_client.enqueue(task_name='measure',plotting=True,interactive=True)['return_val'][0]
 
         self.update_status(f'Sample is loaded into cell, asking the SAS instrument for exposure...')
         self.sas_uuid = self.measure_SAS(sample)
-        self.sas_client.wait(self.sas_uuid)
+        # self.sas_client.wait(self.sas_uuid)
 
         self.update_status(f'Cleaning up sample {name}...')
         self.rinse_uuid = self.load_client.enqueue(task_name='rinseCell')
-
-        self.update_status(f'Waiting for instrument to measure scattering of {name} with UUID {self.sas_uuid}...')
-        self.take_snapshot(prefix = f'07-after-measure-{name}')
-            
+        
         self.update_status(f'All done for {name}!')
 
 
@@ -379,6 +386,7 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
         predict             = kwargs.get('predict',True)
         start_new_manifest  = kwargs.get('start_new_manifest',False)
         ternary             = kwargs['ternary']#should be bool
+        stop_after          = kwargs['stop_after']
         pre_run_list        = copy.deepcopy(kwargs.get('pre_run_list',[]))
 
         mix_order = kwargs.get('mix_order',None)
@@ -388,7 +396,11 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
         data_path = pathlib.Path(self.config['csv_data_path'])
         
         self.stop_AL = False
+            
         while not self.stop_AL:
+            if self.agent_client.get_driver_object('iteration') >= stop_after:
+                self.stop_AL = True
+            
             self.app.logger.info(f'Starting new AL loop')
             #####################
             ## GET NEXT SAMPLE ##
@@ -432,23 +444,26 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
             for k,v in mass_dict.items():
                 self.target[k].mass = v
             self.target.volume = sample_volume
-
-
+            
+            
             ######################
             ## MAKE NEXT SAMPLE ##
             ######################
             self.deck.reset_targets()
             self.deck.add_target(self.target,name='target')
             self.deck.make_sample_series(reset_sample_series=True)
-            self.deck.validate_sample_series(tolerance=0.15)
+            self.deck.validate_sample_series(tolerance=self.config['mass_tolerance'])
+            
             self.deck.make_protocol(only_validated=False)
             if (mix_order is None) or (custom_stock_settings is None):
-                warnings.warn('No mix_order or custom_stock_settings applied as mix_order={mix_order} and custom_stock_settings={custom_stock_settings}')
+                warnings.warn(f'No mix_order or custom_stock_settings applied as mix_order={mix_order} and custom_stock_settings={custom_stock_settings}')
             else: 
                 self.fix_protocol_order(mix_order,custom_stock_settings)
             self.sample,validated = self.deck.sample_series[0]
-            self.app.logger.info(self.deck.validation_report)
             
+            ######################
+            ## Validation Check ##
+            ######################
             if validated:
                 self.app.logger.info(f'Validation PASSED')
                 self.AL_status_str = 'Last sample validation PASSED'
@@ -458,19 +473,60 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
             self.app.logger.info(f'Making next sample with mass fraction: {self.sample.target_check.mass_fraction}')
             
             self.catch_protocol.source = self.sample.target_loc
+            ##################################
+            ## BUILD DATASET FOR NEW SAMPLE ##
+            ##################################
+            self.new_data              = xr.Dataset()
+            self.new_data['label']     = -1
+            self.new_data['validated'] = validated
             
+            sample_composition = {}
+            if ternary:
+                total = 0
+                for component in self.AL_components:
+                    mf = self.sample.target_check.mass_fraction[component].magnitude
+                    self.new_data[component] = mf
+                    total+=mf
+                for component in self.AL_components:
+                    self.new_data[component] = self.new_data[component]/total
+                    
+                    sample_composition[component] = {}
+                    sample_composition[component]['values'] = self.new_data[component]
+                    sample_composition[component]['units'] = 'fraction'
+            else:
+                for component in self.AL_components:
+                    self.new_data[component] = self.sample.target_check.concentration[component].to("mg/ml").magnitude
+                    self.new_data[component].attrs['units'] = 'mg/ml'
+                    
+                    sample_composition[component] = {}
+                    sample_composition[component]['values'] = self.new_data[component].values.tolist()
+                    sample_composition[component]['units'] = 'mg/ml'
+                    
+                
+            for component in self.components:
+                self.new_data['mfrac_'+component] = self.sample.target_check.mass_fraction[component].magnitude
+                self.new_data['mass_'+component] = self.sample.target_check[component].mass.to('mg').magnitude
+                self.new_data['mass_'+component].attrs['units'] = 'mg'
+
+                       
+            
+            
+            print('setting the sample in the servers')
             sample_uuid = str(uuid.uuid4())
             sample_name = f'AL_{self.config["data_tag"]}_{sample_uuid[-8:]}'
 
-            sample_data = self.set_sample(sample_name=sample_name,sample_uuid=sample_uuid)
+            sample_data = self.set_sample(sample_name=sample_name,sample_uuid=sample_uuid,sample_composition=sample_composition)
             self.prep_client.enqueue(task_name='set_sample',**sample_data)
             self.load_client.enqueue(task_name='set_sample',**sample_data)
             self.sas_client.enqueue(task_name='set_sample',**sample_data)
             self.agent_client.enqueue(task_name='set_sample',**sample_data)
             if self.spec_client is not None:
                 self.spec_client.enqueue(task_name='set_sample',**sample_data)
+                
             if self.turb_client is not None:
+                print('setting the turbidity sample data')
                 self.turb_client.enqueue(task_name='set_sample',**sample_data)
+                
             self.process_sample(
                     dict(
                         name=sample_name,
@@ -486,9 +542,10 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
             ################################
             ## VERIFY SAMPLE TRANSMISSION ##
             ################################
-            h5_path = data_path / (sample_name+'.h5')
-            with h5py.File(h5_path,'r') as h5:
-                SAS_transmission = h5['entry/sample/transmission'][()]
+            # h5_path = data_path / (sample_name+'.h5')
+            # with h5py.File(h5_path,'r') as h5:
+            #     # SAS_transmission = h5['entry/sample/transmission'][()]
+            SAS_transmission = 0.1
   
             if SAS_transmission>self.config['max_sample_transmission']:
                 self.update_status(f'Last sample missed! (Transmission={SAS_transmission})')
@@ -500,28 +557,34 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
             ###############################
             ## GRAB SPEC DATA FROM TILED ##
             ###############################
-            res = self.tiled_cat.search(Eq('sample_uuid',sample_uuid)).search(Eq('task_name','collectContinuous'))
-            res = [v for k,v in res.items() if 'beforeSAS' in v.metadata['driver_config']['filename']]
-            if not (len(res)==1):
-                raise ValueError(f'Bad tiled return: Found {len(res)} results matching query')
-            wl = res[0].metadata['wavelength']      
-            data = res[0].read()
-            spec_measurement = xr.DataArray(data,dims=['spec_time','wavelength'],coords={'wavelength':wl})
+            # res = self.tiled_catalogue.search(Eq('sample_uuid',sample_uuid)).search(Eq('task_name','collectContinuous'))
+            # res = [v for k,v in res.items() if 'beforeSAS' in v.metadata['driver_config']['filename']]
+            # if not (len(res)==1):
+            #     raise ValueError(f'Bad tiled return: Found {len(res)} results matching query')
+            # wl = res[0].metadata['wavelength']      
+            # data = res[0].read()
+            # spec_measurement = xr.DataArray(data,dims=['spec_time','wavelength'],coords={'wavelength':wl})
 
             ##################################
             ## BUILD DATASET FOR NEW SAMPLE ##
             ##################################
-            data_fname = sample_name+'_chosen_r1d.csv'
-            SAS_measurement = pd.read_csv(data_path/data_fname,sep=',',comment='#',header=None,names=['q','I'],usecols=[0,1]).set_index('q').squeeze().to_xarray()
-            SAS_measurement = SAS_measurement.dropna('q')
-
-            self.new_data                     = xr.Dataset()
-            self.new_data['fname']            = data_fname
-            self.new_data['SAS']              = SAS_measurement
-            self.new_data['turbidity']        = -self.turbidity # now high turbidity is positive
-            self.new_data['spec']             = spec_measurement.median('spec_time')
-            self.new_data['spec_error']       = ('wavelength',iqr(spec_measurement,axis=0))
-            self.new_data['label']            = -1
+            data_fname = sample_name+'.h5'
+            
+            # query = self.tiled_catalogue.search(Eq('sas_uuid',str(self.sas_uuid)))
+            query = self.tiled_catalogue.search(Eq('task_name','expose'))
+            # print(query)
+            key, value = query.items()[-1]
+            I = np.array(value)
+            print('SAS shape',I.shape)
+            q = np.array(value.metadata['q'])
+            print('q shape',q.shape)
+            SAS_measurement = I
+            
+            
+            self.new_data['SAS']              = xr.DataArray(data=SAS_measurement,dims=['q'],coords={'q':q}).dropna('q')
+            self.new_data['turbidity']        = self.turbidity # the virtual metric will be from 0-1
+            # self.new_data['spec']             = spec_measurement.median('spec_time')
+            # self.new_data['spec_error']       = ('wavelength',iqr(spec_measurement,axis=0))
             self.new_data['validated']        = validated
             self.new_data['SAS_transmission'] = SAS_transmission
             self.new_data['sample_uuid']      = sample_uuid

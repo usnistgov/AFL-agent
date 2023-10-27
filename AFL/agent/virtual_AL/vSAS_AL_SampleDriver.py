@@ -4,6 +4,8 @@ from AFL.automation.shared.utilities import listify
 from AFL.automation.APIServer.Driver import Driver
 from AFL.agent.AgentClient import AgentClient
 from AFL.automation.shared.units import units
+from tiled.client import from_uri
+from tiled.queries import Eq,Contains
 
 import warnings
 
@@ -33,11 +35,13 @@ class SAS_AL_SampleDriver(Driver):
     defaults['AL_manifest_file'] = '/nfs/aux/chess/reduced_data/cycles/2022-1/id3b/beaucage-2324-D/analysis/data_manifest.csv'
     defaults['data_tag'] = 'default'
     defaults['max_sample_transmission'] = 0.6
+    defaults['mass_tolerance'] = 0.00
     def __init__(self,
             load_url,
             prep_url,
             sas_url,
             agent_url,
+            tiled_url,
             spec_url=None,
             camera_urls = None,
             snapshot_directory =None,
@@ -74,12 +78,18 @@ class SAS_AL_SampleDriver(Driver):
         self.sas_client = Client(sas_url.split(':')[0],port=sas_url.split(':')[1])
         self.sas_client.login('SampleServer_SASClient')
         self.sas_client.debug(False)
+
         
         #agent
         self.agent_url = agent_url
         self.agent_client = AgentClient(agent_url.split(':')[0],port=agent_url.split(':')[1])
         self.agent_client.login('SampleServer_AgentClient')
         self.agent_client.debug(False)
+        
+        #tiled
+        self.tiled_url = tiled_url
+        self.tiled_catalogue = from_uri(tiled_url,api_key='NistoRoboto642')
+        
 
         if spec_url is not None:
             self.spec_url = spec_url
@@ -89,8 +99,11 @@ class SAS_AL_SampleDriver(Driver):
             self.spec_client.enqueue(task_name='setExposure',time=0.1)
         else:
             self.spec_client = None
-
-        self.camera_urls = camera_urls
+    
+        if camera_urls is None:
+            self.camera_urls = []
+        else:
+            self.camera_urls = camera_urls
 
         if snapshot_directory is not None:
             self.config['snapshot_directory'] = snapshot_directory
@@ -101,7 +114,8 @@ class SAS_AL_SampleDriver(Driver):
         self.agent_uuid = None
 
         self.status_str = 'Fresh Server!'
-        self.wait_time = 30.0 #seconds
+        # self.wait_time = 30.0 #seconds
+        self.wait_time = 0.01
         
         
         self.catch_protocol=None
@@ -189,6 +203,8 @@ class SAS_AL_SampleDriver(Driver):
             self.spec_client.enqueue(task_name='collectContinuous',duration=5,interactive=False)
 
         ### the point in which the virtual SAS data driver will produce a spectrum and store it to tiled
+        print('measuring')
+        
         sas_uuid = self.sas_client.enqueue(task_name='expose',name=sample['name'],block=True,exposure=exposure)
         self.sas_client.wait(sas_uuid)
 
@@ -254,13 +270,13 @@ class SAS_AL_SampleDriver(Driver):
                 )
             self.spec_client.enqueue(task_name='collectContinuous',duration=5,interactive=False)
 
-        self.update_status(f'Cell is clean, measuring empty cell scattering...')
-        empty = {}
-        empty['name'] = 'MT-'+sample['name']
-        empty['exposure'] = sample['empty_exposure']
-        empty['wiggle'] = False
-        self.sas_uuid = self.measure(empty)
-        self.sas_client.wait(self.sas_uuid)
+        # self.update_status(f'Cell is clean, measuring empty cell scattering...')
+#         empty = {}
+#         empty['name'] = 'MT-'+sample['name']
+#         empty['exposure'] = sample['empty_exposure']
+#         empty['wiggle'] = False
+#         self.sas_uuid = self.measure(empty)
+#         self.sas_client.wait(self.sas_uuid)
             
         if self.prep_uuid is not None: 
             self.prep_client.wait(self.prep_uuid)
@@ -416,6 +432,7 @@ class SAS_AL_SampleDriver(Driver):
         
         self.stop_AL = False
         while not self.stop_AL:
+            print(pre_run_list)
             self.app.logger.info(f'Starting new AL loop')
             #####################
             ## GET NEXT SAMPLE ##
@@ -430,6 +447,7 @@ class SAS_AL_SampleDriver(Driver):
                     next_sample_dict = next_sample_dict.reset_coords('grid',drop=True)
                 next_sample_dict = next_sample_dict.to_pandas().to_dict()
                 next_sample_dict = {k:{'value':v,'units':self.next_sample.attrs[k+'_units']} for k,v in next_sample_dict.items()}
+                
             self.app.logger.info(f'Preparing to make next sample: {next_sample_dict}')
                     
             
@@ -458,6 +476,8 @@ class SAS_AL_SampleDriver(Driver):
             self.target = AFL.automation.prepare.Solution('target',self.components)
             self.target.volume = sample_volume
             for k,v in mass_dict.items():
+                print('mass dictionary')
+                print(k,v)
                 self.target[k].mass = v
                 
             self.target.volume = sample_volume
@@ -469,14 +489,20 @@ class SAS_AL_SampleDriver(Driver):
             self.deck.reset_targets()
             self.deck.add_target(self.target,name='target')
             self.deck.make_sample_series(reset_sample_series=True)
-            self.deck.validate_sample_series(tolerance=0.15)
+            self.deck.validate_sample_series(tolerance=self.config['mass_tolerance'])
+            
             self.deck.make_protocol(only_validated=False)
             if (mix_order is None) or (custom_stock_settings is None):
-                warnings.warn('No mix_order or custom_stock_settings applied as mix_order={mix_order} and custom_stock_settings={custom_stock_settings}')
+                warnings.warn(f'No mix_order or custom_stock_settings applied as mix_order={mix_order} and custom_stock_settings={custom_stock_settings}')
             else: 
                 self.fix_protocol_order(mix_order,custom_stock_settings)
             self.sample,validated = self.deck.sample_series[0]
             
+            ######################
+            ## Validation Check ##
+            ######################
+            if validated:
+                print(self.sample)
             
             
             ##################################
@@ -504,7 +530,7 @@ class SAS_AL_SampleDriver(Driver):
                     self.new_data[component].attrs['units'] = 'mg/ml'
                     
                     sample_composition[component] = {}
-                    sample_composition[component]['values'] = self.new_data[component]
+                    sample_composition[component]['values'] = self.new_data[component].values.tolist()
                     sample_composition[component]['units'] = 'mg/ml'
                     
                 
@@ -522,13 +548,21 @@ class SAS_AL_SampleDriver(Driver):
             else:
                 self.app.logger.info(f'Validation FAILED')
                 self.AL_status_str = 'Last sample validation FAILED'
+                
+            #re-run the mass balance calculation here
             self.app.logger.info(f'Making next sample with mass fraction: {self.sample.target_check.mass_fraction}')
             
             self.catch_protocol.source = self.sample.target_loc
             
             sample_uuid = str(uuid.uuid4())
             sample_name = f'AL_{self.config["data_tag"]}_{sample_uuid[-8:]}'
+            
+            self.sas_client.set_config(
+                filename=sample_name+'.h5'
+            )
 
+            print(sample_composition)
+            
             sample_data = self.set_sample(sample_name=sample_name,sample_uuid=sample_uuid, sample_composition=sample_composition)
             self.prep_client.enqueue(task_name='set_sample',**sample_data)
             self.load_client.enqueue(task_name='set_sample',**sample_data)
@@ -552,9 +586,12 @@ class SAS_AL_SampleDriver(Driver):
             ################################
             ## VERIFY SAMPLE TRANSMISSION ##
             ################################
+            
+            #can bypass this for now but the data is not stored locally except in tiled....
             h5_path = data_path / (sample_name+'.h5')
             with h5py.File(h5_path,'r') as h5:
-                transmission = h5['entry/sample/transmission'][()]
+                transmission = 0.1
+                # transmission = h5['entry/sample/transmission'][()]
   
             if transmission>self.config['max_sample_transmission']:
                 self.update_status(f'Last sample missed! (Transmission={transmission})')
@@ -564,12 +601,17 @@ class SAS_AL_SampleDriver(Driver):
                 self.update_status(f'Last Sample success! (Transmission={transmission})')
 
             
-            data_fname = sample_name+'_chosen_r1d.csv'
-            measurement = pd.read_csv(data_path/data_fname,sep=',',comment='#',header=None,names=['q','I'],usecols=[0,1]).set_index('q').squeeze().to_xarray()
-            measurement = measurement.dropna('q')
+            data_fname = sample_name+'.h5'
+            # measurement = pd.read_csv(data_path/data_fname,sep=',',comment='#',header=None,names=['q','I'],usecols=[0,1]).set_index('q').squeeze().to_xarray()
+            # measurement = measurement.dropna('q')
             
+            query = self.tiled_catalogue.search(Eq('task_name','expose'))
+            print(query)
+            key, value = query.items()[-1]
+            I = np.array(value)
+            q = value.metadata['q']
             self.new_data['fname']     = data_fname
-            self.new_data['SAS']       = measurement
+            self.new_data['SAS']       = xr.DataArray(data=I,dims=['q'],coords={'q':q}).dropna('q')
             
             self.new_data['transmission'] = transmission
             self.new_data['sample_uuid']      = sample_uuid
@@ -577,6 +619,10 @@ class SAS_AL_SampleDriver(Driver):
             ########################
             ## UPDATE AL MANIFEST ##
             ########################
+            print()
+            print()
+            print()
+            print()
             if start_new_manifest and AL_manifest_path.exists():
                 self.update_status(f'Backing up old and then starting new manifest...')
                 AL_manifest_backup = xr.load_dataset(AL_manifest_path)

@@ -239,12 +239,12 @@ class Virtual_Multimodal_AgentDriver(Driver):
 
                 if self.dataset.attrs['AL_mode'] == 'bimodal_UCB':  
                     kernel_regressor =  gpflow.kernels.Matern52(variance=0.5,lengthscales=2.0) + gpflow.kernels.White(1e-1)
-					
+                    
                     if self.dataset.attrs['regression_mode'] == 'heteroscedastic':
-                       self.update_status(f'Starting heteroscedastic gaussian process regression calculation on {self.config["compute_device"]}')
+                        self.update_status(f'Starting heteroscedastic gaussian process regression calculation on {self.config["compute_device"]}')
 
-                       self.regressor_GP = HscedGaussianProcess.GPR(
-				           dataset = self.dataset,
+                        self.regressor_GP = HscedGaussianProcess.GPR(
+                           dataset = self.dataset,
                            kernel  = kernel_regressor
                            )
 

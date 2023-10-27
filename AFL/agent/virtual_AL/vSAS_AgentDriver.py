@@ -298,7 +298,7 @@ class SAS_AgentDriver(Driver):
         if (self.mask is not None):
             if 'mask' in self.dataset:
                 raise ValueError('Both AgentServer and phasemap from netcdf have mask!')
-            #self.dataset['mask'] = self.mask.copy()
+            # self.dataset['mask'] = self.mask.copy()
             self.dataset.update(self.mask)#assumes self.mask is a dataset
 
         self.components = self.dataset.attrs['components']
