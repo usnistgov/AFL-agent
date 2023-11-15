@@ -398,6 +398,8 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
         self.stop_AL = False
             
         while not self.stop_AL:
+            print(f'stop after iteration {stop_after}')
+            print(f'current AL iteration {self.agent_client.get_driver_object("iteration")}')
             if self.agent_client.get_driver_object('iteration') >= stop_after:
                 self.stop_AL = True
             
@@ -686,11 +688,13 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
             self.update_status(f'Triggering agent server...')
             if len(pre_run_list)==0:
                 if predict:
-                    self.agent_uuid = self.agent_client.enqueue(task_name='predict',datatype='nc')
-                
+                    self.agent_uuid = self.agent_client.enqueue(task_name='predict',datatype='nc',sample_uuid=sample_uuid)
+                    
                     # wait for AL
                     self.app.logger.info(f'Waiting for agent...')
                     self.agent_client.wait(self.agent_uuid)
+
+                    # check the AL iteration and set the appropriate flag if done
                 else:#used for intialization
                     return
             

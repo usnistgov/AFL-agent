@@ -258,7 +258,7 @@ class Virtual_Multimodal_AgentDriver(Driver):
                             )
 
                     
-                    self.regressor_GP.optimize(2000,progress_bar=True)
+                    self.regressor_GP.optimize(500,progress_bar=True)
 
                 
         self.acq_count   = 0
@@ -296,7 +296,7 @@ class Virtual_Multimodal_AgentDriver(Driver):
         self.acq_count+=1#acq represents number of times 'get_next_sample' is called
         
     @Driver.unqueued()
-    def save_results(self):
+    def save_results(self,sample_uuid):
         #write netcdf
         uuid_str = str(uuid.uuid4())
         save_path = pathlib.Path(self.config['save_path'])
@@ -328,6 +328,7 @@ class Virtual_Multimodal_AgentDriver(Driver):
             self.dataset['mask'] = self.dataset['mask'].astype(int)
             
         self.dataset.attrs['uuid'] = uuid_str
+        self.dataset.attrs['sample_uuid'] = sample_uuid
         self.dataset.attrs['date'] = date
         self.dataset.attrs['time'] = time
         self.dataset.attrs['data_tag'] = self.config["data_tag"]
@@ -345,6 +346,7 @@ class Virtual_Multimodal_AgentDriver(Driver):
         
         row = {}
         row['uuid'] = uuid_str
+        row['sample_uuid'] = sample_uuid
         row['date'] =  date
         row['time'] =  time
         row['data_tag'] = self.config['data_tag']
@@ -353,12 +355,12 @@ class Virtual_Multimodal_AgentDriver(Driver):
         self.AL_manifest = pd.concat([self.AL_manifest.T,pd.Series(row)],axis=1,ignore_index=True).T
         self.AL_manifest.to_csv(AL_manifest_path,index=False)
 
-    def predict(self,datatype=None):
+    def predict(self,datatype=None,sample_uuid=None):
         self.read_data()
         self.label()
         self.extrapolate()
         self.get_next_sample()
-        self.save_results()
+        self.save_results(sample_uuid)
 
     @Driver.unqueued(render_hint='precomposed_svg')
     def plot_scatt(self,**kwargs):
