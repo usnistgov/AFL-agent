@@ -7,6 +7,7 @@ import logging
 from AFL.agent import PhaseMap
 import matplotlib.pyplot as plt
 from random import shuffle
+from scipy.stats import norm
 
 from sklearn.neighbors import KernelDensity
 
@@ -134,15 +135,62 @@ class Acquisition:
         self.next_sample = composition
         return self.next_sample
 
-class pseudoUCB(Acquisition):
+class EI(Acquisition):
+    """
+    This acquisition function works on a single GP model (either classifier or regressor, to be specified in the init)
+    """
+    def __init__(self,model_type='classifier'):
+        super().__init()
+        self.name=f'EI_{model_type}'
+        self.model_type= model
+        
+    def calculate_metric(self,GP):
+        if self.phasemap is None:
+            raise ValueError('No phase maps set for acquisition! Call reset_phasemap!')
+
+        #needs to have some flexibility. for every GP or GPR in this calculation, 
+        if self.model_type=='classifier':
+            classifier_prediction = GP.predict(self.phasemap.attrs['components_grid'])
+            self.y_mean_GP = classifier_prediction['mean'].sum(1)
+            self.y_var_GP = classifier_prediction['var'].sum(1)
+
+            # y_var_GP_scaled =  self.y_var_GP.sum(1)
+            # y_var_GP_scaled = (y_var_GP_scaled - y_var_GP_scaled.mean())/y_var_GP_scaled.std()
+            fmax = self.phasemap[self.phasemap.attrs['AL_data']].max().values
+            fmax_scaled = fmax #this should always be 1.0 given that we standardize the data when it comes in...
+            print(f'fmax: {fmax}')
+            print('min,max')
+            print(min(self.y_mean_GP),max(self.y_mean_GP))
+            print("")
+            fmax=1.0
+        elif self.model_type=="regressor":
+
+            regressor_prediction = GPR.predict(self.phasemap.attrs['components_grid'])
+            self.y_mean_GP = regressor_prediction['mean']
+            self.y_var_GP  = regressor_prediction['var']
+
+            y_mean_GP_scaled =  self.y_mean_GP.squeeze()
+            y_mean_GP_scaled = (y_mean_GP_scaled - y_mean_GP_scaled.mean())/y_mean_GP_scaled.std()
+            # fmax = self.phasemap[self.phasemap.attrs['AL_data']].max().values 
+            fmax = 1.0
+        
+        Z = (self.y_mean_GP - fmax)/self.y_var_GPR
+        
+        pdf = norm.pdf(Z)
+        cdf = norm.cdf(Z)
+        
+        self.phasemap['acq_metric'] = ('grid',y_var_GPC_scaled*(Z*cdf + pdf))
+        self.phasemap.attrs['acq_metric'] = self.name
+    
+    
+class pseudoEI(Acquisition):
     """
     This acquisition function works on two GPs only. One has to be a classifier and the other has to be a regressor
     This needs to be generalizable and requires some thought...
     """
-    def __init__(self,scaling =1.0, Thompson_sampling=False):
+    def __init__(self, Thompson_sampling=False):
         super().__init__()
-        self.name = 'pseudo UCB'
-        self.scaling = scaling
+        self.name = 'pseudo EI'
         self.Thompson_sampling = Thompson_sampling
         self.regressor_sample = None
 
@@ -156,9 +204,7 @@ class pseudoUCB(Acquisition):
         self.y_var_GPC = classifier_prediction['var']
 
         y_var_GPC_scaled =  self.y_var_GPC.sum(1)
-        print('min max of model variance')
-        print(y_var_GPC_scaled.min(), y_var_GPC_scaled.max())
-#         y_var_GPC_scaled = (y_var_GPC_scaled - y_var_GPC_scaled.mean())/y_var_GPC_scaled.std()
+        # y_var_GPC_scaled = (y_var_GPC_scaled - y_var_GPC_scaled.mean())/y_var_GPC_scaled.std()
 
         
         regressor_prediction = GPR.predict(self.phasemap.attrs['components_grid'])
@@ -166,20 +212,14 @@ class pseudoUCB(Acquisition):
         self.y_var_GPR  = regressor_prediction['var']
 
         y_mean_GPR_scaled =  self.y_mean_GPR.squeeze()
-        print('min max of model mean')
-        print(y_mean_GPR_scaled.min(), y_mean_GPR_scaled.max())
-#         y_mean_GPR_scaled = (y_mean_GPR_scaled - y_mean_GPR_scaled.mean())/y_mean_GPR_scaled.std()
+        # y_mean_GPR_scaled = (y_mean_GPR_scaled - y_mean_GPR_scaled.mean())/y_mean_GPR_scaled.std()
         
-        if self.Thompson_sampling:
-            self.regressor_sample = GPR.model.predict_f_samples(GPR.transform_domain(components=self.phasemap.attrs['components_grid']),1)
-            self.regressor_sample = self.regressor_sample.numpy().squeeze()
-            regressor_sample_scaled = self.regressor_sample
-            # regressor_sample_scaled = (self.regressor_sample - y_mean_GPR_scaled.mean())/y_mean_GPR_scaled.std()
-            self.phasemap['acq_metric'] = ('grid', regressor_sample_scaled + self.scaling * y_var_GPC_scaled)
-            self.phasemap.attrs['acq_metric'] = self.name + '_TS'
-        else:
-            self.phasemap['acq_metric'] = ('grid',y_mean_GPR_scaled + self.scaling * y_var_GPC_scaled)
-            self.phasemap.attrs['acq_metric'] = self.name
-        self.phasemap.attrs['UCB_scaling'] = self.scaling
+        Z = (self.y_mean_GPR - self.y_mean_GPR.max())/self.y_var_GPR
+        
+        pdf = norm.pdf(Z)
+        cdf = norm.cdf(Z)
+        
+        self.phasemap['acq_metric'] = ('grid',y_var_GPC_scaled*(Z*cdf + pdf))
+        self.phasemap.attrs['acq_metric'] = self.name
 
         return self.phasemap

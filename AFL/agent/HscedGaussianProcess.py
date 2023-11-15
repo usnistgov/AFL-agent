@@ -22,7 +22,7 @@ from AFL.agent.util import ternary_to_xy
 class HeteroscedasticGaussian(gpflow.likelihoods.Likelihood):
     """
     Defines the heteroscedastic gaussian likelihood 
-	"""
+    """
     def __init__(self, **kwargs):
         # this likelihood expects a single latent function F, and two columns in the data matrix Y:
         super().__init__(latent_dim=1, observation_dim=2, **kwargs)
@@ -67,14 +67,14 @@ class DummyGP:
 
     
 class GPR:
-#	'''
-#	This is a class for doing regression. 
-#	-------------
-#	The data construct needs to point to the values being regressed over, Y_i
-#	If uncertainties are known for each value, set the heteroscedastic flag to True
-#	
+#   '''
+#   This is a class for doing regression. 
+#   -------------
+#   The data construct needs to point to the values being regressed over, Y_i
+#   If uncertainties are known for each value, set the heteroscedastic flag to True
+#   
 #   Pass the inputs and uncertainties into the initialization
-#    '''	
+#    '''    
 #
     def __init__(self,dataset,inputs=None,uncertainties=None,kernel=None,heteroscedastic=False):
         self.kernel = kernel
@@ -152,9 +152,9 @@ class GPR:
     def reset_GP(self,dataset,kernel=None,heteroscedastic=False):
     #    """
     #   Constructs the GP model given a likelihood, the input data, a kernel function, and establishes an optimizer
-	#	-------------
-	#	
-	#	"""
+    #   -------------
+    #   
+    #   """
         self.dataset = dataset
         data = self.construct_data(heteroscedastic)
             
@@ -176,7 +176,7 @@ class GPR:
             #the adam optimizer algorithm is already implemented
             #the natgrad optimizer is necessary for the heteroscedastic regression, gamma is a fixed parameter here. may need to be optimized
             self.natgrad = NaturalGradient(gamma=0.5) 
-            self.adam = tf.optimizers.Adam()
+            self.adam = tf.optimizers.legacy.Adam()
             set_trainable(self.model.q_mu, False)
             set_trainable(self.model.q_sqrt, False)
             
@@ -185,7 +185,7 @@ class GPR:
                      data = data,
                      kernel = kernel,
                      )
-             self.optimizer = tf.optimizers.Adam(learning_rate=0.001)
+             self.optimizer = tf.optimizers.legacy.Adam(learning_rate=0.001)
             
 
     def reset_monitoring(self,log_dir='test/',iter_period=1):
@@ -205,18 +205,37 @@ class GPR:
         slow_tasks = MonitorTaskGroup(image_task) 
         self.final_monitor = Monitor(slow_tasks)
 
-    def optimize(self,N=1000, gamma=0.5, final_monitor_step=None,progress_bar=False):
+    def optimize(self,N=1000, gamma=0.5, final_monitor_step=None,progress_bar=False, tol=1e-4):
+        i  = 0
+        break_criteria = False
+        
         if progress_bar:
-            for i in tqdm.tqdm(tf.range(N),total=N):
+            while (i<N) or (break_criteria==True):
+                
+                pre_step_HPs = np.array([i.numpy() for i in self.model.parameters])
                 self._step(i)
+                post_step_HPs = np.array([i.numpy() for i in self.model.parameters])
+                i+=1
+                if all(abs(pre_step_HPs-post_step_HPs) <= tol):
+                    break_criteria=True
+                    break
+            # for i in tqdm.tqdm(tf.range(N),total=N):
+            #     self._step(i)
         else:
-            for i in tf.range(N):
+            while (i<=N) or (break_criteria==True):
+
+                pre_step_HPs = np.array([i.numpy() for i in self.model.parameters])
                 self._step(i)
+                post_step_HPs = np.array([i.numpy() for i in self.model.parameters])
+                i+=1
+                if all(abs(pre_step_HPs-post_step_HPs) <= tol):
+                    break_criteria=True
+                    break
             
         if final_monitor_step is None:
             final_monitor_step = i
         self.final_monitor(final_monitor_step)
-	       
+           
     def _step(self,i):
         #the optimizers in the heteroscedastic GPFlow example
 
