@@ -9,7 +9,6 @@ from gpflow.monitor import (
 )
 import xarray as xr
 from gpflow.optimizers import NaturalGradient
-from gpflow.ci_utils import ci_niter
 from gpflow import set_trainable
 import tensorflow as tf
 from scipy.stats import entropy
