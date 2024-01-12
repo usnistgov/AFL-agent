@@ -58,27 +58,32 @@ class Acquisition:
     def execute(self):
         raise NotImplementedError('Subclasses must implement execute!')
 
-    def get_next_sample(self,nth=0,composition_check=None):
+    def get_next_sample(self,nth=0,composition_check=None, sample_randomly=False):
 
-        if np.all(np.isnan(np.unique(self.phasemap['acq_metric']))):
-            sample_randomly = True
-        else:
-            sample_randomly = False
-
+        # if np.all(np.isnan(np.unique(self.phasemap['acq_metric']))):
+        #     sample_randomly = True
+        # else:
+        #     sample_randomly = False
+        
         if 'mask' not in self.phasemap:
             mask = slice(None)
         else:
             mask = self.phasemap.mask
             
         print("Creating ordered metric lists...")
+        print("are you sampling randomly? ", sample_randomly)
         if sample_randomly:
+            print("sampling randomly")
             close_metric = (
                 self.phasemap.sel(grid=mask,drop=False)
-                [composition.attrs['components_grid']] #just take composition values
-                .rename({k:k.replace('_grid','') for k in composition.attrs['components_grid']})
+                [self.phasemap.attrs['components_grid']] #just take composition values
+                .rename({k:k.replace('_grid','') for k in self.phasemap.attrs['components_grid']})
                 .to_array('component')
             )
+            
+            
         else:
+            print('not sampling randomly')
             # metric = self.phasemap.sel(grid=mask,drop=True)#.copy()
             metric = self.phasemap.set_index(grid='mask').sel(grid=True,drop=True).reset_index('grid').reset_coords(drop=True)
             metric = metric[['acq_metric']+metric.attrs['components_grid']]
@@ -112,6 +117,7 @@ class Acquisition:
                 idex = close_metric_idex_list.pop()
             else:
                 raise ValueError('No gridpoint found that satisfies constraints! Try increasing composition_rtol!')
+                
             
             composition = close_metric.sel(grid=idex)
             
@@ -216,8 +222,12 @@ class pseudoEI(Acquisition):
         
         Z = (self.y_mean_GPR - self.y_mean_GPR.max())/self.y_var_GPR
         
-        pdf = norm.pdf(Z)
-        cdf = norm.cdf(Z)
+        Z = Z.squeeze()
+        pdf = norm.pdf(Z).squeeze()
+        cdf = norm.cdf(Z).squeeze()
+        
+        
+        print(pdf.shape, cdf.shape, y_var_GPC_scaled.shape)
         
         self.phasemap['acq_metric'] = ('grid',y_var_GPC_scaled*(Z*cdf + pdf))
         self.phasemap.attrs['acq_metric'] = self.name

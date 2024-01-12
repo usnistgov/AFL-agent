@@ -12,7 +12,7 @@ from AFL.agent.SAS_AgentDriver import SAS_AgentDriver
 
 from AFL.automation.APIServer.data.DataTiled import DataTiled
 
-data = DataTiled('http://10.42.0.1:8000',api_key = os.environ['TILED_API_KEY'],backup_path='/home/afl642/.afl/json-backup')
+data = DataTiled('http://localhost:8000',api_key = os.environ['TILED_API_KEY'],backup_path='/home/afl642/.afl/json-backup')
 
 server = APIServer('SAS_Agent',index_template="index.html",data=data)
 server.add_standard_routes()

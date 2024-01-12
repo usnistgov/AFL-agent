@@ -388,6 +388,8 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
         ternary             = kwargs['ternary']#should be bool
         stop_after          = kwargs['stop_after']
         pre_run_list        = copy.deepcopy(kwargs.get('pre_run_list',[]))
+        set_run_list        = copy.deepcopy(kwargs.get('set_run_list',[]))
+        self.calc_after_all = kwargs['calc_after_all']
 
         mix_order = kwargs.get('mix_order',None)
         custom_stock_settings = kwargs.get('custom_stock_settings',None)
@@ -410,6 +412,9 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
             if pre_run_list:
                 self.next_sample = None
                 next_sample_dict = pre_run_list.pop(0)
+            elif (len(pre_run_list) == 0) and (len(set_run_list)>0):
+                self.next_sample = None
+                next_sample_dict = set_run_list.pop(0)
             else:
                 self.next_sample = self.agent_client.get_object('next_sample')
                 next_sample_dict = self.next_sample.squeeze()
@@ -686,16 +691,20 @@ class Virtual_Multimodal_AL_SampleDriver(Driver):
             ## TRIGGER AL ##
             ################
             self.update_status(f'Triggering agent server...')
-            if len(pre_run_list)==0:
+            print(len(pre_run_list), self.calc_after_all)
+            if (len(pre_run_list)==0) or (self.calc_after_all==False):
+                print('moved into the prediction loop')
                 if predict:
+                    print('running prediction')
                     self.agent_uuid = self.agent_client.enqueue(task_name='predict',datatype='nc',sample_uuid=sample_uuid)
                     
                     # wait for AL
                     self.app.logger.info(f'Waiting for agent...')
-                    self.agent_client.wait(self.agent_uuid)
+                    self.agent_client.wait(self.agent_uuid,for_history=False)
 
                     # check the AL iteration and set the appropriate flag if done
                 else:#used for intialization
+                    print('passing')
                     return
             
             

@@ -361,7 +361,7 @@ class SAS_AgentDriver(Driver):
         self.acq_count+=1#acq represents number of times 'get_next_sample' is called
         
     @Driver.unqueued()
-    def save_results(self):
+    def save_results(self,sample_uuid):
         #write netcdf
         uuid_str = str(uuid.uuid4())
         save_path = pathlib.Path(self.config['save_path'])
@@ -401,6 +401,7 @@ class SAS_AgentDriver(Driver):
         
         row = {}
         row['uuid'] = uuid_str
+        row['sample_uuid'] = sample_uuid
         row['date'] =  date
         row['time'] =  time
         row['data_tag'] = self.config['data_tag']
@@ -409,7 +410,7 @@ class SAS_AgentDriver(Driver):
         self.AL_manifest = pd.concat([self.AL_manifest.T,pd.Series(row)],axis=1,ignore_index=True).T
         self.AL_manifest.to_csv(AL_manifest_path,index=False)
 
-    def predict(self,datatype=None):
+    def predict(self,datatype=None,sample_uuid=None):
         if datatype in ('nc','netcdf','netcdf4'):
             self.read_data_nc()
         else: #assume csv
@@ -417,7 +418,7 @@ class SAS_AgentDriver(Driver):
         self.label()
         self.extrapolate()
         self.get_next_sample()
-        self.save_results()
+        self.save_results(sample_uuid)
 
     @Driver.unqueued(render_hint='precomposed_svg')
     def plot_scatt(self,**kwargs):

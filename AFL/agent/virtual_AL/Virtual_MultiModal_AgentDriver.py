@@ -70,7 +70,7 @@ class Virtual_Multimodal_AgentDriver(Driver):
         self._mask = None
         self.iteration = 0
         self.acq_count = 0
-        
+        self.sample_randomly = False
     @property
     def app(self):
         return self._app
@@ -285,7 +285,8 @@ class Virtual_Multimodal_AgentDriver(Driver):
             composition_check = composition_check.reset_index('sample').reset_coords(drop=True)
         composition_check = composition_check.to_array('component').transpose('sample',...)
         self.next_sample = self.acquisition.get_next_sample(
-            composition_check = composition_check
+            composition_check = composition_check,
+            sample_randomly=self.sample_randomly
         )
         
         next_dict = self.next_sample.squeeze().to_pandas().to_dict()

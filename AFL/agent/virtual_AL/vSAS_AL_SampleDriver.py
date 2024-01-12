@@ -206,7 +206,7 @@ class SAS_AL_SampleDriver(Driver):
         print('measuring')
         
         sas_uuid = self.sas_client.enqueue(task_name='expose',name=sample['name'],block=True,exposure=exposure)
-        self.sas_client.wait(sas_uuid)
+        # self.sas_client.wait(sas_uuid)
 
         if self.spec_client is not None:
             self.spec_client.set_config(
@@ -214,7 +214,7 @@ class SAS_AL_SampleDriver(Driver):
                     filename=f'{sample["name"]}-afterSAS-spec.h5'
                 )
             spec_uuid = self.spec_client.enqueue(task_name='collectContinuous',duration=5,interactive=False)
-            self.spec_client.wait(spec_uuid)
+            # self.spec_client.wait(spec_uuid)
 
         return sas_uuid
 
@@ -260,7 +260,7 @@ class SAS_AL_SampleDriver(Driver):
  
         if self.rinse_uuid is not None:
             self.update_status(f'Waiting for rinse...')
-            self.load_client.wait(self.rinse_uuid)
+            # self.load_client.wait(self.rinse_uuid)
             self.update_status(f'Rinse done!')
 
         if self.spec_client is not None:
@@ -279,7 +279,7 @@ class SAS_AL_SampleDriver(Driver):
 #         self.sas_client.wait(self.sas_uuid)
             
         if self.prep_uuid is not None: 
-            self.prep_client.wait(self.prep_uuid)
+            # self.prep_client.wait(self.prep_uuid)
             self.take_snapshot(prefix = f'02-after-prep-{name}')
 
         
@@ -292,7 +292,7 @@ class SAS_AL_SampleDriver(Driver):
         
         if self.catch_uuid is not None:
             self.update_status(f'Waiting for sample prep/catch of {name} to finish: {self.catch_uuid}')
-            self.prep_client.wait(self.catch_uuid)
+            # self.prep_client.wait(self.catch_uuid)
             self.take_snapshot(prefix = f'03-after-catch-{name}')
 
         #homing robot to try to mitigate drift problems
@@ -307,7 +307,7 @@ class SAS_AL_SampleDriver(Driver):
         
         self.load_uuid = self.load_client.enqueue(task_name='loadSample',sampleVolume=sample['volume'])
         self.update_status(f'Loading sample into cell: {self.load_uuid}')
-        self.load_client.wait(self.load_uuid)
+        # self.load_client.wait(self.load_uuid)
         self.take_snapshot(prefix = f'05-after-load-{name}')
         
         self.update_status(f'Sample is loaded, asking the instrument for exposure...')
@@ -317,7 +317,7 @@ class SAS_AL_SampleDriver(Driver):
         self.rinse_uuid = self.load_client.enqueue(task_name='rinseCell')
 
         self.update_status(f'Waiting for instrument to measure scattering of {name} with UUID {self.sas_uuid}...')
-        self.sas_client.wait(self.sas_uuid)
+        # self.sas_client.wait(self.sas_uuid)
         self.take_snapshot(prefix = f'06-after-measure-{name}')
             
         self.update_status(f'All done for {name}!')
@@ -351,7 +351,7 @@ class SAS_AL_SampleDriver(Driver):
             self.prep_uuid = self.prep_client.transfer(**task)
         
         if self.load_uuid is not None:
-            self.load_client.wait(self.load_uuid)
+            # self.load_client.wait(self.load_uuid)
             last_name = self.last_sample['name']
             self.take_snapshot(prefix = f'05-after-load-{last_name}')
 
@@ -361,10 +361,10 @@ class SAS_AL_SampleDriver(Driver):
             
             self.update_status(f'Cleaning up sample {last_name}...')
             self.rinse_uuid = self.load_client.enqueue(task_name='rinseCell')
-            self.load_client.wait(self.rinse_uuid)
+            # self.load_client.wait(self.rinse_uuid)
 
             self.update_status(f'Waiting for rinse...')
-            self.load_client.wait(self.rinse_uuid)
+            # self.load_client.wait(self.rinse_uuid)
             self.update_status(f'Rinse done!')
             
         self.update_status(f'Queueing sample {name} load into syringe loader')
@@ -423,6 +423,7 @@ class SAS_AL_SampleDriver(Driver):
         start_new_manifest  = kwargs.get('start_new_manifest',False)
         ternary             = kwargs['ternary']#should be bool
         pre_run_list        = copy.deepcopy(kwargs.get('pre_run_list',[]))
+        stop_after          = kwargs['stop_after']
 
         mix_order = kwargs.get('mix_order',None)
         custom_stock_settings = kwargs.get('custom_stock_settings',None)
@@ -432,7 +433,10 @@ class SAS_AL_SampleDriver(Driver):
         
         self.stop_AL = False
         while not self.stop_AL:
-            print(pre_run_list)
+            print(f'stop after iteration {stop_after}')
+            print(f'current AL iteration {self.agent_client.get_driver_object("iteration")}')
+            if self.agent_client.get_driver_object('iteration') >= stop_after:
+                self.stop_AL = True
             self.app.logger.info(f'Starting new AL loop')
             #####################
             ## GET NEXT SAMPLE ##
@@ -589,10 +593,10 @@ class SAS_AL_SampleDriver(Driver):
             
             #can bypass this for now but the data is not stored locally except in tiled....
             h5_path = data_path / (sample_name+'.h5')
-            with h5py.File(h5_path,'r') as h5:
-                transmission = 0.1
+            # with h5py.File(h5_path,'r') as h5:
+            #     transmission = 0.1
                 # transmission = h5['entry/sample/transmission'][()]
-  
+            transmission = 0.1
             if transmission>self.config['max_sample_transmission']:
                 self.update_status(f'Last sample missed! (Transmission={transmission})')
                 self.app.logger.info('Dropping this sample from AL and hoping the next one hits...')
@@ -666,11 +670,11 @@ class SAS_AL_SampleDriver(Driver):
             self.update_status(f'Triggering agent server...')
             if len(pre_run_list)==0:
                 if predict:
-                    self.agent_uuid = self.agent_client.enqueue(task_name='predict',datatype='nc')
+                    self.agent_uuid = self.agent_client.enqueue(task_name='predict',datatype='nc',sample_uuid=sample_uuid)
                 
                     # wait for AL
                     self.app.logger.info(f'Waiting for agent...')
-                    self.agent_client.wait(self.agent_uuid)
+                    # self.agent_client.wait(self.agent_uuid)
                 else:#used for intialization
                     return
             
