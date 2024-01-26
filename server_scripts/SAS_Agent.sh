@@ -17,4 +17,4 @@ else
 fi
 
 
-python ~/AFL-agent/server_scripts/SAS_Agent.py
+python SAS_Agent.py

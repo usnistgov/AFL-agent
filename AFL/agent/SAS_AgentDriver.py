@@ -340,7 +340,7 @@ class SAS_AgentDriver(Driver):
                 self.GP.optimize(2000,progress_bar=True)
                 
             
-        if self.data is not None:
+        if (self.data is not None) and not (self.n_phases==1):
             from gpflow.utilities.traversal import leaf_components
             for name,value in leaf_components(self.GP.model).items():
                 value_numpy = value.numpy()
@@ -445,7 +445,7 @@ class SAS_AgentDriver(Driver):
         self.get_next_sample()
         self.save_results()
 
-    @Driver.unqueued(render_hint='precomposed_svg')
+    @Driver.unqueued(render_hint='precomposed_png')
     def plot_scatt(self,**kwargs):
         if self.dataset is not None:
             if 'labels_ordinal' not in self.dataset:
@@ -453,7 +453,8 @@ class SAS_AgentDriver(Driver):
                 labels = [0]
             else:
                 labels = np.unique(self.dataset.labels_ordinal.values)
-            
+
+        print('render_hint=',kwargs['render_hint'])
         if 'precomposed' in kwargs['render_hint']:
             matplotlib.use('Agg') #very important
             if self.dataset is None:
@@ -475,8 +476,8 @@ class SAS_AgentDriver(Driver):
                     plt.sca(axes[i,1])
                     spm.afl.comp.plot_discrete(components=self.dataset.attrs['components']);
     
-            svg  = mpl_plot_to_bytes(fig,format='svg')
-            return svg
+            img  = mpl_plot_to_bytes(fig,format=kwargs['render_hint'].split('_')[1])
+            return img
         elif kwargs['render_hint']=='raw': 
             # construct dict to send as json (all np.ndarrays must be converted to list!)
             out_dict = {}
@@ -500,7 +501,7 @@ class SAS_AgentDriver(Driver):
         else:
             raise ValueError(f'Cannot handle render_hint={kwargs["render_hint"]}')
 
-    @Driver.unqueued(render_hint='precomposed_svg')
+    @Driver.unqueued(render_hint='precomposed_png')
     def plot_acq(self,**kwargs):
         matplotlib.use('Agg') #very important
         fig,ax = plt.subplots()
@@ -509,10 +510,13 @@ class SAS_AgentDriver(Driver):
             plt.gca().set(xlim=(0,10),ylim=(0,10))
         else:
             self.acquisition.plot()
-        svg  = mpl_plot_to_bytes(fig,format='svg')
-        return svg
+        if 'precomposed' in kwargs['render_hint']:
+            img  = mpl_plot_to_bytes(fig,format=kwargs['render_hint'].split('_')[1])
+            return img
+        else:
+            raise ValueError(f'Cannot handle render_hint={kwargs["render_hint"]}')
 
-    @Driver.unqueued(render_hint='precomposed_svg')
+    @Driver.unqueued(render_hint='precomposed_png')
     def plot_gp(self,**kwargs):
         if self.dataset is None:
             return 'No phasemap loaded. Run read_data()'
