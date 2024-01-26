@@ -65,15 +65,15 @@ class vSAS_NoDeck_AL_SampleDriver(Driver):
         self.name = 'vSAS_AL_SampleDriver'
 
         #prepare samples
-        self.prep_url = prep_url
-        self.prep_client = OT2Client(prep_url.split(':')[0],port=prep_url.split(':')[1])
-        self.prep_client.login('SampleServer_PrepClient')
-        self.prep_client.debug(False)
+        # self.prep_url = prep_url
+        # self.prep_client = OT2Client(prep_url.split(':')[0],port=prep_url.split(':')[1])
+        # self.prep_client.login('SampleServer_PrepClient')
+        # self.prep_client.debug(False)
 
         #load samples
-        self.load_client = Client(load_url.split(':')[0],port=load_url.split(':')[1])
-        self.load_client.login('SampleServer_LoadClient')
-        self.load_client.debug(False)
+        # self.load_client = Client(load_url.split(':')[0],port=load_url.split(':')[1])
+        # self.load_client.login('SampleServer_LoadClient')
+        # self.load_client.debug(False)
  
         #measure samples
         self.sas_url = sas_url
@@ -420,12 +420,12 @@ class vSAS_NoDeck_AL_SampleDriver(Driver):
             #################
             sample_data = self.set_sample(sample_name=sample_name,sample_uuid=sample_uuid, sample_composition=sample_composition)
             print(sample_data)
-            self.prep_client.enqueue(task_name='set_sample',**sample_data)
-            self.load_client.enqueue(task_name='set_sample',**sample_data)
+            #self.prep_client.enqueue(task_name='set_sample',**sample_data)
+            #self.load_client.enqueue(task_name='set_sample',**sample_data)
             self.sas_client.enqueue(task_name='set_sample',**sample_data)
             self.agent_client.enqueue(task_name='set_sample',**sample_data)
-            if self.spec_client is not None:
-                self.spec_client.enqueue(task_name='set_sample',**sample_data)
+            # if self.spec_client is not None:
+            #     self.spec_client.enqueue(task_name='set_sample',**sample_data)
                 
             ####################
             ## PROCESS SAMPLE ##

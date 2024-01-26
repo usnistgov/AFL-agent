@@ -1,9 +1,5 @@
 #!/bin/bash -i
 
-git config --global credential.helper store
-
-conda activate afl_agent
-
 if [[ -z "${TILED_API_KEY}" ]]; then
   export TILED_API_KEY=$(cat ~/.afl/tiled_api_key)
 else
@@ -17,7 +13,4 @@ else
 fi
 
 
-cd ~/AFL-agent/
-git pull
-
-python ~/AFL-agent/server_scripts/SampleServer_AL_noDeck_vSAS.py
+python SampleServer_AL_noDeck_vSAS.py
