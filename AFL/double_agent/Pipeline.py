@@ -16,6 +16,8 @@ from abc import ABC, abstractmethod
 
 import xarray as xr
 
+from AFL.double_agent.util import listify
+
 
 class Pipeline:
     """
@@ -27,12 +29,35 @@ class Pipeline:
         else:
             self.ops = ops
 
+
+    def __iter__(self):
+        for op in self.ops:
+            yield op
+
+    def __repr__(self):
+        return f'<Pipeline N={len(self.ops)}>'
+
     def append(self, op):
         self.ops.append(op)
         return self
 
     def copy(self):
         return copy.deepcopy(self)
+
+
+    def draw(self):
+        import networkx as nx
+        G = nx.DiGraph()
+        for op in self:
+            output = op.output_variable
+            G.add_node(output)
+            # need to handle case where input_variables is a list
+            for input in listify(op.input_variable):
+                G.add_node(input)
+                G.add_edge(input, op.output_variable)
+
+        pos = nx.nx_agraph.pygraphviz_layout(G, prog='dot')
+        nx.draw(G, with_labels=True, pos=pos)
 
     def validate(self):
         raise NotImplementedError
@@ -76,6 +101,10 @@ class PipelineOpBase(ABC):
 
         self.output = {}
 
+        # variables to exclude when constructing attrs dict for xarray
+        self._banned_from_attrs = ['output']
+
+
     @abstractmethod
     def calculate(self, data):
         pass
@@ -85,8 +114,11 @@ class PipelineOpBase(ABC):
 
     def _get_attrs(self):
         output_dict = copy.deepcopy(self.__dict__)
-        if 'output' in output_dict:
-            del output_dict['output']
+        for key in self._banned_from_attrs:
+            try:
+                del output_dict[key]
+            except KeyError:
+                pass
         return output_dict
 
     def _get_variable(self, data):

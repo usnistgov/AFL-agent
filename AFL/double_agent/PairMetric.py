@@ -13,11 +13,8 @@ from AFL.double_agent.util import listify
 
 
 class PairMetric(PipelineOpBase):
-    def __init__(self, input_variable, output_variable, sample_dim='sample', params=None, name=None, constrain_same=None,
-                 constrain_different=None):
-
-        if name is None:
-            self.name = 'BaseMetric'
+    def __init__(self, input_variable, output_variable, sample_dim='sample', params=None, name='BaseMetric',
+                 constrain_same=None, constrain_different=None):
 
         super().__init__(name=name,input_variable=input_variable, output_variable=output_variable)
 
@@ -38,6 +35,8 @@ class PairMetric(PipelineOpBase):
             self.constrain_different = []
         else:
             self.constrain_different = constrain_different
+
+        self._banned_from_attrs.append('W')
 
     def __getitem__(self, index):
         return self.W[index]
@@ -93,7 +92,6 @@ class Similarity(PairMetric):
         data1 = self._get_variable(dataset)
 
         if len(data1.shape) == 1:
-            print('reshaping input to similarity')
             data1 = data1.expand_dims("feature", axis=1)
         self.W = pairwise.pairwise_kernels(
             data1,
@@ -108,38 +106,56 @@ class Similarity(PairMetric):
 
 
 class Distance(PairMetric):
-    def __init__(self, data_variable='data', params=None, name=None, constrain_same=None, constrain_different=None):
-        super().__init__(data_variable, params, name, constrain_same, constrain_different)
-        if name is None:
-            self.name = f'Distance:{params["metric"]}'
+    def __init__(self, input_variable, output_variable, sample_dim, params=None, name='DistanceMetric', constrain_same=None,
+                 constrain_different=None):
 
-    def calculate(self, dataset, **params):
-        if params:
-            self.params.update(params)
+        super().__init__(name=name,input_variable=input_variable, output_variable=output_variable, sample_dim=sample_dim,
+                         params=params, constrain_same=constrain_same, constrain_different=constrain_different)
 
-        X = dataset[listify(self.data_variable)].to_array().squeeze()
+    def calculate(self, dataset):
+        data1 = self._get_variable(dataset)
+
         self.W = pairwise.pairwise_distances(
-            X,
+            data1,
             **self.params
         )
+
+        dims = dims=[self.sample_dim+'_i',self.sample_dim+'_j']
+        self.output[self.output_variable] = xr.DataArray(self.W,dims=dims)
+        return self
+
+class Delaunay(PairMetric):
+    def __init__(self, input_variable, output_variable, sample_dim, params=None, name='DelaunayMetric',
+                 constrain_same=None, constrain_different=None):
+
+        super().__init__(name=name,input_variable=input_variable, output_variable=output_variable, sample_dim=sample_dim,
+                         params=params, constrain_same=constrain_same, constrain_different=constrain_different)
+
+    def calculate(self, dataset):
+        """
+        Computes the Delaunay triangulation of the given points
+        :param x: array of shape (num_nodes, 2)
+        :return: the computed adjacency matrix
+        """
+        data1 = self._get_variable(dataset)
+        tri = scipy.spatial.Delaunay(data1)
+        edges_explicit = np.concatenate((tri.vertices[:, :2],
+                                         tri.vertices[:, 1:],
+                                         tri.vertices[:, ::2]), axis=0)
+        adj = np.zeros((x.shape[0], x.shape[0]))
+        adj[edges_explicit[:, 0], edges_explicit[:, 1]] = 1.
+        self.W = np.clip(adj + adj.T, 0, 1)
+
         return self
 
 
-class MultiMetric(PairMetric):
-    def __init__(
-            self,
-            metrics,
-            data_variable='data',
-            combine_by='prod',
-            combine_by_powers=None,
-            combine_by_coeffs=None,
-            constrain_same=None,
-            constrain_different=None,
-            **params
-    ):
-        super().__init__(data_variable, params, None, constrain_same, constrain_different)
-        self.metrics = metrics
-        self.update_name()
+class CombineMetric(PairMetric):
+    def __init__(self, input_variable_list, output_variable, sample_dim, combine_by, combine_by_powers=None,
+                 combine_by_coeffs=None, params=None, name='CombineMetric', constrain_same=None, constrain_different=None):
+
+        super().__init__(name=name, input_variable=input_variable_list, output_variable=output_variable,
+                         sample_dim=sample_dim, params=params, constrain_same=constrain_same,
+                         constrain_different=constrain_different)
 
         self.combine_by = combine_by
         self.combine_by_powers = combine_by_powers
@@ -150,18 +166,6 @@ class MultiMetric(PairMetric):
             self.combine = self.sum
         else:
             raise ValueError('Combine by function not recognized. Must be "sum" or "prod"')
-
-    def to_dict(self):
-        out = {}
-        for i, metric in enumerate(self.metrics):
-            out[f'metric_{i}'] = metric.to_dict()
-        return out
-
-    def update_name(self):
-        self.name = ''
-        for metric in self.metrics:
-            self.name += metric.name + '-'
-        self.name = self.name[:-1]  # remove last '-'
 
     def prod(self, data_list):
         if self.combine_by_powers is not None:
@@ -196,31 +200,16 @@ class MultiMetric(PairMetric):
 
     def calculate(self, dataset):
         W_list = []
-        for metric in self.metrics:
-            W_list.append(metric.calculate(dataset))
-        self.W_list = W_list
+        for name in self.input_variable:
+            W_list.append(dataset[name])
+
         self.W = self.combine(W_list)
         self.W = self.normalize1()
         self.W = self.apply_constraints()
+
+        dims = dims=[self.sample_dim+'_i',self.sample_dim+'_j']
+        self.output[self.output_variable] = xr.DataArray(self.W,dims=dims)
+
         return self
 
 
-class Delaunay(Similarity):
-    def __init__(self, data_variable='data', params=None):
-        super().__init__(data_variable, params)
-        self.name = 'Delaunay'
-
-    def calculate(self, X):
-        """
-        Computes the Delaunay triangulation of the given points
-        :param x: array of shape (num_nodes, 2)
-        :return: the computed adjacency matrix
-        """
-        tri = scipy.spatial.Delaunay(X)
-        edges_explicit = np.concatenate((tri.vertices[:, :2],
-                                         tri.vertices[:, 1:],
-                                         tri.vertices[:, ::2]), axis=0)
-        adj = np.zeros((x.shape[0], x.shape[0]))
-        adj[edges_explicit[:, 0], edges_explicit[:, 1]] = 1.
-        self.W = np.clip(adj + adj.T, 0, 1)
-        return self
