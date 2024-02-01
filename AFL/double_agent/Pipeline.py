@@ -20,14 +20,15 @@ import xarray as xr
 import networkx as nx
 
 from AFL.double_agent.util import listify
+from AFL.double_agent.Context import Context,NoContextException
 
 
-class Pipeline:
+class Pipeline(Context):
     """
     Container class for defining and building pipelines.
     """
 
-    def __init__(self, ops=None):
+    def __init__(self, name=None, ops=None):
         if ops is None:
             self.ops = []
         else:
@@ -35,6 +36,10 @@ class Pipeline:
 
         # placeholder for networkx graph
         self.graph = None
+        if name is None:
+            self.name = "Pipeline"
+        else:
+            self.name = name
 
     def __iter__(self):
         """ALlows pipelines to be iterated over"""
@@ -46,7 +51,7 @@ class Pipeline:
         return self.ops[i]
 
     def __repr__(self):
-        return f'<Pipeline N={len(self.ops)}>'
+        return f'<Pipeline {self.name} N={len(self.ops)}>'
 
     def print(self):
         """Print a summary of the pipeline"""
@@ -187,6 +192,13 @@ class PipelineOpBase(ABC):
         self.output_prefix = output_prefix
 
         self.output = {}
+
+        #try to add to context
+        try:
+            Context.get_context().append(self)
+        except NoContextException:
+            pass  #silently continue
+
 
         # variables to exclude when constructing attrs dict for xarray
         self._banned_from_attrs = ['output', '_banned_from_attrs']
