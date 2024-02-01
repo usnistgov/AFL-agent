@@ -1,10 +1,13 @@
 import threading
 
+
 class NoContextException(Exception):
     pass
 
-class Context:
-    """
+
+class PipelineContext:
+    """Inherited by Pipeline to allow for context manager abuse
+
     See https://stackoverflow.com/questions/49573131/how-are-pymc3-variables-assigned-to-the-currently-active-model
     """
     contexts = threading.local()
@@ -29,4 +32,3 @@ class Context:
             return cls.get_contexts()[-1]
         except IndexError:
             raise NoContextException("No context on context stack")
-

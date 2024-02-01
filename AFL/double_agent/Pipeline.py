@@ -20,10 +20,10 @@ import xarray as xr
 import networkx as nx
 
 from AFL.double_agent.util import listify
-from AFL.double_agent.Context import Context,NoContextException
+from AFL.double_agent.Context import PipelineContext,NoContextException
 
 
-class Pipeline(Context):
+class Pipeline(PipelineContext):
     """
     Container class for defining and building pipelines.
     """
@@ -34,12 +34,13 @@ class Pipeline(Context):
         else:
             self.ops = ops
 
-        # placeholder for networkx graph
-        self.graph = None
         if name is None:
             self.name = "Pipeline"
         else:
             self.name = name
+
+        # placeholder for networkx graph
+        self.graph = None
 
     def __iter__(self):
         """ALlows pipelines to be iterated over"""
