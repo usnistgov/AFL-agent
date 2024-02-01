@@ -15,7 +15,9 @@ import warnings
 import pickle
 from abc import ABC, abstractmethod
 
+import matplotlib.pyplot as plt
 import xarray as xr
+import networkx as nx
 
 from AFL.double_agent.util import listify
 
@@ -31,12 +33,28 @@ class Pipeline:
         else:
             self.ops = ops
 
+        # placeholder for networkx graph
+        self.graph = None
+
     def __iter__(self):
+        """ALlows pipelines to be iterated over"""
         for op in self.ops:
             yield op
 
+    def __getitem__(self, i):
+        """Allows PipelineOps to be viewed from the pipeline via an index"""
+        return self.ops[i]
+
     def __repr__(self):
         return f'<Pipeline N={len(self.ops)}>'
+
+    def print(self):
+        """Print a summary of the pipeline"""
+        print(f"{'i':>3s}) {'PipelineOp':35s} {'input_variable'} ---> {'output_variable'}")
+        print(f"{'--':>4s} {'-' * 10:35s} {'-' * 14}      {'-' * 15}")
+        for i, op in enumerate(self):
+            print(f"{i:3d}) {'<' + op.name + '>':35s} {op.input_variable} ---> {op.output_variable}")
+
 
     def append(self, op):
         """Mirrors the behavior of python lists"""
@@ -49,6 +67,7 @@ class Pipeline:
         return self
 
     def clear_outputs(self):
+        """Clears the ouptut dict of all PipelineOps in this pipeline"""
         for op in self:
             op.output = {}
 
@@ -56,6 +75,13 @@ class Pipeline:
         return copy.deepcopy(self)
 
     def write(self, filename):
+        """Write pipeline to disk as a pkl
+
+        Parameters
+        ----------
+        filename: str
+            Filename or filepath to be written
+        """
         pipeline = self.copy()
         pipeline.clear_outputs()
 
@@ -64,31 +90,64 @@ class Pipeline:
 
     @staticmethod
     def read(filename):
+        """Read pipeline from pickle file on disk
+
+
+        Usage
+        -----
+        ```python
+        from AFL.double_agent.Pipeline import Pipeline
+        pipeline1 = Pipeline.read('pickled_pipeline.pkl')
+        ````
+
+        """
         with open(filename, 'rb') as f:
             pipeline = pickle.load(f)
         return pipeline
 
-    def draw(self):
-        import networkx as nx
+    def make_graph(self):
+        """Build a networkx graph representation of this pipeline"""
 
-        G = nx.DiGraph()
-        edge_labels = {}
+        self.graph = nx.DiGraph()
+        self.graph_edge_labels = {}
         for op in self:
             output_variable = op.output_variable
             if output_variable is None:
                 continue
-            G.add_node(output_variable)
+            self.graph.add_node(output_variable)
             # need to handle case where input_variables is a list
             for input_variable in listify(op.input_variable):
                 if input_variable is None:
                     continue
-                G.add_node(input_variable)
-                G.add_edge(input_variable, output_variable)
-                edge_labels[input_variable, output_variable] = op.name
+                self.graph.add_node(input_variable)
+                self.graph.add_edge(input_variable, output_variable)
+                self.graph_edge_labels[input_variable, output_variable] = op.name
 
-        pos = nx.nx_agraph.pygraphviz_layout(G, prog='dot')  # ,args='-Gnodesep=10')
-        nx.draw(G, with_labels=True, pos=pos, node_size=1000)
-        nx.draw_networkx_edge_labels(G, pos, edge_labels)
+    def draw(self, figsize=(8, 8), edge_labels=True):
+        """Draw the pipeline as a graph"""
+        self.make_graph()
+
+        plt.figure(figsize=figsize)
+        pos = nx.nx_agraph.pygraphviz_layout(self.graph, prog='dot')
+        nx.draw(self.graph, with_labels=True, pos=pos, node_size=1000)
+        if edge_labels:
+            nx.draw_networkx_edge_labels(self.graph, pos, self.graph_edge_labels)
+
+    def input_variables(self):
+        """Get the input variables needed for the pipeline to fully execute
+
+        Warning
+        -------
+        This list will currently include "Generators" that aren't required to be in the pipeline. These will hopefully
+        be distinguishable by having Generator in the name, but this isn't enforced at the moment.
+        """
+        self.make_graph()
+        return [n for n, d in self.graph.in_degree() if d == 0]
+
+    def output_variables(self):
+        """Get the outputs variables of the pipeline"""
+        self.make_graph()
+        return [n for n, d in self.graph.out_degree() if d == 0]
 
     def validate(self):
         raise NotImplementedError
@@ -130,7 +189,7 @@ class PipelineOpBase(ABC):
         self.output = {}
 
         # variables to exclude when constructing attrs dict for xarray
-        self._banned_from_attrs = ['output','_banned_from_attrs']
+        self._banned_from_attrs = ['output', '_banned_from_attrs']
 
     @abstractmethod
     def calculate(self, dataset):
@@ -138,6 +197,15 @@ class PipelineOpBase(ABC):
 
     def __repr__(self):
         return f'<PipelineOp:{self.name}>'
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+    def _prefix_output(self,variable_name):
+        prefixed_variable = copy.deepcopy(variable_name)
+        if self.output_prefix is not None:
+            prefixed_variable = self.output_prefix + '_' + prefixed_variable
+        return prefixed_variable
 
     def _get_attrs(self):
         output_dict = copy.deepcopy(self.__dict__)
@@ -169,8 +237,6 @@ class PipelineOpBase(ABC):
 
         return output
 
-    def copy(self):
-        return copy.deepcopy(self)
 
     def add_to_dataset(self, dataset, copy_dataset=True):
         """Adds (xarray) data in output dictionary to provided xarray dataset"""

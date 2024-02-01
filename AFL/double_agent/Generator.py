@@ -12,13 +12,13 @@ from AFL.double_agent.Pipeline import PipelineOpBase
 class Generator(PipelineOpBase):
     """Base class stub for all generators"""
 
-    def __init__(self, input_variable=None, output_variable=None, name='GeneratorBase'):
+    def __init__(self, input_variable='Generator', output_variable=None, name='GeneratorBase'):
         super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
 
 
 class CartesianGrid(Generator):
     """Generator that produces a cartesian grid according to use provided min/max/step"""
-    def __init__(self, output_variable, grid_spec, sample_dim, name='CartesianGrid'):
+    def __init__(self, output_variable, grid_spec, sample_dim, name='CartesianGridGenerator'):
         """
         Parameters
         ----------
@@ -30,7 +30,8 @@ class CartesianGrid(Generator):
             subdictionary that defines the mininum, maximum, and step size for that component with keys: min, max, step.
 
         """
-        super().__init__(name=name, input_variable=None, output_variable=output_variable)
+        #using intput_variable just as a placeholder for visualization purposes
+        super().__init__(name=name, input_variable='CartesianGridGenerator', output_variable=output_variable)
         self.grid_spec = grid_spec
         self.components = list(grid_spec.keys())
         self.sample_dim = sample_dim
@@ -51,8 +52,9 @@ class CartesianGrid(Generator):
 
 class BarycentricGrid(Generator):
     def __init__(self, output_variable, components, sample_dim, pts_per_row=50, basis=1.0, dim=3, eps=1e-9,
-                 name='CartesianGrid'):
-        super().__init__(name=name, input_variable=None, output_variable=output_variable)
+                 name='BarycentricGridGenerator'):
+        #using intput_variable just as a placeholder for visualization purposes
+        super().__init__(name=name, input_variable=name, output_variable=output_variable)
         self.components = components
         self.sample_dim = sample_dim
         self.pts_per_row = pts_per_row
