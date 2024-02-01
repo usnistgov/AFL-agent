@@ -12,6 +12,7 @@ All PipelineOps should:
 """
 import copy
 import warnings
+import pickle
 from abc import ABC, abstractmethod
 
 import xarray as xr
@@ -23,12 +24,12 @@ class Pipeline:
     """
     Container class for defining and building pipelines.
     """
-    def __init__(self,ops=None):
+
+    def __init__(self, ops=None):
         if ops is None:
             self.ops = []
         else:
             self.ops = ops
-
 
     def __iter__(self):
         for op in self.ops:
@@ -47,44 +48,58 @@ class Pipeline:
         self.ops.extend(op)
         return self
 
+    def clear_outputs(self):
+        for op in self:
+            op.output = {}
+
     def copy(self):
         return copy.deepcopy(self)
 
+    def write(self, filename):
+        pipeline = self.copy()
+        pipeline.clear_outputs()
+
+        with open(filename, 'wb') as f:
+            pickle.dump(pipeline, f)
+
+    @staticmethod
+    def read(filename):
+        with open(filename, 'rb') as f:
+            pipeline = pickle.load(f)
+        return pipeline
 
     def draw(self):
         import networkx as nx
+
         G = nx.DiGraph()
         edge_labels = {}
         for op in self:
-            output = op.output_variable
-            if output is None:
+            output_variable = op.output_variable
+            if output_variable is None:
                 continue
-            G.add_node(output)
+            G.add_node(output_variable)
             # need to handle case where input_variables is a list
-            for input in listify(op.input_variable):
-                if (input is None) :
+            for input_variable in listify(op.input_variable):
+                if input_variable is None:
                     continue
-                G.add_node(input)
-                G.add_edge(input, op.output_variable)
-                edge_labels[input,output] = op.name
+                G.add_node(input_variable)
+                G.add_edge(input_variable, output_variable)
+                edge_labels[input_variable, output_variable] = op.name
 
-        pos = nx.nx_agraph.pygraphviz_layout(G, prog='dot')#,args='-Gnodesep=10')
+        pos = nx.nx_agraph.pygraphviz_layout(G, prog='dot')  # ,args='-Gnodesep=10')
         nx.draw(G, with_labels=True, pos=pos, node_size=1000)
-        nx.draw_networkx_edge_labels(G,pos,edge_labels)
+        nx.draw_networkx_edge_labels(G, pos, edge_labels)
 
     def validate(self):
         raise NotImplementedError
 
-    def calculate(self, dataset, copy=True,tiled_data=None):
+    def calculate(self, dataset, tiled_data=None):
         """Execute all operations in pipeline on provided dataset"""
-        if copy:
-            dataset1 = dataset.copy()
-        else:
-            dataset1 = dataset
+        dataset1 = dataset.copy()
 
         for op in self.ops:
             op.calculate(dataset1)
-            dataset1 = op.add_to_dataset(dataset1,copy=False)
+            dataset1 = op.add_to_dataset(dataset1, copy_dataset=False)
 
             if tiled_data is not None:
                 op.add_to_tiled(tiled_data)
@@ -115,8 +130,7 @@ class PipelineOpBase(ABC):
         self.output = {}
 
         # variables to exclude when constructing attrs dict for xarray
-        self._banned_from_attrs = ['output']
-
+        self._banned_from_attrs = ['output','_banned_from_attrs']
 
     @abstractmethod
     def calculate(self, dataset):
@@ -158,9 +172,9 @@ class PipelineOpBase(ABC):
     def copy(self):
         return copy.deepcopy(self)
 
-    def add_to_dataset(self, dataset,copy=True):
+    def add_to_dataset(self, dataset, copy_dataset=True):
         """Adds (xarray) data in output dictionary to provided xarray dataset"""
-        if copy:
+        if copy_dataset:
             dataset1 = dataset.copy()
         else:
             dataset1 = dataset

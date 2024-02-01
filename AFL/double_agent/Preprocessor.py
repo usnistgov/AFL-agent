@@ -18,6 +18,7 @@ class Preprocessor(PipelineOpBase):
 
 
 class SavgolFilter(Preprocessor):
+    """Smooth and take derivatives of input data via a Savitsky-Golay filter"""
     def __init__(self, input_variable, output_variable, dim='q', xlo=None, xhi=None, xlo_isel=None, xhi_isel=None,
                  pedestal=None, npts=250, derivative=0, window_length=31, polyorder=2,
                  apply_log_scale=True, name='SavgolFilter'):
@@ -88,15 +89,13 @@ class SavgolFilter(Preprocessor):
                                        deriv=self.derivative)
 
         self.output[self.output_variable] = data1.copy(data=data1_filtered.T)
+        self.output[self.output_variable].attrs["description"] = f"Savitsky-Golay filtered data"
 
         return self
 
 
 class SubtractMin(Preprocessor):
-    """
-    Baseline variable by subtracting minimum value
-
-    """
+    """ Baseline input variable by subtracting minimum value """
 
     def __init__(self, input_variable, output_variable, dim, name='SubtractMin'):
         super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
@@ -107,6 +106,7 @@ class SubtractMin(Preprocessor):
         data1 = self._get_variable(dataset)
 
         self.output[self.output_variable] = data1 - data1.min(self.dim)
+        self.output[self.output_variable].attrs["description"] = f"Subtracted minimum value along dimension '{self.dim}'"
 
         return self
 
@@ -151,8 +151,8 @@ class BarycentricToTernaryXY(Preprocessor):
         xy = np.dot(bary, self.corners)
 
         self.output[self.output_variable] = xr.DataArray(xy, dims=[self.sample_dim, 'xy'])
-        self.output[self.output_variable].attrs["description"] = ("xy coordinates from barycentric variable '{"
-                                                                  "self.input_variable}'")
+        self.output[self.output_variable].attrs["description"] = ("barycentric coordinates from xy variable "
+                                                                  f"'{self.input_variable}'")
         return self
 
 
@@ -196,6 +196,6 @@ class TernaryXYToBarycentric(Preprocessor):
         v = np.column_stack((self.corners, np.ones(3)))
         bary = np.dot(xys, np.linalg.inv(v))
         self.output[self.output_variable] = xr.DataArray(bary, dims=[self.sample_dim, 'component'])
-        self.output[self.output_variable].attrs["description"] = ("Barycentric coordinates from variable '{"
-                                                                  "self.input_variable}'")
+        self.output[self.output_variable].attrs["description"] = ("XY coordinates from barycentric variable "
+                                                                  f"'{self.input_variable}'")
         return self
