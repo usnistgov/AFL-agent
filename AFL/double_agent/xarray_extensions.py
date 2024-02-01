@@ -424,45 +424,8 @@ class CompositionTools:
             ax.grid('on', color='black')
         return artists
 
-    def plot_continuous(self, components=None, labels=None, set_labels=True, ternary=True, **mpl_kw):
-        warnings.warn('plot_continuous is deprecated and will be removed in a future release. Please use plot_surface.',
-                      DeprecationWarning, stacklevel=2)
 
-        components = self._get_default(components)
-
-        if ternary and len(components) == 3:
-            xy = self.ternary_to_xy(components)
-        elif len(components) == 3:
-            xy = np.vstack(list(self.data[c].values for c in components)).T
-        elif len(components) == 2:
-            xy = np.vstack(list(self.data[c].values for c in components)).T
-        else:
-            raise ValueError(f'Can only work with 2 or 3 components. You passed: {components}')
-
-        if (labels is None):
-            if ('labels' in self.data.coords):
-                labels = self.data.coords['labels'].values
-            elif ('labels' in self.data):
-                labels = self.data['labels'].values
-            else:
-                labels = np.zeros(xy.shape[0])
-        elif isinstance(labels, str) and (labels in self.data):
-            labels = self.data[labels].values
-
-        if ('cmap' not in mpl_kw) and ('color' not in mpl_kw):
-            mpl_kw['cmap'] = 'viridis'
-        if 'color' not in mpl_kw:
-            mpl_kw['c'] = labels
-        artists = plt.scatter(*xy.T, **mpl_kw)
-
-        if set_labels:
-            if ternary:
-                mpl_format_ternary(plt.gca(), *components)
-            else:
-                plt.gca().set(xlabel=components[0], ylabel=components[1])
-        return artists
-
-    def plot_scatter(self, components=None, labels=None, set_axes_labels=True, ternary=True, discrete_labels=True,
+    def plot_scatter(self, components=None, component_var=None, labels=None, set_axes_labels=True, ternary=True, discrete_labels=True,
                      **mpl_kw):
         components = self._get_default(components)
 
@@ -515,41 +478,6 @@ class CompositionTools:
                 labels = {k: v for k, v in zip(['xlabel', 'ylabel'], components)}
             ax.set(**labels)
             ax.grid('on', color='black')
-        return artists
-
-    def plot_discrete(self, components=None, labels=None, set_labels=True, normalize=True, ternary=True, **mpl_kw):
-        warnings.warn('plot_discrete is deprecated and will be removed, please use plot_scatter.', DeprecationWarning,
-                      stacklevel=2)
-
-        components = self._get_default(components)
-
-        if ternary and len(components) == 3:
-            xy = self.ternary_to_xy(components, normalize=normalize)
-        elif len(components) == 2:
-            xy = np.vstack(list(self.data[c].values for c in components)).T
-        else:
-            raise ValueError(f'Can only work with 2 or 3 components. You passed: {components}')
-
-        if labels is None:
-            if 'labels' in self.data.coords:
-                labels = self.data.coords['labels'].values
-            elif 'labels' in self.data:
-                labels = self.data['labels'].values
-            else:
-                labels = np.zeros(xy.shape[0])
-        elif isinstance(labels, str) and (labels in self.data):
-            labels = self.data[labels].values
-
-        artists = []
-        for label in np.unique(labels):
-            mask = (labels == label)
-            artists.append(plt.scatter(*xy[mask].T, **mpl_kw))
-
-        if set_labels:
-            if ternary:
-                mpl_format_ternary(plt.gca(), *components)
-            else:
-                plt.gca().set(xlabel=components[0], ylabel=components[1])
         return artists
 
     def plot_3D(self, components=None, labels=None, set_labels=True, **mpl_kw):

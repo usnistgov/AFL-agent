@@ -38,7 +38,13 @@ class Pipeline:
         return f'<Pipeline N={len(self.ops)}>'
 
     def append(self, op):
+        """Mirrors the behavior of python lists"""
         self.ops.append(op)
+        return self
+
+    def extend(self, op):
+        """Mirrors the behavior of python lists"""
+        self.ops.extend(op)
         return self
 
     def copy(self):
@@ -48,16 +54,23 @@ class Pipeline:
     def draw(self):
         import networkx as nx
         G = nx.DiGraph()
+        edge_labels = {}
         for op in self:
             output = op.output_variable
+            if output is None:
+                continue
             G.add_node(output)
             # need to handle case where input_variables is a list
             for input in listify(op.input_variable):
+                if (input is None) :
+                    continue
                 G.add_node(input)
                 G.add_edge(input, op.output_variable)
+                edge_labels[input,output] = op.name
 
-        pos = nx.nx_agraph.pygraphviz_layout(G, prog='dot')
-        nx.draw(G, with_labels=True, pos=pos)
+        pos = nx.nx_agraph.pygraphviz_layout(G, prog='dot')#,args='-Gnodesep=10')
+        nx.draw(G, with_labels=True, pos=pos, node_size=1000)
+        nx.draw_networkx_edge_labels(G,pos,edge_labels)
 
     def validate(self):
         raise NotImplementedError
@@ -106,7 +119,7 @@ class PipelineOpBase(ABC):
 
 
     @abstractmethod
-    def calculate(self, data):
+    def calculate(self, dataset):
         pass
 
     def __repr__(self):

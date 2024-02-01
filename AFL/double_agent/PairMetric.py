@@ -1,5 +1,5 @@
 """
-PairMetrics are PipelineOps that produce pair matrices are results
+PairMetrics are PipelineOps that produce pair matrices as results
 """
 import copy
 
@@ -9,11 +9,10 @@ import scipy.spatial
 from sklearn.metrics import pairwise
 
 from AFL.double_agent.Pipeline import PipelineOpBase
-from AFL.double_agent.util import listify
 
 
 class PairMetric(PipelineOpBase):
-    def __init__(self, input_variable, output_variable, sample_dim='sample', params=None, name='BaseMetric',
+    def __init__(self, input_variable, output_variable, sample_dim='sample', params=None, name='PairMetric',
                  constrain_same=None, constrain_different=None):
 
         super().__init__(name=name,input_variable=input_variable, output_variable=output_variable)
