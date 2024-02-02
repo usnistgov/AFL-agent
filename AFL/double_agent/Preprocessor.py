@@ -120,7 +120,7 @@ class BarycentricToTernaryXY(Preprocessor):
 
     """
 
-    def __init__(self, input_variable, output_variable, sample_dim, name='BaryCentricToTernaryXY'):
+    def __init__(self, input_variable, output_variable, sample_dim, name='BarycentricToTernaryXY'):
         """Constructor
 
         Parameters
@@ -165,7 +165,7 @@ class TernaryXYToBarycentric(Preprocessor):
 
     """
 
-    def __init__(self, input_variable, output_variable, sample_dim, name='TernaryXYToBaryCentric'):
+    def __init__(self, input_variable, output_variable, sample_dim, name='TernaryXYToBarycentric'):
         """Constructor
 
         Parameters

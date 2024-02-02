@@ -56,10 +56,22 @@ class Pipeline(PipelineContext):
 
     def print(self):
         """Print a summary of the pipeline"""
-        print(f"{'i':>3s}) {'PipelineOp':35s} {'input_variable'} ---> {'output_variable'}")
-        print(f"{'--':>4s} {'-' * 10:35s} {'-' * 14}      {'-' * 15}")
+        print(f"{'PipelineOp':40s} {'input_variable'} ---> {'output_variable'}")
+        print(f"{'-' * 10:40s} {'-' * 35}")
         for i, op in enumerate(self):
-            print(f"{i:3d}) {'<' + op.name + '>':35s} {op.input_variable} ---> {op.output_variable}")
+            print(f"{i:<3d}) {'<' + op.name + '>':35s} {op.input_variable} ---> {op.output_variable}")
+
+        print()
+        print("Input Variables")
+        print("---------------")
+        for i,data in enumerate(self.input_variables()):
+            print(f"{i}) {data}")
+
+        print()
+        print("Output Variables")
+        print("----------------")
+        for i,data in enumerate(self.output_variables()):
+            print(f"{i}) {data}")
 
 
     def append(self, op):
@@ -196,9 +208,9 @@ class PipelineOpBase(ABC):
 
         #try to add to context
         try:
-            Context.get_context().append(self)
+            PipelineContext.get_context().append(self)
         except NoContextException:
-            pass  #silently continue
+            pass  # silently continue for those working outside of a context manager
 
 
         # variables to exclude when constructing attrs dict for xarray
