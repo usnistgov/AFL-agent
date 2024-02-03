@@ -5,14 +5,14 @@ PairMetrics are PipelineOps that produce pair matrices as results
 import xarray as xr
 import numpy as np
 
-from AFL.double_agent.Pipeline import PipelineOpBase
+from AFL.double_agent.PipelineOp import PipelineOp
 
 import sklearn.gaussian_process
 import sklearn.gaussian_process.kernels
 import scipy.stats
 
 
-class Extrapolator(PipelineOpBase):
+class Extrapolator(PipelineOp):
     def __init__(self, feature_input_variable, predictor_input_variable, output_variable, grid_variable, grid_dim,
                  sample_dim, name='Extrapolator'):
         super().__init__(name=name, input_variable=[feature_input_variable, predictor_input_variable, grid_variable],

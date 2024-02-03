@@ -8,10 +8,10 @@ import xarray as xr
 import scipy.spatial
 from sklearn.metrics import pairwise
 
-from AFL.double_agent.Pipeline import PipelineOpBase
+from AFL.double_agent.PipelineOp import PipelineOp
 
 
-class PairMetric(PipelineOpBase):
+class PairMetric(PipelineOp):
     def __init__(self, input_variable, output_variable, sample_dim='sample', params=None, name='PairMetric',
                  constrain_same=None, constrain_different=None):
 

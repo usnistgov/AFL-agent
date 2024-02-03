@@ -5,7 +5,7 @@ class NoContextException(Exception):
     pass
 
 
-class PipelineContext:
+class ContextManager:
     """Inherited by Pipeline to allow for context manager abuse
 
     See https://stackoverflow.com/questions/49573131/how-are-pymc3-variables-assigned-to-the-currently-active-model

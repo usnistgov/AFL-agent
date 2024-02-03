@@ -9,10 +9,10 @@ import sklearn.cluster
 import sklearn.mixture
 from sklearn.metrics import silhouette_samples
 
-from AFL.double_agent.Pipeline import PipelineOpBase
+from AFL.double_agent.PipelineOp import PipelineOp
 
 
-class PhaseLabeler(PipelineOpBase):
+class PhaseLabeler(PipelineOp):
     def __init__(self, input_variable, output_variable, dim='sample', params=None, name='PhaseLabeler'):
 
         super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)

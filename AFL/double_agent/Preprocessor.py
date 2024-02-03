@@ -7,10 +7,10 @@ import warnings
 import numpy as np
 import xarray as xr
 from scipy.signal import savgol_filter
-from AFL.double_agent.Pipeline import PipelineOpBase
+from AFL.double_agent.PipelineOp import PipelineOp
 
 
-class Preprocessor(PipelineOpBase):
+class Preprocessor(PipelineOp):
     """Base class stub for all preprocessors"""
 
     def __init__(self, input_variable=None, output_variable=None, name='PreprocessorBase'):

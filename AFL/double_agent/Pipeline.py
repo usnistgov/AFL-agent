@@ -11,24 +11,26 @@ All PipelineOps should:
 
 """
 import copy
-import warnings
 import pickle
-from abc import ABC, abstractmethod
+
+from typing import Generator, Optional, List
+from typing_extensions import Self
 
 import matplotlib.pyplot as plt
 import xarray as xr
 import networkx as nx
 
+from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
-from AFL.double_agent.Context import PipelineContext,NoContextException
+from AFL.double_agent.ContextManager import ContextManager
 
 
-class Pipeline(PipelineContext):
+class Pipeline(ContextManager):
     """
     Container class for defining and building pipelines.
     """
 
-    def __init__(self, name=None, ops=None):
+    def __init__(self, name: Optional[str] = None, ops: Optional[List] = None):
         if ops is None:
             self.ops = []
         else:
@@ -41,17 +43,18 @@ class Pipeline(PipelineContext):
 
         # placeholder for networkx graph
         self.graph = None
+        self.graph_edge_labels = None
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[PipelineOp,Self,None]:
         """ALlows pipelines to be iterated over"""
         for op in self.ops:
             yield op
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: int) -> PipelineOp:
         """Allows PipelineOps to be viewed from the pipeline via an index"""
         return self.ops[i]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<Pipeline {self.name} N={len(self.ops)}>'
 
     def print(self):
@@ -64,22 +67,21 @@ class Pipeline(PipelineContext):
         print()
         print("Input Variables")
         print("---------------")
-        for i,data in enumerate(self.input_variables()):
+        for i, data in enumerate(self.input_variables()):
             print(f"{i}) {data}")
 
         print()
         print("Output Variables")
         print("----------------")
-        for i,data in enumerate(self.output_variables()):
+        for i, data in enumerate(self.output_variables()):
             print(f"{i}) {data}")
 
-
-    def append(self, op):
+    def append(self, op: PipelineOp) -> Self:
         """Mirrors the behavior of python lists"""
         self.ops.append(op)
         return self
 
-    def extend(self, op):
+    def extend(self, op: List[PipelineOp]) -> Self:
         """Mirrors the behavior of python lists"""
         self.ops.extend(op)
         return self
@@ -89,10 +91,10 @@ class Pipeline(PipelineContext):
         for op in self:
             op.output = {}
 
-    def copy(self):
+    def copy(self) -> Self:
         return copy.deepcopy(self)
 
-    def write(self, filename):
+    def write(self, filename: str):
         """Write pipeline to disk as a pkl
 
         Parameters
@@ -107,7 +109,7 @@ class Pipeline(PipelineContext):
             pickle.dump(pipeline, f)
 
     @staticmethod
-    def read(filename):
+    def read(filename: str):
         """Read pipeline from pickle file on disk
 
 
@@ -170,7 +172,7 @@ class Pipeline(PipelineContext):
     def validate(self):
         raise NotImplementedError
 
-    def calculate(self, dataset, tiled_data=None):
+    def calculate(self, dataset: xr.Dataset, tiled_data=None) -> xr.Dataset:
         """Execute all operations in pipeline on provided dataset"""
         dataset1 = dataset.copy()
 
@@ -181,115 +183,3 @@ class Pipeline(PipelineContext):
             if tiled_data is not None:
                 op.add_to_tiled(tiled_data)
         return dataset1
-
-
-class PipelineOpBase(ABC):
-    """
-    Abstract base class for data processors. All operations in AFL.agent should inherit PipelineOpBase.
-    """
-
-    def __init__(self, name=None, input_variable=None, output_variable=None, input_prefix=None, output_prefix=None):
-        if all(x is None for x in [input_variable, output_variable, input_prefix, output_prefix]):
-            warnings.warn(
-                'No input/output information set for PipelineOp...this is likely an error',
-                stacklevel=2
-            )
-
-        if name is None:
-            self.name = 'PipelineOp'
-        else:
-            self.name = name
-        self.input_variable = input_variable
-        self.output_variable = output_variable
-        self.input_prefix = input_prefix
-        self.output_prefix = output_prefix
-
-        self.output = {}
-
-        #try to add to context
-        try:
-            PipelineContext.get_context().append(self)
-        except NoContextException:
-            pass  # silently continue for those working outside of a context manager
-
-
-        # variables to exclude when constructing attrs dict for xarray
-        self._banned_from_attrs = ['output', '_banned_from_attrs']
-
-    @abstractmethod
-    def calculate(self, dataset):
-        pass
-
-    def __repr__(self):
-        return f'<PipelineOp:{self.name}>'
-
-    def copy(self):
-        return copy.deepcopy(self)
-
-    def _prefix_output(self,variable_name):
-        prefixed_variable = copy.deepcopy(variable_name)
-        if self.output_prefix is not None:
-            prefixed_variable = self.output_prefix + '_' + prefixed_variable
-        return prefixed_variable
-
-    def _get_attrs(self):
-        output_dict = copy.deepcopy(self.__dict__)
-        for key in self._banned_from_attrs:
-            try:
-                del output_dict[key]
-            except KeyError:
-                pass
-        return output_dict
-
-    def _get_variable(self, data):
-        if self.input_variable is None and self.input_prefix is None:
-            raise ValueError((
-                """Can't get variable for {self.name} without input_variable """
-                """or input_prefix specified in constructor """
-            ))
-
-        if self.input_variable is not None and self.input_prefix is not None:
-            raise ValueError((
-                """Both input_variable and input_prefix were specified in constructor. """
-                """Only one should be specified to avoid ambiguous operation"""
-            ))
-
-        if self.input_variable is not None:
-            output = data[self.input_variable].copy()
-
-        elif self.input_prefix is not None:
-            raise NotImplementedError
-
-        return output
-
-
-    def add_to_dataset(self, dataset, copy_dataset=True):
-        """Adds (xarray) data in output dictionary to provided xarray dataset"""
-        if copy_dataset:
-            dataset1 = dataset.copy()
-        else:
-            dataset1 = dataset
-
-        for name, value in self.output.items():
-            if isinstance(value, xr.Dataset):
-                # add PipelineOp meta variables to attributes
-                for data_var in value:
-                    value[data_var].attrs.update(self._get_attrs())
-                dataset1 = xr.merge([dataset1, value])
-            elif isinstance(value, xr.DataArray):
-                # add PipelineOp meta variables to attributes
-                value.attrs.update(self._get_attrs())
-                dataset1[name] = value
-            else:
-                raise ValueError((
-                    f"""Items in output dictionary of PipelineOp {self.name} must be xr.Dataset or xr.DataArray """
-                    f"""Found variable named {name} of type {type(value)}."""
-                ))
-        return dataset1
-
-    def add_to_tiled(self, tiled_data):
-        """Adds data in output dictionary to provided tiled catalogue"""
-        raise NotImplementedError
-        # This needs to handle/deconstruct xarray types!!
-        # for name, dataarray in self.output.items():
-        #     tiled_data.add_array(name, value.values)
