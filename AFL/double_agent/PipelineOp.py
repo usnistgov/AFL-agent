@@ -1,7 +1,7 @@
 import copy
 import warnings
 from abc import ABC, abstractmethod
-from typing import Optional, Dict
+from typing import Optional, Dict, List, Union
 from typing_extensions import Self
 
 import xarray as xr
@@ -14,9 +14,12 @@ class PipelineOp(ABC):
     Abstract base class for data processors. All operations in AFL.agent should inherit PipelineOpBase.
     """
 
-    def __init__(self, name: Optional[str] = None, input_variable: Optional[str] = None,
-                 output_variable: Optional[str] = None, input_prefix: Optional[str] = None,
-                 output_prefix: Optional[str] = None):
+    def __init__(self,
+                 name: Union[Optional[str], List[str]] = None,
+                 input_variable: Union[Optional[str], List[str]] = None,
+                 output_variable: Union[Optional[str], List[str]] = None,
+                 input_prefix: Union[Optional[str], List[str]] = None,
+                 output_prefix: Union[Optional[str], List[str]] = None):
 
         if all(x is None for x in [input_variable, output_variable, input_prefix, output_prefix]):
             warnings.warn(

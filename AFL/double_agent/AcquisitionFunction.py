@@ -55,6 +55,8 @@ class AcquisitionFunction(PipelineOp):
         self._banned_from_attrs.append('acquisition')
 
     def _get_excluded_comps(self, dataset):
+        if self.excluded_comps_variables is None:
+            return None
 
         merge_list = []
         for var in listify(self.excluded_comps_variables):
@@ -91,7 +93,12 @@ class AcquisitionFunction(PipelineOp):
 
         self.output.update(gp_op.output)
 
-        dataset['decision_surface'] += gp_op.output['excluded_surface']
+        self.output[self._prefix_output('pre_exclude_decision_surface')] = self.acquisition['decision_surface']
+        self.output[self._prefix_output('pre_exclude_decision_surface')].attrs['description'] = (
+            "The acquisition surface before it is modified by an exclusion field"
+        )
+
+        dataset['decision_surface'] -= gp_op.output['excluded_surface']
         return dataset
 
     def get_next_samples(self, dataset):
@@ -120,8 +127,8 @@ class AcquisitionFunction(PipelineOp):
         if len(indices) < self.count:
             raise AcquisitionError((
                 """Unable to find gridpoint in decision surface that satisfies all constraints. """
-                """This often occurs when acquisition_rtol (currently {self.acquisition_rtol}) """
-                """is too low or when the exclusion_radius (currently {self.exclusion_radius}) """
+                f"""This often occurs when acquisition_rtol (currently {self.decision_rtol}) """
+                f"""is too low or when the exclusion_radius (currently {self.exclusion_radius}) """
                 """is too high for the current problem state."""
             ))
 
@@ -131,6 +138,7 @@ class AcquisitionFunction(PipelineOp):
 
         next_samples = dataset.sel({self.grid_dim: next_indices}).comp_grid
         next_samples = next_samples.rename({self.grid_dim:'AF_sample'})
+        next_samples = next_samples.reset_index('AF_sample', drop=True)
 
         self.output[self.output_variable] = next_samples  # should already be a xr.DataArray
 
@@ -161,8 +169,10 @@ class RandomAF(AcquisitionFunction):
             dims=self.grid_dim
         )
 
-        self.acquisition['excluded_comps'] = self._get_excluded_comps(dataset)
-        self.exclude_previous_samples(self.acquisition)
+        excluded_comps = self._get_excluded_comps(dataset)
+        if excluded_comps is not None:
+            self.acquisition['excluded_comps'] = self._get_excluded_comps(dataset)
+            self.exclude_previous_samples(self.acquisition)
 
         self.output[self._prefix_output('decision_surface')] = self.acquisition['decision_surface']
         self.output[self._prefix_output('decision_surface')].attrs['description'] = (
@@ -197,7 +207,7 @@ class MaxValueAF(AcquisitionFunction):
 
         self.acquisition['comp_grid'] = dataset[self.grid_variable].transpose(self.grid_dim, ...)
 
-        # make sure it's actually a list, listify will pass-through tuples
+        # make sure it's actually a list, listify will pass through tuples
         input_variables = list(listify(self.input_variables))
 
         if self.combine_coeffs is not None:
@@ -210,10 +220,13 @@ class MaxValueAF(AcquisitionFunction):
         for coeff, input_variable in zip(coeffs, input_variables):
             decision_surface += coeff * dataset[input_variable]
 
+        decision_surface = (decision_surface - decision_surface.min())/(decision_surface.max()-decision_surface.min())
         self.acquisition['decision_surface'] = decision_surface
 
-        self.acquisition['excluded_comps'] = self._get_excluded_comps(dataset)
-        self.exclude_previous_samples(self.acquisition)
+        excluded_comps = self._get_excluded_comps(dataset)
+        if excluded_comps is not None:
+            self.acquisition['excluded_comps'] = self._get_excluded_comps(dataset)
+            self.exclude_previous_samples(self.acquisition)
 
         self.output[self._prefix_output('decision_surface')] = self.acquisition['decision_surface']
         self.output[self._prefix_output('decision_surface')].attrs['description'] = (

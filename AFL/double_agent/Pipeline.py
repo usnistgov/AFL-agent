@@ -57,6 +57,15 @@ class Pipeline(ContextManager):
     def __repr__(self) -> str:
         return f'<Pipeline {self.name} N={len(self.ops)}>'
 
+    def search(self,name: str,contains:bool =False) -> Optional[PipelineOp]:
+        for op in self:
+            if contains and (name in op.name):
+                return op
+            elif name==op.name:
+                return op
+        return None
+
+
     def print(self):
         """Print a summary of the pipeline"""
         print(f"{'PipelineOp':40s} {'input_variable'} ---> {'output_variable'}")
@@ -131,17 +140,17 @@ class Pipeline(ContextManager):
         self.graph = nx.DiGraph()
         self.graph_edge_labels = {}
         for op in self:
-            output_variable = op.output_variable
-            if output_variable is None:
-                continue
-            self.graph.add_node(output_variable)
-            # need to handle case where input_variables is a list
-            for input_variable in listify(op.input_variable):
-                if input_variable is None:
+            for output_variable in listify(op.output_variable):
+                if output_variable is None:
                     continue
-                self.graph.add_node(input_variable)
-                self.graph.add_edge(input_variable, output_variable)
-                self.graph_edge_labels[input_variable, output_variable] = op.name
+                self.graph.add_node(output_variable)
+                # need to handle case where input_variables is a list
+                for input_variable in listify(op.input_variable):
+                    if input_variable is None:
+                        continue
+                    self.graph.add_node(input_variable)
+                    self.graph.add_edge(input_variable, output_variable)
+                    self.graph_edge_labels[input_variable, output_variable] = op.name
 
     def draw(self, figsize=(8, 8), edge_labels=True):
         """Draw the pipeline as a graph"""
@@ -168,9 +177,6 @@ class Pipeline(ContextManager):
         """Get the outputs variables of the pipeline"""
         self.make_graph()
         return [n for n, d in self.graph.out_degree() if d == 0]
-
-    def validate(self):
-        raise NotImplementedError
 
     def calculate(self, dataset: xr.Dataset, tiled_data=None) -> xr.Dataset:
         """Execute all operations in pipeline on provided dataset"""

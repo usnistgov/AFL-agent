@@ -5,18 +5,24 @@ PairMetrics are PipelineOps that produce pair matrices as results
 import xarray as xr
 import numpy as np
 
-from AFL.double_agent.PipelineOp import PipelineOp
-
 import sklearn.gaussian_process
 import sklearn.gaussian_process.kernels
-import scipy.stats
+
+from AFL.double_agent.PipelineOp import PipelineOp
+from AFL.double_agent.util import listify
+
 
 
 class Extrapolator(PipelineOp):
-    def __init__(self, feature_input_variable, predictor_input_variable, output_variable, grid_variable, grid_dim,
-                 sample_dim, name='Extrapolator'):
-        super().__init__(name=name, input_variable=[feature_input_variable, predictor_input_variable, grid_variable],
-                         output_variable=output_variable)
+    def __init__(self, feature_input_variable, predictor_input_variable, output_variables, output_prefix,
+                 grid_variable, grid_dim, sample_dim, name='Extrapolator'):
+
+        super().__init__(
+            name=name,
+            input_variable=[feature_input_variable, predictor_input_variable, grid_variable],
+            output_variable=[output_prefix+'_'+o for o in listify(output_variables)],
+            output_prefix = output_prefix,
+        )
         self.feature_input_variable = feature_input_variable
         self.predictor_input_variable = predictor_input_variable
         self.grid_variable = grid_variable
@@ -25,10 +31,11 @@ class Extrapolator(PipelineOp):
 
 
 class DummyExtrapolator(Extrapolator):
-    def __init__(self, feature_input_variable, predictor_input_variable, output_variable, grid_variable, grid_dim,
+    def __init__(self, feature_input_variable, predictor_input_variable, output_prefix, grid_variable, grid_dim,
                  sample_dim, name='DummyExtrapolator'):
         super().__init__(name=name, feature_input_variable=feature_input_variable,
-                         predictor_input_variable=predictor_input_variable, output_variable=output_variable,
+                         predictor_input_variable=predictor_input_variable,
+                         output_variables=['mean','var'], output_prefix=output_prefix,
                          grid_variable=grid_variable, grid_dim=grid_dim, sample_dim=sample_dim)
 
     def calculate(self, dataset):
@@ -40,11 +47,12 @@ class DummyExtrapolator(Extrapolator):
 
 
 class GaussianProcessClassifier(Extrapolator):
-    def __init__(self, feature_input_variable, predictor_input_variable, output_variable, grid_variable, grid_dim,
+    def __init__(self, feature_input_variable, predictor_input_variable, output_prefix, grid_variable, grid_dim,
                  sample_dim, kernel=None, name='GaussianProcessClassifier'):
 
         super().__init__(name=name, feature_input_variable=feature_input_variable,
-                         predictor_input_variable=predictor_input_variable, output_variable=output_variable,
+                         predictor_input_variable=predictor_input_variable,
+                         output_variables=['mean','entropy'], output_prefix=output_prefix,
                          grid_variable=grid_variable, grid_dim=grid_dim, sample_dim=sample_dim)
 
         if kernel is None:
@@ -62,8 +70,8 @@ class GaussianProcessClassifier(Extrapolator):
         mean = clf.predict_proba(grid.values)
         entropy = -np.sum(np.log(mean)*mean,axis=-1)
 
-        self.output[self.output_variable + "_mean"] = xr.DataArray(mean.argmax(-1),dims=self.grid_dim)
-        self.output[self.output_variable + "_entropy"] = xr.DataArray(entropy,dims=self.grid_dim)
+        self.output[self._prefix_output("mean")] = xr.DataArray(mean.argmax(-1),dims=self.grid_dim)
+        self.output[self._prefix_output("entropy")] = xr.DataArray(entropy,dims=self.grid_dim)
 
         return self
 
