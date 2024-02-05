@@ -6,19 +6,22 @@ All PipelineOps should:
 - take input_variable and output_variable in their constructor
 - have a .calculate method
     - with exact signature as base class (PipelineOpBase)
-    - that  writes an xr.Dataset or xr.DataArray (preferred)
+    - that writes a xr.Dataset or xr.DataArray (preferred)
     - that returns self
 
 """
+import re
 import copy
 import pickle
 
 from typing import Generator, Optional, List
 from typing_extensions import Self
 
+import numpy as np
 import matplotlib.pyplot as plt
 import xarray as xr
 import networkx as nx
+from tqdm.auto import tqdm
 
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
@@ -45,8 +48,8 @@ class Pipeline(ContextManager):
         self.graph = None
         self.graph_edge_labels = None
 
-    def __iter__(self) -> Generator[PipelineOp,Self,None]:
-        """ALlows pipelines to be iterated over"""
+    def __iter__(self) -> Generator[PipelineOp, Self, None]:
+        """Allows pipelines to be iterated over"""
         for op in self.ops:
             yield op
 
@@ -57,16 +60,15 @@ class Pipeline(ContextManager):
     def __repr__(self) -> str:
         return f'<Pipeline {self.name} N={len(self.ops)}>'
 
-    def search(self,name: str,contains:bool =False) -> Optional[PipelineOp]:
+    def search(self, name: str, contains: bool = False) -> Optional[PipelineOp]:
         for op in self:
             if contains and (name in op.name):
                 return op
-            elif name==op.name:
+            elif name == op.name:
                 return op
         return None
 
-
-    def print(self):
+    def print(self) -> None:
         """Print a summary of the pipeline"""
         print(f"{'PipelineOp':40s} {'input_variable'} ---> {'output_variable'}")
         print(f"{'-' * 10:40s} {'-' * 35}")
@@ -96,7 +98,7 @@ class Pipeline(ContextManager):
         return self
 
     def clear_outputs(self):
-        """Clears the ouptut dict of all PipelineOps in this pipeline"""
+        """Clears the output dict of all PipelineOps in this pipeline"""
         for op in self:
             op.output = {}
 
@@ -149,7 +151,7 @@ class Pipeline(ContextManager):
                     if input_variable is None:
                         continue
                     self.graph.add_node(input_variable)
-                    self.graph.add_edge(input_variable, output_variable)
+                    self.graph.add_edge(input_variable, output_variable, name=op.name)
                     self.graph_edge_labels[input_variable, output_variable] = op.name
 
     def draw(self, figsize=(8, 8), edge_labels=True):
@@ -161,6 +163,74 @@ class Pipeline(ContextManager):
         nx.draw(self.graph, with_labels=True, pos=pos, node_size=1000)
         if edge_labels:
             nx.draw_networkx_edge_labels(self.graph, pos, self.graph_edge_labels)
+
+    def draw_plotly(self):
+        import plotly.graph_objects as go
+
+        self.make_graph()
+        pos = nx.nx_agraph.pygraphviz_layout(self.graph, prog='dot')
+
+        edge_x = []
+        edge_y = []
+        for edge in self.graph.edges():
+            x0, y0 = pos[edge[0]]
+            x1, y1 = pos[edge[1]]
+            edge_x.append(x0)
+            edge_x.append(x1)
+            edge_x.append(None)
+            edge_y.append(y0)
+            edge_y.append(y1)
+            edge_y.append(None)
+
+        edge_trace = go.Scatter(
+            x=edge_x, y=edge_y,
+            line=dict(width=0.5, color='#888'),
+            hoverinfo='none',
+            mode='lines')
+
+        node_x = []
+        node_y = []
+        for node in self.graph.nodes():
+            x, y = pos[node]
+            node_x.append(x)
+            node_y.append(y)
+
+        node_trace = go.Scatter(
+            x=node_x, y=node_y,
+            mode='markers',
+            hoverinfo='text',
+            marker=dict(
+                reversescale=True,
+                color=[],
+                size=20,
+                line_width=2))
+
+        node_text = []
+        regex = re.compile("[\[\]\']")
+        for node in self.graph.nodes():
+            VarIn = np.unique(list(n[0] for n in self.graph.in_edges(node)))
+            VarOut = np.unique(list(n[0] for n in self.graph.out_edges(node)))
+            OpIn = np.unique([self.graph_edge_labels[i, node] for i in VarIn])
+
+            OpIn = regex.sub('', str(OpIn)).replace(" ", ", ")
+            VarIn = regex.sub('', str(VarIn)).replace(" ", ", ")
+            VarOut = regex.sub('', str(VarOut)).replace(" ", ", ")
+            node_text.append(
+                f"{'Node: ':9s}{node}<br>{'OpIn: ':9s}{OpIn}<br>{'VarIn: ':9s}{VarIn}<br>{'VarOut: ':9s}{VarOut}")
+
+        node_trace.text = node_text
+
+        fig = go.Figure([node_trace, edge_trace])
+        fig.update_layout(
+            height=750,
+            width=750,
+            showlegend=False,
+            template="simple_white",
+            xaxis={'visible': False},
+            yaxis={'visible': False},
+            margin=dict(l=20, r=20, t=20, b=20),
+        )
+        return fig
 
     def input_variables(self):
         """Get the input variables needed for the pipeline to fully execute
@@ -178,11 +248,12 @@ class Pipeline(ContextManager):
         self.make_graph()
         return [n for n, d in self.graph.out_degree() if d == 0]
 
-    def calculate(self, dataset: xr.Dataset, tiled_data=None) -> xr.Dataset:
+    def calculate(self, dataset: xr.Dataset, tiled_data=None, disable_progress_bar=False) -> xr.Dataset:
         """Execute all operations in pipeline on provided dataset"""
         dataset1 = dataset.copy()
 
-        for op in self.ops:
+        for op in (pbar := tqdm(self.ops, disable=disable_progress_bar)):
+            pbar.set_postfix_str(f"{op.name:25s}")
             op.calculate(dataset1)
             dataset1 = op.add_to_dataset(dataset1, copy_dataset=False)
 

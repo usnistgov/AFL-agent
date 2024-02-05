@@ -10,7 +10,7 @@ support for producing n-predictions
 
 to_add
 - exclude_point_functino
-- multivariate gaussian generation on grid (no pipelineop)
+- multivariate gaussian generation on grid (no PipelineOp)
 
 """
 import numpy as np
@@ -29,6 +29,7 @@ class AcquisitionError(Exception):
 
 
 class AcquisitionFunction(PipelineOp):
+
     def __init__(self, input_variables, grid_variable, grid_dim='grid', output_prefix=None,
                  output_variable="next_compositions", decision_rtol=0.05,
                  excluded_comps_variables=None, excluded_comps_dim='component', exclusion_radius=1e-3,
@@ -93,7 +94,7 @@ class AcquisitionFunction(PipelineOp):
 
         self.output.update(gp_op.output)
 
-        self.output[self._prefix_output('pre_exclude_decision_surface')] = self.acquisition['decision_surface']
+        self.output[self._prefix_output('pre_exclude_decision_surface')] = dataset['decision_surface']
         self.output[self._prefix_output('pre_exclude_decision_surface')].attrs['description'] = (
             "The acquisition surface before it is modified by an exclusion field"
         )
@@ -119,7 +120,7 @@ class AcquisitionFunction(PipelineOp):
         # array after finding the optimal next samples
         dataset = dataset.assign_coords({self.grid_dim: np.arange(dataset.sizes[self.grid_dim])})
 
-        # find indices of all samples within self.decison_rtol of the maximum
+        # find indices of all samples within self.decision_rtol of the maximum
         close_mask = np.isclose(dataset.decision_surface, dataset.decision_surface.max(), rtol=self.decision_rtol,
                                 atol=0)
         indices = dataset.sel({self.grid_dim: close_mask})[self.grid_dim].values
@@ -137,7 +138,7 @@ class AcquisitionFunction(PipelineOp):
         next_indices = indices[:self.count]
 
         next_samples = dataset.sel({self.grid_dim: next_indices}).comp_grid
-        next_samples = next_samples.rename({self.grid_dim:'AF_sample'})
+        next_samples = next_samples.rename({self.grid_dim: 'AF_sample'})
         next_samples = next_samples.reset_index('AF_sample', drop=True)
 
         self.output[self.output_variable] = next_samples  # should already be a xr.DataArray
@@ -220,7 +221,8 @@ class MaxValueAF(AcquisitionFunction):
         for coeff, input_variable in zip(coeffs, input_variables):
             decision_surface += coeff * dataset[input_variable]
 
-        decision_surface = (decision_surface - decision_surface.min())/(decision_surface.max()-decision_surface.min())
+        decision_surface = (decision_surface - decision_surface.min()) / (
+                    decision_surface.max() - decision_surface.min())
         self.acquisition['decision_surface'] = decision_surface
 
         excluded_comps = self._get_excluded_comps(dataset)
