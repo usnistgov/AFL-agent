@@ -104,7 +104,7 @@ class GaussianPoints(Generator):
         grid = dataset[self.grid_variable]
         gaussian_points = np.zeros(grid.sizes[self.grid_dim])
         normalization = np.sqrt((2 * np.pi) ** n_comps * np.linalg.det(np.eye(n_comps) * self.exclusion_radius))
-        for i, coord in excluded_comps.groupby(self.sample_dim):
+        for i, coord in excluded_comps.groupby(self.sample_dim,squeeze=False):
             pdf = multivariate_normal.pdf(grid, mean=coord.values.squeeze(), cov=self.exclusion_radius)
             gaussian_points = gaussian_points +  self.exclusion_depth * normalization * pdf
 

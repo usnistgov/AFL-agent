@@ -81,7 +81,7 @@ class SavgolFilter(Preprocessor):
         data1 = data1.interp({dim: xnew})
 
         # filter out any q that have NaN
-        data1 = data1.dropna(dim, 'any')
+        data1 = data1.dropna(dim, how='any')
 
         # take derivative
         data1_filtered = savgol_filter(data1.values.T, window_length=self.window_length, polyorder=self.polyorder,
