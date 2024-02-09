@@ -22,7 +22,10 @@ class DoubleAgentDriver(Driver):
 
         self.input: Optional[xr.Dataset] = None
         self.pipeline: Optional[Pipeline] = None
-        self.results: Optional[Dict[str, xr.Dataset]] = None
+        self.results: Optional[Dict[str, xr.Dataset]] = dict()
+
+    def reset_results(self):
+        self.results = dict()
 
     def predict(self, deposit=True):
         if (self.pipeline is None) or (self.input is None):
@@ -38,6 +41,8 @@ class DoubleAgentDriver(Driver):
 
         if deposit:
             self.deposit_to_dropbox(self.results[al_uid], uid=al_uid)
+
+        return al_uid
 
     def deposit_to_dropbox(self, obj: object, uid: Union[str, uuid.UUID]) -> None:
         if uid is None:
