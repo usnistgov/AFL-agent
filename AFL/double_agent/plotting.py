@@ -48,7 +48,6 @@ def plot_surface_mpl(
 
     if 'ax' in mpl_kw:
         ax = mpl_kw.pop('ax')
-
     else:
         fig, ax = plt.subplots(1, 1, subplot_kw=dict(projection=projection))
 
@@ -105,9 +104,9 @@ def plot_scatter_mpl(
 
     if set_axes_labels:
         if projection == 'ternary':
-            labels = {k: v for k, v in zip(['tlabel', 'llabel', 'rlabel'], components)}
+            labels = {k: v.values[()] for k, v in zip(['tlabel', 'llabel', 'rlabel'], components)}
         else:
-            labels = {k: v for k, v in zip(['xlabel', 'ylabel'], components)}
+            labels = {k: v.values[()] for k, v in zip(['xlabel', 'ylabel'], components)}
         ax.set(**labels)
         ax.grid('on', color='black')
     return artists
