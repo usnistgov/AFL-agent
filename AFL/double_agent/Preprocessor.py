@@ -4,6 +4,9 @@ Preprocessing ops generally take in measurement data and scale, correct, and tra
 
 """
 import warnings
+from typing import Union, Optional
+from numbers import Number
+
 import numpy as np
 import xarray as xr
 from scipy.signal import savgol_filter
@@ -107,6 +110,80 @@ class SubtractMin(Preprocessor):
 
         self.output[self.output_variable] = data1 - data1.min(self.dim)
         self.output[self.output_variable].attrs["description"] = f"Subtracted minimum value along dimension '{self.dim}'"
+
+        return self
+
+class Zscale(Preprocessor):
+    """ Z-scale the data to have mean 0 and standard deviation scaling"""
+
+    def __init__(
+            self,
+            input_variable: str,
+            output_variable: str,
+            dim: str,
+            minval: Optional[Number] = None,
+            maxval: Optional[Number] = None,
+            name:str='Standardize'
+    ):
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
+
+        self.dim = dim
+        self.minval = minval
+        self.maxval = maxval
+
+    def calculate(self, dataset):
+        data1 = self._get_variable(dataset)
+
+        if self.maxval is None:
+            maxval = data1.max()
+        else:
+            maxval = self.maxval
+
+        if self.minval is None:
+            minval = data1.min()
+        else:
+            minval = self.minval
+
+
+        self.output[self.output_variable] = (data1 - minval)/(maxval - minval)
+        self.output[self.output_variable].attrs["description"] = f"Data normalized to have range 0 -> 1"
+
+        return self
+
+class Standardize(Preprocessor):
+    """ Standardize the data to have min 0 and max 1"""
+
+    def __init__(
+            self,
+            input_variable: str,
+            output_variable: str,
+            dim: str,
+            minval: Optional[Number] = None,
+            maxval: Optional[Number] = None,
+            name:str='Standardize'
+    ):
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
+
+        self.dim = dim
+        self.minval = minval
+        self.maxval = maxval
+
+    def calculate(self, dataset):
+        data1 = self._get_variable(dataset)
+
+        if self.maxval is None:
+            maxval = data1.max()
+        else:
+            maxval = self.maxval
+
+        if self.minval is None:
+            minval = data1.min()
+        else:
+            minval = self.minval
+
+
+        self.output[self.output_variable] = (data1 - minval)/(maxval - minval)
+        self.output[self.output_variable].attrs["description"] = f"Data normalized to have range 0 -> 1"
 
         return self
 
