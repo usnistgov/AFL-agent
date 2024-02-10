@@ -25,7 +25,7 @@ class PhaseLabeler(PipelineOp):
         else:
             self.params = params
 
-        self._banned_from_attrs.append('labels')
+        self._banned_from_attrs.extend(['labels','clf','silh_dict'])
 
     def __getitem__(self, index):
         return self.labels[index]
