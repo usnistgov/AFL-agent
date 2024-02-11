@@ -34,7 +34,6 @@ class SASfit_classifier(PipelineOp):
         
         self.input_models = input_models
         self.sample_dim = sample_dim
-        self.q = None
         self.labels=None
         self.fit_method = fit_method
         self.fit_tiled_id = None
@@ -45,7 +44,7 @@ class SASfit_classifier(PipelineOp):
         """
         creates a client to talk to the SASfit server
         """
-        self.q = dataset[self.q_dim].values
+        q = dataset[self.q_dim].values
         
         self.SASfit_client = Client(
             self.server_id.spit(':')[0],
@@ -55,7 +54,7 @@ class SASfit_classifier(PipelineOp):
         self.SASfit_client.debug(False)
         
         self.SASfit_client.set_config(
-            q_range=(min(self.q), max(self.q)),
+            q_range=(min(q), max(q)),
             model_inputs = self.input_models
         )
         
@@ -63,11 +62,15 @@ class SASfit_classifier(PipelineOp):
         """
         Default class calculate runs a fit method on the input data and outputs a classification
         """
-        data = 
+        q = dataset[self.q_dim].values.tolist()
+        Is = dataset[self.sas_variable].values.tolist()
+        dIs = dataset[self.sas_err_variable].values.tolist()
         
         self.SASfit_client.enqueue(
             task_name="fit_models",
-            data = data,
+            q = q,
+            I = Is,
+            dI = dIs,
             fit_method = self.fit_method
         )
         
@@ -76,14 +79,14 @@ class SASfit_classifier(PipelineOp):
             interactive = True
         )['return_val']
         
-        self.labels = report_json['best_fits']['model_idx']
-        self.best_chisq = report_json['best_fits']['lowest_chisq']
-        self.label_names = report_json['best_fits']['model_name']
+        labels = report_json['best_fits']['model_idx']
+        best_chisq = report_json['best_fits']['lowest_chisq']
+        label_names = report_json['best_fits']['model_name']
         
         #mandatory for each pipeline operation
-        self.output[self._prefix_output("labels")] = xr.DataArray(self.labels, dims=[self.sample_dim])
-        self.output[self._prefix_output("label_names")] = xr.DataArray(self.label_names, dims=[self.sample_dim])
-        self.output[self._prefix_output("best_chisq")] = xr.DataArray(self.best_chisq, dims=[self.sample_dim])
+        self.output[self._prefix_output("labels")] = xr.DataArray(labels, dims=[self.sample_dim])
+        self.output[self._prefix_output("label_names")] = xr.DataArray(label_names, dims=[self.sample_dim])
+        self.output[self._prefix_output("best_chisq")] = xr.DataArray(best_chisq, dims=[self.sample_dim])
         return self
 
 
@@ -98,7 +101,11 @@ class SASfit_fit_extract(SASfit):
             q_SAS
         )
 
-    def calculate()
+    def calculate():
+        pass
+        
+        return self
+        
 
 
 
