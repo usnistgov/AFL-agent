@@ -87,6 +87,16 @@ def plot_scatter_mpl(
 
     coords = dataset[component_variable].transpose(..., component_dim).values
 
+    if (labels is None):
+        if ('labels' in dataset.coords):
+            labels = dataset.coords['labels'].values
+        elif ('labels' in dataset):
+            labels = dataset['labels'].values
+        else:
+            labels = np.zeros(coords.shape[0])
+    elif isinstance(labels, str) and (labels in dataset):
+        labels = dataset[labels].values
+
     if 'ax' in mpl_kw:
         ax = mpl_kw.pop('ax')
     else:
