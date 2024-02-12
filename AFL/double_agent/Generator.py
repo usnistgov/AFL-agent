@@ -40,7 +40,6 @@ class CartesianGrid(Generator):
     def calculate(self, dataset):
         grid_list = []
         for component in self.components:
-            print(component)
             spec = self.grid_spec[component]
             grid_list.append(np.linspace(spec['min'], spec['max'], spec['steps']))
 
