@@ -38,8 +38,7 @@ class SASfit_classifier(PipelineOp):
         self.fit_method = fit_method
         self.fit_tiled_id = None
         
-        self._banned_from_attrs.append('SASfit_client')
-        self._banned_from_attrs.append('input_models')
+        self._banned_from_attrs.extend(['SASfit_client','input_models'])
         
     def construct_client(self, dataset):
         """
@@ -69,7 +68,7 @@ class SASfit_classifier(PipelineOp):
         Is = dataset[self.sas_variable].values.tolist()
         dIs = dataset[self.sas_err_variable].values.tolist()
         
-        self.SASfit_client.enqueue(
+        tiled_calc_id = self.SASfit_client.enqueue(
             task_name="fit_models",
             q = q,
             I = Is,
@@ -88,8 +87,11 @@ class SASfit_classifier(PipelineOp):
         
         #mandatory for each pipeline operation
         self.output[self._prefix_output("labels")] = xr.DataArray(labels, dims=[self.sample_dim])
+        self.output[self._prefix_output("labels")].attrs['tiled_calc_id'] = tiled_calc_id
         self.output[self._prefix_output("label_names")] = xr.DataArray(label_names, dims=[self.sample_dim])
+        self.output[self._prefix_output("label_names")].attrs['tiled_calc_id'] = tiled_calc_id
         self.output[self._prefix_output("best_chisq")] = xr.DataArray(best_chisq, dims=[self.sample_dim])
+        self.output[self._prefix_output("best_chisq")].attrs['tiled_calc_id'] = tiled_calc_id
         return self
 
 
@@ -115,13 +117,14 @@ class SASfit_fit_extract(PipelineOp):
         self.target_fit_params = target_fit_params
         
         self.input_models = input_models
-        if self.target_model not in self.input_models:
+        if self.target_model not in [model['name'] for model in self.input_models]:
             raise ValueError("Hey, the target model is not in the supplied input models")
+        
         self.sample_dim = sample_dim
         self.fit_method = fit_method
         self.fit_tiled_id = None
         
-        self._banned_from_attrs.extend(['SASfit_client','input_models',])
+        self._banned_from_attrs.extend(['SASfit_client','input_models'])
 
         
     def construct_client(self, dataset):
@@ -152,7 +155,7 @@ class SASfit_fit_extract(PipelineOp):
         Is = dataset[self.sas_variable].values.tolist()
         dIs = dataset[self.sas_err_variable].values.tolist()
         
-        self.SASfit_client.enqueue(
+        tiled_calc_id = self.SASfit_client.enqueue(
             task_name="fit_models",
             q = q,
             I = Is,
@@ -174,10 +177,10 @@ class SASfit_fit_extract(PipelineOp):
 
         target = []
         err = []
-        for i, model in enumerate(report_json['model_fits']):
-            if model.name == self.target_model:
-                target.append(model['output_fit_params']['value'])
-                err.append(model['output_fit_params']['error'])
+        for idx, model in enumerate(report_json['best_fits']['model_params']):
+            if model['name'] == self.target_model:
+                target.append(model['output_fit_params'][self.target_fit_params]['value'])
+                err.append(model['output_fit_params'][self.target_fit_params]['error'])
             else:
                 #we may want something different than np.nan
                 target.append(np.nan)
@@ -185,15 +188,21 @@ class SASfit_fit_extract(PipelineOp):
         
         #mandatory for each pipeline operation
         self.output[self._prefix_output("labels")] = xr.DataArray(labels, dims=[self.sample_dim])
+        self.output[self._prefix_output('labels')].attrs['tiled_calc_id'] = tiled_calc_id
         self.output[self._prefix_output("label_names")] = xr.DataArray(label_names, dims=[self.sample_dim])
+        self.output[self._prefix_output('label_names')].attrs['tiled_calc_id'] = tiled_calc_id
         self.output[self._prefix_output("best_chisq")] = xr.DataArray(best_chisq, dims=[self.sample_dim])
-        self.output[self._prefix_output("fit_values")] = xr.DataArray(target, dims=[self.sample_dim])
-        self.output[self._prefix_output("fit_err_values")] = xr.DataArray(err, dims=[self.sample_dim])
-        
-        self.output[self._prefix_output("fit_values")].attrs['target_model'] = 
-        self.output[self._prefix_output("fit_err_values")].attrs['target_model'] = 
+        self.output[self._prefix_output('best_chisq')].attrs['tiled_calc_id'] = tiled_calc_id
 
         
+        self.output[self._prefix_output("fit_values")] = xr.DataArray(target, dims=[self.sample_dim])
+        self.output[self._prefix_output("fit_err_values")] = xr.DataArray(err, dims=[self.sample_dim])
+
+        for output_var in ['fit_values','fit_err_values']:
+            self.output[self._prefix_output(output_var)].attrs['target_model'] = self.target_model
+            self.output[self._prefix_output(output_var)].attrs['target_fit_params'] = self.target_fit_params
+            self.output[self._prefix_output(output_var)].attrs['tiled_calc_id'] = tiled_calc_id
+
         return self
 
         
