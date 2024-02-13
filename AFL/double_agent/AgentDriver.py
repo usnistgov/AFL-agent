@@ -1,5 +1,6 @@
 from typing import Union, Optional, Dict
 import uuid
+import pathlib
 
 import xarray as xr
 
@@ -10,43 +11,45 @@ from AFL.automation.APIServer.Driver import Driver
 class DoubleAgentDriver(Driver):
     defaults = {}
     defaults['save_path'] = '/home/AFL/'
+    defaults['concat_dim'] = 'sample'
 
     def __init__(self, overrides=None):
-        Driver.__init__(self, name='SAS_AgentDriver', defaults=self.gather_defaults(), overrides=overrides)
-
-        self.watchdog = None
+        Driver.__init__(self, name='DoubleAgentDriver', defaults=self.gather_defaults(), overrides=overrides)
         self.app = None
         self.name = 'DoubleAgentDriver'
 
         self.status_str = 'Fresh server!'
 
-        self.input: Optional[xr.Dataset] = None
+        self.input: xr.Dataset = xr.Dataset()
         self.pipeline: Optional[Pipeline] = None
         self.results: Optional[Dict[str, xr.Dataset]] = dict()
 
+    def append(self,db_uuid:str):
+        next_sample = self.retrieve_obj(db_uuid)
+        self.input = xr.concat([self.input,next_sample],dim=self.config['concat_dim'],data_vars='minimal')
     def reset_results(self):
         self.results = dict()
 
-    def predict(self, deposit=True):
+    def predict(self, deposit=True, save_to_disk=True, sample_uuid=None, AL_campaign_name=None):
         if (self.pipeline is None) or (self.input is None):
             raise ValueError(
-                """Cannot predict without one or more pipelines loaded! Use client.set_driver_object to upload an """
+                """Cannot predict without a pipeline and input loaded! Use client.set_driver_object to upload an """
                 """Pipeline.Pipeline and an xr.Dataset to this APIServer. You currently have: \n"""
-                f"""DoubleAgentDriver.pipelines = {self.pipeline}\n"""
-                f"""DoubleAgentDriver.datasets = {self.input}\n"""
+                f"""DoubleAgentDriver.pipeline = {self.pipeline}\n"""
+                f"""DoubleAgentDriver.input = {self.input}\n"""
             )
 
-        al_uid = 'AL-' + str(uuid.uuid4())
-        self.results[al_uid] = self.pipeline.calculate(self.input)
+        ag_uid = 'AG-' + str(uuid.uuid4())
+        self.results[ag_uid] = self.pipeline.calculate(self.input)
+
+        if save_to_disk:
+            path = (
+                    pathlib.Path(self.config['save_path']) /
+                    f'{AL_campaign_name}_SAM-{str(sample_uuid)[-6:]}_AG-{ag_uid[-6:]}.nc'
+            )
+            self.results[ag_uid].to_netcdf(path)
 
         if deposit:
-            self.deposit_to_dropbox(self.results[al_uid], uid=al_uid)
+            self.deposit_obj(self.results[ag_uid],uid=ag_uid)
 
-        return al_uid
-
-    def deposit_to_dropbox(self, obj: object, uid: Union[str, uuid.UUID]) -> None:
-        if uid is None:
-            uid = 'DB-' + str(uuid.uuid4())
-
-        self.dropbox = {}
-        self.dropbox[uid] = obj
+        return ag_uid

@@ -4,7 +4,7 @@ Preprocessing ops generally take in measurement data and scale, correct, and tra
 
 """
 import warnings
-from typing import Union, Optional
+from typing import Union, Optional, List
 from numbers import Number
 
 import numpy as np
@@ -123,7 +123,7 @@ class Zscale(Preprocessor):
             dim: str,
             minval: Optional[Number] = None,
             maxval: Optional[Number] = None,
-            name:str='Standardize'
+            name:str='Zscale'
     ):
         super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
 
@@ -186,7 +186,45 @@ class Standardize(Preprocessor):
         self.output[self.output_variable].attrs["description"] = f"Data normalized to have range 0 -> 1"
 
         return self
+        
+class Zscale_error(Preprocessor):
+    """ scale the y_err data, first input is y, second input is y_err"""
 
+    def __init__(
+            self,
+            input_variables: Union[Optional[str], List[str]],
+            output_variable: str,
+            dim: str,
+            # minval: Optional[Number] = None,
+            # maxval: Optional[Number] = None,
+            name:str='Zscale_error'
+    ):
+        super().__init__(name=name, input_variable=input_variables, output_variable=output_variable)
+
+        self.dim = dim
+        # self.minval = minval
+        # self.maxval = maxval
+
+    def calculate(self, dataset):
+        data1 = self._get_variable(dataset)
+        data_y_err = data1[self.input_variable[1]]
+        data_y = data1[self.input_variable[0]]
+        # if self.maxval is None:
+        #     maxval = data1.max()
+        # else:
+        #     maxval = self.maxval
+
+        # if self.minval is None:
+        #     minval = data1.min()
+        # else:
+        #     minval = self.minval
+
+
+        # self.output[self.output_variable] = (data1 - minval)/(maxval - minval)
+        self.output[self.output_variable] = data_y_err/data_y.std()
+        self.output[self.output_variable].attrs["description"] = f"Uncertainty normalized to have range 0 -> 1"
+
+        return self
 
 class BarycentricToTernaryXY(Preprocessor):
     """
