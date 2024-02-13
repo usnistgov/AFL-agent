@@ -71,6 +71,12 @@ class PipelineOp(ABC):
                 del output_dict[key]
             except KeyError:
                 pass
+
+        #sanitize
+        for key in output_dict.keys():
+            if output_dict[key] is None:
+                output_dict[key] = 'None'
+
         return output_dict
 
     def _get_variable(self, dataset: xr.Dataset) -> xr.DataArray:
