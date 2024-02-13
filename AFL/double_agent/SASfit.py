@@ -35,8 +35,6 @@ class SASfit_classifier(PipelineOp):
         self.input_models = input_models
         self.sample_dim = sample_dim
         self.labels=None
-        self.fit_method = fit_method
-        self.fit_tiled_id = None
         
         self._banned_from_attrs.extend(['SASfit_client','input_models'])
         
@@ -122,7 +120,6 @@ class SASfit_fit_extract(PipelineOp):
         
         self.sample_dim = sample_dim
         self.fit_method = fit_method
-        self.fit_tiled_id = None
         
         self._banned_from_attrs.extend(['SASfit_client','input_models'])
 
