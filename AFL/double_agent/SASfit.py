@@ -19,7 +19,8 @@ import sasmodels
 
 
 class SASfit_classifier(PipelineOp):
-    def __init__(self, sas_variable, sas_err_variable, output_variables, input_models, resolution, output_prefix, q_dim, sample_dim, server_id='localhost:5058', fit_method=None, name="SASfit_classifier"):
+    def __init__(self, sas_variable, sas_err_variable, input_models, resolution, output_prefix, q_dim, sample_dim, server_id='localhost:5058', fit_method=None, name="SASfit_classifier"):
+        output_variables = ['labels','label_names','best_chisq','best_chisq']
         super().__init__(
             name=name,
             input_variable = [q_dim, sas_variable, sas_err_variable],
@@ -100,7 +101,8 @@ class SASfit_classifier(PipelineOp):
 # trying without using the base class. Should talk to Tyler about the methodology. Following module is the same as above but it has just a few more outputs in the calculate method 
 ################
 class SASfit_fit_extract(PipelineOp):
-    def __init__(self, sas_variable, sas_err_variable, output_variables, input_models, resolution, output_prefix, q_dim, sample_dim, target_model, target_fit_params, server_id='localhost:5058', fit_method=None, name='SASfit_fit_extract'):
+    def __init__(self, sas_variable, sas_err_variable, input_models, resolution, output_prefix, q_dim, sample_dim, target_model, target_fit_params, server_id='localhost:5058', fit_method=None, name='SASfit_fit_extract'):
+        output_variables = ['labels','label_names','best_chisq','best_chisq','fit_values','fit_err_values']
         super().__init__(
             name=name,
             input_variable = [q_dim, sas_variable, sas_err_variable],
