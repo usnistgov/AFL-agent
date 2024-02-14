@@ -8,7 +8,7 @@ except:
 import xarray as xr
 from AFL.automation.APIServer.APIServer import APIServer
 #from AFL.automation.instrument.VirtualSpec_data import VirtualSpec_data
-from SAS_model_fit_driver import sas_wrapper, SAS_model_fit
+from AFL.double_agent.SAS_model_fit_driver import sas_wrapper, SAS_model_fit
 from AFL.automation.APIServer.data.DataTiled import DataTiled
 
 ### local tiled server here

@@ -253,6 +253,9 @@ class PseudoUCB(AcquisitionFunction):
             exclusion_radius=exclusion_radius, count=count, name=name
         )
 
+        if len(lambdas) != len(input_variable):
+            raise ValueError(f"there are not the same number 'lambda' scaling params to 'input_variables', check the inputs:   {len(lambdas)} to {len(input_variables)}")
+        
         # this doesn't need to be an attribute, just convenient for debugging
         self.acquisition = None
 
@@ -267,16 +270,16 @@ class PseudoUCB(AcquisitionFunction):
         # make sure it's actually a list, listify will pass through tuples
         input_variables = list(listify(self.input_variables))
 
-        lambdas = self.lambdas
+        
         
         # this might work and do what I wanted with the pUCB lamdas
-        decision_surface = lambdas.pop(0) * dataset[input_variables.pop(0)].copy()
-        for lambd, input_variable in zip(coeffs, input_variables):
-            decision_surface += lambd * dataset[input_variable]
+        decision_surface = self.lambdas.pop(0) * dataset[input_variables.pop(0)].copy()
+        for lamb, input_variable in zip(self.lambdas, input_variables):
+            decision_surface += lamb * dataset[input_variable]
 
-        #is this necessary
-        decision_surface = (decision_surface - decision_surface.min()) / (
-                    decision_surface.max() - decision_surface.min())
+        # #is this necessary?
+        # decision_surface = (decision_surface - decision_surface.min()) / (
+        #             decision_surface.max() - decision_surface.min())
         self.acquisition['decision_surface'] = decision_surface
 
         excluded_comps = self._get_excluded_comps(dataset)
