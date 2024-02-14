@@ -60,12 +60,14 @@ class GaussianProcessClassifier(Extrapolator):
         else:
             self.kernel = kernel
 
+        self.output_prefix=output_prefix
+
     def calculate(self, dataset):
         X = dataset[self.feature_input_variable].transpose(self.sample_dim, ...)
         y = dataset[self.predictor_input_variable].transpose(self.sample_dim, ...)
         grid = dataset[self.grid_variable]
 
-        clf = sklearn.gaussian_process.GaussianProcessClassifier(kernel=self.kernel).fit(X.values, y.values)
+        clf = sklearn.gaussian_process.GaussianProcessClassifier(kernel=self.kernel,optimizer=None).fit(X.values, y.values)
 
         mean = clf.predict_proba(grid.values)
         entropy = -np.sum(np.log(mean)*mean,axis=-1)
@@ -79,29 +81,30 @@ class GaussianProcessRegressor(Extrapolator):
     def __init__(self, feature_input_variable, predictor_input_variable,
                  output_prefix, grid_variable, grid_dim,
                  sample_dim, predictor_uncertainty_variable=None,
-                 kernel=None, name='GaussianProcessRegressor'):
+                 kernel=None, name='GaussianProcessRegressor',fix_nans=True):
 
         super().__init__(name=name, feature_input_variable=feature_input_variable,
                          predictor_input_variable=predictor_input_variable,
-                         output_variables=['mean','std'], output_prefix=output_prefix,
+                         output_variables=['mean','var'], output_prefix=output_prefix,
                          predictor_uncertainty_variable=predictor_uncertainty_variable,
                          grid_variable=grid_variable, grid_dim=grid_dim, sample_dim=sample_dim)
 
         if kernel is None:
-            self.kernel = sklearn.gaussian_process.kernels.Matern(length_scale=[0.1,0.1],
-                                                                  # length_scale_bounds="fixed",
-                                                                  length_scale_bounds=[(1e-3,1e0),(1e-3,1e0)],
-                                                                  nu=2.5)
+            self.kernel = sklearn.gaussian_process.kernels.Matern(length_scale=[0.1],
+                                                                  length_scale_bounds=(1e-3,1e0),
+                                                                  nu=1.5)
         else:
             self.kernel = kernel
 
+        
         self.predictor_uncertainty_variable = predictor_uncertainty_variable
         self._banned_from_attrs.append('predictor_uncertainty_variable')
 
     def calculate(self, dataset):
-        X = dataset[self.feature_input_variable].transpose(self.sample_dim, ...)
-        y = dataset[self.predictor_input_variable].transpose(self.sample_dim, ...)
+        X = dataset[self.feature_input_variable].transpose(self.sample_dim, ...).dropna(dim=self.sample_dim)
+        y = dataset[self.predictor_input_variable].transpose(self.sample_dim, ...).dropna(dim=self.sample_dim)
 
+        
         grid = dataset[self.grid_variable]
 
         if self.predictor_uncertainty_variable != None:
@@ -115,7 +118,7 @@ class GaussianProcessRegressor(Extrapolator):
         mean, std = reg.predict(grid.values, return_std=True)
 
         self.output[self._prefix_output("mean")] = xr.DataArray(mean,dims=self.grid_dim)
-        self.output[self._prefix_output("std")] = xr.DataArray(std,dims=self.grid_dim)
-        self.output[self._prefix_output("std")].attrs["Heteroscedastic"] = reg_type
+        self.output[self._prefix_output("var")] = xr.DataArray(std,dims=self.grid_dim)
+        self.output[self._prefix_output("var")].attrs["heteroscedastic"] = reg_type
 
         return self

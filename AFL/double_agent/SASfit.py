@@ -23,9 +23,11 @@ class SASfit_classifier(PipelineOp):
         super().__init__(
             name=name,
             input_variable = [q_dim, sas_variable, sas_err_variable],
-            output_variable = [output_prefix+'_'+o for o in listify(output_variables)]
+            output_variable = [output_prefix+'_'+o for o in listify(output_variables)],
+            output_prefix=output_prefix
         )
         self.server_id = server_id
+        self.fit_method = fit_method
         
         self.q_dim = q_dim
         self.sas_variable = sas_variable
@@ -102,7 +104,8 @@ class SASfit_fit_extract(PipelineOp):
         super().__init__(
             name=name,
             input_variable = [q_dim, sas_variable, sas_err_variable],
-            output_variable = [output_prefix+'_'+o for o in listify(output_variables)]
+            output_variable = [output_prefix+'_'+o for o in listify(output_variables)],
+            output_prefix = output_prefix
         )
         self.server_id = server_id
 

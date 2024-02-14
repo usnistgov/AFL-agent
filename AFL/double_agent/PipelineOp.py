@@ -36,6 +36,8 @@ class PipelineOp(ABC):
         self.input_prefix = input_prefix
         self.output_prefix = output_prefix
 
+        
+
         self.output = {}
 
         try:
