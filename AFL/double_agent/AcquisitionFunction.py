@@ -253,7 +253,7 @@ class PseudoUCB(AcquisitionFunction):
             exclusion_radius=exclusion_radius, count=count, name=name
         )
 
-        if len(lambdas) != len(input_variable):
+        if len(lambdas) != len(input_variables):
             raise ValueError(f"there are not the same number 'lambda' scaling params to 'input_variables', check the inputs:   {len(lambdas)} to {len(input_variables)}")
         
         # this doesn't need to be an attribute, just convenient for debugging
