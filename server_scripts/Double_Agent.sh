@@ -17,4 +17,4 @@ else
 fi
 
 
-python Double_Agent.py
+python ${HOME}/AFL-agent/server_scripts/Double_Agent.py
