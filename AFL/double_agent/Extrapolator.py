@@ -73,9 +73,9 @@ class GaussianProcessClassifier(Extrapolator):
 
         if len(np.unique(y)) == 1:
             
-            self.output[self._prefix_output("mean")] = xr.DataArray(np.ones(X.shape),dims=self.grid_dim)
-            self.output[self._prefix_output("entropy")] = xr.DataArray(np.ones(X.shape),dims=self.grid_dim)
-            self.output[self._prefix_output("y_prob")] = xr.DataArray(np.ones(X.shape),dims=self.grid_dim)
+            self.output[self._prefix_output("mean")] = xr.DataArray(np.ones(dataset.grid.shape),dims=[self.grid_dim])
+            self.output[self._prefix_output("entropy")] = xr.DataArray(np.ones(dataset.grid.shape),dims=[self.grid_dim])
+            self.output[self._prefix_output("y_prob")] = xr.DataArray(np.ones(dataset.grid.shape),dims=[self.grid_dim])
             
         else:
             clf = sklearn.gaussian_process.GaussianProcessClassifier(kernel=self.kernel,optimizer=self.optimizer).fit(X.values, y.values)
@@ -85,7 +85,7 @@ class GaussianProcessClassifier(Extrapolator):
             entropy = -np.sum(np.log(mean)*mean,axis=-1)
 
             #A messier way to achieve a similar thing
-            y_prob = 1 - (mean - (1/np.unique(y)))
+            y_prob = 1 - (mean - (1/len(np.unique(y))))
             
             self.output[self._prefix_output("mean")] = xr.DataArray(mean.argmax(-1),dims=self.grid_dim)
             self.output[self._prefix_output("entropy")] = xr.DataArray(entropy,dims=self.grid_dim)
