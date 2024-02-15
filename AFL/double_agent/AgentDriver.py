@@ -11,22 +11,29 @@ from AFL.automation.APIServer.Driver import Driver
 class DoubleAgentDriver(Driver):
     defaults = {}
     defaults['save_path'] = '/home/AFL/'
-    defaults['concat_dim'] = 'sample'
 
-    def __init__(self, overrides=None):
-        Driver.__init__(self, name='DoubleAgentDriver', defaults=self.gather_defaults(), overrides=overrides)
+    def __init__(self, name='DoubleAgentDriver', overrides=None):
+        Driver.__init__(self, name=name, defaults=self.gather_defaults(), overrides=overrides)
         self.app = None
-        self.name = 'DoubleAgentDriver'
+        self.name = name
 
         self.status_str = 'Fresh server!'
 
-        self.input: xr.Dataset = xr.Dataset()
+        self.input: Optional[xr.Dataset] = None
         self.pipeline: Optional[Pipeline] = None
         self.results: Optional[Dict[str, xr.Dataset]] = dict()
 
-    def append(self,db_uuid:str):
+    def initialize(self,db_uuid:str):
+        self.input = self.retrieve_obj(db_uuid)
+        
+    def append(self,db_uuid:str,concat_dim:str):
+        if self.input is None:
+            raise ValueError('Must set "input" Dataset client.deposit_obj and then DoubleAgentDriver.initialize')
+                             
         next_sample = self.retrieve_obj(db_uuid)
-        self.input = xr.concat([self.input,next_sample],dim=self.config['concat_dim'],data_vars='minimal')
+              
+        self.input = xr.concat([self.input,next_sample],dim=concat_dim,data_vars='minimal')
+        
     def reset_results(self):
         self.results = dict()
 
