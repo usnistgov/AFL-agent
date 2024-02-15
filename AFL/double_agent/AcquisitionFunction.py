@@ -238,3 +238,60 @@ class MaxValueAF(AcquisitionFunction):
         self.get_next_samples(self.acquisition)
 
         return self
+
+class PseudoUCB(AcquisitionFunction):
+
+    def __init__(self, input_variables, grid_variable, grid_dim='grid', lambdas=None, output_prefix=None,
+                 output_variable='next_samples', decision_rtol=0.05,
+                 excluded_comps_variables=None, excluded_comps_dim=None, exclusion_radius=1e-3,
+                 count=1, name='MaxValueAF'):
+
+        super().__init__(
+            input_variables=input_variables, grid_variable=grid_variable, grid_dim=grid_dim,
+            output_prefix=output_prefix, output_variable=output_variable, decision_rtol=decision_rtol,
+            excluded_comps_variables=excluded_comps_variables, excluded_comps_dim=excluded_comps_dim,
+            exclusion_radius=exclusion_radius, count=count, name=name
+        )
+
+        if len(lambdas) != len(input_variables):
+            raise ValueError(f"there are not the same number 'lambda' scaling params to 'input_variables', check the inputs:   {len(lambdas)} to {len(input_variables)}")
+        
+        # this doesn't need to be an attribute, just convenient for debugging
+        self.acquisition = None
+
+        #might make this a list corresponding to the input variables for more complicated 
+        self.lambdas = lambdas
+
+    def calculate(self, dataset):
+        self.acquisition = xr.Dataset()
+
+        self.acquisition['comp_grid'] = dataset[self.grid_variable].transpose(self.grid_dim, ...)
+
+        # make sure it's actually a list, listify will pass through tuples
+        input_variables = list(listify(self.input_variables))
+
+        
+        
+        # this might work and do what I wanted with the pUCB lamdas
+        decision_surface = self.lambdas.pop(0) * dataset[input_variables.pop(0)].copy()
+        for lamb, input_variable in zip(self.lambdas, input_variables):
+            decision_surface += lamb * dataset[input_variable]
+
+        # #is this necessary?
+        # decision_surface = (decision_surface - decision_surface.min()) / (
+        #             decision_surface.max() - decision_surface.min())
+        self.acquisition['decision_surface'] = decision_surface
+
+        excluded_comps = self._get_excluded_comps(dataset)
+        if excluded_comps is not None:
+            self.acquisition['excluded_comps'] = self._get_excluded_comps(dataset)
+            self.exclude_previous_samples(self.acquisition)
+
+        self.output[self._prefix_output('decision_surface')] = self.acquisition['decision_surface']
+        self.output[self._prefix_output('decision_surface')].attrs['description'] = (
+            "The final acquisition surface that is evaluated to determine the next_sample"
+        )
+
+        self.get_next_samples(self.acquisition)
+
+        return self

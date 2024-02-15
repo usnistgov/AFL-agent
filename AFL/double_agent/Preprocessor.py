@@ -121,32 +121,20 @@ class Zscale(Preprocessor):
             input_variable: str,
             output_variable: str,
             dim: str,
-            minval: Optional[Number] = None,
-            maxval: Optional[Number] = None,
             name:str='Zscale'
     ):
         super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
 
         self.dim = dim
-        self.minval = minval
-        self.maxval = maxval
 
     def calculate(self, dataset):
         data1 = self._get_variable(dataset)
+        self.mean = data1.mean()
+        self.std = data1.std()
 
-        if self.maxval is None:
-            maxval = data1.max()
-        else:
-            maxval = self.maxval
-
-        if self.minval is None:
-            minval = data1.min()
-        else:
-            minval = self.minval
-
-
-        self.output[self.output_variable] = (data1 - minval)/(maxval - minval)
-        self.output[self.output_variable].attrs["description"] = f"Data normalized to have range 0 -> 1"
+        #this standardizes between the min and the max values, this isn't z-scaling...
+        self.output[self.output_variable] = (data1-self.mean)/self.std
+        self.output[self.output_variable].attrs["description"] = f"Data Zscaled to have range 0 ~ -1 -> 1"
 
         return self
 
@@ -195,34 +183,19 @@ class Zscale_error(Preprocessor):
             input_variables: Union[Optional[str], List[str]],
             output_variable: str,
             dim: str,
-            # minval: Optional[Number] = None,
-            # maxval: Optional[Number] = None,
             name:str='Zscale_error'
     ):
         super().__init__(name=name, input_variable=input_variables, output_variable=output_variable)
 
         self.dim = dim
-        # self.minval = minval
-        # self.maxval = maxval
 
     def calculate(self, dataset):
         data1 = self._get_variable(dataset)
         data_y_err = data1[self.input_variable[1]]
         data_y = data1[self.input_variable[0]]
-        # if self.maxval is None:
-        #     maxval = data1.max()
-        # else:
-        #     maxval = self.maxval
 
-        # if self.minval is None:
-        #     minval = data1.min()
-        # else:
-        #     minval = self.minval
-
-
-        # self.output[self.output_variable] = (data1 - minval)/(maxval - minval)
         self.output[self.output_variable] = data_y_err/data_y.std()
-        self.output[self.output_variable].attrs["description"] = f"Uncertainty normalized to have range 0 -> 1"
+        self.output[self.output_variable].attrs["description"] = f"Uncertainty normalized to have range 0 -> inf"
 
         return self
 

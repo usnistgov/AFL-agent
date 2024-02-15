@@ -28,7 +28,7 @@ class CartesianGrid(Generator):
 
         grid_spec: dict of dicts
             Dictionary where each top-level key corresponds to a component in the system. Each top-level key points to a
-            subdictionary that defines the mininum, maximum, and step size for that component with keys: min, max, step.
+            subdictionary that defines the mininum, maximum, and step size for that component with keys: min, max, steps.
 
         """
         #using intput_variable just as a placeholder for visualization purposes
