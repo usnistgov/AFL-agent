@@ -19,7 +19,7 @@ import sasmodels
 
 
 class SASfit_classifier(PipelineOp):
-    def __init__(self, sas_variable, sas_err_variable, input_models, resolution, output_prefix, q_dim, sample_dim, server_id='localhost:5058', fit_method=None, name="SASfit_classifier"):
+    def __init__(self, sas_variable, sas_err_variable, resolution, output_prefix, q_dim, sample_dim, server_id='localhost:5058', fit_method=None, name="SASfit_classifier"):
         output_variables = ['labels','label_names','best_chisq','best_chisq']
         super().__init__(
             name=name,
@@ -45,7 +45,6 @@ class SASfit_classifier(PipelineOp):
         """
         creates a client to talk to the SASfit server
         """
-        q = dataset[self.q_dim].values
         
         self.SASfit_client = Client(
             self.server_id.split(':')[0],
@@ -54,10 +53,6 @@ class SASfit_classifier(PipelineOp):
         self.SASfit_client.login('SASfit_Client')
         self.SASfit_client.debug(False)
         
-        self.SASfit_client.set_config(
-            q_range=(min(q), max(q)),
-            model_inputs = self.input_models
-        )
         
     def calculate(self, dataset):
         """
