@@ -36,6 +36,8 @@ class PairMetric(PipelineOp):
             self.constrain_different = constrain_different
 
         self._banned_from_attrs.append('W')
+        self._banned_from_attrs.append('params')
+        self._banned_from_attrs.append('combine')
 
     def __getitem__(self, index):
         return self.W[index]
@@ -100,6 +102,7 @@ class Similarity(PairMetric):
 
         dims = dims=[self.sample_dim+'_i',self.sample_dim+'_j']
         self.output[self.output_variable] = xr.DataArray(self.W,dims=dims)
+        self.output[self.output_variable].attrs.update(self.params)
 
         return self
 

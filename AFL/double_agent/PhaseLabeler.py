@@ -25,7 +25,7 @@ class PhaseLabeler(PipelineOp):
         else:
             self.params = params
 
-        self._banned_from_attrs.extend(['labels','clf','silh_dict'])
+        self._banned_from_attrs.extend(['labels','clf','silh_dict','params'])
 
     def __getitem__(self, index):
         return self.labels[index]
@@ -104,6 +104,7 @@ class SpectralClustering(PhaseLabeler):
         self._construct_labeler()
         self.silhouette(data1.values)  # maybe silhouette should be a separate op...
         self.output[self.output_variable] = xr.DataArray(self.labels, dims=[self.dim])
+        self.output[self.output_variable].attrs.update(self.params)
         return self
 
     def _label(self, metric):

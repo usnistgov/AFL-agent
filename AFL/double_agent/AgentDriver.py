@@ -23,8 +23,12 @@ class DoubleAgentDriver(Driver):
         self.pipeline: Optional[Pipeline] = None
         self.results: Optional[Dict[str, xr.Dataset]] = dict()
 
-    def initialize(self,db_uuid:str):
+        
+    def initialize_input(self,db_uuid:str):
         self.input = self.retrieve_obj(db_uuid)
+        
+    def initialize_pipeline(self,db_uuid:str):
+        self.pipeline = self.retrieve_obj(db_uuid)
         
     def append(self,db_uuid:str,concat_dim:str):
         if self.input is None:

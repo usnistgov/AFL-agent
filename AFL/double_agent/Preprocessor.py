@@ -137,6 +137,51 @@ class Zscale(Preprocessor):
         self.output[self.output_variable].attrs["description"] = f"Data Zscaled to have range 0 ~ -1 -> 1"
 
         return self
+    
+class Destandardize(Preprocessor):
+    """ Standardize the data to have min 0 and max 1"""
+
+    def __init__(
+            self,
+            input_variable: str,
+            output_variable: str,
+            dim: str,
+            scale_variable: Optional[str]=None,
+            minval: Optional[Number] = None,
+            maxval: Optional[Number] = None,
+            name:str='Destandardize'
+    ):
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
+
+        self.dim = dim
+        self.minval = minval
+        self.maxval = maxval
+        self.scale_variable = scale_variable
+
+    def calculate(self, dataset):
+        data1 = self._get_variable(dataset)
+
+        if self.maxval is None:
+            if self.scale_variable is None:
+                maxval = data1.max(self.dim)
+            else:
+                maxval = dataset[self.scale_variable].max(self.dim)
+        else:
+            maxval = self.maxval
+
+        if self.minval is None:
+            if self.scale_variable is None:
+                minval = data1.min(self.dim)
+            else:
+                minval = dataset[self.scale_variable].min(self.dim)
+        else:
+            minval = self.minval
+
+
+        self.output[self.output_variable] = data1*(maxval - minval) + minval
+        self.output[self.output_variable].attrs["description"] = f"Data normalized to have range 0 -> 1"
+
+        return self
 
 class Standardize(Preprocessor):
     """ Standardize the data to have min 0 and max 1"""
@@ -146,6 +191,7 @@ class Standardize(Preprocessor):
             input_variable: str,
             output_variable: str,
             dim: str,
+            scale_variable: Optional[str]=None,
             minval: Optional[Number] = None,
             maxval: Optional[Number] = None,
             name:str='Standardize'
@@ -155,17 +201,24 @@ class Standardize(Preprocessor):
         self.dim = dim
         self.minval = minval
         self.maxval = maxval
+        self.scale_variable = scale_variable
 
     def calculate(self, dataset):
         data1 = self._get_variable(dataset)
 
         if self.maxval is None:
-            maxval = data1.max()
+            if self.scale_variable is None:
+                maxval = data1.max(self.dim)
+            else:
+                maxval = dataset[self.scale_variable].max(self.dim)
         else:
             maxval = self.maxval
 
         if self.minval is None:
-            minval = data1.min()
+            if self.scale_variable is None:
+                minval = data1.min(self.dim)
+            else:
+                minval = dataset[self.scale_variable].min(self.dim)
         else:
             minval = self.minval
 

@@ -28,6 +28,8 @@ class Extrapolator(PipelineOp):
         self.grid_variable = grid_variable
         self.sample_dim = sample_dim
         self.grid_dim = grid_dim
+        
+        self._banned_from_attrs.extend(['kernel'])
 
 
 class DummyExtrapolator(Extrapolator):

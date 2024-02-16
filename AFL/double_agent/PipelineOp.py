@@ -76,8 +76,11 @@ class PipelineOp(ABC):
 
         #sanitize
         for key in output_dict.keys():
-            if output_dict[key] is None:
-                output_dict[key] = 'None'
+            output_dict[key] = str(output_dict[key])
+            # if output_dict[key] is None:
+            #     output_dict[key] = 'None'
+            # elif type(output_dict[key]) is bool:
+            #     output_dict[key] = str(output_dict[key])
 
         return output_dict
 
