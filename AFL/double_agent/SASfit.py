@@ -14,7 +14,7 @@ from AFL.double_agent.util import listify
 import seaborn as sns
 from AFL.automation.APIServer.Client import Client
 
-from SAS_model_fit_driver import SAS_model_fit, sas_wrapper
+from AFL.double_agent.SAS_model_fit_driver import SAS_model_fit, sas_wrapper
 import sasmodels
 
 
