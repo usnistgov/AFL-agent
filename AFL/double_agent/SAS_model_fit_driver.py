@@ -30,10 +30,7 @@ from AFL.automation.APIServer.Driver import Driver
 import h5py
 import pathlib
 import uuid
-import tensorflow
 from multiprocessing import Process, Pool
-import tensorflow as tf
-
 
 
 class sas_wrapper():

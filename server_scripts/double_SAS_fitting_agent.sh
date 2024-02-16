@@ -17,4 +17,4 @@ else
 fi
 
 
-python ${HOME}/AFL-agent/server_scripts/SAS_fitting_agent.py
+python ${HOME}/AFL-agent/server_scripts/double_SAS_fitting_agent.py

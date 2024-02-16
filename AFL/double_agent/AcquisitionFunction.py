@@ -221,7 +221,10 @@ class MaxValueAF(AcquisitionFunction):
         for coeff, input_variable in zip(coeffs, input_variables):
             decision_surface += coeff * dataset[input_variable]
 
-        decision_surface = (decision_surface - decision_surface.min()) / (
+        if (decision_surface.max() - decision_surface.min())<1e-16:
+            pass
+        else: #normalize
+            decision_surface = (decision_surface - decision_surface.min()) / (
                     decision_surface.max() - decision_surface.min())
         self.acquisition['decision_surface'] = decision_surface
 

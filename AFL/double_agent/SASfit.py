@@ -35,11 +35,10 @@ class SASfit_classifier(PipelineOp):
         self.sas_err_variable = sas_err_variable
         
         
-        self.input_models = input_models
         self.sample_dim = sample_dim
         self.labels=None
         
-        self._banned_from_attrs.extend(['SASfit_client','input_models'])
+        self._banned_from_attrs.extend(['SASfit_client'])
         
     def construct_client(self, dataset):
         """
@@ -96,7 +95,7 @@ class SASfit_classifier(PipelineOp):
 # trying without using the base class. Should talk to Tyler about the methodology. Following module is the same as above but it has just a few more outputs in the calculate method 
 ################
 class SASfit_fit_extract(PipelineOp):
-    def __init__(self, sas_variable, sas_err_variable, input_models, resolution, output_prefix, q_dim, sample_dim, target_model, target_fit_params, server_id='localhost:5058', fit_method=None, name='SASfit_fit_extract'):
+    def __init__(self, sas_variable, sas_err_variable, resolution, output_prefix, q_dim, sample_dim, target_model, target_fit_params, server_id='localhost:5058', fit_method=None, name='SASfit_fit_extract'):
         output_variables = ['labels','label_names','best_chisq','best_chisq','fit_values','fit_err_values']
         super().__init__(
             name=name,
@@ -114,14 +113,11 @@ class SASfit_fit_extract(PipelineOp):
         self.target_model = target_model
         self.target_fit_params = target_fit_params
         
-        self.input_models = input_models
-        if self.target_model not in [model['name'] for model in self.input_models]:
-            raise ValueError("Hey, the target model is not in the supplied input models")
         
         self.sample_dim = sample_dim
         self.fit_method = fit_method
         
-        self._banned_from_attrs.extend(['SASfit_client','input_models'])
+        self._banned_from_attrs.extend(['SASfit_client'])
 
         
     def construct_client(self, dataset):
@@ -137,10 +133,10 @@ class SASfit_fit_extract(PipelineOp):
         self.SASfit_client.login('SASfit_Client')
         self.SASfit_client.debug(False)
         
-        self.SASfit_client.set_config(
-            q_range=(min(q), max(q)),
-            model_inputs = self.input_models
-        )
+        input_models = self.SASfit_client.get_config('input_models')
+        
+        if self.target_model not in [model['name'] for model in input_models]:
+            raise ValueError("Hey, the target model is not in the supplied input models")
         
     def calculate(self, dataset):
         """
