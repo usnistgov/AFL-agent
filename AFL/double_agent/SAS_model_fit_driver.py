@@ -149,19 +149,12 @@ class SAS_model_fit(Driver):
         
         self.resolution = sasmodels.resolution.Pinhole1D(self.empty_data.x, self.empty_data.x*0.15)
         
-        ### persistent config model loading. the dictionary 
-        ### spawn a sasmodel for each model in the persistent config
-        try:
-            self.construct_models()
-        except:
-            raise ValueError("info is not correct in config for creating models")
         
     def construct_models(self):
         """This works off of the presistent config and will generate a list of sas_wrapper models containing the kernels, the experiments, the problems and resolution etc."""
         self.models=[]
         
-        print("")
-        print("constructing models from inputs agian")
+        print("constructing models from inputs")
         for inputs in self.config['model_inputs']:
             print(inputs)
             model = sas_wrapper(
