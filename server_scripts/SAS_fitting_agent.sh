@@ -16,5 +16,4 @@ else
   export AFL_SYSTEM_SERIAL="${AFL_SYSTEM_SERIAL}"
 fi
 
-
 python ${HOME}/AFL-agent/server_scripts/SAS_fitting_agent.py
