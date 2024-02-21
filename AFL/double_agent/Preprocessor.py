@@ -4,7 +4,7 @@ Preprocessing ops generally take in measurement data and scale, correct, and tra
 
 """
 import warnings
-from typing import Union, Optional, List
+from typing import Union, Optional, List, Dict
 from numbers import Number
 
 import numpy as np
@@ -339,4 +339,91 @@ class TernaryXYToBarycentric(Preprocessor):
         self.output[self.output_variable] = xr.DataArray(bary, dims=[self.sample_dim, 'component'])
         self.output[self.output_variable].attrs["description"] = ("XY coordinates from barycentric variable "
                                                                   f"'{self.input_variable}'")
+        return self
+
+
+class SympyTransform(Preprocessor):
+    def __init__(self, input_variable: str, output_variable: str, sample_dim: str, transforms: Dict[str, object],
+                 transform_dim: str, component_dim: str = 'component', name: str = 'SympyTransform'):
+        """Transform data using sympy expressions
+
+        Parameters
+        ----------
+        input_variable : str
+            The data variable to extract from the dataset
+
+        output_variable : str
+            The dataset key to write the result of this PipelineOp into
+
+        sample_dim: str
+            The name of the sample_dimension for this calculation
+
+        transforms: Dict[str,object]
+            A dictionary of transforms (sympy expressions) to evaluate to generate new variables. For this method to function,
+            the transforms must be completely specified except for the names in component_dim of the input_variable
+
+        transform_dim: str
+            The name of the dimension that the 'component_dim' will be transformed to
+
+        Example
+        -------
+        ```python
+        from AFL.double_agent import *
+        import sympy
+        with Pipeline() as p:
+            CartesianGrid(
+                output_variable='comps',
+                grid_spec={
+                    'A':{'min':1,'max':25,'steps':5},
+                    'B':{'min':1,'max':25,'steps':5},
+                    'C':{'min':1,'max':25,'steps':5},
+                },
+                sample_dim='grid',
+            )
+
+
+            A,B,C = sympy.symbols('A B C')
+            vA = A/(A+B+C)
+            vB = B/(A+B+C)
+            vC = C/(A+B+C)
+            SympyTransform(
+                input_variable='comps',
+                output_variable='trans_comps',
+                sample_dim='grid',
+                transforms={'vA':vA,'vB':vB,'vC':vC},
+                transform_dim='trans_component'
+            )
+
+        p.calculate(xr.Dataset())# returns dataset with grid and transformed grid
+        ```
+
+        """
+
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
+        self.sample_dim = sample_dim
+        self.component_dim = component_dim
+        self.transforms = transforms
+        self.transform_dim = transform_dim
+
+    def calculate(self, dataset: xr.Dataset):
+
+        data = dataset[self.input_variable].transpose(self.sample_dim, self.component_dim)
+
+        # need to construct a list of dicts
+        comp_list = []
+        for _, sds in data.groupby(self.sample_dim, squeeze=False):
+            comp_list.append(
+                {k: v for k, v in zip(data[self.component_dim].values, sds.values.squeeze())}
+            )
+
+        # apply transform
+        new_comps = xr.Dataset()
+        for name, transform in self.transforms.items():
+            new_comps[name] = ((self.sample_dim,), np.vectorize(lambda x: transform.evalf(subs=x))(comp_list))
+
+        new_comps = new_comps.to_array(self.transform_dim).transpose(..., self.transform_dim)
+
+        self.output[self.output_variable] = new_comps
+        self.output[self.output_variable].attrs['description'] = 'Variables transformed using sympy expressions'
+
         return self
