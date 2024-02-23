@@ -10,6 +10,9 @@ from numbers import Number
 import numpy as np
 import xarray as xr
 from scipy.signal import savgol_filter
+import sympy
+
+
 from AFL.double_agent.PipelineOp import PipelineOp
 
 
@@ -406,20 +409,17 @@ class SympyTransform(Preprocessor):
         self.transform_dim = transform_dim
 
     def calculate(self, dataset: xr.Dataset):
-
         data = dataset[self.input_variable].transpose(self.sample_dim, self.component_dim)
 
-        # need to construct a list of dicts
-        comp_list = []
-        for _, sds in data.groupby(self.sample_dim, squeeze=False):
-            comp_list.append(
-                {k: v for k, v in zip(data[self.component_dim].values, sds.values.squeeze())}
-            )
+        # need to construct a dict of arrays
+        comps = {k: v.squeeze().values for k, v in data.groupby(self.component_dim,squeeze=False)}
 
         # apply transform
         new_comps = xr.Dataset()
         for name, transform in self.transforms.items():
-            new_comps[name] = ((self.sample_dim,), np.vectorize(lambda x: transform.evalf(subs=x))(comp_list))
+            symbols = list(transform.free_symbols)
+            f = sympy.lambdify(symbols, transform)
+            new_comps[name] = ((self.sample_dim,), f(**{k.name: comps[k.name] for k in symbols}))
 
         new_comps = new_comps.to_array(self.transform_dim).transpose(..., self.transform_dim)
 
