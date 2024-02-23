@@ -3,6 +3,7 @@
 Preprocessing ops generally take in measurement or composition data and scale, correct, and transform it
 
 """
+
 import warnings
 from numbers import Number
 from typing import Union, Optional, List, Dict
@@ -10,7 +11,7 @@ from typing import Union, Optional, List, Dict
 import numpy as np
 import sympy
 import xarray as xr
-from scipy.signal import savgol_filter
+from scipy.signal import savgol_filter  # type: ignore
 from typing_extensions import Self
 
 from AFL.double_agent.PipelineOp import PipelineOp
@@ -19,7 +20,12 @@ from AFL.double_agent.PipelineOp import PipelineOp
 class Preprocessor(PipelineOp):
     """Base class stub for all preprocessors"""
 
-    def __init__(self, input_variable: str = None, output_variable: str = None, name: str = 'PreprocessorBase') -> None:
+    def __init__(
+        self,
+        input_variable: str = None,
+        output_variable: str = None,
+        name: str = "PreprocessorBase",
+    ) -> None:
         """
         Parameters
         ----------
@@ -32,7 +38,9 @@ class Preprocessor(PipelineOp):
         name: str
             The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
         """
-        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
+        super().__init__(
+            name=name, input_variable=input_variable, output_variable=output_variable
+        )
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
@@ -70,10 +78,23 @@ class SavgolFilter(Preprocessor):
 
     """
 
-    def __init__(self, input_variable: str, output_variable: str, dim: str = 'q', xlo: Optional[Number] = None,
-                 xhi: Optional[Number] = None, xlo_isel: Optional[int] = None, xhi_isel: Optional[int] = None,
-                 pedestal: Optional[Number] = None, npts: int = 250, derivative: int = 0, window_length: int = 31,
-                 polyorder: int = 2, apply_log_scale: bool = True, name: str = 'SavgolFilter') -> None:
+    def __init__(
+        self,
+        input_variable: str,
+        output_variable: str,
+        dim: str = "q",
+        xlo: Optional[Number] = None,
+        xhi: Optional[Number] = None,
+        xlo_isel: Optional[int] = None,
+        xhi_isel: Optional[int] = None,
+        pedestal: Optional[Number] = None,
+        npts: int = 250,
+        derivative: int = 0,
+        window_length: int = 31,
+        polyorder: int = 2,
+        apply_log_scale: bool = True,
+        name: str = "SavgolFilter",
+    ) -> None:
         """
         Parameters
         ----------
@@ -114,7 +135,9 @@ class SavgolFilter(Preprocessor):
             The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
         """
 
-        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
+        super().__init__(
+            name=name, input_variable=input_variable, output_variable=output_variable
+        )
 
         self.dim = dim
         self.npts = npts
@@ -133,22 +156,27 @@ class SavgolFilter(Preprocessor):
         data1 = self._get_variable(dataset)
 
         if self.dim not in data1.coords:
-            raise ValueError((
-                f"""dim argument of PipelineOp '{self.name}' set to '{self.dim}' but not found in coords"""
-            ))
+            raise ValueError(
+                (
+                    f"""dim argument of PipelineOp '{self.name}' set to '{self.dim}' but not found in coords"""
+                )
+            )
 
         if (self.xlo is not None) or (self.xhi is not None):
             if (self.xlo_isel is not None) or (self.xhi_isel is not None):
-                warnings.warn((
-                    'Both value and index based indexing have been specified! '
-                    'Value indexing will be applied first!'
-                ), stacklevel=2)
+                warnings.warn(
+                    (
+                        "Both value and index based indexing have been specified! "
+                        "Value indexing will be applied first!"
+                    ),
+                    stacklevel=2,
+                )
 
         data1 = data1.sel({self.dim: slice(self.xlo, self.xhi)})
         data1 = data1.isel({self.dim: slice(self.xlo_isel, self.xhi_isel)})
 
         if self.apply_log_scale:
-            dim = 'log_' + self.dim
+            dim = "log_" + self.dim
             data1 = data1.where(data1 > 0.0, drop=True)
             data1 = data1.pipe(np.log10)
             data1[self.dim] = np.log10(data1[self.dim])
@@ -173,14 +201,22 @@ class SavgolFilter(Preprocessor):
         data1 = data1.interp({dim: x_new})
 
         # filter out any q that have NaN
-        data1 = data1.dropna(dim, how='any')
+        data1 = data1.dropna(dim, how="any")
 
         # take derivative
-        data1_filtered = savgol_filter(data1.values.T, window_length=self.window_length, polyorder=self.polyorder,
-                                       delta=dx, axis=0, deriv=self.derivative)
+        data1_filtered = savgol_filter(
+            data1.values.T,
+            window_length=self.window_length,
+            polyorder=self.polyorder,
+            delta=dx,
+            axis=0,
+            deriv=self.derivative,
+        )
 
         self.output[self.output_variable] = data1.copy(data=data1_filtered.T)
-        self.output[self.output_variable].attrs["description"] = f"Savitsky-Golay filtered data"
+        self.output[self.output_variable].attrs[
+            "description"
+        ] = f"Savitsky-Golay filtered data"
 
         return self
 
@@ -188,7 +224,13 @@ class SavgolFilter(Preprocessor):
 class SubtractMin(Preprocessor):
     """Baseline input variable by subtracting minimum value"""
 
-    def __init__(self, input_variable: str, output_variable: str, dim: str, name: str = 'SubtractMin') -> None:
+    def __init__(
+        self,
+        input_variable: str,
+        output_variable: str,
+        dim: str,
+        name: str = "SubtractMin",
+    ) -> None:
         """
         Parameters
         ----------
@@ -204,7 +246,9 @@ class SubtractMin(Preprocessor):
         name: str
             The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
         """
-        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
+        super().__init__(
+            name=name, input_variable=input_variable, output_variable=output_variable
+        )
 
         self.dim = dim
 
@@ -213,18 +257,26 @@ class SubtractMin(Preprocessor):
         data1 = self._get_variable(dataset)
 
         self.output[self.output_variable] = data1 - data1.min(self.dim)
-        self.output[self.output_variable].attrs["description"] = (
-            f"Subtracted minimum value along dimension '{self.dim}'"
-        )
+        self.output[self.output_variable].attrs[
+            "description"
+        ] = f"Subtracted minimum value along dimension '{self.dim}'"
 
         return self
 
 
 class Standardize(Preprocessor):
-    """ Standardize the data to have min 0 and max 1"""
+    """Standardize the data to have min 0 and max 1"""
 
-    def __init__(self, input_variable: str, output_variable: str, dim: str, scale_variable: Optional[str] = None,
-                 min_val: Optional[Number] = None, max_val: Optional[Number] = None, name: str = 'Standardize') -> None:
+    def __init__(
+        self,
+        input_variable: str,
+        output_variable: str,
+        dim: str,
+        scale_variable: Optional[str] = None,
+        min_val: Optional[Number] = None,
+        max_val: Optional[Number] = None,
+        name: str = "Standardize",
+    ) -> None:
         """
         Parameters
         ----------
@@ -248,7 +300,9 @@ class Standardize(Preprocessor):
             The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
 
         """
-        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
+        super().__init__(
+            name=name, input_variable=input_variable, output_variable=output_variable
+        )
 
         self.dim = dim
         self.min_val = min_val
@@ -276,7 +330,9 @@ class Standardize(Preprocessor):
             min_val = self.min_val
 
         self.output[self.output_variable] = (data1 - min_val) / (max_val - min_val)
-        self.output[self.output_variable].attrs["description"] = f"Data normalized to have range 0 -> 1"
+        self.output[self.output_variable].attrs[
+            "description"
+        ] = f"Data normalized to have range 0 -> 1"
 
         return self
 
@@ -284,9 +340,16 @@ class Standardize(Preprocessor):
 class Destandardize(Preprocessor):
     """Transform the data from 0->1 scaling"""
 
-    def __init__(self, input_variable: str, output_variable: str, dim: str, scale_variable: Optional[str] = None,
-                 min_val: Optional[Number] = None, max_val: Optional[Number] = None,
-                 name: str = 'Destandardize') -> None:
+    def __init__(
+        self,
+        input_variable: str,
+        output_variable: str,
+        dim: str,
+        scale_variable: Optional[str] = None,
+        min_val: Optional[Number] = None,
+        max_val: Optional[Number] = None,
+        name: str = "Destandardize",
+    ) -> None:
         """
         Parameters
         ----------
@@ -310,7 +373,9 @@ class Destandardize(Preprocessor):
             The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
 
         """
-        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
+        super().__init__(
+            name=name, input_variable=input_variable, output_variable=output_variable
+        )
 
         self.dim = dim
         self.min_val = min_val
@@ -338,7 +403,9 @@ class Destandardize(Preprocessor):
             min_val = self.min_val
 
         self.output[self.output_variable] = data1 * (max_val - min_val) + min_val
-        self.output[self.output_variable].attrs["description"] = f"Data normalized to have range 0 -> 1"
+        self.output[self.output_variable].attrs[
+            "description"
+        ] = f"Data normalized to have range 0 -> 1"
 
         return self
 
@@ -346,7 +413,9 @@ class Destandardize(Preprocessor):
 class Zscale(Preprocessor):
     """Z-scale the data to have mean 0 and standard deviation scaling"""
 
-    def __init__(self, input_variable: str, output_variable: str, dim: str, name: str = 'Zscale') -> None:
+    def __init__(
+        self, input_variable: str, output_variable: str, dim: str, name: str = "Zscale"
+    ) -> None:
         """
         Parameters
         ----------
@@ -362,7 +431,9 @@ class Zscale(Preprocessor):
         name: str
             The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
         """
-        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
+        super().__init__(
+            name=name, input_variable=input_variable, output_variable=output_variable
+        )
 
         self.mean = None
         self.std = None
@@ -376,17 +447,26 @@ class Zscale(Preprocessor):
 
         # this standardizes between the min and the max values, this isn't z-scaling...
         self.output[self.output_variable] = (data1 - self.mean) / self.std
-        self.output[self.output_variable].attrs["description"] = f"Data Zscaled to have range 0 ~ -1 -> 1"
+        self.output[self.output_variable].attrs[
+            "description"
+        ] = f"Data Zscaled to have range 0 ~ -1 -> 1"
 
         return self
 
 
 class ZscaleError(Preprocessor):
-    """ Scale the y_err data, first input is y, second input is y_err"""
+    """Scale the y_err data, first input is y, second input is y_err"""
 
-    def __init__(self, input_variables: Union[Optional[str], List[str]], output_variable: str, dim: str,
-                 name: str = 'Zscale_error') -> None:
-        super().__init__(name=name, input_variable=input_variables, output_variable=output_variable)
+    def __init__(
+        self,
+        input_variables: Union[Optional[str], List[str]],
+        output_variable: str,
+        dim: str,
+        name: str = "Zscale_error",
+    ) -> None:
+        super().__init__(
+            name=name, input_variable=input_variables, output_variable=output_variable
+        )
 
         self.dim = dim
 
@@ -397,7 +477,9 @@ class ZscaleError(Preprocessor):
         data_y = data1[self.input_variable[0]]
 
         self.output[self.output_variable] = data_y_err / data_y.std()
-        self.output[self.output_variable].attrs["description"] = f"Uncertainty normalized to have range 0 -> inf"
+        self.output[self.output_variable].attrs[
+            "description"
+        ] = f"Uncertainty normalized to have range 0 -> inf"
 
         return self
 
@@ -411,8 +493,13 @@ class BarycentricToTernaryXY(Preprocessor):
 
     """
 
-    def __init__(self, input_variable: str, output_variable: str, sample_dim: str,
-                 name: str = 'BarycentricToTernaryXY') -> None:
+    def __init__(
+        self,
+        input_variable: str,
+        output_variable: str,
+        sample_dim: str,
+        name: str = "BarycentricToTernaryXY",
+    ) -> None:
         """
         Parameters
         ----------
@@ -429,7 +516,9 @@ class BarycentricToTernaryXY(Preprocessor):
             The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
 
         """
-        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
+        super().__init__(
+            name=name, input_variable=input_variable, output_variable=output_variable
+        )
 
         x_min = 0.5 - 1.0 / np.sqrt(3)
         x_max = 0.5 + 1.0 / np.sqrt(3)
@@ -444,9 +533,12 @@ class BarycentricToTernaryXY(Preprocessor):
         bary = bary / np.sum(bary, axis=1)[:, np.newaxis]
         xy = np.dot(bary, self.corners)
 
-        self.output[self.output_variable] = xr.DataArray(xy, dims=[self.sample_dim, 'xy'])
-        self.output[self.output_variable].attrs["description"] = ("barycentric coordinates from xy variable "
-                                                                  f"'{self.input_variable}'")
+        self.output[self.output_variable] = xr.DataArray(
+            xy, dims=[self.sample_dim, "xy"]
+        )
+        self.output[self.output_variable].attrs["description"] = (
+            "barycentric coordinates from xy variable " f"'{self.input_variable}'"
+        )
         return self
 
 
@@ -459,8 +551,13 @@ class TernaryXYToBarycentric(Preprocessor):
 
     """
 
-    def __init__(self, input_variable: str, output_variable: str, sample_dim: str,
-                 name: str = 'TernaryXYToBarycentric') -> None:
+    def __init__(
+        self,
+        input_variable: str,
+        output_variable: str,
+        sample_dim: str,
+        name: str = "TernaryXYToBarycentric",
+    ) -> None:
         """
         Parameters
         ----------
@@ -476,7 +573,9 @@ class TernaryXYToBarycentric(Preprocessor):
         name: str
             The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
         """
-        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
+        super().__init__(
+            name=name, input_variable=input_variable, output_variable=output_variable
+        )
 
         x_min = 0.5 - 1.0 / np.sqrt(3)
         x_max = 0.5 + 1.0 / np.sqrt(3)
@@ -491,17 +590,28 @@ class TernaryXYToBarycentric(Preprocessor):
         xys = np.column_stack((xy, np.ones(xy.shape[0])))
         v = np.column_stack((self.corners, np.ones(3)))
         bary = np.dot(xys, np.linalg.inv(v))
-        self.output[self.output_variable] = xr.DataArray(bary, dims=[self.sample_dim, 'component'])
-        self.output[self.output_variable].attrs["description"] = ("XY coordinates from barycentric variable "
-                                                                  f"'{self.input_variable}'")
+        self.output[self.output_variable] = xr.DataArray(
+            bary, dims=[self.sample_dim, "component"]
+        )
+        self.output[self.output_variable].attrs["description"] = (
+            "XY coordinates from barycentric variable " f"'{self.input_variable}'"
+        )
         return self
 
 
 class SympyTransform(Preprocessor):
     """Transform data using sympy expressions"""
 
-    def __init__(self, input_variable: str, output_variable: str, sample_dim: str, transforms: Dict[str, object],
-                 transform_dim: str, component_dim: str = 'component', name: str = 'SympyTransform') -> None:
+    def __init__(
+        self,
+        input_variable: str,
+        output_variable: str,
+        sample_dim: str,
+        transforms: Dict[str, object],
+        transform_dim: str,
+        component_dim: str = "component",
+        name: str = "SympyTransform",
+    ) -> None:
         """
 
         Parameters
@@ -563,7 +673,9 @@ class SympyTransform(Preprocessor):
 
         """
 
-        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
+        super().__init__(
+            name=name, input_variable=input_variable, output_variable=output_variable
+        )
         self.sample_dim = sample_dim
         self.component_dim = component_dim
         self.transforms = transforms
@@ -571,21 +683,33 @@ class SympyTransform(Preprocessor):
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
-        data = dataset[self.input_variable].transpose(self.sample_dim, self.component_dim)
+        data = dataset[self.input_variable].transpose(
+            self.sample_dim, self.component_dim
+        )
 
         # need to construct a dict of arrays
-        comps = {k: v.squeeze().values for k, v in data.groupby(self.component_dim, squeeze=False)}
+        comps = {
+            k: v.squeeze().values
+            for k, v in data.groupby(self.component_dim, squeeze=False)
+        }
 
         # apply transform
         new_comps = xr.Dataset()
         for name, transform in self.transforms.items():
             symbols = list(transform.free_symbols)
             lam = sympy.lambdify(symbols, transform)
-            new_comps[name] = ((self.sample_dim,), lam(**{k.name: comps[k.name] for k in symbols}))
+            new_comps[name] = (
+                (self.sample_dim,),
+                lam(**{k.name: comps[k.name] for k in symbols}),
+            )
 
-        new_comps = new_comps.to_array(self.transform_dim).transpose(..., self.transform_dim)
+        new_comps = new_comps.to_array(self.transform_dim).transpose(
+            ..., self.transform_dim
+        )
 
         self.output[self.output_variable] = new_comps
-        self.output[self.output_variable].attrs['description'] = 'Variables transformed using sympy expressions'
+        self.output[self.output_variable].attrs[
+            "description"
+        ] = "Variables transformed using sympy expressions"
 
         return self
