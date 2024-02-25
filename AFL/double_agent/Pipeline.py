@@ -10,30 +10,30 @@ All PipelineOps should:
     - that returns self
 
 """
-import re
+
 import copy
 import pickle
-
+import re
 from typing import Generator, Optional, List
+
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
+import xarray as xr
+from tqdm.auto import tqdm
 from typing_extensions import Self
 
-import numpy as np
-import matplotlib.pyplot as plt
-import xarray as xr
-import networkx as nx
-from tqdm.auto import tqdm
-
+from AFL.double_agent.PipelineContext import PipelineContext
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
-from AFL.double_agent.ContextManager import ContextManager
 
 
-class Pipeline(ContextManager):
+class Pipeline(PipelineContext):
     """
     Container class for defining and building pipelines.
     """
 
-    def __init__(self, name: Optional[str] = None, ops: Optional[List] = None):
+    def __init__(self, name: Optional[str] = None, ops: Optional[List] = None) -> None:
         if ops is None:
             self.ops = []
         else:
@@ -58,7 +58,7 @@ class Pipeline(ContextManager):
         return self.ops[i]
 
     def __repr__(self) -> str:
-        return f'<Pipeline {self.name} N={len(self.ops)}>'
+        return f"<Pipeline {self.name} N={len(self.ops)}>"
 
     def search(self, name: str, contains: bool = False) -> Optional[PipelineOp]:
         for op in self:
@@ -73,7 +73,9 @@ class Pipeline(ContextManager):
         print(f"{'PipelineOp':40s} {'input_variable'} ---> {'output_variable'}")
         print(f"{'-' * 10:40s} {'-' * 35}")
         for i, op in enumerate(self):
-            print(f"{i:<3d}) {'<' + op.name + '>':35s} {op.input_variable} ---> {op.output_variable}")
+            print(
+                f"{i:<3d}) {'<' + op.name + '>':35s} {op.input_variable} ---> {op.output_variable}"
+            )
 
         print()
         print("Input Variables")
@@ -116,13 +118,12 @@ class Pipeline(ContextManager):
         pipeline = self.copy()
         pipeline.clear_outputs()
 
-        with open(filename, 'wb') as f:
+        with open(filename, "wb") as f:
             pickle.dump(pipeline, f)
 
     @staticmethod
     def read(filename: str):
         """Read pipeline from pickle file on disk
-
 
         Usage
         -----
@@ -132,7 +133,7 @@ class Pipeline(ContextManager):
         ````
 
         """
-        with open(filename, 'rb') as f:
+        with open(filename, "rb") as f:
             pipeline = pickle.load(f)
         return pipeline
 
@@ -159,7 +160,7 @@ class Pipeline(ContextManager):
         self.make_graph()
 
         plt.figure(figsize=figsize)
-        pos = nx.nx_agraph.pygraphviz_layout(self.graph, prog='dot')
+        pos = nx.nx_agraph.pygraphviz_layout(self.graph, prog="dot")
         nx.draw(self.graph, with_labels=True, pos=pos, node_size=1000)
         if edge_labels:
             nx.draw_networkx_edge_labels(self.graph, pos, self.graph_edge_labels)
@@ -168,7 +169,7 @@ class Pipeline(ContextManager):
         import plotly.graph_objects as go
 
         self.make_graph()
-        pos = nx.nx_agraph.pygraphviz_layout(self.graph, prog='dot')
+        pos = nx.nx_agraph.pygraphviz_layout(self.graph, prog="dot")
 
         edge_x = []
         edge_y = []
@@ -183,10 +184,12 @@ class Pipeline(ContextManager):
             edge_y.append(None)
 
         edge_trace = go.Scatter(
-            x=edge_x, y=edge_y,
-            line=dict(width=0.5, color='#888'),
-            hoverinfo='none',
-            mode='lines')
+            x=edge_x,
+            y=edge_y,
+            line=dict(width=0.5, color="#888"),
+            hoverinfo="none",
+            mode="lines",
+        )
 
         node_x = []
         node_y = []
@@ -196,27 +199,26 @@ class Pipeline(ContextManager):
             node_y.append(y)
 
         node_trace = go.Scatter(
-            x=node_x, y=node_y,
-            mode='markers',
-            hoverinfo='text',
-            marker=dict(
-                reversescale=True,
-                color=[],
-                size=20,
-                line_width=2))
+            x=node_x,
+            y=node_y,
+            mode="markers",
+            hoverinfo="text",
+            marker=dict(reversescale=True, color=[], size=20, line_width=2),
+        )
 
         node_text = []
-        regex = re.compile("[\[\]\']")
+        regex = re.compile("[\[\]']")
         for node in self.graph.nodes():
             VarIn = np.unique(list(n[0] for n in self.graph.in_edges(node)))
             VarOut = np.unique(list(n[0] for n in self.graph.out_edges(node)))
             OpIn = np.unique([self.graph_edge_labels[i, node] for i in VarIn])
 
-            OpIn = regex.sub('', str(OpIn)).replace(" ", ", ")
-            VarIn = regex.sub('', str(VarIn)).replace(" ", ", ")
-            VarOut = regex.sub('', str(VarOut)).replace(" ", ", ")
+            OpIn = regex.sub("", str(OpIn)).replace(" ", ", ")
+            VarIn = regex.sub("", str(VarIn)).replace(" ", ", ")
+            VarOut = regex.sub("", str(VarOut)).replace(" ", ", ")
             node_text.append(
-                f"{'Node: ':9s}{node}<br>{'OpIn: ':9s}{OpIn}<br>{'VarIn: ':9s}{VarIn}<br>{'VarOut: ':9s}{VarOut}")
+                f"{'Node: ':9s}{node}<br>{'OpIn: ':9s}{OpIn}<br>{'VarIn: ':9s}{VarIn}<br>{'VarOut: ':9s}{VarOut}"
+            )
 
         node_trace.text = node_text
 
@@ -226,8 +228,8 @@ class Pipeline(ContextManager):
             width=750,
             showlegend=False,
             template="simple_white",
-            xaxis={'visible': False},
-            yaxis={'visible': False},
+            xaxis={"visible": False},
+            yaxis={"visible": False},
             margin=dict(l=20, r=20, t=20, b=20),
         )
         return fig
@@ -248,7 +250,9 @@ class Pipeline(ContextManager):
         self.make_graph()
         return [n for n, d in self.graph.out_degree() if d == 0]
 
-    def calculate(self, dataset: xr.Dataset, tiled_data=None, disable_progress_bar=False) -> xr.Dataset:
+    def calculate(
+        self, dataset: xr.Dataset, tiled_data=None, disable_progress_bar=False
+    ) -> xr.Dataset:
         """Execute all operations in pipeline on provided dataset"""
         dataset1 = dataset.copy()
 

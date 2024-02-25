@@ -44,7 +44,7 @@ class Preprocessor(PipelineOp):
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
-        return NotImplementedError("Calculate must be implemented in subclasses")
+        return NotImplementedError(".calculate must be implemented in subclasses")  # type: ignore
 
 
 class SavgolFilter(Preprocessor):
@@ -74,7 +74,6 @@ class SavgolFilter(Preprocessor):
 
     5. Finally, `scipy.signal.savgol_filter` is applied with the `window_length`, `polyorder`, and `derivative`
     parameters specified in the constructor.
-
 
     """
 

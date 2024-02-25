@@ -1,12 +1,13 @@
 """
-PairMetrics are PipelineOps that produce pair matrices as results
-
+Extrapolators take discrete sample data and extrapolate the data onto a provided grid.
 """
+from typing_extensions import Self
+
 import xarray as xr
 import numpy as np
 
-import sklearn.gaussian_process
-import sklearn.gaussian_process.kernels
+import sklearn.gaussian_process  # type: ignore
+import sklearn.gaussian_process.kernels  # type: ignore
 
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
@@ -30,6 +31,10 @@ class Extrapolator(PipelineOp):
         self.grid_dim = grid_dim
         
         self._banned_from_attrs.extend(['kernel'])
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
+        return NotImplementedError(".calculate must be implemented in subclasses")  # type: ignore
 
 
 class DummyExtrapolator(Extrapolator):

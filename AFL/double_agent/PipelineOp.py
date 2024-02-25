@@ -1,12 +1,12 @@
 import copy
 import warnings
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, List, Union
-from typing_extensions import Self
+from typing import Optional, Dict, List
 
 import xarray as xr
+from typing_extensions import Self
 
-from AFL.double_agent.ContextManager import ContextManager, NoContextException
+from AFL.double_agent.PipelineContext import PipelineContext, NoContextException
 
 
 class PipelineOp(ABC):
@@ -15,11 +15,11 @@ class PipelineOp(ABC):
     """
 
     def __init__(self,
-                 name: Union[Optional[str], List[str]] = None,
-                 input_variable: Union[Optional[str], List[str]] = None,
-                 output_variable: Union[Optional[str], List[str]] = None,
-                 input_prefix: Union[Optional[str], List[str]] = None,
-                 output_prefix: Union[Optional[str], List[str]] = None):
+                 name: Optional[str] | List[str] = None,
+                 input_variable: Optional[str] | List[str] = None,
+                 output_variable: Optional[str] | List[str] = None,
+                 input_prefix: Optional[str] | List[str] = None,
+                 output_prefix: Optional[str] | List[str] = None):
 
         if all(x is None for x in [input_variable, output_variable, input_prefix, output_prefix]):
             warnings.warn(
@@ -31,30 +31,29 @@ class PipelineOp(ABC):
             self.name = 'PipelineOp'
         else:
             self.name = name
+
         self.input_variable = input_variable
         self.output_variable = output_variable
         self.input_prefix = input_prefix
         self.output_prefix = output_prefix
 
-        
-
         self.output = {}
 
         try:
             # try to add this object to current pipeline on context stack
-            ContextManager.get_context().append(self)
+            PipelineContext.get_context().append(self)
         except NoContextException:
             # silently continue for those working outside a context manager
             pass
 
-            # variables to exclude when constructing attrs dict for xarray
+        # variables to exclude when constructing attrs dict for xarray
         self._banned_from_attrs = ['output', '_banned_from_attrs']
 
     @abstractmethod
-    def calculate(self, dataset: xr.Dataset) -> xr.Dataset:
+    def calculate(self, dataset: xr.Dataset) -> Self:
         pass
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<PipelineOp:{self.name}>'
 
     def copy(self) -> Self:
@@ -63,7 +62,7 @@ class PipelineOp(ABC):
     def _prefix_output(self, variable_name: str) -> str:
         prefixed_variable = copy.deepcopy(variable_name)
         if self.output_prefix is not None:
-            prefixed_variable = self.output_prefix + '_' + prefixed_variable
+            prefixed_variable = f'{self.output_prefix}_{prefixed_variable}'
         return prefixed_variable
 
     def _get_attrs(self) -> Dict:
