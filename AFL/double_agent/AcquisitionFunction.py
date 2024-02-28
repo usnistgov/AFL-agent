@@ -1,14 +1,14 @@
 """
-Acquisition functions gather one or more inputs and use that information to choose one or more samples
-from a supplied grid.
+Acquisition functions gather one or more inputs and use that information to choose one or more points from a
+from a supplied composition grid.
 """
 
 import copy
 from typing import List, Optional
-from typing_extensions import Self
 
 import numpy as np
 import xarray as xr
+from typing_extensions import Self
 
 from AFL.double_agent.Generator import GaussianPoints
 from AFL.double_agent.PipelineOp import PipelineOp

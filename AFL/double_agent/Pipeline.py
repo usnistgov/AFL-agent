@@ -234,7 +234,7 @@ class Pipeline(PipelineContext):
         )
         return fig
 
-    def input_variables(self):
+    def input_variables(self) -> List[str]:
         """Get the input variables needed for the pipeline to fully execute
 
         Warning
@@ -243,15 +243,15 @@ class Pipeline(PipelineContext):
         be distinguishable by having Generator in the name, but this isn't enforced at the moment.
         """
         self.make_graph()
-        return [n for n, d in self.graph.in_degree() if d == 0]
+        return [n for n, d in self.graph.in_degree() if d == 0]  # type: ignore
 
-    def output_variables(self):
+    def output_variables(self) -> List[str]:
         """Get the outputs variables of the pipeline"""
         self.make_graph()
-        return [n for n, d in self.graph.out_degree() if d == 0]
+        return [n for n, d in self.graph.out_degree() if d == 0]  # type: ignore
 
     def calculate(
-        self, dataset: xr.Dataset, tiled_data=None, disable_progress_bar=False
+        self, dataset: xr.Dataset, tiled_data=None, disable_progress_bar: bool=False
     ) -> xr.Dataset:
         """Execute all operations in pipeline on provided dataset"""
         dataset1 = dataset.copy()

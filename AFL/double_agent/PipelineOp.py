@@ -11,7 +11,7 @@ from AFL.double_agent.PipelineContext import PipelineContext, NoContextException
 
 class PipelineOp(ABC):
     """
-    Abstract base class for data processors. All operations in AFL.agent should inherit PipelineOpBase.
+    Abstract base class for data processors. All operations in AFL.double_agent should inherit PipelineOpBase.
     """
 
     def __init__(self,
@@ -37,7 +37,7 @@ class PipelineOp(ABC):
         self.input_prefix = input_prefix
         self.output_prefix = output_prefix
 
-        self.output = {}
+        self.output: Dict[str, xr.DataArray] = {}
 
         try:
             # try to add this object to current pipeline on context stack

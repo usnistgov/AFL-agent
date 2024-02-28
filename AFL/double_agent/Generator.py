@@ -1,12 +1,12 @@
 """Generators take parametric input to generate data"""
 
 from typing import Dict, List
-from typing_extensions import Self
 
 import numpy as np
 import xarray as xr
 from itertools import product
 from scipy.stats import multivariate_normal  # type: ignore
+from typing_extensions import Self
 
 from AFL.double_agent.PipelineOp import PipelineOp
 
