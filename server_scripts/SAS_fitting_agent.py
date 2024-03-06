@@ -8,16 +8,16 @@ except:
 import xarray as xr
 from AFL.automation.APIServer.APIServer import APIServer
 #from AFL.automation.instrument.VirtualSpec_data import VirtualSpec_data
-from AFL.double_agent.SAS_model_fit_driver import sas_wrapper, SAS_model_fit
+from AFL.double_agent.SASFitter_Driver import SASModelWrapper, SASFitter_Driver
 from AFL.automation.APIServer.data.DataTiled import DataTiled
 
 ### local tiled server here
 data = DataTiled(server='http://0.0.0.0:8000', api_key = os.environ['TILED_API_KEY'], backup_path='/Users/drs18/.afl/json-backup')
-server = APIServer('SAS_fitting_Server', data=data)
+server = APIServer('SAS_Fitting_Server', data=data)
 
 server.add_standard_routes()
 
-server.create_queue(SAS_model_fit())
+server.create_queue(SASFitter_Driver())
 
 server.init_logging()
 
