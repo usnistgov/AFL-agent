@@ -269,7 +269,7 @@ class SASFitter_Driver(Driver):
             y = sds[sas_variable].squeeze().values
             dy = sds[sas_err_variable].squeeze().values
             if sas_resolution_variable is not None:
-                dx = sds[sas_err_variable].values
+                dx = sds[sas_resolution_variable].values
             else:
                 dx = None
 
