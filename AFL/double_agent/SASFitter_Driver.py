@@ -162,7 +162,7 @@ class SASFitter_Driver(Driver):
         self.models = []
         for inputs in self.config["model_inputs"]:
             q_min = inputs.get("q_min", self.config["q_min"])
-            q_max = inputs.get("q_min", self.config["q_max"])
+            q_max = inputs.get("q_max", self.config["q_max"])
             data.mask = (data.x < q_min) | (data.x > q_max)
             model = SASModelWrapper(
                 name=inputs["name"],
