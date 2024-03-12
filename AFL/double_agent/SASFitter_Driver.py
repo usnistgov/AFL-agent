@@ -130,7 +130,7 @@ class SASFitter_Driver(Driver):
     defaults = {}
     defaults["savepath"] = "/home/afl642/2402_DT_ISIS_path"
     defaults["q_min"] = 1e-2
-    defaults["q_max"] = 1e-2
+    defaults["q_max"] = 1e-1
     defaults["resolution"] = None
     defaults["model_inputs"] = [
         {
