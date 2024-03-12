@@ -1,12 +1,14 @@
 import copy
 import pathlib
 import uuid
+from collections import defaultdict
 from typing import Dict, Any, Optional
 from typing_extensions import Self
 
 from tqdm.auto import tqdm  # type: ignore
 import h5py  # type: ignore
 import numpy as np
+import pandas as pd
 
 import bumps  # type: ignore
 import bumps.fitproblem  # type: ignore
@@ -60,12 +62,16 @@ class SASModelWrapper:
 
         self.model_I = None
         self.model_q = None
+        self.fit_params = None
 
     def copy(self) -> Self:
         return copy.deepcopy(self)
 
     def construct_I(self, params: Optional[Dict[str, Any]] = None) -> np.ndarray:
         return self(params)
+
+    def residuals(self):
+        return self.problem.residuals()
 
     def __call__(self, params: Optional[Dict[str, Any]] = None) -> np.ndarray:
         """
@@ -99,12 +105,25 @@ class SASModelWrapper:
                 verbose=True,
             )
 
-        fit_params = {
+        self.fit_params = {
             key: val for key, val in zip(self.problem.labels(), self.problem.getp())
         }
-        self.model_I = self.construct_I(params=fit_params)
-        self.model_q = self.data.x[self.data.mask==0]
+        self.model_I = self.construct_I(params=self.fit_params)
+        self.model_q = self.data.x[self.data.mask == 0]
         return self.results
+
+    def get_fit_params(self):
+        params = copy.deepcopy(self.init_params)
+        for idx, r in enumerate(self.problem.labels()):
+            params[r] = {}
+            params[r]["value"] = self.results.x[idx]
+            params[r]["error"] = self.results.dx[idx]
+
+        for key in list(params):
+            if "bounds" in list(params[key]):
+                params[key]["error"] = params[key]["bounds"]
+                del params[key]["bounds"]
+        return params
 
 
 class SASFitter_Driver(Driver):
@@ -264,7 +283,7 @@ class SASFitter_Driver(Driver):
         self.sasdata_dataset = self.retrieve_obj(db_uuid)
 
         self.sasdata = []
-        for i, sds in self.sasdata_dataset.groupby(sample_dim,squeeze=False):
+        for i, sds in self.sasdata_dataset.groupby(sample_dim, squeeze=False):
             x = sds[q_variable].squeeze().values
             y = sds[sas_variable].squeeze().values
             dy = sds[sas_err_variable].squeeze().values
@@ -304,38 +323,53 @@ class SASFitter_Driver(Driver):
             self.models_post = []
             self.construct_models(data)
 
-            fitted_models_data = []
+            fitted_models.append([])
             for model in self.models:
                 model.fit(fit_method=fit_method)
-
                 self.models_post.append(model)
                 self.models_fit = True
 
-                fitted_models_data.append(model.copy())
-
-            fitted_models.append(fitted_models_data)
+                fitted_models[-1].append(model.copy())
 
             self.results.append(self.store_results(self.models_post))
 
         self.build_report()
 
         # construct array of theory fits
-        fit_q = None
-        fit_I = []
-        for models in fitted_models:
-            fit_I_model = []
-            for model in models:
-                fit_I_model.append(model.model_I)
-                if fit_q is None:
-                    fit_q = model.model_q
-            fit_I.append(fit_I_model)
+        tiled_arrays = defaultdict(list)
+        for fitted_models in fitted_models:
 
-        # push to tiled
+            for model in fitted_models:
+                tiled_arrays[f"fit_I_{model.name}"].append(model.model_I)
+                tiled_arrays[f"residuals_{model.name}"].append(model.residuals())
+                if len(tiled_arrays[f'fit_q_{model.name}'])==0:
+                    tiled_arrays[f'fit_q_{model.name}'] = model.model_q
+
+                tiled_arrays[f"params_{model.name}"].append(model.get_fit_params())
+
+        # construct arrays and save to tiled
         self.data.add_array("chisq", self.report["best_fits"]["lowest_chisq"])
         self.data.add_array("model_names", self.report["best_fits"]["model_name"])
-        self.data.add_array("fit_q", np.array(fit_q))
-        self.data.add_array("fit_I", np.array(fit_I))
-        self.data["report"] = self.report
+        for array_name, array in tiled_arrays.items():
+            if "params_" in array_name:
+                df_value = pd.DataFrame([
+                    {k:v['value'] for k,v in item.items()}
+                    for item in array
+                ])
+                df_error = pd.DataFrame([
+                    {k:v['error'] for k,v in item.items()}
+                    for item in array
+                ])
+
+                df_value = df_value.fillna(-1)
+                df_error = df_error.fillna(-1)
+
+                self.data[array_name+"_columns"] = df_value.columns.values
+                self.data.add_array(array_name,df_value.values)
+                self.data.add_array(array_name+'_error',df_error.values)
+            else:
+                self.data.add_array(array_name, np.array(array))
+
 
         ####################
         # a main process has to exist for this to run. not sure how it should interface on a server...
