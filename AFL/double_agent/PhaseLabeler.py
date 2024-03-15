@@ -13,7 +13,7 @@ from AFL.double_agent.PipelineOp import PipelineOp
 
 
 class PhaseLabeler(PipelineOp):
-    def __init__(self, input_variable, output_variable, dim='sample', params=None, name='PhaseLabeler'):
+    def __init__(self, input_variable, output_variable, dim='sample', use_silhouette=False, params=None, name='PhaseLabeler'):
 
         super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
 
@@ -26,6 +26,7 @@ class PhaseLabeler(PipelineOp):
             self.params = params
 
         self._banned_from_attrs.extend(['labels','clf','silh_dict','params'])
+        self.use_silhouette = use_silhouette
 
     def __getitem__(self, index):
         return self.labels[index]
@@ -81,12 +82,12 @@ class PhaseLabeler(PipelineOp):
             self.n_phases = silh_dict['n_phases'][idx]
             self.labels = silh_dict['labels'][idx]
         self.silh_dict = silh_dict
-
+        
 
 class SpectralClustering(PhaseLabeler):
-    def __init__(self, input_variable, output_variable, dim, params=None, name='SpectralClustering'):
+    def __init__(self, input_variable, output_variable, dim, params=None, name='SpectralClustering',use_silhouette=False):
         super().__init__(name=name, input_variable=input_variable, output_variable=output_variable, dim=dim,
-                         params=params)
+                         params=params,use_silhouette=use_silhouette)
 
     def _construct_labeler(self, **params):
         self.params.update(params)
@@ -99,10 +100,14 @@ class SpectralClustering(PhaseLabeler):
             n_init=1000
         )
 
+
     def calculate(self, dataset):
         data1 = self._get_variable(dataset)
         self._construct_labeler()
-        self.silhouette(data1.values)  # maybe silhouette should be a separate op...
+        if self.use_silhouette:
+            self.silhouette(data1.values)  # maybe silhouette should be a separate op...
+        else:
+            self.labels = self.clf.fit_predict(data1.values)
         self.output[self.output_variable] = xr.DataArray(self.labels, dims=[self.dim])
         self.output[self.output_variable].attrs.update(self.params)
         return self
