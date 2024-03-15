@@ -340,6 +340,7 @@ class SASFitter_Driver(Driver):
         for fitted_models in fitted_models:
 
             for model in fitted_models:
+                tiled_arrays[f"chisq_{model.name}"].append(model.problem.chisq())
                 tiled_arrays[f"fit_I_{model.name}"].append(model.model_I)
                 tiled_arrays[f"residuals_{model.name}"].append(model.residuals())
                 if len(tiled_arrays[f'fit_q_{model.name}'])==0:
@@ -348,7 +349,7 @@ class SASFitter_Driver(Driver):
                 tiled_arrays[f"params_{model.name}"].append(model.get_fit_params())
 
         # construct arrays and save to tiled
-        self.data.add_array("chisq", self.report["best_fits"]["lowest_chisq"])
+        self.data.add_array("best_chisq", self.report["best_fits"]["lowest_chisq"])
         self.data.add_array("model_names", self.report["best_fits"]["model_name"])
         for array_name, array in tiled_arrays.items():
             if "params_" in array_name:
