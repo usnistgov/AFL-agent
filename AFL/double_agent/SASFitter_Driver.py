@@ -110,6 +110,7 @@ class SASModelWrapper:
         }
         self.model_I = self.construct_I(params=self.fit_params)
         self.model_q = self.data.x[self.data.mask == 0]
+        self.model_cov = self.problem.cov
         return self.results
 
     def get_fit_params(self):
@@ -295,13 +296,19 @@ class SASFitter_Driver(Driver):
             self.sasdata.append(sasmodels.data.Data1D(x=x, y=y, dy=dy, dx=dx))
 
     def fit_models(self, parallel=False, model_list=None, fit_method=None):
-        """This will fit each available sas_wrapper model in the model list to the data supplied
-        q is a list of q vectors
-        I is a list of lists of the scattering patterns (n lists of q vectors)
-        dI is a list of lists of the uncertainty in the scattering patterns (n lists of q vectors)
+        """
+        Executes a fit models call
 
-        data_ID can be a list of string identifiers for each sasview data object fit_method is defaulted to in the
-        input but if supplied must be a dictionary of kwargs that pass into the sasmodel.problem method.
+        Parameters
+        ----------
+        parallel: bool
+            NOT IMPLEMENTED!!! executes a multi-process fitting call to speed up the data
+        
+        fit_method: Optional[dict]
+            a dictionary defining the fitting routine to pass into the bumps fitting routine
+            
+        model_list: Optional[list]
+            the list of formatted dictionaries for the SAS models construction        
         """
 
         if not self.sasdata:  # empty
@@ -425,10 +432,35 @@ class SASFitter_Driver(Driver):
 
         return self.report
 
+    def calc_probabilities(self):
+        """
+        Calculates the probability of the set of models given the following approximations
+        
+        Uses the loss function (chisq) as an estimate of the model log likelihood p(t|M(i),theta) and the Laplace approximation to construct a marginal log likelihood.
+        This relies on gaussain curvature (Hessian) which in the case of multivariate normal distributions is the negative inverse of the covariance matrix. 
+          
+        """
+        
+        all_chisqs = []
+        all_fit_params = []
+        all_fit_cov = []
+
+        log_marginal_likelihoods = []
+        for model in self.models:
+            
+            model_likelihood = -1*model.chisq
+            d = len(model.fit_params)
+            log_marginal_likelihood = model_likelihood + np.log(np.linalg.det(model.cov)) + 0.5*d*np.log(2*np.pi)
+            
+            print(model_likelihood,d,log_marginal_likelihood)
+            log_marginal_likelihoods.append(log_marginal_likelihood)
+
+        model_probabilities = [i/sum(log_marginal_likelihoods) for i in log_marginal_likelihoods]
+        return model_probabilities
+
+    
     def model_selection(self, chisqr_tol=1e0):
         """
-        Moved to the labeler class... this server only fits
-
         This returns the model selected based either on BIC or some other metric for which one is correct
 
         should return the model name, the parameters that were optimized as well as the flags? and chi squared?
