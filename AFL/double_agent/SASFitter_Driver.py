@@ -110,7 +110,7 @@ class SASModelWrapper:
         }
         self.model_I = self.construct_I(params=self.fit_params)
         self.model_q = self.data.x[self.data.mask == 0]
-        self.model_cov = self.problem.cov
+        self.model_cov = self.problem.cov()
         return self.results
 
     def get_fit_params(self):
@@ -208,6 +208,7 @@ class SASFitter_Driver(Driver):
                 name = model.name
                 sasmodel = model.sasmodel
                 chi_sqr = model.problem.chisq()
+                cov = model.model_cov
 
                 # new parameters needs to take on the same form as the input model but now it no longer has bounds
                 # but error
@@ -227,6 +228,7 @@ class SASFitter_Driver(Driver):
                         "name": name,
                         "sasmodel": sasmodel,
                         "chisq": chi_sqr,
+                        "cov"  : cov.tolist(),
                         "output_fit_params": params,
                     }
                 )
@@ -356,6 +358,7 @@ class SASFitter_Driver(Driver):
                 tiled_arrays[f"params_{model.name}"].append(model.get_fit_params())
 
         # construct arrays and save to tiled
+        self.data.add_array('probabilities', self.report['probabilities'])
         self.data.add_array("best_chisq", self.report["best_fits"]["lowest_chisq"])
         self.data.add_array("model_names", self.report["best_fits"]["model_name"])
         for array_name, array in tiled_arrays.items():
@@ -427,6 +430,7 @@ class SASFitter_Driver(Driver):
         bf["model_params"] = [
             self.report["model_fits"][idx][m] for idx, m in enumerate(indices)
         ]
+        self.report['probabilities'] = self.calc_probabilities()
 
         self.report["best_fits"] = bf
 
@@ -437,7 +441,7 @@ class SASFitter_Driver(Driver):
         Calculates the probability of the set of models given the following approximations
         
         Uses the loss function (chisq) as an estimate of the model log likelihood p(t|M(i),theta) and the Laplace approximation to construct a marginal log likelihood.
-        This relies on gaussain curvature (Hessian) which in the case of multivariate normal distributions is the negative inverse of the covariance matrix. 
+        This relies on gaussain curvature (Hessian) which in the case of multivariate normal distributions is the inverse of the covariance matrix. 
           
         """
         
@@ -446,16 +450,20 @@ class SASFitter_Driver(Driver):
         all_fit_cov = []
 
         log_marginal_likelihoods = []
-        for model in self.models:
+        print(len(self.models), len(self.results[0]))
+        for result in self.results:
             
-            model_likelihood = -1*model.chisq
-            d = len(model.fit_params)
-            log_marginal_likelihood = model_likelihood + np.log(np.linalg.det(model.cov)) + 0.5*d*np.log(2*np.pi)
+            model_likelihood = [-1*model['chisq'] for model in result]
+            #d = len(model.fit_params)
+            d = [len(model['cov']) for model in result]
+            cov = [np.array(model['cov']) for model in result]
+            log_marginal_likelihood = [model_likelihood[i] + np.log(np.linalg.det(cov[i])) + 0.5*d[i]*np.log(2*np.pi) for i in range(len(d))]
             
             print(model_likelihood,d,log_marginal_likelihood)
             log_marginal_likelihoods.append(log_marginal_likelihood)
 
-        model_probabilities = [i/sum(log_marginal_likelihoods) for i in log_marginal_likelihoods]
+        model_probabilities = [j/sum(i) for i in log_marginal_likelihoods for j in i]
+        self.model_probabilities = model_probabilities
         return model_probabilities
 
     
