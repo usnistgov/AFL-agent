@@ -361,6 +361,7 @@ class SASFitter_Driver(Driver):
         self.data.add_array('probabilities', self.report['probabilities'])
         self.data.add_array("best_chisq", self.report["best_fits"]["lowest_chisq"])
         self.data.add_array("model_names", self.report["best_fits"]["model_name"])
+        self.data.add_array("all_chisq", self.report["all_chisq"])
         for array_name, array in tiled_arrays.items():
             if "params_" in array_name:
                 df_value = pd.DataFrame([
@@ -431,7 +432,7 @@ class SASFitter_Driver(Driver):
             self.report["model_fits"][idx][m] for idx, m in enumerate(indices)
         ]
         self.report['probabilities'] = self.calc_probabilities()
-
+        self.report['all_chisq'] = [[model['chisq'] for model in result] for result in self.results]
         self.report["best_fits"] = bf
 
         return self.report
