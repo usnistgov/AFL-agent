@@ -1,128 +1,205 @@
-import tensorflow as tf
-import gpflow
-from gpflow.monitor import (
-    ImageToTensorBoard,
-    ModelToTensorBoard,
-    Monitor,
-    MonitorTaskGroup,
-    ScalarToTensorBoard,
-)
+"""
+Extrapolators take discrete sample data and extrapolate the data onto a provided grid.
 
-import xarray as xr
+This file segments all extapolators that require tensorflow.
+"""
+
+from typing import List, Optional
+from typing_extensions import Self
+
 import numpy as np
-import tqdm
+import xarray as xr
+import tqdm  # type: ignore
 
-from AFL.double_agent.Extrapolator import Extrapolator
+from AFL.double_agent.PipelineOp import PipelineOp
+from AFL.double_agent.util import listify
+
+import tensorflow as tf  # type: ignore
+import gpflow
 
 
-class GP(Extrapolator):
-    def __init__(self, dataset, kernel=None):
+class TFExtrapolator(PipelineOp):
+    """Base class for all tensorflow based extrapolators"""
 
-        self.reset_GP(dataset, kernel)
-        self.iter_monitor = lambda x: None
-        self.final_monitor = lambda x: None
+    def __init__(
+        self,
+        feature_input_variable: str,
+        predictor_input_variable: str,
+        output_variables: List[str],
+        output_prefix: str,
+        grid_variable: str,
+        grid_dim: str,
+        sample_dim: str,
+        name: str = "Extrapolator",
+    ) -> None:
+        """
+        Parameters
+        ----------
+        feature_input_variable : str
+            The name of the `xarray.Dataset` data variable to use as the input to the model that will be extrapolating
+            the discrete data. This is typically a sample composition variable.
 
-    def construct_data(self):
-        if 'labels' not in self.dataset:
-            raise ValueError('Must have labels variable in Dataset before making GP!')
+        predictor_input_variable : str
+            The name of the `xarray.Dataset` data variable to use as the output of the model that will be extrapolating
+            the discrete data. This is typically a class label or property variable.
 
-        if 'labels_ordinal' not in self.dataset:
-            self.dataset = self.dataset.afl.labels.make_ordinal()
+        output_variables: List[str]
+            The list of variables that will be output by this class.
 
-        labels = self.dataset['labels_ordinal'].values
-        if len(labels.shape) == 1:
-            labels = labels[:, np.newaxis]
+        output_prefix: str
+            The string prefix to apply to each output variable before inserting into the output `xarray.Dataset`
 
-        domain = self.transform_domain()
+        grid_variable: str
+            The name of the `xarray.Dataset` data variable to use as an evaluation grid.
 
-        data = (domain, labels)
-        return data
+        grid_dim: str
+            The xarray dimension over each grid_point. Grid equivalent to sample.
 
-    def transform_domain(self, components=None):
+        output_prefix: Optional[str]
+            If provided, all outputs of this `PipelineOp` will be prefixed with this string
 
-        if 'GP_domain_transform' in self.dataset.attrs:
-            if self.dataset.attrs['GP_domain_transform'] == 'ternary':
-                if not (len(self.dataset.attrs['components']) == 3):
-                    raise ValueError("Ternary domain transform specified but len(components)!=3")
-                domain = self.dataset.afl.comp.ternary_to_xy(components=components)
-            elif self.dataset.attrs['GP_domain_transform'] == 'standard_scaled':
-                domain = self.dataset.afl.comp.get_standard_scaled(components=components)
-            elif self.dataset.attrs['GP_domain_transform'] == 'range_scaled':
-                components = self.dataset.afl.comp._get_default(components)
-                ranges = {}
-                for component in components:
-                    ranges[component] = {}
-                    ranges[component]['min'] = self.dataset.attrs[component + '_range'][0]
-                    ranges[component]['max'] = self.dataset.attrs[component + '_range'][1]
-                    ranges[component]['range'] = self.dataset.attrs[component + '_range'][1] - \
-                                                 self.dataset.attrs[component + '_range'][0]
-                domain = self.dataset.afl.comp.get_range_scaled(ranges, components=components)
-            else:
-                raise ValueError('Domain not recognized!')
-        else:
-            domain = self.dataset.afl.comp.get(components=components)
-        return domain
+        sample_dim: str
+            The `xarray` dimension over the discrete 'samples' in the `feature_input_variable`. This is typically
+            a variant of `sample` e.g., `saxs_sample`.
 
-    def reset_GP(self, dataset, kernel=None):
-        self.dataset = dataset
-        self.n_classes = dataset.attrs['n_phases']
+        name: str
+            The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
+        """
 
-        data = self.construct_data()
+        super().__init__(
+            name=name,
+            input_variable=[
+                feature_input_variable,
+                predictor_input_variable,
+                grid_variable,
+            ],
+            output_variable=[
+                output_prefix + "_" + o for o in listify(output_variables)
+            ],
+            output_prefix=output_prefix,
+        )
+        self.feature_input_variable = feature_input_variable
+        self.predictor_input_variable = predictor_input_variable
+        self.grid_variable = grid_variable
+        self.sample_dim = sample_dim
+        self.grid_dim = grid_dim
+
+        self._banned_from_attrs.extend(["kernel", "opt_logs"])
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
+        return NotImplementedError(".calculate must be implemented in subclasses")  # type: ignore
+
+
+class TFGaussianProcessClassifier(TFExtrapolator):
+    """Use a Gaussian process classifier to extrapolate class labels at discrete compositions onto a composition grid"""
+
+    def __init__(
+        self,
+        feature_input_variable: str,
+        predictor_input_variable: str,
+        output_prefix: str,
+        grid_variable: str,
+        grid_dim: str,
+        sample_dim: str,
+        kernel: Optional[gpflow.kernels.Kernel] = None,
+        name: str = "TFGaussianProcessClassifier",
+    ) -> None:
+        """
+        Parameters
+        ----------
+        feature_input_variable : str
+            The name of the `xarray.Dataset` data variable to use as the input to the model that will be extrapolating
+            the discrete data. This is typically a sample composition variable.
+
+        predictor_input_variable : str
+            The name of the `xarray.Dataset` data variable to use as the output of the model that will be extrapolating
+            the discrete data. For this `PipelineOp` this should be a class label vector.
+
+        output_prefix: str
+            The string prefix to apply to each output variable before inserting into the output `xarray.Dataset`
+
+        grid_variable: str
+            The name of the `xarray.Dataset` data variable to use as an evaluation grid.
+
+        grid_dim: str
+            The xarray dimension over each grid_point. Grid equivalent to sample.
+
+        sample_dim: str
+            The `xarray` dimension over the discrete 'samples' in the `feature_input_variable`. This is typically
+            a variant of `sample` e.g., `saxs_sample`.
+
+        kernel: Optional[object]
+            A optional sklearn.gaussian_process.kernel to use the classifier. If not provided, will default to
+            `Matern`.
+
+        name: str
+            The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
+        """
+
+        super().__init__(
+            name=name,
+            feature_input_variable=feature_input_variable,
+            predictor_input_variable=predictor_input_variable,
+            output_variables=["mean", "variance"],
+            output_prefix=output_prefix,
+            grid_variable=grid_variable,
+            grid_dim=grid_dim,
+            sample_dim=sample_dim,
+        )
 
         if kernel is None:
-            kernel = gpflow.kernels.Matern32(variance=0.1, lengthscales=0.1)
-
-        invlink = gpflow.likelihoods.RobustMax(self.n_classes)
-        likelihood = gpflow.likelihoods.MultiClass(self.n_classes, invlink=invlink)
-        self.model = gpflow.models.VGP(
-            data=data,
-            kernel=kernel,
-            likelihood=likelihood,
-            num_latent_gps=self.n_classes
-        )
-        self.loss = self.model.training_loss_closure(compile=True)
-        self.trainable_variables = self.model.trainable_variables
-        self.optimizer = tf.optimizers.Adam(learning_rate=0.001)
-
-    def reset_monitoring(self, log_dir='test/', iter_period=1):
-        model_task = ModelToTensorBoard(log_dir, self.model, keywords_to_monitor=['*'])
-        lml_task = ScalarToTensorBoard(log_dir, lambda: self.loss(), "Training Loss")
-
-        fast_tasks = MonitorTaskGroup([model_task, lml_task], period=iter_period)
-        self.iter_monitor = Monitor(fast_tasks)
-
-        image_task = ImageToTensorBoard(
-            log_dir,
-            self.plot,
-            "Mean/Variance",
-            fig_kw=dict(figsize=(18, 6)),
-            subplots_kw=dict(nrows=1, ncols=3)
-        )
-        slow_tasks = MonitorTaskGroup(image_task)
-        self.final_monitor = Monitor(slow_tasks)
-
-    def optimize(self, N, final_monitor_step=None, progress_bar=False):
-        if progress_bar:
-            for i in tqdm.tqdm(tf.range(N), total=N):
-                self._step(i)
+            self.kernel: gpflow.kernels.Kernel = gpflow.kernels.Matern32(
+                variance=0.1, lengthscales=0.1
+            )
         else:
-            for i in tf.range(N):
-                self._step(i)
+            self.kernel = kernel
 
-        if final_monitor_step is None:
-            final_monitor_step = i
-        self.final_monitor(final_monitor_step)
+        self.output_prefix = output_prefix
 
-    @tf.function
-    def _step(self, i):
-        self.optimizer.minimize(self.loss, self.trainable_variables)
-        self.iter_monitor(i)
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
+        X = dataset[self.feature_input_variable].transpose(self.sample_dim, ...)
+        y = dataset[self.predictor_input_variable].transpose(self.sample_dim, ...)
+        grid = dataset[self.grid_variable]
 
-    def predict(self, components):
-        domain = self.transform_domain(components=components)
-        self.y = self.model.predict_y(domain)
-        self.y_mean = self.y[0].numpy()
-        self.y_var = self.y[1].numpy()
-        return {'mean': self.y_mean, 'var': self.y_var}
+        if len(np.unique(y)) == 1:
 
+            self.output[self._prefix_output("mean")] = xr.DataArray(
+                np.ones(dataset.grid.shape), dims=[self.grid_dim]
+            )
+            self.output[self._prefix_output("entropy")] = xr.DataArray(
+                np.ones(dataset.grid.shape), dims=[self.grid_dim]
+            )
 
+        else:
+            n_classes: int = len(np.unique(y.values))
+            data = (X, y)
+
+            invlink = gpflow.likelihoods.RobustMax(n_classes)
+            likelihood = gpflow.likelihoods.MultiClass(n_classes, invlink=invlink)
+            model = gpflow.models.VGP(
+                data=data,
+                kernel=self.kernel,
+                likelihood=likelihood,
+                num_latent_gps=n_classes,
+            )
+
+            loss = model.training_loss_closure(compile=True)
+            opt = gpflow.optimizers.Scipy()
+            self.opt_logs = opt.minimize(
+                loss,
+                model.trainable_variables,
+                options=dict(maxiter=1000),
+            )
+
+            mean, variance = model.predict_y(grid.values)
+
+            self.output[self._prefix_output("mean")] = xr.DataArray(
+                mean.numpy().argmax(-1), dims=self.grid_dim
+            )
+            self.output[self._prefix_output("variance")] = xr.DataArray(
+                variance.numpy().sum(-1), dims=self.grid_dim
+            )
+
+        return self
