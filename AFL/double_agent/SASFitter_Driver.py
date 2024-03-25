@@ -297,6 +297,7 @@ class SASFitter_Driver(Driver):
 
             self.sasdata.append(sasmodels.data.Data1D(x=x, y=y, dy=dy, dx=dx))
 
+
     def fit_models(self, parallel=False, model_list=None, fit_method=None):
         """
         Executes a fit models call
@@ -328,7 +329,9 @@ class SASFitter_Driver(Driver):
             model_list = self.models
 
         fitted_models = []
-        for data in tqdm(self.sasdata, total=len(self.sasdata)):
+        # for data in tqdm(self.sasdata, total=len(self.sasdata)):
+        for idx,data in enumerate(self.sasdata):
+            print(idx)
             self.models_post = []
             self.construct_models(data)
 
@@ -358,7 +361,7 @@ class SASFitter_Driver(Driver):
                 tiled_arrays[f"params_{model.name}"].append(model.get_fit_params())
 
         # construct arrays and save to tiled
-        self.data.add_array('probabilities', self.report['probabilities'])
+        # self.data.add_array('probabilities', self.report['probabilities'])
         self.data.add_array("best_chisq", self.report["best_fits"]["lowest_chisq"])
         self.data.add_array("model_names", self.report["best_fits"]["model_name"])
         self.data.add_array("all_chisq", self.report["all_chisq"])
@@ -458,7 +461,7 @@ class SASFitter_Driver(Driver):
             #d = len(model.fit_params)
             d = [len(model['cov']) for model in result]
             cov = [np.array(model['cov']) for model in result]
-            log_marginal_likelihood = [model_likelihood[i] + np.log(np.linalg.det(cov[i])) + 0.5*d[i]*np.log(2*np.pi) for i in range(len(d))]
+            log_marginal_likelihood = [model_likelihood[i] + 0.5*np.log(np.linalg.det(cov[i])) + 0.5*d[i]*np.log(2*np.pi) for i in range(len(d))]
             
             print(model_likelihood,d,log_marginal_likelihood)
             log_marginal_likelihoods.append(log_marginal_likelihood)
