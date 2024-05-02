@@ -30,6 +30,7 @@ class TFExtrapolator(PipelineOp):
         grid_variable: str,
         grid_dim: str,
         sample_dim: str,
+        optimize: bool,
         name: str = "Extrapolator",
     ) -> None:
         """
@@ -83,6 +84,7 @@ class TFExtrapolator(PipelineOp):
         self.grid_variable = grid_variable
         self.sample_dim = sample_dim
         self.grid_dim = grid_dim
+        self.optimize = True
 
         self._banned_from_attrs.extend(["kernel", "opt_logs"])
 
@@ -102,6 +104,7 @@ class TFGaussianProcessClassifier(TFExtrapolator):
         grid_variable: str,
         grid_dim: str,
         sample_dim: str,
+        optimize: bool = True,
         kernel: Optional[gpflow.kernels.Kernel] = None,
         name: str = "TFGaussianProcessClassifier",
     ) -> None:
@@ -146,6 +149,7 @@ class TFGaussianProcessClassifier(TFExtrapolator):
             grid_variable=grid_variable,
             grid_dim=grid_dim,
             sample_dim=sample_dim,
+            optimize = optimize,
         )
 
         if kernel is None:
@@ -184,22 +188,29 @@ class TFGaussianProcessClassifier(TFExtrapolator):
                 likelihood=likelihood,
                 num_latent_gps=n_classes,
             )
+            display(model)
 
-            loss = model.training_loss_closure(compile=True)
-            opt = gpflow.optimizers.Scipy()
-            self.opt_logs = opt.minimize(
-                loss,
-                model.trainable_variables,
-                options=dict(maxiter=1000),
-            )
+            if self.optimize:
+                print('Training!')
+                opt = gpflow.optimizers.Scipy()
+                self.opt_logs = opt.minimize(
+                    model.training_loss_closure(),
+                    model.trainable_variables,
+                    options=dict(maxiter=1000),
+                )
+                
+            display(model)
 
             mean, variance = model.predict_y(grid.values)
 
+            param_dict = {k:v.numpy() for k,v in gpflow.utilities.parameter_dict(model).items()}
             self.output[self._prefix_output("mean")] = xr.DataArray(
                 mean.numpy().argmax(-1), dims=self.grid_dim
             )
+            self.output[self._prefix_output("mean")].attrs.update(param_dict)
             self.output[self._prefix_output("variance")] = xr.DataArray(
                 variance.numpy().sum(-1), dims=self.grid_dim
             )
+            self.output[self._prefix_output("variance")].attrs.update(param_dict)
 
         return self
