@@ -1,16 +1,27 @@
 .. AFL-agent documentation master file, created by
-   sphinx-quickstart on Fri May 31 11:15:28 2024.
+   sphinx-quickstart on Tue May 28 13:58:39 2024.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
 Welcome to AFL-agent's documentation!
-=====================================
+==========================================
+
+AFL-agent is a framework for instrument control.  It powers the NIST AFL, but is more useful than that.  It enables the easy conversion of Python classes - drivers - into robust HTTP microservices with authentication, task queueing, UI generation, data management, and more.
+
+
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   
 
 
+.. autosummary::
+   :toctree: _autosummary
+   :template: custom-module-template.rst
+   :recursive:
+
+   AFL.agent
 
 Indices and tables
 ==================
