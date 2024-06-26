@@ -6,4 +6,5 @@ from .PhaseLabeler import *
 from .Preprocessor import *
 from .Generator import *
 from .plotting import *
+from .Boundary import *
 
