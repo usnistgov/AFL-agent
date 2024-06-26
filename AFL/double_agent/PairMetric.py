@@ -234,7 +234,7 @@ class Delaunay(PairMetric):
 class CombineMetric(PairMetric):
     def __init__(
         self,
-        input_variable_list: List[str],
+        input_variables: List[str],
         output_variable: str,
         sample_dim: str,
         combine_by: str,
@@ -248,7 +248,7 @@ class CombineMetric(PairMetric):
 
         super().__init__(
             name=name,
-            input_variable=input_variable_list,
+            input_variable=input_variables,
             output_variable=output_variable,
             sample_dim=sample_dim,
             params=params,
