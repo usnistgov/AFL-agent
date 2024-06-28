@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Generator
 from typing_extensions import Self
 
 import numpy as np
@@ -13,6 +13,9 @@ from ast import literal_eval
 
 from AFL.double_agent.PipelineOp import PipelineOp
 
+
+# Shapely types to skip over for boundary score
+EXCLUDED_HULL_TYPES = ["Point", "LineString"]
 
 class ConcaveHull(PipelineOp):
     def __init__(
@@ -87,6 +90,7 @@ class ConcaveHull(PipelineOp):
 
 
 def _get_xy(hull):
+    """Extract xy coodinates from shapely object"""
     try:
         x, y = hull.boundary.xy
     except NotImplementedError:
@@ -100,6 +104,33 @@ def _get_xy(hull):
         else:
             x, y = None, None
     return x, y
+
+
+def _get_hulls(
+    dataset: xr.Dataset, hull_variable: str
+): #-> Generator[object, (xr.Dataset,str), None]: # to-fix when I have wifi...
+    """Iterate over a data variable of shapely hull strings and convert to shapely objects
+
+    Parameters
+    ----------
+    dataset: xr.Dataset
+        Input dataset
+
+    hull_variable: str
+        Name of variable containing a data variable of stringified shapely objects. Should have only
+        one dimension with a coordinate of hull_labels.
+    """
+    dims = dataset[hull_variable].dims
+    if len(dims) > 1:
+        raise ValueError(
+            f"The hulls variable {hull_variable} should only have one dimension. It has {dims}"
+        )
+    dim = dims[0]
+
+    for hull_label in dataset[hull_variable][dim].values:
+        hull_str = dataset[hull_variable].sel(**{dim: hull_label}).item()
+        hull = shape(literal_eval(hull_str))
+        yield hull_label, hull
 
 
 def _calculate_perimeter_score(hull1, hull2):
@@ -159,23 +190,13 @@ class BoundaryScore(PipelineOp):
         self.al_hull_variable = al_hull_variable
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        gt_hulls = dataset[self.gt_hull_variable]
-        al_hulls = dataset[self.al_hull_variable]
 
         all_scores = []
-        for da_gt_hull in gt_hulls:
-            gt_name = list(da_gt_hull.coords.values())[0].item()  # this should be cleaned up...
-            gt_hull_str = da_gt_hull.item()
-            gt_hull = shape(literal_eval(gt_hull_str))
-
-            for da_al_hull in al_hulls:
-                al_name = list(da_al_hull.coords.values())[0].item()  # this should be cleaned up...
-                al_hull_str = da_al_hull.item()
-                al_hull = shape(literal_eval(al_hull_str))
-
-                if al_hull.geom_type == "Point":
-                    continue
-                elif al_hull.geom_type == "LineString":
+        for gt_name, gt_hull in _get_hulls(dataset, self.gt_hull_variable):
+            if gt_hull.geom_type in EXCLUDED_HULL_TYPES:
+                continue
+            for al_name, al_hull in _get_hulls(dataset, self.al_hull_variable):
+                if al_hull.geom_type in EXCLUDED_HULL_TYPES:
                     continue
 
                 try:
