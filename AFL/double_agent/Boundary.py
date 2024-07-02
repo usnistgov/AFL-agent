@@ -6,8 +6,10 @@ import xarray as xr
 
 from sklearn.metrics import pairwise_distances_argmin_min  # type: ignore
 
-from shapely import MultiPoint, concave_hull  # type: ignore
+from shapely import MultiPoint, Point, concave_hull  # type: ignore
 from shapely.geometry import mapping, shape  # type: ignore
+from shapely.errors import GEOSException
+
 
 from ast import literal_eval
 
@@ -27,6 +29,7 @@ class ConcaveHull(PipelineOp):
         component_dim: str = "components",
         label_variable: Optional[str] = None,
         segmentize_length: float = 0.025,
+        allow_holes: bool = False,
         name: str = "ConcaveHull",
     ) -> None:
         super().__init__(
@@ -42,6 +45,7 @@ class ConcaveHull(PipelineOp):
         self.segmentize_length = segmentize_length
         self.label_variable = label_variable
         self.drop_phases = drop_phases
+        self.allow_holes = allow_holes
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         input_data = self._get_variable(dataset).transpose(..., self.component_dim)
@@ -64,14 +68,20 @@ class ConcaveHull(PipelineOp):
             if label in self.drop_phases:
                 continue
             self.xys = MultiPoint(xy.values)
-            hull = concave_hull(
-                self.xys, ratio=self.hull_tracing_ratio, allow_holes=True
-            )
-            hull = hull.segmentize(self.segmentize_length)
-            hulls[label] = hull
+            try:
+                hull = concave_hull(
+                    self.xys, ratio=self.hull_tracing_ratio, allow_holes=self.allow_holes
+                )
+            except GEOSException:
+                hulls[label] = Point(
+                    [-3.14, 3.14]
+                )  # dummy point at pi-pi, "Point" type is in EXCLUDED_HULL_TYPES
+            else:
+                hull = hull.segmentize(self.segmentize_length)
+                hulls[label] = hull
 
-        # This is a little...gross but I'm not sure of a better way to store the variable length arrays
-        # associated with concave hulls. We could store each hull as its own dataarray but we would need
+        # This is a little...gross, but I'm not sure of a better way to store the variable length arrays
+        # associated with concave hulls. We could store each hull as its own DataArray but we would need
         # separate dimensions for each hull...which seems like a mess. The compromise is to store a string
         # representation of the hull
         hulls_serialized = {}
@@ -90,11 +100,11 @@ class ConcaveHull(PipelineOp):
 
 
 def _get_xy(hull):
-    """Extract xy coodinates from shapely object"""
+    """Extract xy coordinates from shapely object"""
     try:
         x, y = hull.boundary.xy
     except NotImplementedError:
-        if hasattr(hull, "geoms"):
+        if hasattr(hull.boundary, "geoms"):
             x = []
             y = []
             for geom in list(hull.boundary.geoms):
@@ -108,7 +118,7 @@ def _get_xy(hull):
 
 def _get_hulls(
     dataset: xr.Dataset, hull_variable: str
-): #-> Generator[object, (xr.Dataset,str), None]: # to-fix when I have wifi...
+):  # -> Generator[object, (xr.Dataset,str), None]: # to-fix when I have wifi...
     """Iterate over a data variable of shapely hull strings and convert to shapely objects
 
     Parameters
