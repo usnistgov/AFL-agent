@@ -10,6 +10,7 @@ from shapely import MultiPoint, Point, concave_hull  # type: ignore
 from shapely.geometry import mapping, shape  # type: ignore
 from shapely.errors import GEOSException
 
+from plotly import graph_objects as go
 
 from ast import literal_eval
 
@@ -18,6 +19,7 @@ from AFL.double_agent.PipelineOp import PipelineOp
 
 # Shapely types to skip over for boundary score
 EXCLUDED_HULL_TYPES = ["Point", "LineString"]
+
 
 class ConcaveHull(PipelineOp):
     def __init__(
@@ -181,6 +183,34 @@ def _calculate_perimeter_score(hull1, hull2):
     return out
 
 
+def _make_boundary_plots(score_dict):
+    gt_xy = score_dict["hull1_xy"]
+    xy = score_dict["hull2_xy"]
+    pair_xy = score_dict["pair_coord"]
+
+    out = {}
+    out["GT"] = go.Scatter(
+        x=gt_xy.T[0],
+        y=gt_xy.T[1],
+        mode="lines+markers",
+        line={"color": "black"},
+        marker={"symbol": "circle-open"},
+        name="GT",
+    )
+    out["AL"] = go.Scatter(
+        x=xy.T[0],
+        y=xy.T[1],
+        mode="lines+markers",
+        line={"color": "green"},
+        marker={"symbol": "triangle-up-open"},
+        name="AL",
+    )
+    out["pairs"] = go.Scatter(
+        x=pair_xy[:, 0], y=pair_xy[:, 1], line={"color": "red"}, opacity=0.5, name=None
+    )
+    return out
+
+
 class BoundaryScore(PipelineOp):
     def __init__(
         self,
@@ -188,6 +218,7 @@ class BoundaryScore(PipelineOp):
         al_hull_variable: str,
         output_prefix: str = "boundary_score",
         name: str = "BoundaryScore",
+        plot: bool = False,
     ) -> None:
         super().__init__(
             name=name,
@@ -198,6 +229,7 @@ class BoundaryScore(PipelineOp):
 
         self.gt_hull_variable = gt_hull_variable
         self.al_hull_variable = al_hull_variable
+        self.plot = plot
 
     def calculate(self, dataset: xr.Dataset) -> Self:
 
@@ -230,6 +262,24 @@ class BoundaryScore(PipelineOp):
             ]
             if not (any(check1) or any(check2)):
                 best_scores[score["GT"]] = score
+
+        if self.plot:
+            for label, score_dict in best_scores.items():
+                boundary_plots = _make_boundary_plots(score_dict)
+                fig = go.FigureWidget(
+                    layout={
+                        "width": 500,
+                        "height": 500,
+                        "margin": dict(l=20, r=20, t=20, b=20),
+                        "legend": dict(
+                            yanchor="top", y=0.99, xanchor="left", x=0.01, bgcolor=None
+                        ),
+                    }
+                )
+                fig.add_trace(boundary_plots["GT"])
+                fig.add_trace(boundary_plots["AL"])
+                fig.add_trace(boundary_plots["pairs"])
+                fig.show()
 
         self.output[self._prefix_output("mean")] = xr.Dataset(
             {k: v["mean"] for k, v in best_scores.items()}
