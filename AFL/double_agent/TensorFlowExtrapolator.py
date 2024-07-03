@@ -17,6 +17,8 @@ from AFL.double_agent.util import listify
 import tensorflow as tf  # type: ignore
 import gpflow
 
+from sklearn.preprocessing import OrdinalEncoder
+
 
 class TFExtrapolator(PipelineOp):
     """Base class for all tensorflow based extrapolators"""
@@ -88,9 +90,24 @@ class TFExtrapolator(PipelineOp):
 
         self._banned_from_attrs.extend(["kernel", "opt_logs"])
 
+        self.ordinal_encoder = OrdinalEncoder()
+
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
         return NotImplementedError(".calculate must be implemented in subclasses")  # type: ignore
+
+    def encode(self, labels):
+        labels_np = labels.values.reshape(-1, 1)
+        labels_np_ord = self.ordinal_encoder.fit_transform(labels_np)
+        labels_ord = labels.copy(data=labels_np_ord.squeeze())
+        return labels_ord
+
+    def invert_encoded(self, labels):
+        labels_np = labels.values.reshape(-1, 1)
+        labels_np_orig = self.ordinal_encoder.fit_transform(labels_np)
+        labels_orig = labels.copy(data=labels_np_orig.squeeze())
+        return labels_orig
+
 
 
 class TFGaussianProcessClassifier(TFExtrapolator):
@@ -149,7 +166,7 @@ class TFGaussianProcessClassifier(TFExtrapolator):
             grid_variable=grid_variable,
             grid_dim=grid_dim,
             sample_dim=sample_dim,
-            optimize = optimize,
+            optimize=optimize,
         )
 
         if kernel is None:
@@ -165,6 +182,7 @@ class TFGaussianProcessClassifier(TFExtrapolator):
         """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
         X = dataset[self.feature_input_variable].transpose(self.sample_dim, ...)
         y = dataset[self.predictor_input_variable].transpose(self.sample_dim, ...)
+        y = self.encode(y)
         grid = dataset[self.grid_variable]
 
         if len(np.unique(y)) == 1:
@@ -178,7 +196,7 @@ class TFGaussianProcessClassifier(TFExtrapolator):
 
         else:
             n_classes: int = len(np.unique(y.values))
-            data = (X, y)
+            data = (X.values, y.values)
 
             invlink = gpflow.likelihoods.RobustMax(n_classes)
             likelihood = gpflow.likelihoods.MultiClass(n_classes, invlink=invlink)
@@ -188,22 +206,21 @@ class TFGaussianProcessClassifier(TFExtrapolator):
                 likelihood=likelihood,
                 num_latent_gps=n_classes,
             )
-            display(model)
 
             if self.optimize:
-                print('Training!')
                 opt = gpflow.optimizers.Scipy()
                 self.opt_logs = opt.minimize(
                     model.training_loss_closure(),
                     model.trainable_variables,
                     options=dict(maxiter=1000),
                 )
-                
             display(model)
 
             mean, variance = model.predict_y(grid.values)
 
-            param_dict = {k:v.numpy() for k,v in gpflow.utilities.parameter_dict(model).items()}
+            param_dict = {
+                k: v.numpy() for k, v in gpflow.utilities.parameter_dict(model).items()
+            }
             self.output[self._prefix_output("mean")] = xr.DataArray(
                 mean.numpy().argmax(-1), dims=self.grid_dim
             )
