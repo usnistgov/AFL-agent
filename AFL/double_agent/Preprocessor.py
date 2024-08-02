@@ -699,7 +699,7 @@ class SympyTransform(Preprocessor):
             lam = sympy.lambdify(symbols, transform)
             new_comps[name] = (
                 (self.sample_dim,),
-                lam(**{k.name: comps[k.name] for k in symbols}),
+                listify(lam(**{k.name: comps[k.name] for k in symbols})),
             )
 
         new_comps = new_comps.to_array(self.transform_dim).transpose(
