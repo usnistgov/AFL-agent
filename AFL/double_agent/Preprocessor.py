@@ -15,6 +15,7 @@ from scipy.signal import savgol_filter  # type: ignore
 from typing_extensions import Self
 
 from AFL.double_agent.PipelineOp import PipelineOp
+from AFL.double_agent.util import listify
 
 
 class Preprocessor(PipelineOp):
@@ -712,3 +713,68 @@ class SympyTransform(Preprocessor):
         ] = "Variables transformed using sympy expressions"
 
         return self
+
+
+class Extrema(Preprocessor):
+    """Find the extrema of a data variable"""
+
+    def __init__(
+            self,
+            input_variable: str,
+            output_variable: str,
+            dim: str,
+            return_coords: bool = False,
+            operator='max',
+            slice: Optional[List] = None,
+            slice_dim: Optional[str] = None,
+            name: str = "Extrema",
+    ) -> None:
+        """
+        Parameters
+        ----------
+        input_variable : str
+            The name of the `xarray.Dataset` data variable to extract from the input dataset
+
+        output_variable : str
+            The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+
+        dim: str
+             The dimension to use when calculating the data minimum
+
+        name: str
+            The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
+        """
+        super().__init__(
+            name=name, input_variable=input_variable, output_variable=output_variable
+        )
+
+        self.dim = dim
+        self.operator = operator
+        self.return_coords = return_coords
+        self.slice = slice
+        self.slice_dim = slice_dim
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
+        data = self._get_variable(dataset)
+
+        if self.slice is not None:
+            data = data.sel({self.slice_dim: slice(*self.slice)})
+
+        if self.return_coords:
+            if 'arg' not in self.operator:
+                operator = 'arg' + self.operator
+            else:
+                operator = self.operator
+            idx = getattr(data, operator)(dim=self.dim)
+            self.output[self.output_variable] = data[self.dim][idx]
+        else:
+            self.output[self.output_variable] = getattr(data, self.operator)(dim=self.dim)
+
+        self.output[self.output_variable].attrs[
+            "description"
+        ] = f"Extrema of {self.input_variable} with operator {self.operator} and return_coords {self.return_coords}"
+
+        return self
+
+
