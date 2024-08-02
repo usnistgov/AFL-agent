@@ -107,14 +107,16 @@ class AcquisitionFunction(PipelineOp):
         if self.excluded_comps_variables is None:
             return None
 
+
         merge_list = []
         for var in listify(self.excluded_comps_variables):
-            merge_list.append(
-                dataset[var]
-                .transpose(..., self.excluded_comps_dim)
-                .rename({dataset[var].dims[0]: "sample"})
-            )
+            d = dataset[var]
+            d = d.transpose(..., self.excluded_comps_dim)
+            d = d.rename({d.dims[0]: "sample"})
 
+            merge_list.append(d)
+
+        self.merge_list = merge_list
         excluded_comps = xr.concat(merge_list, dim="sample")
         excluded_comps = xr.DataArray(
             np.unique(excluded_comps, axis=0), dims=excluded_comps.dims
