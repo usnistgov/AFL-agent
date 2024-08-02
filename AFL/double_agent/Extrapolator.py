@@ -327,15 +327,16 @@ class GaussianProcessRegressor(Extrapolator):
 
         if kernel is None:
             self.kernel = sklearn.gaussian_process.kernels.Matern(
-                length_scale=[0.1], length_scale_bounds=(1e-3, 1e0), nu=1.5
+                #length_scale=[0.1], length_scale_bounds=(1e-3, 1e0), nu=1.5
+                length_scale = [0.1], length_scale_bounds = (0.2, 1e0), nu = 1.5
             )
         else:
             self.kernel = kernel
 
         if optimizer is not None:
-            self.optimizer = "fmin_l_bfgs_b"
+            self.optimizer = optimizer
         else:
-            self.optimizer = None
+            self.optimizer = "fmin_l_bfgs_b"
 
         self.predictor_uncertainty_variable = predictor_uncertainty_variable
         self._banned_from_attrs.append("predictor_uncertainty_variable")
@@ -372,11 +373,15 @@ class GaussianProcessRegressor(Extrapolator):
             reg_type = "homoscedastic"
 
         mean, std = reg.predict(grid.values, return_std=True)
+        var = std*std
+        self.reg = reg
 
-        self.output[self._prefix_output("mean")] = xr.DataArray(
-            mean, dims=self.grid_dim
-        )
-        self.output[self._prefix_output("var")] = xr.DataArray(std, dims=self.grid_dim)
-        self.output[self._prefix_output("var")].attrs["heteroscedastic"] = reg_type
+        self.output[self._prefix_output("mean")] = xr.DataArray( mean, dims=self.grid_dim )
+        self.output[self._prefix_output("mean")].attrs["reg_type"] = reg_type
+        self.output[self._prefix_output("mean")].attrs.update(reg.kernel_.get_params())
+
+        self.output[self._prefix_output("var")] = xr.DataArray(var, dims=self.grid_dim)
+        self.output[self._prefix_output("var")].attrs["reg_type"] = reg_type
+        self.output[self._prefix_output("var")].attrs.update(reg.kernel_.get_params())
 
         return self
