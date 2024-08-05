@@ -184,6 +184,7 @@ class SASFitter_Driver(Driver):
             q_min = inputs.get("q_min", self.config["q_min"])
             q_max = inputs.get("q_max", self.config["q_max"])
             data.mask = (data.x < q_min) | (data.x > q_max)
+            print(data.y.shape,data.y)
             model = SASModelWrapper(
                 name=inputs["name"],
                 data=copy.deepcopy(data),
@@ -296,7 +297,6 @@ class SASFitter_Driver(Driver):
                 dx = None
 
             self.sasdata.append(sasmodels.data.Data1D(x=x, y=y, dy=dy, dx=dx))
-
 
     def fit_models(self, parallel=False, model_list=None, fit_method=None):
         """

@@ -93,12 +93,16 @@ class SASfit_classifier(PipelineOp):
         self.output[self._prefix_output("labels")].attrs[
             "tiled_calc_id"
         ] = tiled_calc_id
+
+        
         self.output[self._prefix_output("label_names")] = xr.DataArray(
             label_names, dims=[self.sample_dim]
         )
         self.output[self._prefix_output("label_names")].attrs[
             "tiled_calc_id"
         ] = tiled_calc_id
+
+        
         self.output[self._prefix_output("best_chisq")] = xr.DataArray(
             best_chisq, dims=[self.sample_dim]
         )
@@ -170,9 +174,9 @@ class SASfit_fit_extract(PipelineOp):
         self.SASfit_client.login("SASfit_Client")
         self.SASfit_client.debug(False)
 
-        input_models = self.SASfit_client.get_config("input_models")
+        model_inputs = self.SASfit_client.get_config("model_inputs",interactive=True)['return_val']
 
-        if self.target_model not in [model["name"] for model in input_models]:
+        if self.target_model not in [model["name"] for model in model_inputs]:
             raise ValueError(
                 "Hey, the target model is not in the supplied input models"
             )
@@ -183,12 +187,20 @@ class SASfit_fit_extract(PipelineOp):
         """
         self.construct_client()
 
-        q = dataset[self.q_dim].values.tolist()
-        Is = dataset[self.sas_variable].values.tolist()
-        dIs = dataset[self.sas_err_variable].values.tolist()
+        sub_dataset = dataset[[self.q_dim, self.sas_variable, self.sas_err_variable]]
+        db_uuid = self.SASfit_client.deposit_obj(obj=sub_dataset)
+
+        self.SASfit_client.enqueue(
+            task_name="set_sasdata",
+            db_uuid=db_uuid,
+            sample_dim=self.sample_dim,
+            q_variable=self.q_dim,
+            sas_variable=self.sas_variable,
+            sas_err_variable=self.sas_err_variable,
+        )
 
         tiled_calc_id = self.SASfit_client.enqueue(
-            task_name="fit_models", q=q, I=Is, dI=dIs, fit_method=self.fit_method
+            task_name="fit_models", fit_method=self.fit_method
         )
 
         # calls the report rom the fit that was just run
@@ -201,19 +213,22 @@ class SASfit_fit_extract(PipelineOp):
         best_chisq = report_json["best_fits"]["lowest_chisq"]
         label_names = report_json["best_fits"]["model_name"]
 
-        target = []
-        err = []
-        for idx, model in enumerate(report_json["best_fits"]["model_params"]):
-            if model["name"] == self.target_model:
-                target.append(
-                    model["output_fit_params"][self.target_fit_params]["value"]
-                )
-                err.append(model["output_fit_params"][self.target_fit_params]["error"])
-            else:
-                # we may want something different than np.nan
-                target.append(np.nan)
-                err.append(np.nan)
+        target = {}
+        err = {}
+        for param in self.target_fit_params:
+            target[param] = []
+            err[param] = []
+        for idx,fit in enumerate(report_json["model_fits"]):
+            for model in fit:
+                if model["name"] == self.target_model:
+                    for param in self.target_fit_params:
+                        target[param].append(model["output_fit_params"][param]["value"])
+                        err[param].append(model["output_fit_params"][param]["error"])
+        
+        if target == False:
+            raise ValueError(f'The target model {self.target_model} is not in the config')
 
+        
         # mandatory for each pipeline operation
         self.output[self._prefix_output("labels")] = xr.DataArray(
             labels, dims=[self.sample_dim]
@@ -234,22 +249,22 @@ class SASfit_fit_extract(PipelineOp):
             "tiled_calc_id"
         ] = tiled_calc_id
 
-        self.output[self._prefix_output("fit_values")] = xr.DataArray(
-            target, dims=[self.sample_dim]
-        )
-        self.output[self._prefix_output("fit_err_values")] = xr.DataArray(
-            err, dims=[self.sample_dim]
-        )
-
-        for output_var in ["fit_values", "fit_err_values"]:
-            self.output[self._prefix_output(output_var)].attrs[
-                "target_model"
-            ] = self.target_model
-            self.output[self._prefix_output(output_var)].attrs[
-                "target_fit_params"
-            ] = self.target_fit_params
-            self.output[self._prefix_output(output_var)].attrs[
+        #target it now a dictionary that allows for multiple things
+        for key in list(target):
+            self.output[self._prefix_output(f"{key}_fit_val")] = xr.DataArray(
+                target[key], dims=[self.sample_dim]
+            )
+            self.output[self._prefix_output(f"{key}_fit_val")].attrs[
                 "tiled_calc_id"
             ] = tiled_calc_id
 
+            
+            self.output[self._prefix_output(f"{key}_fit_err")] = xr.DataArray(
+                err[key], dims=[self.sample_dim]
+            )
+            self.output[self._prefix_output(f"{key}_fit_err")].attrs[
+                "tiled_calc_id"
+            ] = tiled_calc_id
+
+            
         return self
