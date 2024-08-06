@@ -172,6 +172,8 @@ class SavgolFilter(Preprocessor):
                     stacklevel=2,
                 )
 
+        data1 = data1.transpose(self.dim,...)
+
         data1 = data1.sel({self.dim: slice(self.xlo, self.xhi)})
         data1 = data1.isel({self.dim: slice(self.xlo_isel, self.xhi_isel)})
 
@@ -182,7 +184,8 @@ class SavgolFilter(Preprocessor):
             data1[self.dim] = np.log10(data1[self.dim])
             data1 = data1.rename({self.dim: dim})
         else:
-            dim = self.dim
+            dim = "sg_"+self.dim
+            data1[dim] = data1[self.dim]
 
         # need to remove duplicate values
         data1 = data1.groupby(dim, squeeze=False).mean()
@@ -205,7 +208,7 @@ class SavgolFilter(Preprocessor):
 
         # take derivative
         data1_filtered = savgol_filter(
-            data1.values.T,
+            data1.values,
             window_length=self.window_length,
             polyorder=self.polyorder,
             delta=dx,
@@ -213,7 +216,7 @@ class SavgolFilter(Preprocessor):
             deriv=self.derivative,
         )
 
-        self.output[self.output_variable] = data1.copy(data=data1_filtered.T)
+        self.output[self.output_variable] = data1.copy(data=data1_filtered).transpose(...,dim)
         self.output[self.output_variable].attrs[
             "description"
         ] = f"Savitsky-Golay filtered data"
@@ -257,6 +260,60 @@ class SubtractMin(Preprocessor):
         data1 = self._get_variable(dataset)
 
         self.output[self.output_variable] = data1 - data1.min(self.dim)
+        self.output[self.output_variable].attrs[
+            "description"
+        ] = f"Subtracted minimum value along dimension '{self.dim}'"
+
+        return self
+
+class Subtract(Preprocessor):
+    """Baseline input variable by subtracting a value"""
+
+    def __init__(
+        self,
+        input_variable: str,
+        output_variable: str,
+        dim: str,
+        value: float | str,
+        coord_value: bool = True,
+        name: str = "Subtract",
+    ) -> None:
+        """
+        Parameters
+        ----------
+        input_variable : str
+            The name of the `xarray.Dataset` data variable to extract from the input dataset
+
+        output_variable : str
+            The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+
+        dim: str
+             The dimension to use when calculating the data minimum
+
+        name: str
+            The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
+        """
+        super().__init__(
+            name=name, input_variable=input_variable, output_variable=output_variable
+        )
+
+        self.dim = dim
+        self.value = value
+        self.coord_value = coord_value
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
+        data1 = self._get_variable(dataset)
+        
+        if isinstance(self.value,str) and self.coord_value:
+            value = dataset[self.value].item()
+            subtract_value = data1.sel({self.dim:value},method='nearest')
+        elif self.coord_value:
+            subtract_value = data1.sel({self.dim:self.value},method='nearest')
+        else:
+            subtract_value = self.value
+            
+        self.output[self.output_variable] = data1 - subtract_value
         self.output[self.output_variable].attrs[
             "description"
         ] = f"Subtracted minimum value along dimension '{self.dim}'"
@@ -777,4 +834,27 @@ class Extrema(Preprocessor):
 
         return self
 
+class VarsToArray(Preprocessor):
+    def __init__(
+        self, 
+        input_variables: List, 
+        output_variable: str, 
+        variable_dim:str,
+        squeeze: bool = False,
+        name:str='VarsToArray'):
+
+        super().__init__(name=name, input_variable=input_variables, output_variable=output_variable)
+        print(self.input_variable,self.output_variable)
+        
+        self.variable_dim = variable_dim
+        self.squeeze = squeeze
+
+    def calculate(self, dataset):
+        output = dataset[self.input_variable].to_array(self.variable_dim)      
+        if self.squeeze:
+            output = output.squeeze()
+        print(self.output_variable)
+        print(output)
+        self.output[self.output_variable] = output
+        return self
 
