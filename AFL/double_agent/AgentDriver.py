@@ -105,9 +105,12 @@ class DoubleAgentDriver(Driver):
 
         next_sample = self.retrieve_obj(db_uuid)
 
-        self.input = xr.concat(
-            [self.input, next_sample], dim=concat_dim, data_vars="minimal"
-        )
+        if self.input is None:
+            self.input = next_sample
+        else:
+            self.input = xr.concat(
+                [self.input, next_sample], dim=concat_dim, data_vars="minimal"
+            )
 
     def reset_results(self):
         self.results = dict()
