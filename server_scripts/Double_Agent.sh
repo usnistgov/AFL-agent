@@ -1,6 +1,6 @@
 #!/bin/bash -i
 
-conda activate afl_agent
+conda activate afl_agent_311
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-11.0/lib64/
 
