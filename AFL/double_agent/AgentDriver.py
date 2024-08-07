@@ -168,3 +168,7 @@ class DoubleAgentDriver(Driver):
             self.deposit_obj(self.results[ag_uid], uid=ag_uid)
 
         return ag_uid
+
+_OVERRIDE_MAIN_MODULE_NAME = 'DoubleAgentDriver'
+if __name__ == '__main__':
+    from AFL.automation.shared.launcher import *
