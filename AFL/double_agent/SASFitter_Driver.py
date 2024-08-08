@@ -508,3 +508,7 @@ class SASFitter_Driver(Driver):
         print(f"writing data to {filepath/filename}")
         with h5py.File(filepath / filename, "w") as f:
             f.create_dataset(str(uuid.uuid1()), data=data)
+
+_DEFAULT_PORT = 5058
+if __name__ == '__main__':
+    from AFL.automation.shared.launcher import *
