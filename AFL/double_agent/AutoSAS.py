@@ -134,34 +134,18 @@ class AutoSAS(PipelineOp):
         # - extract the intensities and q-vectors from tiled and store them here
         return self
 
-
-################
-# trying without using the base class. Should talk to Tyler about the methodology. Following module is the same as above
-# but it has just a few more outputs in the calculate method
-################
-class AutoSAS_fit_extract(PipelineOp):
+class ModelSelect_parsimony(PipelineOP):
     def __init__(
         self,
-        sas_variable,
-        sas_err_variable,
-        resolution,
         output_prefix,
-        q_dim,
         sample_dim,
-        target_model,
-        target_fit_params,
+        chisq_variable,
+        chisq_cutoff=1.0,
         server_id="localhost:5058",
-        fit_method=None,
-        name="AutoSAS_fit_extract",
+        tiled_id="localhost:8000",
+        name="ModelSelection",
     ):
-        output_variables = [
-            "labels",
-            "label_names",
-            "best_chisq",
-            "best_chisq",
-            "fit_values",
-            "fit_err_values",
-        ]
+        output_variables = ["labels" , "best_chisq", "label_names"]
         super().__init__(
             name=name,
             input_variable=[q_dim, sas_variable, sas_err_variable],
@@ -172,102 +156,15 @@ class AutoSAS_fit_extract(PipelineOp):
         )
         self.server_id = server_id
 
-        # necessary to do the sas_fitting. These data variables/coordinates will build the SAS1D object and the
-        # target model and parameters to extract
-        self.q_dim = q_dim
-        self.sas_variable = sas_variable
-        self.sas_err_variable = sas_err_variable
-
-        self.target_model = target_model
-        self.target_fit_params = target_fit_params
-
         self.sample_dim = sample_dim
-        self.fit_method = fit_method
+        self.chisq_variable = chisq_variable
+        self.chisq_cutoff = chisq_cutoff
 
-        self._banned_from_attrs.extend(["AutoSAS_client"])
+        #self._banned_from_attrs.extend(["AutoSAS_client"])
 
-    def construct_client(self):
-        """
-        creates a client to talk to the AutoSAS server
-        """
-
-        self.AutoSAS_client = Client(
-            self.server_id.split(":")[0], port=self.server_id.split(":")[1]
-        )
-        self.AutoSAS_client.login("AutoSAS_client")
-        self.AutoSAS_client.debug(False)
-
-        model_inputs = self.AutoSAS_client.get_config("model_inputs",interactive=True)['return_val']
-
-        if self.target_model not in [model["name"] for model in model_inputs]:
-            raise ValueError(
-                "Hey, the target model is not in the supplied input models"
-            )
-
-    def calculate(self, dataset):
-        """
-        Default class calculate runs a fit method on the input data and outputs a classification
-        """
-        self.construct_client()
-
-        sub_dataset = dataset[[self.q_dim, self.sas_variable, self.sas_err_variable]]
-        db_uuid = self.AutoSAS_client.deposit_obj(obj=sub_dataset)
-
-        self.AutoSAS_client.enqueue(
-            task_name="set_sasdata",
-            db_uuid=db_uuid,
-            sample_dim=self.sample_dim,
-            q_variable=self.q_dim,
-            sas_variable=self.sas_variable,
-            sas_err_variable=self.sas_err_variable,
-        )
-
-        tiled_calc_id = self.AutoSAS_client.enqueue(
-            task_name="fit_models", fit_method=self.fit_method
-        )
-
-        # calls the report rom the fit that was just run
-        report_json = self.AutoSAS_client.enqueue(
-            task_name="build_report", interactive=True
-        )["return_val"]
-
-        # extract the labels and fit results
-        labels = report_json["best_fits"]["model_idx"]
-        best_chisq = report_json["best_fits"]["lowest_chisq"]
-        label_names = report_json["best_fits"]["model_name"]
-
-        target = {}
-        err = {}
-        for param in self.target_fit_params:
-            target[param] = []
-            err[param] = []
-        for idx,fit in enumerate(report_json["model_fits"]):
-            for model in fit:
-                if model["name"] == self.target_model:
-                    for param in self.target_fit_params:
-                        target[param].append(model["output_fit_params"][param]["value"])
-                        err[param].append(model["output_fit_params"][param]["error"])
-        
-        if target == False:
-            raise ValueError(f'The target model {self.target_model} is not in the config')
-
-        
-        #target it now a dictionary that allows for multiple things
-        for key in list(target):
-            self.output[self._prefix_output(f"{key}_fit_val")] = xr.DataArray(
-                target[key], dims=[self.sample_dim]
-            )
-            self.output[self._prefix_output(f"{key}_fit_val")].attrs[
-                "tiled_calc_id"
-            ] = tiled_calc_id
-
+        def calculate(self, dataset):
+            """ Apply this `PipelineOp` to the supplied `xarray.dataset`"""
+            all_chisq = dataset[self.chisq_variable]
             
-            self.output[self._prefix_output(f"{key}_fit_err")] = xr.DataArray(
-                err[key], dims=[self.sample_dim]
-            )
-            self.output[self._prefix_output(f"{key}_fit_err")].attrs[
-                "tiled_calc_id"
-            ] = tiled_calc_id
-
-            
-        return self
+            self.output[self._output_prefix('labels')]
+            return self
