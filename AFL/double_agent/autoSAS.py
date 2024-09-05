@@ -21,8 +21,9 @@ class AutoSAS(PipelineOp):
         q_dim,
         sample_dim,
         server_id="localhost:5058",
+        tiled_id="localhost:8000",
         fit_method=None,
-        name="SASfit_classifier",
+        name="AutoSAS_fit",
     ):
         output_variables = ["all_chisq"]
         super().__init__(
@@ -41,20 +42,18 @@ class AutoSAS(PipelineOp):
         self.sas_err_variable = sas_err_variable
 
         self.sample_dim = sample_dim
-        self.labels = None
-
-        self._banned_from_attrs.extend(["SASfit_client"])
+        self._banned_from_attrs.extend(["AutoSAS_client"])
 
     def construct_client(self):
         """
-        creates a client to talk to the SASfit server
+        creates a client to talk to the AutoSAS server
         """
 
-        self.SASfit_client = Client(
+        self.AutoSAS_client = Client(
             self.server_id.split(":")[0], port=self.server_id.split(":")[1]
         )
-        self.SASfit_client.login("SASfit_Client")
-        self.SASfit_client.debug(False)
+        self.AutoSAS_client.login("AutoSAS_client")
+        self.AutoSAS_client.debug(False)
 
     def calculate(self, dataset):
         """
@@ -63,9 +62,9 @@ class AutoSAS(PipelineOp):
         self.construct_client()
 
         sub_dataset = dataset[[self.q_dim, self.sas_variable, self.sas_err_variable]]
-        db_uuid = self.SASfit_client.deposit_obj(obj=sub_dataset)
+        db_uuid = self.AutoSAS_client.deposit_obj(obj=sub_dataset)
 
-        self.SASfit_client.enqueue(
+        self.AutoSAS_client.enqueue(
             task_name="set_sasdata",
             db_uuid=db_uuid,
             sample_dim=self.sample_dim,
@@ -74,35 +73,16 @@ class AutoSAS(PipelineOp):
             sas_err_variable=self.sas_err_variable,
         )
 
-        tiled_calc_id = self.SASfit_client.enqueue(
+        tiled_calc_id = self.AutoSAS_client.enqueue(
             task_name="fit_models", fit_method=self.fit_method
         )
 
-        report_json = self.SASfit_client.enqueue(
+        report_json = self.AutoSAS_client.enqueue(
             task_name="build_report", interactive=True
         )["return_val"]
 
-        labels = report_json["best_fits"]["model_idx"]
-        best_chisq = report_json["best_fits"]["lowest_chisq"]
-        label_names = report_json["best_fits"]["model_name"]
+        all_chisq = report_json["best_fits"]["all_chisq"]
 
-        ## mandatory for each pipeline operation
-        #self.output[self._prefix_output("labels")] = xr.DataArray(
-        #    labels, dims=[self.sample_dim]
-        #)
-        #self.output[self._prefix_output("labels")].attrs[
-        #    "tiled_calc_id"
-        #] = tiled_calc_id
-
-        #
-        #self.output[self._prefix_output("label_names")] = xr.DataArray(
-        #    label_names, dims=[self.sample_dim]
-        #)
-        #self.output[self._prefix_output("label_names")].attrs[
-        #    "tiled_calc_id"
-        #] = tiled_calc_id
-
-        
         self.output[self._prefix_output("all_chisq")] = xr.DataArray(
             best_chisq, dims=[self.sample_dim]
         )
@@ -116,15 +96,17 @@ class AutoSAS(PipelineOp):
         for param in self.target_fit_params:
             target[param] = []
             err[param] = []
+
         for idx,fit in enumerate(report_json["model_fits"]):
             for model in fit:
-                if model["name"] == self.target_model:
-                    for param in self.target_fit_params:
-                        target[param].append(model["output_fit_params"][param]["value"])
-                        err[param].append(model["output_fit_params"][param]["error"])
+                for param in model["output_fit_params"]:
+                    param_name = '_'.join([model['name'],param])
+                    
+                    target[param_name].append(model["output_fit_params"][param]["value"])
+                    err[param_name].append(model["output_fit_params"][param]["error"])
         
-        if target == False:
-            raise ValueError(f'The target model {self.target_model} is not in the config')
+        #if target == False:
+        #    raise ValueError(f'The target model {self.target_model} is not in the config')
 
         
         #target it now a dictionary that allows for multiple things
@@ -143,6 +125,13 @@ class AutoSAS(PipelineOp):
             self.output[self._prefix_output(f"{key}_fit_err")].attrs[
                 "tiled_calc_id"
             ] = tiled_calc_id
+
+
+
+
+        #### TO DO ####
+        # - validate the current changes to the pipeline op
+        # - extract the intensities and q-vectors from tiled and store them here
         return self
 
 
@@ -150,7 +139,7 @@ class AutoSAS(PipelineOp):
 # trying without using the base class. Should talk to Tyler about the methodology. Following module is the same as above
 # but it has just a few more outputs in the calculate method
 ################
-class SASfit_fit_extract(PipelineOp):
+class AutoSAS_fit_extract(PipelineOp):
     def __init__(
         self,
         sas_variable,
@@ -163,7 +152,7 @@ class SASfit_fit_extract(PipelineOp):
         target_fit_params,
         server_id="localhost:5058",
         fit_method=None,
-        name="SASfit_fit_extract",
+        name="AutoSAS_fit_extract",
     ):
         output_variables = [
             "labels",
@@ -195,20 +184,20 @@ class SASfit_fit_extract(PipelineOp):
         self.sample_dim = sample_dim
         self.fit_method = fit_method
 
-        self._banned_from_attrs.extend(["SASfit_client"])
+        self._banned_from_attrs.extend(["AutoSAS_client"])
 
     def construct_client(self):
         """
-        creates a client to talk to the SASfit server
+        creates a client to talk to the AutoSAS server
         """
 
-        self.SASfit_client = Client(
+        self.AutoSAS_client = Client(
             self.server_id.split(":")[0], port=self.server_id.split(":")[1]
         )
-        self.SASfit_client.login("SASfit_Client")
-        self.SASfit_client.debug(False)
+        self.AutoSAS_client.login("AutoSAS_client")
+        self.AutoSAS_client.debug(False)
 
-        model_inputs = self.SASfit_client.get_config("model_inputs",interactive=True)['return_val']
+        model_inputs = self.AutoSAS_client.get_config("model_inputs",interactive=True)['return_val']
 
         if self.target_model not in [model["name"] for model in model_inputs]:
             raise ValueError(
@@ -222,9 +211,9 @@ class SASfit_fit_extract(PipelineOp):
         self.construct_client()
 
         sub_dataset = dataset[[self.q_dim, self.sas_variable, self.sas_err_variable]]
-        db_uuid = self.SASfit_client.deposit_obj(obj=sub_dataset)
+        db_uuid = self.AutoSAS_client.deposit_obj(obj=sub_dataset)
 
-        self.SASfit_client.enqueue(
+        self.AutoSAS_client.enqueue(
             task_name="set_sasdata",
             db_uuid=db_uuid,
             sample_dim=self.sample_dim,
@@ -233,12 +222,12 @@ class SASfit_fit_extract(PipelineOp):
             sas_err_variable=self.sas_err_variable,
         )
 
-        tiled_calc_id = self.SASfit_client.enqueue(
+        tiled_calc_id = self.AutoSAS_client.enqueue(
             task_name="fit_models", fit_method=self.fit_method
         )
 
         # calls the report rom the fit that was just run
-        report_json = self.SASfit_client.enqueue(
+        report_json = self.AutoSAS_client.enqueue(
             task_name="build_report", interactive=True
         )["return_val"]
 
