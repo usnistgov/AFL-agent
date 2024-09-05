@@ -20,6 +20,7 @@ class AutoSAS(PipelineOp):
         output_prefix,
         q_dim,
         sample_dim,
+        model_dim,
         server_id="localhost:5058",
         tiled_id="localhost:8000",
         fit_method=None,
@@ -42,6 +43,7 @@ class AutoSAS(PipelineOp):
         self.sas_err_variable = sas_err_variable
 
         self.sample_dim = sample_dim
+        self.model_dim = model_dim
         self._banned_from_attrs.extend(["AutoSAS_client"])
 
     def construct_client(self):
@@ -81,10 +83,10 @@ class AutoSAS(PipelineOp):
             task_name="build_report", interactive=True
         )["return_val"]
 
-        all_chisq = report_json["best_fits"]["all_chisq"]
+        all_chisq = report_json["all_chisq"]
 
         self.output[self._prefix_output("all_chisq")] = xr.DataArray(
-            best_chisq, dims=[self.sample_dim]
+            all_chisq, dims=[self.sample_dim,self.model_dim]
         )
         self.output[self._prefix_output("all_chisq")].attrs[
             "tiled_calc_id"
@@ -108,9 +110,10 @@ class AutoSAS(PipelineOp):
         #if target == False:
         #    raise ValueError(f'The target model {self.target_model} is not in the config')
 
-        
+        print("Writing out the data to output dictionary")
         #target it now a dictionary that allows for multiple things
         for key in list(target):
+            print(key)
             self.output[self._prefix_output(f"{key}_fit_val")] = xr.DataArray(
                 target[key], dims=[self.sample_dim]
             )
@@ -134,7 +137,7 @@ class AutoSAS(PipelineOp):
         # - extract the intensities and q-vectors from tiled and store them here
         return self
 
-class ModelSelect_parsimony(PipelineOP):
+class ModelSelect_parsimony(PipelineOp):
     def __init__(
         self,
         output_prefix,

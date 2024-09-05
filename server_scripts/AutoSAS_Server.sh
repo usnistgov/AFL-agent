@@ -16,4 +16,4 @@ else
   export AFL_SYSTEM_SERIAL="${AFL_SYSTEM_SERIAL}"
 fi
 
-python ${HOME}/AFL-agent/server_scripts/AutoSAS_Driver.py
+python ${HOME}/AFL-agent/server_scripts/AutoSAS_Server.py
