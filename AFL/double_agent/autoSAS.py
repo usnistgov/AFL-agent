@@ -11,7 +11,7 @@ from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
 
 
-class SASfit_classifier(PipelineOp):
+class AutoSAS(PipelineOp):
     def __init__(
         self,
         sas_variable,
@@ -24,7 +24,7 @@ class SASfit_classifier(PipelineOp):
         fit_method=None,
         name="SASfit_classifier",
     ):
-        output_variables = ["labels", "label_names", "best_chisq", "best_chisq"]
+        output_variables = ["all_chisq"]
         super().__init__(
             name=name,
             input_variable=[q_dim, sas_variable, sas_err_variable],
@@ -86,29 +86,63 @@ class SASfit_classifier(PipelineOp):
         best_chisq = report_json["best_fits"]["lowest_chisq"]
         label_names = report_json["best_fits"]["model_name"]
 
-        # mandatory for each pipeline operation
-        self.output[self._prefix_output("labels")] = xr.DataArray(
-            labels, dims=[self.sample_dim]
-        )
-        self.output[self._prefix_output("labels")].attrs[
-            "tiled_calc_id"
-        ] = tiled_calc_id
+        ## mandatory for each pipeline operation
+        #self.output[self._prefix_output("labels")] = xr.DataArray(
+        #    labels, dims=[self.sample_dim]
+        #)
+        #self.output[self._prefix_output("labels")].attrs[
+        #    "tiled_calc_id"
+        #] = tiled_calc_id
+
+        #
+        #self.output[self._prefix_output("label_names")] = xr.DataArray(
+        #    label_names, dims=[self.sample_dim]
+        #)
+        #self.output[self._prefix_output("label_names")].attrs[
+        #    "tiled_calc_id"
+        #] = tiled_calc_id
 
         
-        self.output[self._prefix_output("label_names")] = xr.DataArray(
-            label_names, dims=[self.sample_dim]
-        )
-        self.output[self._prefix_output("label_names")].attrs[
-            "tiled_calc_id"
-        ] = tiled_calc_id
-
-        
-        self.output[self._prefix_output("best_chisq")] = xr.DataArray(
+        self.output[self._prefix_output("all_chisq")] = xr.DataArray(
             best_chisq, dims=[self.sample_dim]
         )
-        self.output[self._prefix_output("best_chisq")].attrs[
+        self.output[self._prefix_output("all_chisq")].attrs[
             "tiled_calc_id"
         ] = tiled_calc_id
+
+
+        target = {}
+        err = {}
+        for param in self.target_fit_params:
+            target[param] = []
+            err[param] = []
+        for idx,fit in enumerate(report_json["model_fits"]):
+            for model in fit:
+                if model["name"] == self.target_model:
+                    for param in self.target_fit_params:
+                        target[param].append(model["output_fit_params"][param]["value"])
+                        err[param].append(model["output_fit_params"][param]["error"])
+        
+        if target == False:
+            raise ValueError(f'The target model {self.target_model} is not in the config')
+
+        
+        #target it now a dictionary that allows for multiple things
+        for key in list(target):
+            self.output[self._prefix_output(f"{key}_fit_val")] = xr.DataArray(
+                target[key], dims=[self.sample_dim]
+            )
+            self.output[self._prefix_output(f"{key}_fit_val")].attrs[
+                "tiled_calc_id"
+            ] = tiled_calc_id
+
+            
+            self.output[self._prefix_output(f"{key}_fit_err")] = xr.DataArray(
+                err[key], dims=[self.sample_dim]
+            )
+            self.output[self._prefix_output(f"{key}_fit_err")].attrs[
+                "tiled_calc_id"
+            ] = tiled_calc_id
         return self
 
 
@@ -229,26 +263,6 @@ class SASfit_fit_extract(PipelineOp):
             raise ValueError(f'The target model {self.target_model} is not in the config')
 
         
-        # mandatory for each pipeline operation
-        self.output[self._prefix_output("labels")] = xr.DataArray(
-            labels, dims=[self.sample_dim]
-        )
-        self.output[self._prefix_output("labels")].attrs[
-            "tiled_calc_id"
-        ] = tiled_calc_id
-        self.output[self._prefix_output("label_names")] = xr.DataArray(
-            label_names, dims=[self.sample_dim]
-        )
-        self.output[self._prefix_output("label_names")].attrs[
-            "tiled_calc_id"
-        ] = tiled_calc_id
-        self.output[self._prefix_output("best_chisq")] = xr.DataArray(
-            best_chisq, dims=[self.sample_dim]
-        )
-        self.output[self._prefix_output("best_chisq")].attrs[
-            "tiled_calc_id"
-        ] = tiled_calc_id
-
         #target it now a dictionary that allows for multiple things
         for key in list(target):
             self.output[self._prefix_output(f"{key}_fit_val")] = xr.DataArray(

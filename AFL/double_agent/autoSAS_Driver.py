@@ -127,7 +127,7 @@ class SASModelWrapper:
         return params
 
 
-class SASFitter_Driver(Driver):
+class AutoSAS_Driver(Driver):
     defaults = {}
     defaults["savepath"] = "/home/afl642/2402_DT_ISIS_path"
     defaults["q_min"] = 1e-2
