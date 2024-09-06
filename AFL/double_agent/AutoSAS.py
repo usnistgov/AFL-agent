@@ -10,6 +10,9 @@ from AFL.automation.APIServer.Client import Client
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
 
+from tiled.client import from uir
+from tiled.queries import Eq, Contains
+
 
 class AutoSAS(PipelineOp):
     def __init__(
@@ -44,7 +47,7 @@ class AutoSAS(PipelineOp):
 
         self.sample_dim = sample_dim
         self.model_dim = model_dim
-        self._banned_from_attrs.extend(["AutoSAS_client"])
+        self._banned_from_attrs.extend(["AutoSAS_client","tiled_client"])
 
     def construct_client(self):
         """
@@ -56,6 +59,10 @@ class AutoSAS(PipelineOp):
         )
         self.AutoSAS_client.login("AutoSAS_client")
         self.AutoSAS_client.debug(False)
+
+        self.tiled_client = from_uri(
+            self.tiled_id.
+        )
 
     def calculate(self, dataset):
         """
@@ -95,46 +102,58 @@ class AutoSAS(PipelineOp):
 
         target = {}
         err = {}
-        for param in self.target_fit_params:
-            target[param] = []
-            err[param] = []
-
+        for idx,fit in enumerate(report_json["model_fits"]):
+            for model in fit:
+                target[model['name']] = {}
+                err[model['name']] = {}
+                
+                for param in model["output_fit_params"]:
+                    param_name = '_'.join([model['name'],param])
+                    target[model['name']][param_name] = []
+                    err[model['name']][param_name] = []
+                    
         for idx,fit in enumerate(report_json["model_fits"]):
             for model in fit:
                 for param in model["output_fit_params"]:
+                    
                     param_name = '_'.join([model['name'],param])
                     
-                    target[param_name].append(model["output_fit_params"][param]["value"])
-                    err[param_name].append(model["output_fit_params"][param]["error"])
+                    target[model['name']][param_name].append(model["output_fit_params"][param]["value"])
+                    err[model['name']][param_name].append(model["output_fit_params"][param]["error"])
         
-        #if target == False:
-        #    raise ValueError(f'The target model {self.target_model} is not in the config')
-
         print("Writing out the data to output dictionary")
         #target it now a dictionary that allows for multiple things
         for key in list(target):
             print(key)
-            self.output[self._prefix_output(f"{key}_fit_val")] = xr.DataArray(
-                target[key], dims=[self.sample_dim]
-            )
-            self.output[self._prefix_output(f"{key}_fit_val")].attrs[
-                "tiled_calc_id"
-            ] = tiled_calc_id
-
+            print(list(target[key]))
+            print([target[key][p] for p in list(target[key])])
+            model_dim = key+'_params'
+            p_data = np.array([target[key][param] for param in list(target[key])])
             
-            self.output[self._prefix_output(f"{key}_fit_err")] = xr.DataArray(
-                err[key], dims=[self.sample_dim]
+            print(p_data.shape)
+            self.output[f"{key}_fit_val"] = xr.DataArray(
+                data=p_data,
+                coords=[list(target[key]), np.arange(p_data.shape[1])],
+                dims=[model_dim,self.sample_dim]
             )
-            self.output[self._prefix_output(f"{key}_fit_err")].attrs[
+            self.output[f"{key}_fit_val"].attrs[
                 "tiled_calc_id"
             ] = tiled_calc_id
 
-
-
+            e_data = np.array([err[key][param] for param in list(err[key])])
+            self.output[f"{key}_fit_err"] = xr.DataArray(
+                data=e_data,
+                coords=[list(target[key]), np.arange(e_data.shape[1])],
+                dims=[model_dim, self.sample_dim]
+            )
+            self.output[f"{key}_fit_err"].attrs[
+                "tiled_calc_id"
+            ] = tiled_calc_id
 
         #### TO DO ####
-        # - validate the current changes to the pipeline op
         # - extract the intensities and q-vectors from tiled and store them here
+
+        result = self.
         return self
 
 class ModelSelect_parsimony(PipelineOp):
