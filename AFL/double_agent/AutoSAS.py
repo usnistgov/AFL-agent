@@ -10,7 +10,7 @@ from AFL.automation.APIServer.Client import Client
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
 
-from tiled.client import from uir
+from tiled.client import from_uri
 from tiled.queries import Eq, Contains
 
 
@@ -25,7 +25,8 @@ class AutoSAS(PipelineOp):
         sample_dim,
         model_dim,
         server_id="localhost:5058",
-        tiled_id="localhost:8000",
+        tiled_server_id="https://localhost:8000",
+        tiled_api_key="key",
         fit_method=None,
         name="AutoSAS_fit",
     ):
@@ -39,6 +40,8 @@ class AutoSAS(PipelineOp):
             output_prefix=output_prefix,
         )
         self.server_id = server_id
+        self.tiled_server_id = tiled_server_id
+        self.tiled_api_key = tiled_api_key
         self.fit_method = fit_method
 
         self.q_dim = q_dim
@@ -49,7 +52,7 @@ class AutoSAS(PipelineOp):
         self.model_dim = model_dim
         self._banned_from_attrs.extend(["AutoSAS_client","tiled_client"])
 
-    def construct_client(self):
+    def construct_clients(self):
         """
         creates a client to talk to the AutoSAS server
         """
@@ -61,14 +64,15 @@ class AutoSAS(PipelineOp):
         self.AutoSAS_client.debug(False)
 
         self.tiled_client = from_uri(
-            self.tiled_id.
+            self.tiled_server_id,
+            api_key=self.tiled_api_key
         )
 
     def calculate(self, dataset):
         """
         Default class calculate runs a fit method on the input data and outputs a classification
         """
-        self.construct_client()
+        self.construct_clients()
 
         sub_dataset = dataset[[self.q_dim, self.sas_variable, self.sas_err_variable]]
         db_uuid = self.AutoSAS_client.deposit_obj(obj=sub_dataset)
@@ -100,6 +104,8 @@ class AutoSAS(PipelineOp):
         ] = tiled_calc_id
 
 
+
+        
         target = {}
         err = {}
         for idx,fit in enumerate(report_json["model_fits"]):
@@ -120,17 +126,17 @@ class AutoSAS(PipelineOp):
                     
                     target[model['name']][param_name].append(model["output_fit_params"][param]["value"])
                     err[model['name']][param_name].append(model["output_fit_params"][param]["error"])
+
+
         
         print("Writing out the data to output dictionary")
         #target it now a dictionary that allows for multiple things
         for key in list(target):
-            print(key)
-            print(list(target[key]))
-            print([target[key][p] for p in list(target[key])])
+            
             model_dim = key+'_params'
             p_data = np.array([target[key][param] for param in list(target[key])])
             
-            print(p_data.shape)
+            # print(p_data.shape)
             self.output[f"{key}_fit_val"] = xr.DataArray(
                 data=p_data,
                 coords=[list(target[key]), np.arange(p_data.shape[1])],
@@ -153,7 +159,50 @@ class AutoSAS(PipelineOp):
         #### TO DO ####
         # - extract the intensities and q-vectors from tiled and store them here
 
-        result = self.
+        #querry the tiled server and pull the entries from the tiled_calc_uuid
+        result = self.tiled_client.search(Eq('uuid',tiled_calc_id))
+        tiled_dict = {}
+        for uuid,entry in list(result.items()):
+            task = entry.metadata['array_name']
+            # print(task)
+            
+            arr = entry[()]
+            tiled_dict[task] = arr
+            # print(arr)
+
+        
+        ds_fit_results = []
+        model_ids = list(target)
+        for idx, mid in enumerate(model_ids):
+            
+            ds = xr.Dataset()
+            q_key = [i for i in list(tiled_dict) if ('fit_q' in i and mid in i)][0]
+
+            
+            for key in list(tiled_dict):
+        
+                if (mid in key) and ('fit_I' in key):
+                    self.output[key] = xr.DataArray(
+                        tiled_dict[key],
+                        dims=[self.sample_dim,q_key],
+                        coords=[np.arange(e_data.shape[1]), tiled_dict[q_key]]
+                    )
+                elif (mid in key) and ('residuals' in key):
+                    self.output[key] = xr.DataArray(
+                        tiled_dict[key],
+                        dims=[self.sample_dim,q_key],
+                        coords=[np.arange(e_data.shape[1]), tiled_dict[q_key]]
+                    )
+                ds_fit_results.append(ds)
+
+        
+        # print(ds_fit_results)
+        # ds_fit_results = xr.merge(ds_fit_results)
+        # print("merged?")
+        # print(ds_fit_results)
+        # # for 
+        # self.output[](ds_fit_results)
+        
         return self
 
 class ModelSelect_parsimony(PipelineOp):
