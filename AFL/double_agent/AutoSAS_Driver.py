@@ -137,6 +137,8 @@ class AutoSAS_Driver(Driver):
         {
             "name": "power_law_1",
             "sasmodel": "power_law",
+            "q_min":0.01,
+            "q_max":0.4,
             "fit_params": {
                 "power": {"value": 4, "bounds": (3, 4.5)},
                 "background": {"value": 1e-4, "bounds": (1e-10, 1e2)},
