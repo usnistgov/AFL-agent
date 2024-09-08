@@ -207,8 +207,7 @@ class ModelSelect_parsimony(PipelineOp):
         sample_dim,
         chisq_variable,
         chisq_cutoff=1.0,
-        server_id="localhost:5058",
-        tiled_id="localhost:8000",
+		complexity_order=None,
         name="ModelSelection",
     ):
         output_variables = ["labels" , "best_chisq", "label_names"]
