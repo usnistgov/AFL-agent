@@ -194,15 +194,9 @@ class ModelSelectBestChiSq(PipelineOp):
         model_names_var,
         model_dim,
         sample_dim,
-<<<<<<< HEAD
         chisq_variable,
-        chisq_cutoff=1.0,
-		complexity_order=None,
-=======
-        selection_method=None,
         output_prefix='BestChiSq',
->>>>>>> 1639035ec31457f2e9798396c79d35e465f90fc4
-        name="ModelSelection",
+        name="ModelSelection_BestChiSq",
         **kwargs
     ):
         
@@ -219,19 +213,19 @@ class ModelSelectBestChiSq(PipelineOp):
         self.sample_dim = sample_dim
         self.model_dim = model_dim
         self.model_names_var = model_names_var
-        self.selection_method = selection_method
         
         self.all_chisq_var = all_chisq_var
         
         def calculate(self, dataset):        
             """Method for selecting the model based on the best chi-squared value"""
-            self.output[self._output_prefix('labels')]
 
             labels = dataset[all_chisq_var].argmax(model_dim).values
-            
             label_names = np.array([dataset[model_names_var][i].values for i in labels])
             
-            self.output[self._prefix_output("labels")] = xr.DataArray(
+            
+
+
+			self.output[self._prefix_output("labels")] = xr.DataArray(
                 data=labels,
                 dims=[self.sample_dim]
             )
