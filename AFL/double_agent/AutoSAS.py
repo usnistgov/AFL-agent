@@ -1,8 +1,3 @@
-"""
-PairMetrics are PipelineOps that produce pair matrices as results
-
-"""
-
 import numpy as np
 import xarray as xr
 
