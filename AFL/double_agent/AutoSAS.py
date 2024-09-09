@@ -243,6 +243,7 @@ class ModelSelectParsimony(PipelineOp):
         sample_dim,
         cutoff_threshold,
         model_complexity=None,
+        server_id="localhost:5058",
         output_prefix='Parsimony',
         name="ModelSelection_Parsimony",
         **kwargs
@@ -282,8 +283,8 @@ class ModelSelectParsimony(PipelineOp):
         
         self.dataset = dataset.copy(deep=True)
 
-        bestChiSq_labels = self.dataset[self.all_chisq_var].argmin(self.model_names_var).values
-        bestChiSq_label_names = np.array([self.dataset[self.model_names_var][i].values for i in bestChiSq_labels])
+        bestChiSq_labels = self.dataset[self.all_chisq_var].argmin(self.model_names_var)
+        bestChiSq_label_names = np.array([self.dataset[self.model_names_var][i].values for i in bestChiSq_labels.values])
         
         ### default behavior is that complexity is determined by number of free parameters. 
         ### this is an issue if the number of parameters is the same between models. You bank on them having wildly different ChiSq vals
@@ -299,13 +300,38 @@ class ModelSelectParsimony(PipelineOp):
                         n_params +=1
                 order.append(n_params)
 
+        replacement_labels = best_ChiSq_labels.copy(deep=True)
+        all_chisq = self.dataset[self.all_chisq_var]
+        sorted_chisq = all_chisq.sortby(self.model_names_var).values
+        print(sorted_chisq)
+       
+
+
+       #as written in dev full of jank...
+        min_diff_chisq =  np.array([row[1] - [row[0] for row in sorted_chisq])
+        next_best_idx = np.array([np.argpartition(row,1)[1] for row in all_chisq])
+
+        for idx in range(len(replacement_labels)):
+            chisq_set = self.dataset.all_chisq[idx].min(dim=self.model_names_var).values
+
+            if (min_diff_chisq[idx] <= self.cutoff_threshold):
+                best_model_index = replacement_labels[idx]
+                next_best_index = next_best_idx[idx]
+                bm_rank = model_complexity_order_index.index(best_model_index)
+                nbm_rank = model_complexity_order_index.index(next_best_index)
+                
+                if (bm_rank > nbm_rank):
+                    replacement_labels[idx] = next_best_index
+
+        
+
         self.output[self._prefix_output("labels")] = xr.DataArray(
-            data=labels,
+            data=replacement_labels,
             dims=[self.sample_dim]
         )
         
         self.output[self._prefix_output("label_names")] = xr.DataArray(
-            data=label_names,
+            data=[self.dataset[self.model_names_var].values[i] for i in replacement_labels,
             dims=[self.sample_dim]
         )
         return self
@@ -368,23 +394,26 @@ class ModelSelectAIC(PipelineOp):
                     n_params +=1
             n.append(n_params)
         n = np.array(n)
-        print(n)
         
-        AIC = n@self.dataset[self.all_chisq_var].values.T
-        print(AIC)
-        print(AIC.shape)
+        ### chisq + 2*ln(d) = AIC    
+        AIC = np.array([2*np.log(i) + 2*n for i in self.dataset[self.all_chisq_var].values])
+
+        AIC_labels = np.argmin(AIC,axis=1)
+        AIC_label_names = np.array([self.dataset[self.model_names_var][i].values for i in AIC_labels])
+        
+
         self.output['AIC'] = xr.DataArray(
             data=AIC,
-            dims=[self.sample_dim, self.model_name_var]
+            dims=[self.sample_dim, self.model_names_var]
         )
 
         self.output[self._prefix_output("labels")] = xr.DataArray(
-            data=labels,
+            data=AIC_labels,
             dims=[self.sample_dim]
         )
         
         self.output[self._prefix_output("label_names")] = xr.DataArray(
-            data=label_names,
+            data=AIC_label_names,
             dims=[self.sample_dim]
         )
 
