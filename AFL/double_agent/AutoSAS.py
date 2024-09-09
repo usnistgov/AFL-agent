@@ -283,7 +283,7 @@ class ModelSelectParsimony(PipelineOp):
         self.dataset = dataset.copy(deep=True)
 
         bestChiSq_labels = self.dataset[self.all_chisq_var].argmin(self.model_names_var).values
-        bestChiSq_label_names = np.array([self.dataset[self.model_names_var][i].values for i in labels])
+        bestChiSq_label_names = np.array([self.dataset[self.model_names_var][i].values for i in bestChiSq_labels])
         
         ### default behavior is that complexity is determined by number of free parameters. 
         ### this is an issue if the number of parameters is the same between models. You bank on them having wildly different ChiSq vals
@@ -316,10 +316,10 @@ class ModelSelectAIC(PipelineOp):
         self,
         all_chisq_var,
         model_names_var,
-        model_dim,
         sample_dim,
         output_prefix='AIC',
         name="ModelSelectionAIC",
+        server_id="localhost:5058",
         **kwargs
     ):
         
@@ -332,7 +332,8 @@ class ModelSelectAIC(PipelineOp):
             ],
             output_prefix=output_prefix,
         )
-        
+       
+        self.server_id = server_id
         self.sample_dim = sample_dim
         self.model_names_var = model_names_var
         self.all_chisq_var = all_chisq_var
@@ -355,7 +356,7 @@ class ModelSelectAIC(PipelineOp):
         self.dataset = dataset.copy(deep=True)
 
         bestChiSq_labels = self.dataset[self.all_chisq_var].argmin(self.model_names_var).values
-        bestChiSq_label_names = np.array([self.dataset[self.model_names_var][i].values for i in labels])
+        bestChiSq_label_names = np.array([self.dataset[self.model_names_var][i].values for i in bestChiSq_labels])
         
         aSAS_config = self.AutoSAS_client.get_config('all',interactive=True)['return_val']
         n = []
@@ -374,7 +375,7 @@ class ModelSelectAIC(PipelineOp):
         print(AIC.shape)
         self.output['AIC'] = xr.DataArray(
             data=AIC,
-            dims=[self.sample_dim, self.model_dim]
+            dims=[self.sample_dim, self.model_name_var]
         )
 
         self.output[self._prefix_output("labels")] = xr.DataArray(
