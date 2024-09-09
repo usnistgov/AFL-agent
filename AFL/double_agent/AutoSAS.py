@@ -192,18 +192,16 @@ class ModelSelectBestChiSq(PipelineOp):
         self,
         all_chisq_var,
         model_names_var,
-        model_dim,
+        #model_dim,
         sample_dim,
-        chisq_variable,
         output_prefix='BestChiSq',
         name="ModelSelection_BestChiSq",
-        **kwargs
     ):
         
         output_variables = ["labels", "label_names"]
         super().__init__(
             name=name,
-            input_variable=[all_chisq, ],
+            input_variable=[all_chisq_var, model_names_var],
             output_variable=[
                 output_prefix + "_" + o for o in listify(output_variables)
             ],
@@ -211,42 +209,73 @@ class ModelSelectBestChiSq(PipelineOp):
         )
         
         self.sample_dim = sample_dim
-        self.model_dim = model_dim
+        #self.model_dim = model_dim
         self.model_names_var = model_names_var
         
         self.all_chisq_var = all_chisq_var
+
+    def calculate(self, dataset):        
+        """Method for selecting the model based on the best chi-squared value"""
         
-        def calculate(self, dataset):        
-            """Method for selecting the model based on the best chi-squared value"""
-
-            labels = dataset[all_chisq_var].argmax(model_dim).values
-            label_names = np.array([dataset[model_names_var][i].values for i in labels])
-            
-            
-
-
-			self.output[self._prefix_output("labels")] = xr.DataArray(
-                data=labels,
-                dims=[self.sample_dim]
-            )
-            self.output[self._prefix_output("labels")].attrs[
-                "tiled_calc_id"
-            ] = tiled_calc_id
-
-            self.output[self._prefix_output("label_names")] = xr.DataArray(
-                data=label_nanes,
-                dims=[self.sample_dim]
-            )
-            self.output[self._prefix_output("label_names")].attrs[
-                "tiled_calc_id"
-            ] = tiled_calc_id
-            return self
+        labels = dataset[self.all_chisq_var].argmin(self.model_names_var).values
+        label_names = np.array([dataset[self.model_names_var][i].values for i in labels])
+        
+        self.output[self._prefix_output("labels")] = xr.DataArray(
+            data=labels,
+            dims=[self.sample_dim]
+        )
+        
+        self.output[self._prefix_output("label_names")] = xr.DataArray(
+            data=label_names,
+            dims=[self.sample_dim]
+        )
+        return self
 
 
+class ModelSelectParsimony(PipelineOp):
+    def __init__(
+        self,
+        all_chisq_var,
+        model_names_var,
+        model_dim,
+        sample_dim,
+        cutoff_threshold,
+        chisq_variable,
+        complexity_order,
+        output_prefix='Parsimony',
+        name="ModelSelection_Parsimony",
+        **kwargs
+    ):
+        
+        output_variables = ["labels", "label_names"]
+        super().__init__(
+            name=name,
+            input_variable=[all_chisq_var, model_names_var],
+            output_variable=[
+                output_prefix + "_" + o for o in listify(output_variables)
+            ],
+            output_prefix=output_prefix,
+        )
+        
+        self.sample_dim = sample_dim
+        #self.model_dim = model_dim
+        self.model_names_var = model_names_var
+        
+        self.all_chisq_var = all_chisq_var
 
-
-
-
-
-
-
+    def calculate(self, dataset):        
+        """Method for selecting the model based on the best chi-squared value"""
+        
+        labels = dataset[self.all_chisq_var].argmin(self.model_names_var).values
+        label_names = np.array([dataset[self.model_names_var][i].values for i in labels])
+        
+        self.output[self._prefix_output("labels")] = xr.DataArray(
+            data=labels,
+            dims=[self.sample_dim]
+        )
+        
+        self.output[self._prefix_output("label_names")] = xr.DataArray(
+            data=label_names,
+            dims=[self.sample_dim]
+        )
+        return self
