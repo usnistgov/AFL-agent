@@ -217,8 +217,10 @@ class ModelSelectBestChiSq(PipelineOp):
     def calculate(self, dataset):        
         """Method for selecting the model based on the best chi-squared value"""
         
-        labels = dataset[self.all_chisq_var].argmin(self.model_names_var).values
-        label_names = np.array([dataset[self.model_names_var][i].values for i in labels])
+        self.dataset = dataset.copy(deep=True)
+        
+        labels = self.dataset[self.all_chisq_var].argmin(self.model_names_var).values
+        label_names = np.array([self.dataset[self.model_names_var][i].values for i in labels])
         
         self.output[self._prefix_output("labels")] = xr.DataArray(
             data=labels,
@@ -240,8 +242,7 @@ class ModelSelectParsimony(PipelineOp):
         model_dim,
         sample_dim,
         cutoff_threshold,
-        chisq_variable,
-        complexity_order,
+        model_complexity=None,
         output_prefix='Parsimony',
         name="ModelSelection_Parsimony",
         **kwargs
@@ -258,17 +259,46 @@ class ModelSelectParsimony(PipelineOp):
         )
         
         self.sample_dim = sample_dim
-        #self.model_dim = model_dim
         self.model_names_var = model_names_var
-        
+        self.cutoff_threshold = cutoff_threshold 
+        self.model_complexity = model_complexity
         self.all_chisq_var = all_chisq_var
+    
+    def construct_clients(self):
+        """
+        creates a client to talk to the AutoSAS server
+        """
+
+        self.AutoSAS_client = Client(
+            self.server_id.split(":")[0], port=self.server_id.split(":")[1]
+        )
+        self.AutoSAS_client.login("AutoSAS_client")
+        self.AutoSAS_client.debug(False)
 
     def calculate(self, dataset):        
-        """Method for selecting the model based on the best chi-squared value"""
+        """Method for selecting the model based on parsimony given a user defined ChiSq threshold """
         
-        labels = dataset[self.all_chisq_var].argmin(self.model_names_var).values
-        label_names = np.array([dataset[self.model_names_var][i].values for i in labels])
+        self.construct_clients()
         
+        self.dataset = dataset.copy(deep=True)
+
+        bestChiSq_labels = self.dataset[self.all_chisq_var].argmin(self.model_names_var).values
+        bestChiSq_label_names = np.array([self.dataset[self.model_names_var][i].values for i in labels])
+        
+        ### default behavior is that complexity is determined by number of free parameters. 
+        ### this is an issue if the number of parameters is the same between models. You bank on them having wildly different ChiSq vals
+        ### could use a neighbor approach or some more intelligent selection methods
+        if self.model_complexity is None:
+            aSAS_config = self.AutoSAS_client.get_config('all',interactive=True)['return_val']
+            order = []
+            for model in aSAS_config['model_inputs']:
+            #for model in dataset[self.model_names_var].values:
+                n_params = 0
+                for p in model['fit_params']:
+                    if model['fit_params'][p]['bounds'] != None:
+                        n_params +=1
+                order.append(n_params)
+
         self.output[self._prefix_output("labels")] = xr.DataArray(
             data=labels,
             dims=[self.sample_dim]
@@ -278,4 +308,83 @@ class ModelSelectParsimony(PipelineOp):
             data=label_names,
             dims=[self.sample_dim]
         )
+        return self
+
+
+class ModelSelectAIC(PipelineOp):
+    def __init__(
+        self,
+        all_chisq_var,
+        model_names_var,
+        model_dim,
+        sample_dim,
+        output_prefix='AIC',
+        name="ModelSelectionAIC",
+        **kwargs
+    ):
+        
+        output_variables = ["labels", "label_names", "AIC"]
+        super().__init__(
+            name=name,
+            input_variable=[all_chisq_var, model_names_var],
+            output_variable=[
+                output_prefix + "_" + o for o in listify(output_variables)
+            ],
+            output_prefix=output_prefix,
+        )
+        
+        self.sample_dim = sample_dim
+        self.model_names_var = model_names_var
+        self.all_chisq_var = all_chisq_var
+    
+    def construct_clients(self):
+        """
+        creates a client to talk to the AutoSAS server
+        """
+
+        self.AutoSAS_client = Client(
+            self.server_id.split(":")[0], port=self.server_id.split(":")[1]
+        )
+        self.AutoSAS_client.login("AutoSAS_client")
+        self.AutoSAS_client.debug(False)
+
+    def calculate(self, dataset):        
+        """Method for selecting the model based on parsimony given a user defined ChiSq threshold """
+        
+        self.construct_clients()
+        self.dataset = dataset.copy(deep=True)
+
+        bestChiSq_labels = self.dataset[self.all_chisq_var].argmin(self.model_names_var).values
+        bestChiSq_label_names = np.array([self.dataset[self.model_names_var][i].values for i in labels])
+        
+        aSAS_config = self.AutoSAS_client.get_config('all',interactive=True)['return_val']
+        n = []
+        for model in aSAS_config['model_inputs']:
+        #for model in dataset[self.model_names_var].values:
+            n_params = 0
+            for p in model['fit_params']:
+                if model['fit_params'][p]['bounds'] != None:
+                    n_params +=1
+            n.append(n_params)
+        n = np.array(n)
+        print(n)
+        
+        AIC = n@self.dataset[self.all_chisq_var].values.T
+        print(AIC)
+        print(AIC.shape)
+        self.output['AIC'] = xr.DataArray(
+            data=AIC,
+            dims=[self.sample_dim, self.model_dim]
+        )
+
+        self.output[self._prefix_output("labels")] = xr.DataArray(
+            data=labels,
+            dims=[self.sample_dim]
+        )
+        
+        self.output[self._prefix_output("label_names")] = xr.DataArray(
+            data=label_names,
+            dims=[self.sample_dim]
+        )
+
         return self
