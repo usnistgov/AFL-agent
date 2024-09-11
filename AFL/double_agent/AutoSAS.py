@@ -221,12 +221,18 @@ class ModelSelectBestChiSq(PipelineOp):
         
         labels = self.dataset[self.all_chisq_var].argmin(self.model_names_var).values
         label_names = np.array([self.dataset[self.model_names_var][i].values for i in labels])
-        
+        bestChiSq = self.dataset[self.all_chisq_var].min(self.model_names_var).values
+
         self.output[self._prefix_output("labels")] = xr.DataArray(
             data=labels,
             dims=[self.sample_dim]
         )
         
+        self.output[self._prefix_output("ChiSq")] = xr.DataArray(
+            data=bestChiSq,
+            dims=[self.sample_dim]
+        )
+
         self.output[self._prefix_output("label_names")] = xr.DataArray(
             data=label_names,
             dims=[self.sample_dim]
@@ -239,9 +245,8 @@ class ModelSelectParsimony(PipelineOp):
         self,
         all_chisq_var,
         model_names_var,
-        model_dim,
         sample_dim,
-        cutoff_threshold,
+        cutoff_threshold=1.0,
         model_complexity=None,
         server_id="localhost:5058",
         output_prefix='Parsimony',
@@ -264,6 +269,7 @@ class ModelSelectParsimony(PipelineOp):
         self.cutoff_threshold = cutoff_threshold 
         self.model_complexity = model_complexity
         self.all_chisq_var = all_chisq_var
+        self.server_id = server_id
     
     def construct_clients(self):
         """
@@ -290,6 +296,7 @@ class ModelSelectParsimony(PipelineOp):
         ### this is an issue if the number of parameters is the same between models. You bank on them having wildly different ChiSq vals
         ### could use a neighbor approach or some more intelligent selection methods
         if self.model_complexity is None:
+            print('aggregating complexity')
             aSAS_config = self.AutoSAS_client.get_config('all',interactive=True)['return_val']
             order = []
             for model in aSAS_config['model_inputs']:
@@ -299,26 +306,27 @@ class ModelSelectParsimony(PipelineOp):
                     if model['fit_params'][p]['bounds'] != None:
                         n_params +=1
                 order.append(n_params)
-
-        replacement_labels = best_ChiSq_labels.copy(deep=True)
-        all_chisq = self.dataset[self.all_chisq_var]
-        sorted_chisq = all_chisq.sortby(self.model_names_var).values
-        print(sorted_chisq)
-       
+            print(order)
+            print(np.argsort(order))
+            self.model_complexity = np.argsort(order).tolist()
 
 
        #as written in dev full of jank...
-        min_diff_chisq =  np.array([row[1] - [row[0] for row in sorted_chisq])
+        replacement_labels = bestChiSq_labels.copy(deep=True)
+        all_chisq = self.dataset[self.all_chisq_var]
+        sorted_chisq = all_chisq.sortby(self.model_names_var, ascending=False).values
+
+        min_diff_chisq =  np.array([row[1] - row[0] for row in sorted_chisq])
         next_best_idx = np.array([np.argpartition(row,1)[1] for row in all_chisq])
 
         for idx in range(len(replacement_labels)):
-            chisq_set = self.dataset.all_chisq[idx].min(dim=self.model_names_var).values
+            chisq_set = all_chisq.min(dim=self.model_names_var).values
 
             if (min_diff_chisq[idx] <= self.cutoff_threshold):
                 best_model_index = replacement_labels[idx]
                 next_best_index = next_best_idx[idx]
-                bm_rank = model_complexity_order_index.index(best_model_index)
-                nbm_rank = model_complexity_order_index.index(next_best_index)
+                bm_rank = self.model_complexity.index(best_model_index)
+                nbm_rank = self.model_complexity.index(next_best_index)
                 
                 if (bm_rank > nbm_rank):
                     replacement_labels[idx] = next_best_index
@@ -331,7 +339,7 @@ class ModelSelectParsimony(PipelineOp):
         )
         
         self.output[self._prefix_output("label_names")] = xr.DataArray(
-            data=[self.dataset[self.model_names_var].values[i] for i in replacement_labels,
+            data=[self.dataset[self.model_names_var].values[i] for i in replacement_labels],
             dims=[self.sample_dim]
         )
         return self
