@@ -426,3 +426,98 @@ class ModelSelectAIC(PipelineOp):
         )
 
         return self
+
+
+class ModelSelectBIC(PipelineOp):
+    def __init__(
+        self,
+        all_chisq_var,
+        model_names_var,
+        sample_dim,
+        output_prefix='BIC',
+        name="ModelSelectionBIC",
+        server_id="localhost:5058",
+        **kwargs
+    ):
+        
+        output_variables = ["labels", "label_names", "BIC"]
+        super().__init__(
+            name=name,
+            input_variable=[all_chisq_var, model_names_var],
+            output_variable=[
+                output_prefix + "_" + o for o in listify(output_variables)
+            ],
+            output_prefix=output_prefix,
+        )
+       
+        self.server_id = server_id
+        self.sample_dim = sample_dim
+        self.model_names_var = model_names_var
+        self.all_chisq_var = all_chisq_var
+    
+    def construct_clients(self):
+        """
+        creates a client to talk to the AutoSAS server
+        """
+
+        self.AutoSAS_client = Client(
+            self.server_id.split(":")[0], port=self.server_id.split(":")[1]
+        )
+        self.AutoSAS_client.login("AutoSAS_client")
+        self.AutoSAS_client.debug(False)
+
+    def calculate(self, dataset):        
+        """Method for selecting the model based on parsimony given a user defined ChiSq threshold """
+        
+        self.construct_clients()
+        self.dataset = dataset.copy(deep=True)
+
+        bestChiSq_labels = self.dataset[self.all_chisq_var].argmin(self.model_names_var).values
+        bestChiSq_label_names = np.array([self.dataset[self.model_names_var][i].values for i in bestChiSq_labels])
+        
+        aSAS_config = self.AutoSAS_client.get_config('all',interactive=True)['return_val']
+        n = []
+        for model in aSAS_config['model_inputs']:
+        #for model in dataset[self.model_names_var].values:
+            n_params = 0
+            for p in model['fit_params']:
+                if model['fit_params'][p]['bounds'] != None:
+                    n_params +=1
+            n.append(n_params)
+        n = np.array(n)
+        
+        ###  n*ln(len(q))- 2*ln(chisq) = BIC    
+        BIC = np.array([n*np.log(len(self.dataset.q.values)) - 2*np.log(i) for i in self.dataset[self.all_chisq_var].values])
+
+        BIC_labels = np.argmin(AIC,axis=1)
+        BIC_label_names = np.array([self.dataset[self.model_names_var][i].values for i in AIC_labels])
+        
+
+        self.output['BIC'] = xr.DataArray(
+            data=AIC,
+            dims=[self.sample_dim, self.model_names_var]
+        )
+
+        self.output[self._prefix_output("labels")] = xr.DataArray(
+            data=BIC_labels,
+            dims=[self.sample_dim]
+        )
+        
+        self.output[self._prefix_output("label_names")] = xr.DataArray(
+            data=BIC_label_names,
+            dims=[self.sample_dim]
+        )
+
+        return self
+
+
+class ModelSelectBayesianModelComparison(PipelineOp):
+    """Uses a Bayesian model comparison approach to calculating probailities given a set of models and outputs"""
+    def __init__(
+        self,
+    ):
+        return
+    
+    def calculate(self):
+        return 
+
