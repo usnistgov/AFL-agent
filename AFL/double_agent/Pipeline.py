@@ -195,11 +195,12 @@ class Pipeline(PipelineContext):
         """Draw the pipeline as a graph"""
         self.make_graph()
 
-        plt.figure(figsize=figsize)
+        fig = plt.figure(figsize=figsize)
         pos = nx.nx_agraph.pygraphviz_layout(self.graph, prog="dot")
         nx.draw(self.graph, with_labels=True, pos=pos, node_size=1000)
         if edge_labels:
             nx.draw_networkx_edge_labels(self.graph, pos, self.graph_edge_labels)
+        return fig
 
     def draw_plotly(self):
         import plotly.graph_objects as go
