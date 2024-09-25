@@ -5,6 +5,7 @@ from typing import Optional, Dict, Any
 import xarray as xr
 
 from AFL.automation.APIServer.Driver import Driver  # type: ignore
+from AFL.automation.shared.utilities import mpl_plot_to_bytes
 from AFL.double_agent.Pipeline import Pipeline
 
 
@@ -112,6 +113,25 @@ class DoubleAgentDriver(Driver):
                 [self.input, next_sample], dim=concat_dim, data_vars="minimal"
             )
 
+    @Driver.unqueued(render_hint = 'precomposed_svg')
+    def plot_pipeline(self):
+        if self.pipeline is not None:
+            return mpl_plot_to_bytes(self.pipeline.draw(),format='svg')
+        else:
+            return None
+
+    @Driver.unqueued(render_hint = 'precomposed_png')
+    def plot_operation(self,operation):
+        if self.pipeline is not None:
+            if isinstance(operation,str):
+                return mpl_plot_to_bytes(self.pipeline.search(op).plot(),format='png')
+            elif isinstance(operation,int):
+                return mpl_plot_to_bytes(self.pipeline[op].plot(),format='png')
+            else:
+                return None
+        else:
+            return None
+        
     def reset_results(self):
         self.results = dict()
 
@@ -168,3 +188,7 @@ class DoubleAgentDriver(Driver):
             self.deposit_obj(self.results[ag_uid], uid=ag_uid)
 
         return ag_uid
+
+_OVERRIDE_MAIN_MODULE_NAME = 'DoubleAgentDriver'
+if __name__ == '__main__':
+    from AFL.automation.shared.launcher import *
