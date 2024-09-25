@@ -9,6 +9,7 @@ import sklearn.gaussian_process  # type: ignore
 import sklearn.gaussian_process.kernels  # type: ignore
 import xarray as xr
 from typing_extensions import Self
+import matplotlib.pyplot as plt
 
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
@@ -78,12 +79,39 @@ class Extrapolator(PipelineOp):
         self.grid_variable = grid_variable
         self.sample_dim = sample_dim
         self.grid_dim = grid_dim
+        self.grid = None# store grid for plotting
 
         self._banned_from_attrs.extend(["kernel"])
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
         return NotImplementedError(".calculate must be implemented in subclasses")  # type: ignore
+
+    def plot(self,**mpl_kwargs) -> plt.Figure:
+        n = len(self.output)
+        if n>0:
+            fig, axes = plt.subplots(n,1,figsize=(6,n*4))
+            if n>1:
+                axes = list(axes.flatten())
+            else:
+                axes = [axes]
+
+            for i,(name,data) in enumerate(self.output.items()):
+                if 'grid' in data.dims:
+                    non_grid_dim = [d for d in self.grid.dims if d != self.grid_dim][0]
+                    x = self.grid.isel({non_grid_dim:0})
+                    y = self.grid.isel({non_grid_dim:1})
+                    c = data.values
+                    axes[i].scatter(x=x,y=y,c=list(c),**mpl_kwargs)
+
+                elif 'sample' in data.dims:
+                    data.plot(hue='sample',ax=axes[i],**mpl_kwargs)
+                else:
+                    data.plot(ax=axes[i],**mpl_kwargs)
+                axes[i].set(title=name)
+            return fig
+        else:
+            return plt.figure()
 
 
 class DummyExtrapolator(Extrapolator):
@@ -221,7 +249,7 @@ class GaussianProcessClassifier(Extrapolator):
         """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
         X = dataset[self.feature_input_variable].transpose(self.sample_dim, ...)
         y = dataset[self.predictor_input_variable].transpose(self.sample_dim, ...)
-        grid = dataset[self.grid_variable]
+        self.grid = dataset[self.grid_variable]# store grid for plotting
 
         if len(np.unique(y)) == 1:
 
@@ -241,7 +269,7 @@ class GaussianProcessClassifier(Extrapolator):
             ).fit(X.values, y.values)
 
             # entropy approach to classification probabilities
-            mean = clf.predict_proba(grid.values)
+            mean = clf.predict_proba(self.grid.values)
             entropy = -np.sum(np.log(mean) * mean, axis=-1)
 
             # A messier way to achieve a similar thing
@@ -354,7 +382,7 @@ class GaussianProcessRegressor(Extrapolator):
             .dropna(dim=self.sample_dim)
         )
 
-        grid = dataset[self.grid_variable]
+        self.grid = dataset[self.grid_variable]
 
         if self.predictor_uncertainty_variable is not None:
             dy = dataset[self.predictor_uncertainty_variable].transpose(
@@ -372,7 +400,7 @@ class GaussianProcessRegressor(Extrapolator):
             ).fit(X.values, y.values)
             reg_type = "homoscedastic"
 
-        mean, std = reg.predict(grid.values, return_std=True)
+        mean, std = reg.predict(self.grid.values, return_std=True)
         var = std*std
         self.reg = reg
 

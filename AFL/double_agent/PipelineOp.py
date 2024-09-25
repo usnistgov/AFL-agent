@@ -138,13 +138,20 @@ class PipelineOp(ABC):
         # for name, dataarray in self.output.items():
         #     tiled_data.add_array(name, value.values)
 
-    def plot(self) -> plt.Figure:
+    def plot(self,**mpl_kwargs) -> plt.Figure:
         n = len(self.output)
         if n>0:
             fig, axes = plt.subplots(n,1,figsize=(8,n*4))
-            axes = axes.flatten()
+            if n>1:
+                axes = list(axes.flatten())
+            else:
+                axes = [axes]
+
             for i,(name,data) in enumerate(self.output.items()):
-                data.plot(ax=axes[i])
+                if 'sample' in data.dims:
+                    data = data.plot(hue='sample',ax=axes[i],**mpl_kwargs)
+                else:
+                    data.plot(ax=axes[i],**mpl_kwargs)
                 axes[i].set(title=name)
             return fig
         else:
