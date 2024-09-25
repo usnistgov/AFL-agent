@@ -114,19 +114,23 @@ class DoubleAgentDriver(Driver):
             )
 
     @Driver.unqueued(render_hint = 'precomposed_svg')
-    def plot_pipeline(self):
+    def plot_pipeline(self,**kwargs):
         if self.pipeline is not None:
             return mpl_plot_to_bytes(self.pipeline.draw(),format='svg')
         else:
             return None
 
     @Driver.unqueued(render_hint = 'precomposed_png')
-    def plot_operation(self,operation):
+    def plot_operation(self,operation,**kwargs):
+        try:
+            operation = int(operation)
+        except ValueError:
+            pass
         if self.pipeline is not None:
             if isinstance(operation,str):
-                return mpl_plot_to_bytes(self.pipeline.search(op).plot(),format='png')
+                return mpl_plot_to_bytes(self.pipeline.search(operation).plot(),format='png')
             elif isinstance(operation,int):
-                return mpl_plot_to_bytes(self.pipeline[op].plot(),format='png')
+                return mpl_plot_to_bytes(self.pipeline[operation].plot(),format='png')
             else:
                 return None
         else:
