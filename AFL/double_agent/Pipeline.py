@@ -36,6 +36,7 @@ class Pipeline(PipelineContext):
     """
 
     def __init__(self, name: Optional[str] = None, ops: Optional[List] = None) -> None:
+        self.result = None
         if ops is None:
             self.ops = []
         else:
@@ -300,4 +301,6 @@ class Pipeline(PipelineContext):
 
             if tiled_data is not None:
                 op.add_to_tiled(tiled_data)
+
+        self.result = dataset1
         return dataset1
