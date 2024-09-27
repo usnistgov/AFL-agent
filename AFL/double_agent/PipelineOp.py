@@ -3,6 +3,7 @@ import warnings
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, List
 
+import matplotlib.pyplot as plt
 import xarray as xr
 from typing_extensions import Self
 
@@ -136,3 +137,22 @@ class PipelineOp(ABC):
         # This needs to handle/deconstruct xarray types!!
         # for name, dataarray in self.output.items():
         #     tiled_data.add_array(name, value.values)
+
+    def plot(self,**mpl_kwargs) -> plt.Figure:
+        n = len(self.output)
+        if n>0:
+            fig, axes = plt.subplots(n,1,figsize=(8,n*4))
+            if n>1:
+                axes = list(axes.flatten())
+            else:
+                axes = [axes]
+
+            for i,(name,data) in enumerate(self.output.items()):
+                if 'sample' in data.dims:
+                    data = data.plot(hue='sample',ax=axes[i],**mpl_kwargs)
+                else:
+                    data.plot(ax=axes[i],**mpl_kwargs)
+                axes[i].set(title=name)
+            return fig
+        else:
+            return plt.figure()
