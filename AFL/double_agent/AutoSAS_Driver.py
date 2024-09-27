@@ -127,7 +127,7 @@ class SASModelWrapper:
         return params
 
 
-class SASFitter_Driver(Driver):
+class AutoSAS_Driver(Driver):
     defaults = {}
     defaults["savepath"] = "/home/afl642/2402_DT_ISIS_path"
     defaults["q_min"] = 1e-2
@@ -137,6 +137,8 @@ class SASFitter_Driver(Driver):
         {
             "name": "power_law_1",
             "sasmodel": "power_law",
+            "q_min":0.01,
+            "q_max":0.4,
             "fit_params": {
                 "power": {"value": 4, "bounds": (3, 4.5)},
                 "background": {"value": 1e-4, "bounds": (1e-10, 1e2)},
