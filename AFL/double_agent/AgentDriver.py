@@ -120,6 +120,10 @@ class DoubleAgentDriver(Driver):
         else:
             return None
 
+    @Driver.unqueued(render_hint = 'html')
+    def last_results(self,**kwargs):
+        return self.last_results._repr_html_()
+
     @Driver.unqueued(render_hint = 'precomposed_png')
     def plot_operation(self,operation,**kwargs):
         try:
@@ -190,7 +194,9 @@ class DoubleAgentDriver(Driver):
 
         if deposit:
             self.deposit_obj(self.results[ag_uid], uid=ag_uid)
-
+        
+        self.last_results = self.results[ag_uid]
+        
         return ag_uid
 
 _OVERRIDE_MAIN_MODULE_NAME = 'DoubleAgentDriver'
