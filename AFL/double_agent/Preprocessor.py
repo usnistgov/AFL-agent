@@ -858,3 +858,47 @@ class VarsToArray(Preprocessor):
         self.output[self.output_variable] = output
         return self
 
+class ArrayToVars(Preprocessor):
+    """
+        Parameters
+        ----------
+        input_variable : str
+            The name of the `xarray.Dataset` data variable to extract from the input dataset
+
+        output_variables : list or str
+            The name of the variables to be inserted into the `xarray.Dataset` by this `PipelineOp`
+
+        split_dim: str
+             The dimension to use when splitting a dataset or datarray over
+
+        name: str
+            The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
+
+        """
+    def __init__(
+        self, 
+        input_variable: str, 
+        output_variables: list, 
+        split_dim: list,
+        postfix='',
+        squeeze: bool = False,
+        name:str='DatasetToVars'):
+
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variables)
+        print(self.input_variable,self.output_variable)
+        
+        self.split_dim = split_dim
+        self.squeeze = squeeze
+        self.output_variables = output_variables
+        self.postfix= postfix
+    def calculate(self, dataset):
+        input_arr = dataset[self.input_variable]   
+        if self.squeeze:
+            output = output.squeeze()
+        for var in self.output_variables:
+            print(var)
+    
+            self.output[var+self.postfix] = input_arr.sel({self.split_dim:var})
+            
+        return self
+
