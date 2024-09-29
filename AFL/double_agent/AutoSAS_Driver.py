@@ -333,12 +333,12 @@ class AutoSAS_Driver(Driver):
         fitted_models = []
         # for data in tqdm(self.sasdata, total=len(self.sasdata)):
         for idx,data in enumerate(self.sasdata):
-            print(idx)
             self.models_post = []
             self.construct_models(data)
 
             fitted_models.append([])
             for model in self.models:
+                print('SASDATA IDX:',idx,'MODEL:',model)
                 model.fit(fit_method=fit_method)
                 self.models_post.append(model)
                 self.models_fit = True
@@ -347,12 +347,13 @@ class AutoSAS_Driver(Driver):
 
             self.results.append(self.store_results(self.models_post))
 
+        print("BEFORE BR")
         self.build_report()
+        print("AFTER BR")
 
         # construct array of theory fits
         tiled_arrays = defaultdict(list)
         for fitted_models in fitted_models:
-
             for model in fitted_models:
                 tiled_arrays[f"chisq_{model.name}"].append(model.problem.chisq())
                 tiled_arrays[f"fit_I_{model.name}"].append(model.model_I)
@@ -361,6 +362,8 @@ class AutoSAS_Driver(Driver):
                     tiled_arrays[f'fit_q_{model.name}'] = model.model_q
 
                 tiled_arrays[f"params_{model.name}"].append(model.get_fit_params())
+
+        print('AFTER TILED1')
 
         # construct arrays and save to tiled
         # self.data.add_array('probabilities', self.report['probabilities'])
@@ -386,6 +389,7 @@ class AutoSAS_Driver(Driver):
                 self.data.add_array(array_name+'_error',df_error.values)
             else:
                 self.data.add_array(array_name, np.array(array))
+        print('AFTER TILED2')
 
 
         ####################
@@ -412,6 +416,7 @@ class AutoSAS_Driver(Driver):
         Builds a human readable report for the fitting results.
         TODO: Want a readable PDF built up from FPDF...
         """
+        print("BUILDING REPORT!")
         self.report["fit_method"] = self.config["fit_method"]
         self.report["model_inputs"] = self.config["model_inputs"]
         # self.report['best_model'] =
@@ -439,6 +444,7 @@ class AutoSAS_Driver(Driver):
         self.report['probabilities'] = self.calc_probabilities()
         self.report['all_chisq'] = [[model['chisq'] for model in result] for result in self.results]
         self.report["best_fits"] = bf
+        print("REPORT BUILT!")
 
         return self.report
 

@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import xarray as xr
 
@@ -84,10 +86,16 @@ class AutoSAS(PipelineOp):
         tiled_calc_id = self.AutoSAS_client.enqueue(
             task_name="fit_models", fit_method=self.fit_method
         )
+        print("BEFORE AUTOSAS WAIT")
+        self.AutoSAS_client.wait(tiled_calc_id)
+        print("BEFORE AUTOSAS BUILD_REPORT")
 
-        report_json = self.AutoSAS_client.enqueue(
-            task_name="build_report", interactive=True
-        )["return_val"]
+        report_json = self.AutoSAS_client.get_driver_object('report') #!!! FIX THIS. THIS IS BAD. BAD CLIFFORD
+        print("AFTER AUTOSAS BUILD_REPORT")
+
+        # report_json = self.AutoSAS_client.enqueue(
+        #     task_name="build_report", interactive=True
+        # )["return_val"]
 
         all_chisq = report_json["all_chisq"]
 
@@ -155,6 +163,9 @@ class AutoSAS(PipelineOp):
             ] = tiled_calc_id
 
         result = self.tiled_client.search(Eq('uuid',tiled_calc_id))
+        if len(result)==0:
+            raise ValueError("AutoSAS tiled calculation not found!")
+            
         tiled_dict = {}
         for uuid,entry in list(result.items()):
             task = entry.metadata['array_name']
