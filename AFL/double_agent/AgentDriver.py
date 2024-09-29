@@ -121,7 +121,7 @@ class DoubleAgentDriver(Driver):
             return None
 
     @Driver.unqueued(render_hint = 'html')
-    def last_results(self,**kwargs):
+    def last_result(self,**kwargs):
         return self.last_results._repr_html_()
 
     @Driver.unqueued(render_hint = 'precomposed_png')
@@ -177,6 +177,8 @@ class DoubleAgentDriver(Driver):
                 f"""DoubleAgentDriver.pipeline = {self.pipeline}\n"""
                 f"""DoubleAgentDriver.input = {self.input}\n"""
             )
+        if sample_uuid is None:
+            sample_uuid = 'SAM-'+str(uuid.uuid4())
 
         ag_uid = "AG-" + str(uuid.uuid4())
         self.results[ag_uid] = self.pipeline.calculate(self.input)
