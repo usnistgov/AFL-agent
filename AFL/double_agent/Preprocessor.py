@@ -841,16 +841,22 @@ class VarsToArray(Preprocessor):
         output_variable: str, 
         variable_dim:str,
         squeeze: bool = False,
+        variable_mapping: Dict = None,
         name:str='VarsToArray'):
 
         super().__init__(name=name, input_variable=input_variables, output_variable=output_variable)
         print(self.input_variable,self.output_variable)
+
+        if variable_mapping is None:
+            self.variable_mapping = {}
+        else:
+            self.variable_mapping = variable_mapping
         
         self.variable_dim = variable_dim
         self.squeeze = squeeze
 
     def calculate(self, dataset):
-        output = dataset[self.input_variable].to_array(self.variable_dim)      
+        output = dataset[self.input_variable].rename_vars(self.variable_mapping).to_array(self.variable_dim)      
         if self.squeeze:
             output = output.squeeze()
         print(self.output_variable)
