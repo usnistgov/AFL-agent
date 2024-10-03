@@ -9,6 +9,7 @@ from tqdm.auto import tqdm  # type: ignore
 import h5py  # type: ignore
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 import bumps  # type: ignore
 import bumps.fitproblem  # type: ignore
@@ -162,9 +163,11 @@ class AutoSAS_Driver(Driver):
         self.results = []
         self.report = {}
         self.status_str = "Fresh Server!"
+        self.dropbox = dict()
 
         self.sasdata = []
         self.model_fit = False
+        print("self.data exists == :",self.data)
 
     def status(self):
         status = []
@@ -347,9 +350,7 @@ class AutoSAS_Driver(Driver):
 
             self.results.append(self.store_results(self.models_post))
 
-        print("BEFORE BR")
         self.build_report()
-        print("AFTER BR")
 
         # construct array of theory fits
         tiled_arrays = defaultdict(list)
@@ -363,13 +364,22 @@ class AutoSAS_Driver(Driver):
 
                 tiled_arrays[f"params_{model.name}"].append(model.get_fit_params())
 
-        print('AFTER TILED1')
 
+        #duplicating for dropbox
+        # dropbox_dict= dict(tiled_arrays)
+
+        as_uuid = 'AS-' + str(uuid.uuid4())
+        
         # construct arrays and save to tiled
         # self.data.add_array('probabilities', self.report['probabilities'])
         self.data.add_array("best_chisq", self.report["best_fits"]["lowest_chisq"])
         self.data.add_array("model_names", self.report["best_fits"]["model_name"])
         self.data.add_array("all_chisq", self.report["all_chisq"])
+
+        # dropbox_dict["best_chisq"] = self.report["best_fits"]["lowest_chisq"]
+        # dropbox_dict["model_names"] = self.report["best_fits"]["model_name"]
+        # dropbox_dict["all_chisq"] = self.report["all_chisq"]
+        
         for array_name, array in tiled_arrays.items():
             if "params_" in array_name:
                 df_value = pd.DataFrame([
@@ -387,11 +397,125 @@ class AutoSAS_Driver(Driver):
                 self.data[array_name+"_columns"] = df_value.columns.values
                 self.data.add_array(array_name,df_value.values)
                 self.data.add_array(array_name+'_error',df_error.values)
+                
+                # dropbox_dict[array_name] = df_value.values
+                # dropbox_dict[array_name+'_error'] = df_error.values
+
             else:
                 self.data.add_array(array_name, np.array(array))
-        print('AFTER TILED2')
+
+                # dropbox_dict[array_name] = np.array(array)
+        # print('AFTER TILED2')
 
 
+
+
+        ####################################################################################################
+        ### fixing the write so that it stores not just to tiled but to dropbox
+        ####################################################################################################
+        self.sample_dim = "sas_fit_sample"
+        self.model_dim = "models"
+        
+         
+        dso = xr.Dataset()
+        print(self.sample_dim, self.model_dim)
+        print()
+        dso[("all_chisq")] = xr.DataArray(
+            data = self.report["all_chisq"], 
+            dims = [self.sample_dim, self.model_dim],
+            coords = {self.sample_dim: np.arange(len(self.sasdata)), self.model_dim: [m["name"] for m in list(self.report["model_fits"][0])]}
+        )
+
+
+        ### this needs to get moved to the pipeline object
+        dso[("all_chisq")].attrs[
+            "fit_calc_id"
+        ] = as_uuid
+
+
+        #build from the report json
+        target = {}
+        err = {}
+        for idx,fit in enumerate(self.report["model_fits"]):
+            for model in fit:
+                target[model['name']] = {}
+                err[model['name']] = {}
+                
+                for param in model["output_fit_params"]:
+                    param_name = '_'.join([model['name'],param])
+                    target[model['name']][param_name] = []
+                    err[model['name']][param_name] = []
+                    
+        for idx,fit in enumerate(self.report["model_fits"]):
+            for model in fit:
+                for param in model["output_fit_params"]:
+                    
+                    param_name = '_'.join([model['name'],param])
+                    
+                    target[model['name']][param_name].append(model["output_fit_params"][param]["value"])
+                    err[model['name']][param_name].append(model["output_fit_params"][param]["error"])
+
+
+    
+        # print("Writing out the data to output dictionary")
+        #target it now a dictionary that allows for multiple things
+        for key in list(target):
+            
+            model_dim = key+'_params'
+            p_data = np.array([target[key][param] for param in list(target[key])])
+            
+            # print(p_data.shape)
+            dso[f"{key}_fit_val"] = xr.DataArray(
+                data=p_data,
+                coords={model_dim:list(target[key])},
+                dims=[model_dim,self.sample_dim]
+            )
+            dso[f"{key}_fit_val"].attrs[
+                "fit_calc_id"
+            ] = as_uuid
+
+            e_data = np.array([err[key][param] for param in list(err[key])])
+            
+            dso[f"{key}_fit_err"] = xr.DataArray(
+                data=e_data,
+                coords=[list(target[key]), np.arange(e_data.shape[1])],
+                dims=[model_dim, self.sample_dim]
+            )
+            dso[f"{key}_fit_err"].attrs[
+                "fit_calc_id"
+            ] = as_uuid
+
+        
+
+          
+        
+        model_ids = list(target)
+        
+        for idx, mid in enumerate(model_ids):
+            q_key = [i for i in list(tiled_arrays) if ('fit_q' in i and mid in i)][0]
+            print(mid)
+            
+            for key in list(tiled_arrays):
+        
+                if (mid in key) and ('fit_I' in key):
+                    dso[key] = xr.DataArray(
+                        tiled_arrays[key],
+                        dims=[self.sample_dim,q_key],
+                        coords=[np.arange(e_data.shape[1]), tiled_arrays[q_key]]
+                    )
+                elif (mid in key) and ('residuals' in key):
+                    dso[key] = xr.DataArray(
+                        tiled_arrays[key],
+                        dims=[self.sample_dim,q_key],
+                        coords=[np.arange(e_data.shape[1]), tiled_arrays[q_key]]
+                    )
+        
+        ##################################################
+
+        print('stored to dropbox')
+        self.deposit_obj(obj=dso,uid=as_uuid)
+
+                
         ####################
         # a main process has to exist for this to run. not sure how it should interface on a server...
         ####################
@@ -409,7 +533,7 @@ class AutoSAS_Driver(Driver):
         # else:
         #     for model in model_list:
         #         model.fit(data=data, fit_method=fit_method)
-        return
+        return as_uuid
 
     def build_report(self):
         """

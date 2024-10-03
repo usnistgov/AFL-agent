@@ -22,8 +22,6 @@ class AutoSAS(PipelineOp):
         sample_dim,
         model_dim,
         server_id="localhost:5058",
-        tiled_server_id="https://localhost:8000",
-        tiled_api_key="key",
         fit_method=None,
         name="AutoSAS_fit",
     ):
@@ -37,9 +35,9 @@ class AutoSAS(PipelineOp):
             output_prefix=output_prefix,
         )
         self.server_id = server_id
-        self.tiled_server_id = tiled_server_id
-        self.tiled_api_key = tiled_api_key
         self.fit_method = fit_method
+
+        self.results = dict()
 
         self.q_dim = q_dim
         self.sas_variable = sas_variable
@@ -47,7 +45,7 @@ class AutoSAS(PipelineOp):
 
         self.sample_dim = sample_dim
         self.model_dim = model_dim
-        self._banned_from_attrs.extend(["AutoSAS_client","tiled_client"])
+        self._banned_from_attrs.extend(["AutoSAS_client"])
 
     def construct_clients(self):
         """
@@ -59,11 +57,6 @@ class AutoSAS(PipelineOp):
         )
         self.AutoSAS_client.login("AutoSAS_client")
         self.AutoSAS_client.debug(False)
-
-        self.tiled_client = from_uri(
-            self.tiled_server_id,
-            api_key=self.tiled_api_key
-        )
 
     def calculate(self, dataset):
         """
@@ -83,119 +76,20 @@ class AutoSAS(PipelineOp):
             sas_err_variable=self.sas_err_variable,
         )
 
-        tiled_calc_id = self.AutoSAS_client.enqueue(
-            task_name="fit_models", fit_method=self.fit_method
-        )
-        print("BEFORE AUTOSAS WAIT")
-        self.AutoSAS_client.wait(tiled_calc_id)
-        print("BEFORE AUTOSAS BUILD_REPORT")
+        fit_calc_id = self.AutoSAS_client.enqueue(
+            task_name="fit_models", fit_method=self.fit_method,interactive=True
+        )['return_val']
 
-        report_json = self.AutoSAS_client.get_driver_object('report') #!!! FIX THIS. THIS IS BAD. BAD CLIFFORD
-        print("AFTER AUTOSAS BUILD_REPORT")
-
-        # report_json = self.AutoSAS_client.enqueue(
-        #     task_name="build_report", interactive=True
-        # )["return_val"]
-
-        all_chisq = report_json["all_chisq"]
-
-        self.output[self._prefix_output("all_chisq")] = xr.DataArray(
-            data = all_chisq, 
-            dims = [self.sample_dim, self.model_dim],
-            coords = [np.arange(len(all_chisq)), [m["name"] for m in list(report_json["model_fits"][0])]]
-        )
-        self.output[self._prefix_output("all_chisq")].attrs[
-            "tiled_calc_id"
-        ] = tiled_calc_id
-
-
-
+        # all the extraction is baked into the Driver now. It could be cleaned up in a re-write of autosas...
+        output = self.AutoSAS_client.retrieve_obj(uid=fit_calc_id)
+        output = output.rename_vars({
+            'all_chisq':self._prefix_output('all_chisq')
+        })
+        output = output.rename_dims({
+            'sas_fit_sample':self.sample_dim
+        })
         
-        target = {}
-        err = {}
-        for idx,fit in enumerate(report_json["model_fits"]):
-            for model in fit:
-                target[model['name']] = {}
-                err[model['name']] = {}
-                
-                for param in model["output_fit_params"]:
-                    param_name = '_'.join([model['name'],param])
-                    target[model['name']][param_name] = []
-                    err[model['name']][param_name] = []
-                    
-        for idx,fit in enumerate(report_json["model_fits"]):
-            for model in fit:
-                for param in model["output_fit_params"]:
-                    
-                    param_name = '_'.join([model['name'],param])
-                    
-                    target[model['name']][param_name].append(model["output_fit_params"][param]["value"])
-                    err[model['name']][param_name].append(model["output_fit_params"][param]["error"])
-
-
-        
-        # print("Writing out the data to output dictionary")
-        #target it now a dictionary that allows for multiple things
-        for key in list(target):
-            
-            model_dim = key+'_params'
-            p_data = np.array([target[key][param] for param in list(target[key])])
-            
-            # print(p_data.shape)
-            self.output[f"{key}_fit_val"] = xr.DataArray(
-                data=p_data,
-                coords={model_dim:list(target[key])},
-                dims=[model_dim,self.sample_dim]
-            )
-            self.output[f"{key}_fit_val"].attrs[
-                "tiled_calc_id"
-            ] = tiled_calc_id
-
-            e_data = np.array([err[key][param] for param in list(err[key])])
-            
-            self.output[f"{key}_fit_err"] = xr.DataArray(
-                data=e_data,
-                coords=[list(target[key]), np.arange(e_data.shape[1])],
-                dims=[model_dim, self.sample_dim]
-            )
-            self.output[f"{key}_fit_err"].attrs[
-                "tiled_calc_id"
-            ] = tiled_calc_id
-
-        result = self.tiled_client.search(Eq('uuid',tiled_calc_id))
-        if len(result)==0:
-            raise ValueError("AutoSAS tiled calculation not found!")
-            
-        tiled_dict = {}
-        for uuid,entry in list(result.items()):
-            task = entry.metadata['array_name']
-            # print(task)
-            
-            arr = entry[()]
-            tiled_dict[task] = arr
-            # print(arr)
-
-        
-        model_ids = list(target)
-        for idx, mid in enumerate(model_ids):
-            q_key = [i for i in list(tiled_dict) if ('fit_q' in i and mid in i)][0]
-
-            
-            for key in list(tiled_dict):
-        
-                if (mid in key) and ('fit_I' in key):
-                    self.output[key] = xr.DataArray(
-                        tiled_dict[key],
-                        dims=[self.sample_dim,q_key],
-                        coords=[np.arange(e_data.shape[1]), tiled_dict[q_key]]
-                    )
-                elif (mid in key) and ('residuals' in key):
-                    self.output[key] = xr.DataArray(
-                        tiled_dict[key],
-                        dims=[self.sample_dim,q_key],
-                        coords=[np.arange(e_data.shape[1]), tiled_dict[q_key]]
-                    )
-        
+        self.output = output
         return self
 
 class ModelSelectBestChiSq(PipelineOp):
