@@ -81,15 +81,16 @@ class AutoSAS(PipelineOp):
         )['return_val']
 
         # all the extraction is baked into the Driver now. It could be cleaned up in a re-write of autosas...
-        output = self.AutoSAS_client.retrieve_obj(uid=fit_calc_id)
-        output = output.rename_vars({
+        autosas_fit = self.AutoSAS_client.retrieve_obj(uid=fit_calc_id,delete=False)
+        
+        autosas_fit = autosas_fit.rename_vars({
             'all_chisq':self._prefix_output('all_chisq')
         })
-        output = output.rename_dims({
+        autosas_fit = autosas_fit.rename_dims({
             'sas_fit_sample':self.sample_dim
-        })
+        }).reset_index('sas_fit_sample').reset_coords()
         
-        self.output = output
+        self.output = autosas_fit
         return self
 
 class ModelSelectBestChiSq(PipelineOp):
