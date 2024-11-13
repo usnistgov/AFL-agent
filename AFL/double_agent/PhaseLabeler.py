@@ -68,7 +68,7 @@ class PhaseLabeler(PipelineOp):
 
         silh_avg = np.array(silh_dict['avg_scores'])
         found = False
-        for cutoff in np.arange(0.85, 0.4, -0.05):
+        for cutoff in np.arange(0.85, 0.05, -0.05):
             idx = np.where(silh_avg > cutoff)[0]
             if idx.shape[0] > 0:
                 idx = idx[-1]
@@ -137,3 +137,30 @@ class GaussianMixtureModel(PhaseLabeler):
     def _label(self, metric):
         self.clf.fit(metric)
         self.labels = self.clf.predict(metric)
+        
+class AffinityPropagation(PhaseLabeler):
+    def __init__(self, input_variable, output_variable, dim, params=None, name='AffinityPropagation'):
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable, dim=dim,
+                         params=params)
+
+        default_params = {}
+        default_params['damping'] = 0.75
+        default_params['max_iter'] = 5000
+        default_params['convergence_iter'] = 250
+        default_params['affinity'] = 'precomputed'
+        for k,v in default_params.items():
+            if k not in self.params:
+                self.params[k] = v
+        
+    def calculate(self, dataset):
+        data1 = self._get_variable(dataset)
+        
+        self.clf = sklearn.cluster.AffinityPropagation(**self.params)
+        self.clf.fit(data1.values)
+        
+        self.labels = self.clf.labels_
+        self.output[self.output_variable] = xr.DataArray(self.labels, dims=[self.dim])
+        self.output[self.output_variable].attrs.update(self.params)
+        self.output[self.output_variable].attrs['n_phases'] = len(np.unique(self.labels))
+        return self
+        
