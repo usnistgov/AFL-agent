@@ -5,7 +5,7 @@ from typing import Optional, Dict, Any
 import xarray as xr
 
 from AFL.automation.APIServer.Driver import Driver  # type: ignore
-from AFL.automation.shared.utilities import mpl_plot_to_bytes
+from AFL.automation.shared.utilities import mpl_plot_to_bytes,xarray_to_bytes
 from AFL.double_agent.Pipeline import Pipeline
 
 
@@ -124,6 +124,10 @@ class DoubleAgentDriver(Driver):
     def last_result(self,**kwargs):
         return self.last_results._repr_html_()
 
+    @Driver.unqueued(render_hint = 'netcdf')
+    def download_last_result(self,**kwargs):
+        return xarray_to_bytes(self.last_results)
+    
     @Driver.unqueued(render_hint = 'precomposed_png')
     def plot_operation(self,operation,**kwargs):
         try:
