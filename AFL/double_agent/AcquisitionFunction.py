@@ -156,7 +156,7 @@ class AcquisitionFunction(PipelineOp):
 
         self.output[self._prefix_output("pre_exclude_decision_surface")] = dataset[
             "decision_surface"
-        ]
+        ].copy()
         self.output[self._prefix_output("pre_exclude_decision_surface")].attrs[
             "description"
         ] = "The acquisition surface before it is modified by an exclusion field"
