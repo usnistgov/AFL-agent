@@ -375,6 +375,7 @@ class AutoSAS_Driver(Driver):
         self.data.add_array("best_chisq", self.report["best_fits"]["lowest_chisq"])
         self.data.add_array("model_names", self.report["best_fits"]["model_name"])
         self.data.add_array("all_chisq", self.report["all_chisq"])
+        self.data.add_array("probabilities", self.report["probabilities"])
 
         # dropbox_dict["best_chisq"] = self.report["best_fits"]["lowest_chisq"]
         # dropbox_dict["model_names"] = self.report["best_fits"]["model_name"]
@@ -431,6 +432,12 @@ class AutoSAS_Driver(Driver):
         dso[("all_chisq")].attrs[
             "fit_calc_id"
         ] = as_uuid
+
+        dso[("probabilities")] = xr.DataArray(
+            data = self.report['probabilities'],
+            dims = [self.sample_dim, self.model_dim],
+            coords = {self.sample_dim: np.arange(len(self.sasdata)), self.model_dim: [m["name"] for m in list(self.report["model_fits"][0])]}
+        )
 
 
         #build from the report json
@@ -558,7 +565,7 @@ class AutoSAS_Driver(Driver):
             best_chis.append(chisqs[i])
             best_names.append(names[i])
             indices.append(i)
-        print(best_chis, best_names, indices)
+        #print(best_chis, best_names, indices)
         bf["model_name"] = best_names
         bf["lowest_chisq"] = best_chis
         bf["model_idx"] = [int(i) for i in indices]
@@ -568,6 +575,7 @@ class AutoSAS_Driver(Driver):
         self.report['probabilities'] = self.calc_probabilities()
         self.report['all_chisq'] = [[model['chisq'] for model in result] for result in self.results]
         self.report["best_fits"] = bf
+
         print("REPORT BUILT!")
 
         return self.report
@@ -585,7 +593,7 @@ class AutoSAS_Driver(Driver):
         all_fit_params = []
         all_fit_cov = []
 
-        log_marginal_likelihoods = []
+        marginal_likelihoods = []
         print(len(self.models), len(self.results[0]))
         for result in self.results:
             
@@ -595,12 +603,20 @@ class AutoSAS_Driver(Driver):
             cov = [np.array(model['cov']) for model in result]
             log_marginal_likelihood = [model_likelihood[i] + 0.5*np.log(np.linalg.det(cov[i])) + 0.5*d[i]*np.log(2*np.pi) for i in range(len(d))]
             
-            print(model_likelihood,d,log_marginal_likelihood)
-            log_marginal_likelihoods.append(log_marginal_likelihood)
+            #print(model_likelihood,d,log_marginal_likelihood)
+            marginal_likelihoods.append(np.exp(log_marginal_likelihood))
 
-        model_probabilities = [j/sum(i) for i in log_marginal_likelihoods for j in i]
-        self.model_probabilities = model_probabilities
-        return model_probabilities
+        all_probs = []
+        for row in marginal_likelihoods:
+            probs = [i/sum(row) for i in row]
+            #print(probs)
+            #print(sum(probs))
+            all_probs.append(probs)
+
+        #model_probabilities = [j/sum(i) for i in log_marginal_likelihoods for j in i]
+       # self.model_probabilities = np.array(model_probabilities).reshape(len(self.results),len(d))
+        self.model_probabilities = np.array(all_probs)
+        return self.model_probabilities
 
     
     def model_selection(self, chisqr_tol=1e0):
