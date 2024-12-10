@@ -316,6 +316,150 @@ class RandomAF(AcquisitionFunction):
 
         return self
 
+class MultimodalMask_MaxValueAF(AcquisitionFunction):
+
+    def __init__(
+            self,
+            decision_variable: str,
+            mask_label_variable: str,
+            phase_select_coords: dict[str,float],
+            grid_variable: str,
+            grid_dim: str = "grid",
+            combine_coeffs: Optional[List[float]] = None,
+            output_prefix: Optional[str] = None,
+            output_variable: str = "next_samples",
+            decision_rtol: float = 0.05,
+            excluded_comps_variables: Optional[List[str]] = None,
+            excluded_comps_dim: Optional[str] = None,
+            exclusion_radius: float = 1e-3,
+            count: int = 1,
+            name: str = "MaxValueAF",
+    ):
+        """
+        Parameters
+        ----------
+        input_variables : List[str]
+            The name of the `xarray.Dataset` data variables to extract from the input `xarray.Dataset`
+
+        grid_variable: str
+            The name of the `xarray.Dataset` data variable to use as a evaluation grid.
+
+        grid_dim: str
+            The xarray dimension over each grid_point. Grid equivalent to sample.
+
+        combine_coeffs: Optional[List[float]]
+            If provided, the `self.input_variables` will be scaled by these coefficients before being summed.
+
+        output_prefix: Optional[str]
+            If provided, all outputs of this `PipelineOp` will be prefixed with this string
+
+        output_variable : str
+            The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+
+        decision_rtol: float
+            The next sample will be randomly chosen from all grid points that are within `decision_rtol` percent of the
+            maximum of the decision surface. This
+
+        excluded_comps_variables: Optional[List[str]]
+            A list of `xarray.Dataset` composition variables to use in building an exclusion surface that is added to
+            the decision surface. This exclusion surface is built but placing multidimensional inverted Gaussians at
+            every composition point specified in the `excluded_comps_variables`. This is done using the `GaussianPoints`
+            generator.
+
+        excluded_comps_dim: str
+            The `xarray` dimension over the components of a composition.
+
+        exclusion_radius: float
+            The width of the Gaussian placed by the `GaussianPoints` generator. See that documentation for more details.
+
+        count: int
+            The number of samples to pull from the grid.
+
+        name: str
+            The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
+        """
+
+        super().__init__(
+            input_variables=[mask_label_variable,decision_variable],
+            grid_variable=grid_variable,
+            grid_dim=grid_dim,
+            output_prefix=output_prefix,
+            output_variable=output_variable,
+            decision_rtol=decision_rtol,
+            excluded_comps_variables=excluded_comps_variables,
+            excluded_comps_dim=excluded_comps_dim,
+            exclusion_radius=exclusion_radius,
+            count=count,
+            name=name,
+        )
+        self.combine_coeffs = combine_coeffs
+        self.decision_variable = decision_variable
+        self.mask_label_variable = mask_label_variable
+        self.phase_select_coords = phase_select_coords
+
+        # this doesn't need to be an attribute, just convenient for debugging
+        self.acquisition = None
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
+
+        # grid_dim = 'grid'
+        # grid_variable = 'comps_grid_trans'
+        # mask_labels_variable = 'sans_labels_extrap_mean'
+        # component_dim = 'trans_component'
+        # target = {'PVC': 0.0, 'phi_T': 0.175}
+
+        # label_com = ds_out[grid_variable].groupby(ds_out[mask_labels_variable]).mean()
+
+        # target = xr.Dataset(target).to_array(component_dim)
+        # diff_min = diff[diff.argmin()]
+        # label = label_com[diff.argmin()][mask_labels_variable].values[()]
+
+        # grid_selected = ds_out.set_index({grid_dim: mask_labels_variable}).sel({grid_dim: label})
+
+        self.acquisition = xr.Dataset()
+
+        self.acquisition["comp_grid"] = dataset[self.grid_variable].transpose(
+            self.grid_dim, ...
+        )
+
+        decision_surface = dataset[self.decision_variable].copy()
+        if (decision_surface.max() - decision_surface.min()) < 1e-16:
+            pass
+        else:  # normalize
+            decision_surface = (decision_surface - decision_surface.min()) / (
+                    decision_surface.max() - decision_surface.min()
+            )
+
+        # 1. Calculate the mean of the "mask_label_variable"
+        ## MASKING
+        if len(np.unique(dataset[self.mask_label_variable]))>1:
+            label_com = self.acquisition["comp_grid"].groupby(dataset[self.mask_label_variable]).mean()
+            component_dim = self.acquisition["comp_grid"].dims[1] # should always be [1] due to the transpose above
+            phase_select_coords = xr.Dataset(self.phase_select_coords).to_array(component_dim)
+            diff = (label_com - phase_select_coords).pipe(np.square).sum(component_dim).pipe(np.sqrt)
+            selected_label = label_com[diff.argmin()][self.mask_label_variable].values[()]
+            mask = dataset[self.mask_label_variable] == selected_label
+            decision_surface[~mask] = 0 #set all non-selected values on the decision surface to 0
+
+        self.acquisition["decision_surface"] = decision_surface
+
+        excluded_comps = self._get_excluded_comps(dataset)
+        if excluded_comps is not None:
+            self.acquisition["excluded_comps"] = self._get_excluded_comps(dataset)
+            self.exclude_previous_samples(self.acquisition)
+
+        self.output[self._prefix_output("decision_surface")] = self.acquisition[
+            "decision_surface"
+        ]
+        self.output[self._prefix_output("decision_surface")].attrs[
+            "description"
+        ] = "The final acquisition surface that is evaluated to determine the next_sample"
+
+        self.get_next_samples(self.acquisition)
+
+        return self
+
 
 class MaxValueAF(AcquisitionFunction):
 
