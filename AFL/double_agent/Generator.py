@@ -50,6 +50,7 @@ class CartesianGrid(Generator):
         output_variable: str,
         grid_spec: Dict[str, Dict[str, int | float]],
         sample_dim: str,
+        component_dim: str = 'component',
         name: str = "CartesianGridGenerator",
     ):
         """
@@ -75,6 +76,7 @@ class CartesianGrid(Generator):
         self.grid_spec = grid_spec
         self.components = list(grid_spec.keys())
         self.sample_dim = sample_dim
+        self.component_dim = component_dim
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
@@ -86,8 +88,8 @@ class CartesianGrid(Generator):
         pts = np.array(list(product(*grid_list)))
         self.output[self.output_variable] = xr.DataArray(
             pts,
-            dims=[self.sample_dim, "component"],
-            coords={"component": self.components},
+            dims=[self.sample_dim, self.component_dim],
+            coords={self.component_dim: self.components},
         )
         return self
 
