@@ -329,6 +329,7 @@ class Standardize(Preprocessor):
         input_variable: str,
         output_variable: str,
         dim: str,
+        component_dim: Optional[str] = "component",
         scale_variable: Optional[str] = None,
         min_val: Optional[Number] = None,
         max_val: Optional[Number] = None,
@@ -362,6 +363,7 @@ class Standardize(Preprocessor):
         )
 
         self.dim = dim
+        self.component_dim = component_dim
         self.min_val = min_val
         self.max_val = max_val
         self.scale_variable = scale_variable
@@ -375,6 +377,8 @@ class Standardize(Preprocessor):
                 max_val = data1.max(self.dim)
             else:
                 max_val = dataset[self.scale_variable].max(self.dim)
+        elif isinstance(self.max_val,dict):
+            max_val = xr.Dataset(self.max_val).to_array(self.component_dim)
         else:
             max_val = self.max_val
 
@@ -383,6 +387,8 @@ class Standardize(Preprocessor):
                 min_val = data1.min(self.dim)
             else:
                 min_val = dataset[self.scale_variable].min(self.dim)
+        elif isinstance(self.min_val, dict):
+            min_val = xr.Dataset(self.min_val).to_array(self.component_dim)
         else:
             min_val = self.min_val
 
@@ -402,6 +408,7 @@ class Destandardize(Preprocessor):
         input_variable: str,
         output_variable: str,
         dim: str,
+        component_dim: Optional[str] = "component",
         scale_variable: Optional[str] = None,
         min_val: Optional[Number] = None,
         max_val: Optional[Number] = None,
@@ -435,6 +442,7 @@ class Destandardize(Preprocessor):
         )
 
         self.dim = dim
+        self.component_dim = component_dim
         self.min_val = min_val
         self.max_val = max_val
         self.scale_variable = scale_variable
@@ -448,6 +456,8 @@ class Destandardize(Preprocessor):
                 max_val = data1.max(self.dim)
             else:
                 max_val = dataset[self.scale_variable].max(self.dim)
+        elif isinstance(self.max_val,dict):
+            max_val = xr.Dataset(self.max_val).to_array(self.component_dim)
         else:
             max_val = self.max_val
 
@@ -456,6 +466,8 @@ class Destandardize(Preprocessor):
                 min_val = data1.min(self.dim)
             else:
                 min_val = dataset[self.scale_variable].min(self.dim)
+        elif isinstance(self.min_val, dict):
+            min_val = xr.Dataset(self.min_val).to_array(self.component_dim)
         else:
             min_val = self.min_val
 
