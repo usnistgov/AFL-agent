@@ -182,7 +182,6 @@ class TFGaussianProcessClassifier(TFExtrapolator):
         """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
         X = dataset[self.feature_input_variable].transpose(self.sample_dim, ...)
         y = dataset[self.predictor_input_variable].transpose(self.sample_dim, ...)
-        y = self.encode(y)
         grid = dataset[self.grid_variable]
 
         if len(np.unique(y)) == 1:
@@ -196,7 +195,7 @@ class TFGaussianProcessClassifier(TFExtrapolator):
 
         else:
             n_classes: int = len(np.unique(y.values))
-            data = (X.values, y.values)
+            data = (X.values, y.values.reshape(-1,1))
 
             invlink = gpflow.likelihoods.RobustMax(n_classes)
             likelihood = gpflow.likelihoods.MultiClass(n_classes, invlink=invlink)
@@ -214,13 +213,18 @@ class TFGaussianProcessClassifier(TFExtrapolator):
                     model.trainable_variables,
                     options=dict(maxiter=1000),
                 )
-            display(model)
 
             mean, variance = model.predict_y(grid.values)
 
-            param_dict = {
-                k: v.numpy() for k, v in gpflow.utilities.parameter_dict(model).items()
-            }
+            param_dict = {}
+            blocked_vars = ['q_mu', 'q_sqrt', 'f_mu', 'f_sqrt']
+            for k, v in gpflow.utilities.parameter_dict(model).items():
+                if k[0]=='.':
+                    k = k[1:]
+                if k in blocked_vars:
+                    continue
+                param_dict[k] = v.numpy().tolist()
+
             self.output[self._prefix_output("mean")] = xr.DataArray(
                 mean.numpy().argmax(-1), dims=self.grid_dim
             )
