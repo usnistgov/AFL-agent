@@ -1,0 +1,112 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "AFL_agent/_version.py"
+
+[project]
+name = "AFL-agent"
+dynamic = ["version"]
+description = "Agent code for the Autonomous Formulation Lab"
+readme = "README.md"
+authors = [
+    { name = "Tyler B. Martin", email = "tyler.martin@nist.gov" },
+    { name = "Peter A. Beaucage" }
+    { name = "Duncan R. Sutherland" }
+]
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+]
+
+dependencies = [
+    "numpy",
+    "xarray",
+    "tqdm",
+    "netcdf4",
+    "pandas",
+    "scipy",
+    "matplotlib",
+    "seaborn",
+    "pint",
+    "periodictable",
+    "pillow",
+    "scikit-image",
+    "scikit-learn",
+    "bottleneck",
+    "sasmodels",
+    "shapely",
+    "sympy",
+    "tiled[all]",
+    "sasdata",
+]
+
+[project.optional-dependencies]
+jupyter = [
+    "jupyter",
+    "jupyterlab",
+    "ipywidgets",
+    "ipympl",
+    "nodejs",
+]
+
+tensorflow = [
+    "tensorflow>=2.7",
+    "gpflow",
+]
+
+pytorch = [
+    "torch",
+    "torchvision",
+]
+
+automation = [
+    "flask<2.3",  # before_first request is removed in 2.3
+    "flask-jwt-extended>=4.0",
+    "flask_cors",
+    "watchdog",
+    "markupsafe",
+    "pyserial",
+    "bokeh",
+    "requests",
+]
+
+dev = [
+    "black",
+    "isort",
+    "mypy",
+    "pytest",
+]
+
+all = [
+    "jupyter",
+    "jupyterlab", 
+    "ipywidgets",
+    "ipympl",
+    "nodejs",
+    "tensorflow>=2.7",
+    "gpflow",
+    "torch",
+    "torchvision",
+    "flask<2.3",
+    "flask-jwt-extended>=4.0", 
+    "flask_cors",
+    "watchdog",
+    "markupsafe",
+    "pyserial",
+    "bokeh",
+    "requests",
+    "black",
+    "isort",
+    "mypy",
+    "pytest",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["AFL-agent"] 
