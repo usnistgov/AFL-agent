@@ -8,3 +8,5 @@ from .Generator import *
 from .plotting import *
 from .Boundary import *
 
+from ._version import __version__
+

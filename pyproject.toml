@@ -5,8 +5,11 @@ build-backend = "hatchling.build"
 [tool.hatch.version]
 source = "vcs"
 
+[tool.hatch.build]
+hooks = ["vcs"]
+
 [tool.hatch.build.hooks.vcs]
-version-file = "AFL_agent/_version.py"
+version-file = "AFL/double_agent/_version.py"
 
 [project]
 name = "AFL-agent"
@@ -109,4 +112,5 @@ all = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["AFL-agent"] 
+packages = ["AFL"]
+
