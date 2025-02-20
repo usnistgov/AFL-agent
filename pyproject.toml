@@ -15,9 +15,10 @@ description = "Agent code for the Autonomous Formulation Lab"
 readme = "README.md"
 authors = [
     { name = "Tyler B. Martin", email = "tyler.martin@nist.gov" },
-    { name = "Peter A. Beaucage" }
-    { name = "Duncan R. Sutherland" }
+    { name = "Peter A. Beaucage" },
+    { name = "Duncan R. Sutherland" },
 ]
+
 license = { file = "LICENSE" }
 requires-python = ">=3.11"
 classifiers = [
@@ -82,6 +83,9 @@ dev = [
     "isort",
     "mypy",
     "pytest",
+    "sphinx",
+    "sphinx-rtd-theme",
+    "sphinx-autodoc-typehints",
 ]
 
 all = [

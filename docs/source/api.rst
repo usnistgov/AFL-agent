@@ -4,4 +4,4 @@ API
 .. autosummary::
     :toctree: generated
     :recursive:
-    AFL.agent
+    AFL.double_agent

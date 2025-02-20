@@ -3,18 +3,63 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to AFL-agent's documentation!
-==========================================
+AFL-agent 
+==========
 
-AFL-agent is a framework for instrument control.  It powers the NIST AFL, but is more useful than that.  It enables the easy conversion of Python classes - drivers - into robust HTTP microservices with authentication, task queueing, UI generation, data management, and more.
+.. image:: _static/images/loop.png
+   :align: center
+   :alt: AFL-agent loop diagram
 
+Welcome to AFL-agent, the software package for the Autonomous Formulation Lab
+(AFL).  The AFL is dedicated to accelerating the discovery and optimization of
+soft materials through innovative integration of robotic automation and
+AI/ML-driven experimentation.
 
+This package provides the AI agent infrastructure that enables researchers to
+build sophisticated decision pipelines.  These pipelines can automatically
+process measurement data and make intelligent decisions about the next optimal
+sample to synthesize or analyze.  By combining automated experimentation with
+machine learning, AFL-agent helps streamline the materials discovery process and
+reduce the time from concept to breakthrough.
+
+Key capabilities include:
+
+- Simple, modular, context-based approach to building decision pipelines
+- xArray based data model for storing and processing experimental data
+- Integration with common AI/ML frameworks (e.g., scikit-learn, , TensorFlow, PyTorch)
+- Visualization tools for inspecting and debugging decision pipelines
+- Pipeline serialization and loading
+
+Documentation Sections
+-------------------
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
-   
+   :caption: User Guide
 
+   tutorials/index
+   how-to/index
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API Reference
+
+   reference/double_agent
+   reference/deprecated_agent
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Development
+
+   contributing
+   changelog
+
+Indices and Search
+================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
 
 .. autosummary::
    :toctree: _autosummary
@@ -22,10 +67,3 @@ AFL-agent is a framework for instrument control.  It powers the NIST AFL, but is
    :recursive:
 
    AFL.agent
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

@@ -1,0 +1,63 @@
+/* Custom styles for AFL-agent documentation */
+
+/* Improve readability */
+.wy-nav-content {
+    max-width: 900px;
+}
+
+/* Style for deprecated module warnings */
+.deprecated-module {
+    background-color: #fff3cd;
+    border-left: 5px solid #ffeeba;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Enhance code blocks */
+.highlight {
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+/* Better heading hierarchy */
+h1 {
+    border-bottom: 2px solid #2980B9;
+    padding-bottom: 0.3em;
+}
+
+h2 {
+    border-bottom: 1px solid #eaecef;
+    padding-bottom: 0.3em;
+}
+
+/* Warning styling */
+.admonition.warning {
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+}
+
+.admonition.warning .admonition-title {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+/* Note styling */
+.admonition.note {
+    background-color: #e2f0fd;
+    border-color: #bde0fe;
+}
+
+.admonition.note .admonition-title {
+    background-color: #e2f0fd;
+    color: #0c5460;
+}
+
+/* Improve table styling */
+table.docutils {
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+table.docutils thead th {
+    background-color: #f8f9fa;
+} 
