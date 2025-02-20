@@ -15,7 +15,7 @@ description = "Agent code for the Autonomous Formulation Lab"
 readme = "README.md"
 authors = [
     { name = "Tyler B. Martin", email = "tyler.martin@nist.gov" },
-    { name = "Peter A. Beaucage" }
+    { name = "Peter A. Beaucage" },
     { name = "Duncan R. Sutherland" }
 ]
 license = { file = "LICENSE" }
