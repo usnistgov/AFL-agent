@@ -12,4 +12,4 @@ jobs:
           formats: |-
             epub
             pdf
-          pre-build-command: "pip install -e ."
+          pre-build-command: "pip install ."
