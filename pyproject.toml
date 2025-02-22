@@ -33,6 +33,7 @@ dependencies = [
     "pandas",
     "scipy",
     "matplotlib",
+    "plotly",
     "seaborn",
     "pint",
     "periodictable",
@@ -82,6 +83,11 @@ dev = [
     "isort",
     "mypy",
     "pytest",
+    "sphinx",
+    "sphinx-rtd-theme",
+    "sphinxcontrib-apidoc",
+    "sphinxcontrib-napoleon",
+    "piccolo_theme"
 ]
 
 all = [
@@ -106,6 +112,11 @@ all = [
     "isort",
     "mypy",
     "pytest",
+    "sphinx",
+    "sphinx-rtd-theme",
+    "sphinxcontrib-apidoc",
+    "sphinxcontrib-napoleon",
+    "piccolo_theme"
 ]
 
 [tool.hatch.build.targets.wheel]

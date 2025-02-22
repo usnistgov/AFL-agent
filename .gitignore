@@ -1,26 +1,19 @@
-.ipynb_checkpoints
-.ipynb_checkpoints/*
-dev/.ipynb_checkpoints/*
+AFL/double_agent/_version.py
 *egg-info*
-*log
-*tif
-*tiff
 data/*
-*poni
 *pyc
-*swp
-*.DS_Store
-dev/*
-.idea/*
-AFL/automation/EpicsADLiveProcess/templates/static/.gitkeep
-AFL/automation/EpicsADLiveProcess/templates/static/deck.jpeg
-AFL/automation/EpicsADLiveProcess/templates/static/jquery-3.4.1.min.js
-AFL/automation/EpicsADLiveProcess/templates/static/logo.svg
-AFL/automation/EpicsADLiveProcess/templates/static/ncnr.png
+.DS_Store
 
 venv/
 .venv/
-test_pip/
-
-AFL/double_agent/_version.py
+# Sphinx documentation
+docs/build/
+docs/source/reference/_autosummary/
+*.doctree
+*.pickle
+.buildinfo
+objects.inv
+_build/
+.doctrees/
+*.mo
 
