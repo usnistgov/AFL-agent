@@ -12,5 +12,5 @@ jobs:
           formats: |-
             epub
             pdf
-          pip-requirements: 'requirements.txt'
+          pip-requirements: "requirements.txt"
 

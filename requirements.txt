@@ -2,7 +2,6 @@ accessible-pygments==0.0.5
 adbc-driver-manager==1.4.0
 adbc-driver-postgresql==1.4.0
 adbc-driver-sqlite==1.4.0
-AFL-agent @ file:///Users/tbm/CursorProjects/AFL-agent
 aiofiles==24.1.0
 aiosqlite==0.21.0
 alabaster==1.0.0
