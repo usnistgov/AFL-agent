@@ -1,12 +1,8 @@
 AFL-agent
 =========
 
-AFL-agent is a Python library that implements autonomous active learning agents for material science applications, as described in the manuscript *"Autonomous Small-Angle Scattering for Accelerated Soft Material Formulation Optimization"*. The library is designed to autonomously guide experimental measurement campaigns to efficiently map phase boundaries in soft material formulations using advanced machine learning techniques.
+AFL-agent is a Python library that implements autonomous active learning agents for material science applications, as described in the manuscript *"Autonomous Small-Angle Scattering for Accelerated Soft Material Formulation Optimization"*. The library is designed to autonomously guide experimental measurement campaigns to efficiently map phase boundaries and optimize material properties in soft material formulations using advanced machine learning techniques.
 
-Overview
---------
-
-The AFL-agent library offers robust tools for building autonomous active learning agents tailored for material science applications. It integrates machine learning techniques with experimental design strategies to optimize experimental campaigns and efficiently map phase boundaries and optimize material properties in soft material formulations.
 
 Key Features
 -----------
@@ -17,13 +13,6 @@ Key Features
 * All intermediate pipeline operations are stored in a xarray-based data model
 * Rich visualization tools for analyzing calculations
 
-First Steps
------------
-
-* :doc:`tutorials/getting_started`
-* :doc:`how-to/custom_pipeline`
-* :doc:`explanations/architecture`
-* :doc:`reference/index`
 
 Installation
 -----------
@@ -38,6 +27,8 @@ For development installation with all optional dependencies:
 
 .. code-block:: bash
 
+   git clone https://github.com/usnistgov/afl-agent.git
+   cd afl-agent
    pip install -e .[all]
 
 Documentation Contents
@@ -59,10 +50,4 @@ If you use AFL-agent in your research, please cite the manuscript:
 
 *"Autonomous Small-Angle Scattering for Accelerated Soft Material Formulation Optimization"* (under review)
 
-Indices and Tables
------------------
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 

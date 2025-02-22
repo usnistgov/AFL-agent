@@ -87,7 +87,8 @@ dev = [
     "sphinx-rtd-theme",
     "sphinxcontrib-apidoc",
     "sphinxcontrib-napoleon",
-    "piccolo_theme"
+    "piccolo_theme",
+    "pydata-sphinx-theme",
 ]
 
 all = [
