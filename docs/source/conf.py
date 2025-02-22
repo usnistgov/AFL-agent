@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 # Add the project root directory to the Python path
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../..'))
 
 # Import the package to get the version
 import AFL.double_agent
