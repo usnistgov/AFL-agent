@@ -12,4 +12,5 @@ jobs:
           formats: |-
             epub
             pdf
-          pre-build-command: "pip install ."
+          pip-requirements: 'requirements.txt'
+
