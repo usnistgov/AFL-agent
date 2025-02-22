@@ -7,6 +7,7 @@ Practical step-by-step guides for working with AFL-agent.
    :maxdepth: 2
    :caption: Available Guides:
 
+   installation
    custom_pipeline
    data_preprocessing
    visualization
