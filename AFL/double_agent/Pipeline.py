@@ -5,9 +5,9 @@ All operators/calculations in agent should be formatted as PipelinesOps double_a
 All PipelineOps should:
 - take input_variable and output_variable in their constructor
 - have a .calculate method
-    - with exact signature as base class (PipelineOpBase)
-    - that writes a xr.Dataset or xr.DataArray (preferred)
-    - that returns self
+  - with exact signature as base class (PipelineOpBase)
+  - that writes a xr.Dataset or xr.DataArray (preferred)
+  - that returns self
 
 """
 
