@@ -1,5 +1,5 @@
 AFL\.agent\.PhaseLabeler module
-============================
+================================
 
 .. automodule:: AFL.agent.PhaseLabeler
     :members:

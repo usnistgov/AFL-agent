@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Quick Start Example &#8212; AFL-agent 0.1.dev351 documentation</title>
+    <title>Building Pipelines &#8212; AFL-agent 0.1.dev351 documentation</title>
   
   
   
@@ -42,11 +42,9 @@
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=22db34b0"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/getting_started';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/building_piplines';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="How-To Guides" href="../how-to/index.html" />
-    <link rel="prev" title="Tutorials" href="index.html" />
   
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -139,7 +137,7 @@
 </li>
 
 
-<li class="nav-item current active">
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="index.html">
     Tutorials
   </a>
@@ -239,8 +237,10 @@
       
       
       
+        
+      
       <dialog id="pst-primary-sidebar-modal"></dialog>
-      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
         
 
   
@@ -262,7 +262,7 @@
 </li>
 
 
-<li class="nav-item current active">
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="index.html">
     Tutorials
   </a>
@@ -327,19 +327,6 @@
     
   </div>
   
-    <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item">
-<nav class="bd-docs-nav bd-links"
-     aria-label="Section Navigation">
-  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Setup</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Quick Start Example</a></li>
-</ul>
-</div>
-</nav></div>
-    </div>
-  
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
       <div class="sidebar-primary-item">
@@ -375,10 +362,7 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    
-    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
-    
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Quick Start Example</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Building Pipelines</span></li>
   </ul>
 </nav>
 </div>
@@ -395,13 +379,108 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="quick-start-example">
-<h1>Quick Start Example<a class="headerlink" href="#quick-start-example" title="Permalink to this heading">#</a></h1>
-<p>This short example will help you get started with AFL-agent. See
-:doc:’building_pipelines’ for a more detailed tutorial.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+  <section id="building-pipelines">
+<h1>Building Pipelines<a class="headerlink" href="#building-pipelines" title="Permalink to this heading">#</a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This tutorial is a work in progress.</p>
+</div>
+<p>Here we’ll go into more detail on the Quick Start Example from
+:doc:’getting_started’. In this example, we’ll build a pipeline that
+uses a Savitzky-Golay filter to compute the first derivative of the
+measurement, then computes the similarity between the derivative and
+itself, then clusters the data using spectral clustering, and finally
+fits a Gaussian Process classifier to the data.</p>
+<section id="input-data">
+<h2>Input Data<a class="headerlink" href="#input-data" title="Permalink to this heading">#</a></h2>
+<p>First let’s define the input data for the pipeline. This codebase uses
+<code class="xref py py-class docutils literal notranslate"><span class="pre">xarray.Dataset</span></code> to store the data. This is a powerful and flexible
+data structure for working with multi-dimensional data.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
+
+<span class="c1"># !!! these should be specific data so users understand the shape of the data</span>
+<span class="n">measurements</span> <span class="o">=</span> <span class="o">...</span> <span class="c1"># data from your measurement (e.g. SANS, SAXS, UV-vis, etc.)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="o">...</span> <span class="c1">#x values of your data, (e.g. q-values, energy, wavenumber, wavelength, etc.)</span>
+<span class="n">compositions</span> <span class="o">=</span> <span class="o">...</span> <span class="c1"># composition of your samples</span>
+
+<span class="c1"># Create dataset</span>
+<span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
+    <span class="n">data_vars</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;measurement&#39;</span><span class="p">:</span> <span class="p">([</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">measurements</span><span class="p">),</span>
+        <span class="s1">&#39;composition&#39;</span><span class="p">:</span> <span class="p">([</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;components&#39;</span><span class="p">],</span> <span class="n">compositions</span><span class="p">)</span>
+    <span class="p">},</span>
+    <span class="n">coords</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
+        <span class="s1">&#39;components&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Show a screenshot of the dataset output.</p>
+<p>Plot the dataset?</p>
+</div>
+</section>
+<section id="pipeline-step-1-savitzky-golay-filter">
+<h2>Pipeline Step 1: Savitzky-Golay Filter<a class="headerlink" href="#pipeline-step-1-savitzky-golay-filter" title="Permalink to this heading">#</a></h2>
+<p>To begin, we’ll instantiate a <code class="xref py py-class docutils literal notranslate"><span class="pre">SavgolFilter</span></code> object using the a context
+manager (i.e., the ‘with’ construct shown below). Using this approach, each
+Pipeline operation that is defined in the context is automatically added to the
+<code class="docutils literal notranslate"><span class="pre">my_first_pipeline</span></code> variable.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="k">with</span> <span class="n">Pipeline</span><span class="p">()</span> <span class="k">as</span> <span class="n">my_first_pipeline</span><span class="p">:</span>
+
+    <span class="n">SavgolFilter</span><span class="p">(</span>
+        <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
+        <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;derivative&#39;</span><span class="p">,</span>
+        <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
+        <span class="n">derivative</span><span class="o">=</span><span class="mi">1</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+<p>Going over the keyword arguments one by one:</p>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">input_variable</span></code> keyword argument specifies the name of the variable in the dataset that will be used as
+the input to the Savitzky-Golay filter.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">output_variable</span></code> keyword argument specifies the name of the new variable that will be added to the dataset.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">dim</span></code> keyword argument specifies the dimension along which the filter will be applied.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">derivative</span></code> keyword argument specifies the order of the derivative to be computed.</p></li>
+</ul>
+<p>We can inspect the pipeline by printing the <code class="docutils literal notranslate"><span class="pre">my_first_pipeline</span></code> variable.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">my_first_pipeline</span><span class="o">.</span><span class="n">print</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Add a screenshot of the pipeline printout.</p>
+</div>
+<p>Finally, we can run the pipeline on the dataset and plot the results.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span> <span class="o">=</span> <span class="n">my_first_pipeline</span><span class="o">.</span><span class="n">calculate</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+
+<span class="n">ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">ds</span><span class="o">.</span><span class="n">derivative</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="pipeline-step-2-similarity">
+<h2>Pipeline Step 2: Similarity<a class="headerlink" href="#pipeline-step-2-similarity" title="Permalink to this heading">#</a></h2>
+</section>
+<section id="pipeline-step-3-spectral-clustering">
+<h2>Pipeline Step 3: Spectral Clustering<a class="headerlink" href="#pipeline-step-3-spectral-clustering" title="Permalink to this heading">#</a></h2>
+</section>
+<section id="pipeline-step-4-gaussian-process-classifier">
+<h2>Pipeline Step 4: Gaussian Process Classifier<a class="headerlink" href="#pipeline-step-4-gaussian-process-classifier" title="Permalink to this heading">#</a></h2>
+</section>
+<section id="pipeline-step-5-acquisition-function">
+<h2>Pipeline Step 5: Acquisition Function<a class="headerlink" href="#pipeline-step-5-acquisition-function" title="Permalink to this heading">#</a></h2>
+</section>
+<section id="full-pipeline">
+<h2>Full Pipeline<a class="headerlink" href="#full-pipeline" title="Permalink to this heading">#</a></h2>
+<p>Let’s loook at the full pipeline defined all at once.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
 
 <span class="k">with</span> <span class="n">Pipeline</span><span class="p">()</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
 
@@ -433,56 +512,8 @@
         <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;extrap_variance&#39;</span><span class="p">,</span>
         <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;next_sample&#39;</span>
     <span class="p">)</span>
-
-<span class="c1"># Generate synthetic data</span>
-<span class="n">n_samples</span> <span class="o">=</span> <span class="mi">10</span>
-<span class="n">n_points</span> <span class="o">=</span> <span class="mi">100</span>
-<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">n_points</span><span class="p">)</span>
-<span class="n">measurements</span> <span class="o">=</span> <span class="o">...</span> <span class="c1"># data from your measurement</span>
-<span class="n">compositions</span> <span class="o">=</span> <span class="o">...</span> <span class="c1"># composition of your samples</span>
-
-<span class="c1"># Create dataset</span>
-<span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
-    <span class="n">data_vars</span><span class="o">=</span><span class="p">{</span>
-        <span class="s1">&#39;measurement&#39;</span><span class="p">:</span> <span class="p">([</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">measurements</span><span class="p">),</span>
-        <span class="s1">&#39;composition&#39;</span><span class="p">:</span> <span class="p">([</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;components&#39;</span><span class="p">],</span> <span class="n">compositions</span><span class="p">)</span>
-    <span class="p">},</span>
-    <span class="n">coords</span><span class="o">=</span><span class="p">{</span>
-        <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
-        <span class="s1">&#39;components&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">]</span>
-    <span class="p">}</span>
-<span class="p">)</span>
-
-<span class="c1"># Run the pipeline</span>
-<span class="n">ds_out</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">calculate</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
 </pre></div>
 </div>
-<section id="understanding-the-example">
-<h2>Understanding the Example<a class="headerlink" href="#understanding-the-example" title="Permalink to this heading">#</a></h2>
-<p>Let’s break down what’s happening in this example:</p>
-<ol class="arabic simple">
-<li><p>First, we import the necessary modules from AFL-agent and other dependencies.</p></li>
-<li><p>We create a pipeline using the context manager syntax (<cite>with Pipeline() as pipeline:</cite>).</p></li>
-<li><p>We add several operations to the pipeline:</p>
-<ul class="simple">
-<li><p><cite>SavgolFilter</cite>: Calculates derivatives of the measurement data</p></li>
-<li><p><cite>Similarity</cite>: Computes similarity between measurement data</p></li>
-<li><p><cite>SpectralClustering</cite>: Groups (i.e., clusters) similar measurement data together</p></li>
-<li><p><cite>GaussianProcessClassifier</cite>: Extrapolates the clustering labels for all compositions</p></li>
-<li><p><cite>MaxValueAF</cite>: Selects the next sample to measure as the composition of highest entropy in phase label</p></li>
-</ul>
-</li>
-<li><p>We create a synthetic dataset with measurements and compositions</p></li>
-<li><p>Finally, we run the pipeline on our dataset</p></li>
-</ol>
-</section>
-<section id="next-steps">
-<h2>Next Steps<a class="headerlink" href="#next-steps" title="Permalink to this heading">#</a></h2>
-<p>Now that you’ve seen a basic example, you might want to:</p>
-<ul class="simple">
-<li><p>Build more complicated pipelines: <span class="xref std std-doc">building_pipelines</span></p></li>
-<li><p>Understand the pipeline concept: <span class="xref std std-doc">../explanations/architecture</span></p></li>
-</ul>
 </section>
 </section>
 
@@ -496,24 +527,6 @@
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
-    <a class="left-prev"
-       href="index.html"
-       title="previous page">
-      <i class="fa-solid fa-angle-left"></i>
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Tutorials</p>
-      </div>
-    </a>
-    <a class="right-next"
-       href="../how-to/index.html"
-       title="next page">
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">How-To Guides</p>
-      </div>
-      <i class="fa-solid fa-angle-right"></i>
-    </a>
 </div>
                 </footer>
               
@@ -533,8 +546,13 @@
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#understanding-the-example">Understanding the Example</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#next-steps">Next Steps</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#input-data">Input Data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pipeline-step-1-savitzky-golay-filter">Pipeline Step 1: Savitzky-Golay Filter</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pipeline-step-2-similarity">Pipeline Step 2: Similarity</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pipeline-step-3-spectral-clustering">Pipeline Step 3: Spectral Clustering</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pipeline-step-4-gaussian-process-classifier">Pipeline Step 4: Gaussian Process Classifier</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pipeline-step-5-acquisition-function">Pipeline Step 5: Acquisition Function</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#full-pipeline">Full Pipeline</a></li>
 </ul>
   </nav></div>
 
@@ -542,7 +560,7 @@
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="../_sources/tutorials/getting_started.rst.txt"
+      <li><a href="../_sources/tutorials/building_piplines.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div></div>

@@ -1,5 +1,5 @@
 AFL\.agent\.GaussianProcess module
-==============================
+===================================
 
 .. automodule:: AFL.agent.GaussianProcess
     :members:
