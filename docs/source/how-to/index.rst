@@ -1,5 +1,5 @@
 How-To Guides
-============
+=============
 
 Practical step-by-step guides for working with AFL-agent.
 

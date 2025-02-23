@@ -1,5 +1,5 @@
 AFL\.agent\.AcquisitionFunction module
-================================
+========================================
 
 .. automodule:: AFL.agent.AcquisitionFunction
     :members:
