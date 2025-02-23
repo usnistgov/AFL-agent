@@ -1,5 +1,6 @@
 AFL\.agent\.UCB_AcquisitionFunction module
-===================================
+===========================================
+
 
 .. automodule:: AFL.agent.UCB_AcquisitionFunction
     :members:

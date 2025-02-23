@@ -84,11 +84,17 @@ Let's break down what's happening in this example:
 1. First, we import the necessary modules from AFL-agent and other dependencies.
 2. We create a pipeline using the context manager syntax (`with Pipeline() as pipeline:`).
 3. We add several operations to the pipeline:
+
    - `SavgolFilter`: Calculates derivatives of the measurement data
+
    - `Similarity`: Computes similarity between samples
+
    - `SpectralClustering`: Groups similar samples together
+
    - `GaussianProcessClassifier`: Predicts phase boundaries
+
    - `MaxValueAF`: Selects the next sample to measure
+
 4. We create a synthetic dataset with measurements and compositions
 5. Finally, we run the pipeline on our dataset
 

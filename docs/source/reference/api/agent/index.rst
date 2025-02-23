@@ -1,11 +1,11 @@
 AFL.agent package
-==============
+=================
 
 .. warning::
    The ``agent`` module is deprecated and will be removed in a future version. Please use ``double_agent`` instead.
 
 Core Components
--------------
+---------------
 
 .. toctree::
    :maxdepth: 2
@@ -21,7 +21,7 @@ Core Components
    Metric
 
 Drivers and Automation
---------------------
+-----------------------
 
 .. toctree::
    :maxdepth: 2
@@ -39,7 +39,7 @@ Drivers and Automation
    WatchDog
 
 Data Processing
--------------
+----------------
 
 .. toctree::
    :maxdepth: 2
