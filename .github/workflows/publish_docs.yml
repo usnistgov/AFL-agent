@@ -1,4 +1,4 @@
-name: "Build Documentation"
+name: "Publish Documentation to NIST Pages"
 
 on: [push, pull_request, delete]
 
