@@ -5,6 +5,7 @@ data/*
 .DS_Store
 
 venv/
+venv2/
 .venv/
 # Sphinx documentation
 docs/build/

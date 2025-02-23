@@ -6,8 +6,8 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      # - uses: martintb/Docs4NIST@themedir-bug
-      - uses: usnistgov/Docs4NIST@0.7
+      # - uses: usnistgov/Docs4NIST@0.7
+      - uses: martintb/Docs4NIST@themedir-bug
         with:
           docs-folder: docs/
           pip-requirements: "requirements.txt"
