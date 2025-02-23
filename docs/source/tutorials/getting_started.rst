@@ -1,21 +1,8 @@
-Getting Started with AFL-agent
-==============================
-
-This tutorial will help you get started with AFL-agent by walking through a basic example of building and running a pipeline for phase mapping.
-
-Prerequisites
--------------
-
-Before starting, make sure you have:
-
-1. Python 3.11 or later installed
-2. AFL-agent installed (see :ref:`installation`)
-3. Basic understanding of Python and NumPy
-
 Quick Start Example
---------------------
+===================
 
-Here's a complete example that demonstrates how to build a pipeline for choosing a sample composition:
+This short example will help you get started with AFL-agent. See
+:doc:'building_pipelines' for a more detailed tutorial. 
 
 .. code-block:: python
 
@@ -87,13 +74,13 @@ Let's break down what's happening in this example:
 
    - `SavgolFilter`: Calculates derivatives of the measurement data
 
-   - `Similarity`: Computes similarity between samples
+   - `Similarity`: Computes similarity between measurement data
 
-   - `SpectralClustering`: Groups similar samples together
+   - `SpectralClustering`: Groups (i.e., clusters) similar measurement data together
 
-   - `GaussianProcessClassifier`: Predicts phase boundaries
+   - `GaussianProcessClassifier`: Extrapolates the clustering labels for all compositions
 
-   - `MaxValueAF`: Selects the next sample to measure
+   - `MaxValueAF`: Selects the next sample to measure as the composition of highest entropy in phase label
 
 4. We create a synthetic dataset with measurements and compositions
 5. Finally, we run the pipeline on our dataset
@@ -103,6 +90,5 @@ Next Steps
 
 Now that you've seen a basic example, you might want to:
 
-* Learn more about :doc:`building_pipelines`
-* Understand the :doc:`../explanations/architecture`
-* See how to :doc:`../how-to/custom_pipeline` 
+* Build more complicated pipelines: :doc:`building_pipelines`
+* Understand the pipeline concept: :doc:`../explanations/architecture`
