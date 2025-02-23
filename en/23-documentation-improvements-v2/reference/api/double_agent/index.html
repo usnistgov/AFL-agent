@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>AFL.double_agent API &#8212; AFL-agent 0.1.dev351 documentation</title>
+    <title>AFL.double_agent Package &#8212; AFL-agent 0.1.dev351 documentation</title>
   
   
   
@@ -45,7 +45,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'reference/api/double_agent/index';</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="AFL.double_agent.Pipeline module" href="Pipeline.html" />
+    <link rel="next" title="AFL.double_agent.AcquisitionFunction module" href="AcquisitionFunction.html" />
     <link rel="prev" title="Reference" href="../../index.html" />
   
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -333,10 +333,7 @@
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">AFL.double_agent API</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="Pipeline.html">AFL.double_agent.Pipeline module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PipelineOp.html">AFL.double_agent.PipelineOp module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PipelineContext.html">AFL.double_agent.PipelineContext module</a></li>
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">AFL.double_agent Package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="AcquisitionFunction.html">AFL.double_agent.AcquisitionFunction module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="AutoSAS.html">AFL.double_agent.AutoSAS module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Boundary.html">AFL.double_agent.Boundary module</a></li>
@@ -350,6 +347,9 @@
 <li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="util.html">AFL.double_agent.util module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="plotting.html">AFL.double_agent.plotting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pipeline.html">AFL.double_agent.Pipeline module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PipelineOp.html">AFL.double_agent.PipelineOp module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PipelineContext.html">AFL.double_agent.PipelineContext module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="AutoSAS_Driver.html">AFL.double_agent.AutoSAS_Driver module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="AgentDriver.html">AFL.double_agent.AgentDriver module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="AgentClient.html">AFL.double_agent.AgentClient module</a></li>
@@ -401,7 +401,7 @@
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Reference</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">AFL.double_agent API</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">AFL.double_agent Package</span></li>
   </ul>
 </nav>
 </div>
@@ -418,98 +418,21 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="afl-double-agent-api">
-<h1>AFL.double_agent API<a class="headerlink" href="#afl-double-agent-api" title="Permalink to this heading">#</a></h1>
-<section id="core-components">
-<h2>Core Components<a class="headerlink" href="#core-components" title="Permalink to this heading">#</a></h2>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="Pipeline.html">AFL.double_agent.Pipeline module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="Pipeline.html#AFL.double_agent.Pipeline.Pipeline"><code class="docutils literal notranslate"><span class="pre">Pipeline</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="PipelineOp.html">AFL.double_agent.PipelineOp module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp"><code class="docutils literal notranslate"><span class="pre">PipelineOp</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="PipelineContext.html">AFL.double_agent.PipelineContext module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="PipelineContext.html#AFL.double_agent.PipelineContext.NoContextException"><code class="docutils literal notranslate"><span class="pre">NoContextException</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="PipelineContext.html#AFL.double_agent.PipelineContext.PipelineContext"><code class="docutils literal notranslate"><span class="pre">PipelineContext</span></code></a></li>
-</ul>
-</li>
-</ul>
-</div>
-</section>
+  <section id="afl-double-agent-package">
+<h1>AFL.double_agent Package<a class="headerlink" href="#afl-double-agent-package" title="Permalink to this heading">#</a></h1>
 <section id="pipeline-operations">
 <h2>Pipeline Operations<a class="headerlink" href="#pipeline-operations" title="Permalink to this heading">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="AcquisitionFunction.html">AFL.double_agent.AcquisitionFunction module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.AcquisitionError"><code class="docutils literal notranslate"><span class="pre">AcquisitionError</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.AcquisitionFunction"><code class="docutils literal notranslate"><span class="pre">AcquisitionFunction</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.MaxValueAF"><code class="docutils literal notranslate"><span class="pre">MaxValueAF</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.MultimodalMask_MaxValueAF"><code class="docutils literal notranslate"><span class="pre">MultimodalMask_MaxValueAF</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.PseudoUCB"><code class="docutils literal notranslate"><span class="pre">PseudoUCB</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.RandomAF"><code class="docutils literal notranslate"><span class="pre">RandomAF</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="AcquisitionFunction.html">AFL.double_agent.AcquisitionFunction module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="AutoSAS.html">AFL.double_agent.AutoSAS module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Boundary.html">AFL.double_agent.Boundary module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="Boundary.html#AFL.double_agent.Boundary.BoundaryScore"><code class="docutils literal notranslate"><span class="pre">BoundaryScore</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Boundary.html#AFL.double_agent.Boundary.ConcaveHull"><code class="docutils literal notranslate"><span class="pre">ConcaveHull</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="Extrapolator.html">AFL.double_agent.Extrapolator module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="Extrapolator.html#AFL.double_agent.Extrapolator.DummyExtrapolator"><code class="docutils literal notranslate"><span class="pre">DummyExtrapolator</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Extrapolator.html#AFL.double_agent.Extrapolator.Extrapolator"><code class="docutils literal notranslate"><span class="pre">Extrapolator</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Extrapolator.html#AFL.double_agent.Extrapolator.GaussianProcessClassifier"><code class="docutils literal notranslate"><span class="pre">GaussianProcessClassifier</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Extrapolator.html#AFL.double_agent.Extrapolator.GaussianProcessRegressor"><code class="docutils literal notranslate"><span class="pre">GaussianProcessRegressor</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="Generator.html">AFL.double_agent.Generator module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="Generator.html#AFL.double_agent.Generator.BarycentricGrid"><code class="docutils literal notranslate"><span class="pre">BarycentricGrid</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Generator.html#AFL.double_agent.Generator.CartesianGrid"><code class="docutils literal notranslate"><span class="pre">CartesianGrid</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Generator.html#AFL.double_agent.Generator.GaussianPoints"><code class="docutils literal notranslate"><span class="pre">GaussianPoints</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Generator.html#AFL.double_agent.Generator.Generator"><code class="docutils literal notranslate"><span class="pre">Generator</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="MaskGrid.html">AFL.double_agent.MaskGrid module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="MaskGrid.html#AFL.double_agent.MaskGrid.MaskGrid"><code class="docutils literal notranslate"><span class="pre">MaskGrid</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="PairMetric.html">AFL.double_agent.PairMetric module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="PairMetric.html#AFL.double_agent.PairMetric.CombineMetric"><code class="docutils literal notranslate"><span class="pre">CombineMetric</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="PairMetric.html#AFL.double_agent.PairMetric.Delaunay"><code class="docutils literal notranslate"><span class="pre">Delaunay</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="PairMetric.html#AFL.double_agent.PairMetric.Distance"><code class="docutils literal notranslate"><span class="pre">Distance</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="PairMetric.html#AFL.double_agent.PairMetric.Dummy"><code class="docutils literal notranslate"><span class="pre">Dummy</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="PairMetric.html#AFL.double_agent.PairMetric.PairMetric"><code class="docutils literal notranslate"><span class="pre">PairMetric</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="PairMetric.html#AFL.double_agent.PairMetric.Similarity"><code class="docutils literal notranslate"><span class="pre">Similarity</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="PhaseLabeler.html">AFL.double_agent.PhaseLabeler module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="PhaseLabeler.html#AFL.double_agent.PhaseLabeler.AffinityPropagation"><code class="docutils literal notranslate"><span class="pre">AffinityPropagation</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhaseLabeler.html#AFL.double_agent.PhaseLabeler.GaussianMixtureModel"><code class="docutils literal notranslate"><span class="pre">GaussianMixtureModel</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhaseLabeler.html#AFL.double_agent.PhaseLabeler.PhaseLabeler"><code class="docutils literal notranslate"><span class="pre">PhaseLabeler</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhaseLabeler.html#AFL.double_agent.PhaseLabeler.SpectralClustering"><code class="docutils literal notranslate"><span class="pre">SpectralClustering</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="Preprocessor.html">AFL.double_agent.Preprocessor module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="Preprocessor.html#AFL.double_agent.Preprocessor.ArrayToVars"><code class="docutils literal notranslate"><span class="pre">ArrayToVars</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Preprocessor.html#AFL.double_agent.Preprocessor.BarycentricToTernaryXY"><code class="docutils literal notranslate"><span class="pre">BarycentricToTernaryXY</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Preprocessor.html#AFL.double_agent.Preprocessor.Destandardize"><code class="docutils literal notranslate"><span class="pre">Destandardize</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Preprocessor.html#AFL.double_agent.Preprocessor.Extrema"><code class="docutils literal notranslate"><span class="pre">Extrema</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Preprocessor.html#AFL.double_agent.Preprocessor.Preprocessor"><code class="docutils literal notranslate"><span class="pre">Preprocessor</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Preprocessor.html#AFL.double_agent.Preprocessor.SavgolFilter"><code class="docutils literal notranslate"><span class="pre">SavgolFilter</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Preprocessor.html#AFL.double_agent.Preprocessor.Standardize"><code class="docutils literal notranslate"><span class="pre">Standardize</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Preprocessor.html#AFL.double_agent.Preprocessor.Subtract"><code class="docutils literal notranslate"><span class="pre">Subtract</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Preprocessor.html#AFL.double_agent.Preprocessor.SubtractMin"><code class="docutils literal notranslate"><span class="pre">SubtractMin</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Preprocessor.html#AFL.double_agent.Preprocessor.SympyTransform"><code class="docutils literal notranslate"><span class="pre">SympyTransform</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Preprocessor.html#AFL.double_agent.Preprocessor.TernaryXYToBarycentric"><code class="docutils literal notranslate"><span class="pre">TernaryXYToBarycentric</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Preprocessor.html#AFL.double_agent.Preprocessor.VarsToArray"><code class="docutils literal notranslate"><span class="pre">VarsToArray</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Preprocessor.html#AFL.double_agent.Preprocessor.Zscale"><code class="docutils literal notranslate"><span class="pre">Zscale</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="Preprocessor.html#AFL.double_agent.Preprocessor.ZscaleError"><code class="docutils literal notranslate"><span class="pre">ZscaleError</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="Boundary.html">AFL.double_agent.Boundary module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Extrapolator.html">AFL.double_agent.Extrapolator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Generator.html">AFL.double_agent.Generator module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MaskGrid.html">AFL.double_agent.MaskGrid module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PairMetric.html">AFL.double_agent.PairMetric module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PhaseLabeler.html">AFL.double_agent.PhaseLabeler module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Preprocessor.html">AFL.double_agent.Preprocessor module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TensorFlowExtrapolator.html">AFL.double_agent.TensorFlowExtrapolator module</a></li>
 </ul>
 </div>
@@ -518,25 +441,19 @@
 <h2>Utilities<a class="headerlink" href="#utilities" title="Permalink to this heading">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html#AFL.double_agent.xarray_extensions.AFL_DataArrayTools"><code class="docutils literal notranslate"><span class="pre">AFL_DataArrayTools</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html#AFL.double_agent.xarray_extensions.AFL_DatasetTools"><code class="docutils literal notranslate"><span class="pre">AFL_DatasetTools</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html#AFL.double_agent.xarray_extensions.CompositionTools"><code class="docutils literal notranslate"><span class="pre">CompositionTools</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html#AFL.double_agent.xarray_extensions.LabelTools"><code class="docutils literal notranslate"><span class="pre">LabelTools</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html#AFL.double_agent.xarray_extensions.ScatteringTools"><code class="docutils literal notranslate"><span class="pre">ScatteringTools</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html#AFL.double_agent.xarray_extensions.Utilities"><code class="docutils literal notranslate"><span class="pre">Utilities</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="util.html">AFL.double_agent.util module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plotting.html">AFL.double_agent.plotting module</a></li>
 </ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="util.html">AFL.double_agent.util module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="util.html#AFL.double_agent.util.extract_parameters"><code class="docutils literal notranslate"><span class="pre">extract_parameters()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="util.html#AFL.double_agent.util.listify"><code class="docutils literal notranslate"><span class="pre">listify()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="plotting.html">AFL.double_agent.plotting module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="plotting.html#AFL.double_agent.plotting.plot_scatter_mpl"><code class="docutils literal notranslate"><span class="pre">plot_scatter_mpl()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="plotting.html#AFL.double_agent.plotting.plot_surface_mpl"><code class="docutils literal notranslate"><span class="pre">plot_surface_mpl()</span></code></a></li>
-</ul>
-</li>
+</div>
+</section>
+<section id="core-components">
+<h2>Core Components<a class="headerlink" href="#core-components" title="Permalink to this heading">#</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Pipeline.html">AFL.double_agent.Pipeline module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PipelineOp.html">AFL.double_agent.PipelineOp module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PipelineContext.html">AFL.double_agent.PipelineContext module</a></li>
 </ul>
 </div>
 </section>
@@ -572,11 +489,11 @@
       </div>
     </a>
     <a class="right-next"
-       href="Pipeline.html"
+       href="AcquisitionFunction.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">AFL.double_agent.Pipeline module</p>
+        <p class="prev-next-title">AFL.double_agent.AcquisitionFunction module</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -599,9 +516,9 @@
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#core-components">Core Components</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pipeline-operations">Pipeline Operations</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#utilities">Utilities</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#core-components">Core Components</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#apiserver-drivers">APIServer Drivers</a></li>
 </ul>
   </nav></div>
@@ -642,7 +559,7 @@
 
   <p class="copyright">
     
-      © Copyright : Official Contribution of the US Government.  Not subject to copyright in the United States..
+      © Copyright : Official Contribution of the US Government.  Not subject to copyright in the United States.
       <br/>
     
   </p>

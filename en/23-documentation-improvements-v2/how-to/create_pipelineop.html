@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>AFL.agent.SAXS_AL_SampleDriver module &#8212; AFL-agent 0.1.dev351 documentation</title>
+    <title>Creating a New PipelineOp &#8212; AFL-agent 0.1.dev351 documentation</title>
   
   
   
@@ -27,26 +27,24 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/ntd2d.css?v=525a25f0" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/ntd2d.css?v=525a25f0" />
   
   <!-- So that users can add custom icons -->
-  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=22db34b0"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/api/agent/SAXS_AL_SampleDriver';</script>
-    <link rel="index" title="Index" href="../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="AFL.agent.SAS_AL_SampleDriver module" href="SAS_AL_SampleDriver.html" />
-    <link rel="prev" title="AFL.agent.SANS_AL_SampleDriver module" href="SANS_AL_SampleDriver.html" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=22db34b0"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'how-to/create_pipelineop';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
   
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -75,7 +73,7 @@
   <dialog id="pst-search-dialog">
     
 <form class="bd-search d-flex align-items-center"
-      action="../../../search.html"
+      action="../search.html"
       method="get">
   <i class="fa-solid fa-magnifying-glass"></i>
   <input type="search"
@@ -111,7 +109,7 @@
     
   
 
-<a class="navbar-brand logo" href="../../../index.html">
+<a class="navbar-brand logo" href="../index.html">
   
   
   
@@ -133,35 +131,35 @@
   <ul class="bd-navbar-elements navbar-nav">
     
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../tutorials/installation.html">
+  <a class="nav-link nav-internal" href="../tutorials/installation.html">
     Setup
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
     Tutorials
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../how-to/index.html">
+  <a class="nav-link nav-internal" href="index.html">
     How-To Guides
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../explanations/index.html">
+  <a class="nav-link nav-internal" href="../explanations/index.html">
     Explanations
   </a>
 </li>
 
 
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="../../index.html">
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference/index.html">
     Reference
   </a>
 </li>
@@ -239,8 +237,10 @@
       
       
       
+        
+      
       <dialog id="pst-primary-sidebar-modal"></dialog>
-      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
         
 
   
@@ -256,35 +256,35 @@
   <ul class="bd-navbar-elements navbar-nav">
     
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../tutorials/installation.html">
+  <a class="nav-link nav-internal" href="../tutorials/installation.html">
     Setup
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
     Tutorials
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../how-to/index.html">
+  <a class="nav-link nav-internal" href="index.html">
     How-To Guides
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../explanations/index.html">
+  <a class="nav-link nav-internal" href="../explanations/index.html">
     Explanations
   </a>
 </li>
 
 
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="../../index.html">
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference/index.html">
     Reference
   </a>
 </li>
@@ -327,46 +327,6 @@
     
   </div>
   
-    <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item">
-<nav class="bd-docs-nav bd-links"
-     aria-label="Section Navigation">
-  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../double_agent/index.html">AFL.double_agent Package</a></li>
-</ul>
-<ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">AFL.agent package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="AcquisitionFunction.html">AFL.agent.AcquisitionFunction module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="EI_AcquisitionFunction.html">AFL.agent.EI_AcquisitionFunction module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="UCB_AcquisitionFunction.html">AFL.agent.UCB_AcquisitionFunction module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="GaussianProcess.html">AFL.agent.GaussianProcess module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="HscedGaussianProcess.html">AFL.agent.HscedGaussianProcess module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhaseLabeler.html">AFL.agent.PhaseLabeler module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhaseMap.html">AFL.agent.PhaseMap module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhaseMap_pandas.html">AFL.agent.PhaseMap_pandas module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Metric.html">AFL.agent.Metric module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="AgentClient.html">AFL.agent.AgentClient module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SAS_AgentDriver.html">AFL.agent.SAS_AgentDriver module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Multimodal_AgentDriver.html">AFL.agent.Multimodal_AgentDriver module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="DowShampoo_SampleDriver.html">AFL.agent.DowShampoo_SampleDriver module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SANS_AL_SampleDriver.html">AFL.agent.SANS_AL_SampleDriver module</a></li>
-<li class="toctree-l2 current active"><a class="current reference internal" href="#">AFL.agent.SAXS_AL_SampleDriver module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SAS_AL_SampleDriver.html">AFL.agent.SAS_AL_SampleDriver module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SAS_Grid_AL_SampleDriver.html">AFL.agent.SAS_Grid_AL_SampleDriver module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Multimodal_AL_SampleDriver.html">AFL.agent.Multimodal_AL_SampleDriver module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="vSAS_NoDeck_AL_SampleDriver.html">AFL.agent.vSAS_NoDeck_AL_SampleDriver module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="WatchDog.html">AFL.agent.WatchDog module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html">AFL.agent.xarray_extensions module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="reduce_usaxs.html">AFL.agent.reduce_usaxs module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="util.html">AFL.agent.util module</a></li>
-</ul>
-</details></li>
-</ul>
-</div>
-</nav></div>
-    </div>
-  
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
       <div class="sidebar-primary-item">
@@ -398,17 +358,11 @@
   <ul class="bd-breadcrumbs">
     
     <li class="breadcrumb-item breadcrumb-home">
-      <a href="../../../index.html" class="nav-link" aria-label="Home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    
-    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Reference</a></li>
-    
-    
-    <li class="breadcrumb-item"><a href="index.html" class="nav-link">AFL.agent package</a></li>
-    
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">AFL.agent.SAXS_AL_SampleDriver module</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Creating a New PipelineOp</span></li>
   </ul>
 </nav>
 </div>
@@ -425,8 +379,12 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="afl-agent-saxs-al-sampledriver-module">
-<h1>AFL.agent.SAXS_AL_SampleDriver module<a class="headerlink" href="#afl-agent-saxs-al-sampledriver-module" title="Permalink to this heading">#</a></h1>
+  <section id="creating-a-new-pipelineop">
+<h1>Creating a New PipelineOp<a class="headerlink" href="#creating-a-new-pipelineop" title="Permalink to this heading">#</a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This how-to is a work in progress stub.</p>
+</div>
 </section>
 
 
@@ -439,24 +397,6 @@
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
-    <a class="left-prev"
-       href="SANS_AL_SampleDriver.html"
-       title="previous page">
-      <i class="fa-solid fa-angle-left"></i>
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">AFL.agent.SANS_AL_SampleDriver module</p>
-      </div>
-    </a>
-    <a class="right-next"
-       href="SAS_AL_SampleDriver.html"
-       title="next page">
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">AFL.agent.SAS_AL_SampleDriver module</p>
-      </div>
-      <i class="fa-solid fa-angle-right"></i>
-    </a>
 </div>
                 </footer>
               
@@ -472,7 +412,7 @@
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="../../../_sources/reference/api/agent/SAXS_AL_SampleDriver.rst.txt"
+      <li><a href="../_sources/how-to/create_pipelineop.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div></div>
@@ -490,8 +430,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
 
 
   
@@ -537,6 +477,6 @@
   </footer>
 
   <!-- Taken from https://www.filamentgroup.com/lab/html-includes/#another-demo%3A-including-another-html-file -->
-  <iframe src="../../../_static/ntd2d_menu.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
+  <iframe src="../_static/ntd2d_menu.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
   </body>
 </html>
