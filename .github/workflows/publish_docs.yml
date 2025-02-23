@@ -10,5 +10,5 @@ jobs:
       - uses: martintb/Docs4NIST@themedir-bug
         with:
           docs-folder: docs/
-          pip-requirements: "requirements.txt"
+          pip-requirements: "requirements_sphinx820.txt"
 
