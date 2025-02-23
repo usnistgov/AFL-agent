@@ -125,8 +125,8 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../../"))
-sys.path.append(os.path.abspath("../"))
+sys.path.insert(0,os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("../.."))
 
 
 # -- Project information -----------------------------------------------------
@@ -137,9 +137,9 @@ copyright = (
 )
 author = 'Tyler B. Martin, Peter A. Beaucage, Duncan R. Sutherland'
 
+
 # The full version, including alpha/beta/rc tags
 from AFL.double_agent import __version__
-
 version = AFL.double_agent.__version__.split('+')[0]
 release = version
 
