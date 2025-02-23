@@ -1,13 +1,10 @@
 Explanations
 ============
 
-Background information and explanations about AFL-agent concepts.
+Tho goal of this section is to deepens and broadens the your understanding of the AFL-agent codebase, the goals of the project, and the underlying concepts.
 
 .. toctree::
    :maxdepth: 2
    :caption: Topics:
 
-   architecture
-   machine_learning
-   phase_boundaries
-   data_model 
+   pipelines

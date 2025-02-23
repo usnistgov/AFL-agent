@@ -1,10 +1,10 @@
-Installation Guide
-=================
+Setup
+=====
 
 This guide covers different ways to install AFL-agent based on your needs.
 
 Prerequisites
-------------
+-------------
 
 Before installing AFL-agent, ensure you have:
 
@@ -13,7 +13,7 @@ Before installing AFL-agent, ensure you have:
 * git (for installation from source)
 
 Basic Installation
-----------------
+------------------
 
 The simplest way to install AFL-agent is directly from GitHub using pip:
 
@@ -22,7 +22,7 @@ The simplest way to install AFL-agent is directly from GitHub using pip:
    pip install git+https://github.com/usnistgov/afl-agent
 
 Development Installation
-----------------------
+------------------------
 
 For development work, you'll want to clone the repository and install in editable mode:
 
@@ -33,7 +33,7 @@ For development work, you'll want to clone the repository and install in editabl
    pip install -e .
 
 Optional Dependencies
--------------------
+---------------------
 
 AFL-agent has several optional dependency groups that can be installed based on your needs:
 
@@ -57,7 +57,7 @@ Install with optional dependencies using square brackets:
    pip install -e .[all]
 
 Installation from a Specific Branch
---------------------------------
+-----------------------------------
 
 To install from a specific branch or commit:
 
@@ -70,7 +70,7 @@ To install from a specific branch or commit:
    pip install git+https://github.com/usnistgov/afl-agent.git@commit-hash
 
 Offline Installation
-------------------
+--------------------
 
 For environments without internet access, you can create a wheel file:
 
@@ -89,7 +89,7 @@ For environments without internet access, you can create a wheel file:
       pip install AFL_agent-version-py3-none-any.whl
 
 Troubleshooting
--------------
+---------------
 
 Common installation issues and solutions:
 

@@ -1,10 +1,10 @@
 Getting Started with AFL-agent
-==========================
+==============================
 
 This tutorial will help you get started with AFL-agent by walking through a basic example of building and running a pipeline for phase mapping.
 
 Prerequisites
-------------
+-------------
 
 Before starting, make sure you have:
 
@@ -13,7 +13,7 @@ Before starting, make sure you have:
 3. Basic understanding of Python and NumPy
 
 Quick Start Example
------------------
+--------------------
 
 Here's a complete example that demonstrates how to build a pipeline for choosing a sample composition:
 
@@ -77,7 +77,7 @@ Here's a complete example that demonstrates how to build a pipeline for choosing
    ds_out = pipeline.calculate(ds)
 
 Understanding the Example
------------------------
+-------------------------
 
 Let's break down what's happening in this example:
 
@@ -93,7 +93,7 @@ Let's break down what's happening in this example:
 5. Finally, we run the pipeline on our dataset
 
 Next Steps
----------
+----------
 
 Now that you've seen a basic example, you might want to:
 

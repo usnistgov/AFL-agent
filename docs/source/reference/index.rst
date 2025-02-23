@@ -2,7 +2,7 @@ Reference
 =========
 
 Double Agent API
----------------
+----------------
 .. toctree::
    :maxdepth: 3
 

@@ -2,7 +2,7 @@ AFL.double_agent API
 ====================
 
 Core Components
--------------
+---------------
 
 .. toctree::
    :maxdepth: 2
@@ -12,7 +12,7 @@ Core Components
    PipelineContext
 
 Pipeline Operations
-------------------
+--------------------
 
 .. toctree::
    :maxdepth: 2

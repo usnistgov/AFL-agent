@@ -4,9 +4,9 @@ Tutorials
 Learn AFL-agent by following these step-by-step tutorials.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Available Tutorials:
 
-   getting_started
+   installation
    building_pipelines
    phase_mapping 
