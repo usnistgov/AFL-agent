@@ -1,21 +1,11 @@
-AFL.double_agent API
-====================
-
-Core Components
----------------
-
-.. toctree::
-   :maxdepth: 2
-
-   Pipeline
-   PipelineOp
-   PipelineContext
+AFL.double_agent Package
+=========================
 
 Pipeline Operations
 --------------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    AcquisitionFunction
    AutoSAS
@@ -33,18 +23,28 @@ Utilities
 ---------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    xarray_extensions
    util
    plotting
+
+Core Components
+---------------
+
+.. toctree::
+   :maxdepth: 1
+
+   Pipeline
+   PipelineOp
+   PipelineContext
 
 
 APIServer Drivers
 ------------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    AutoSAS_Driver
    AgentDriver

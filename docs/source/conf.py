@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath("../.."))
 
 project = 'AFL-agent'
 copyright = (
-    ": Official Contribution of the US Government.  Not subject to copyright in the United States."
+    ": Official Contribution of the US Government.  Not subject to copyright in the United States"
 )
 author = 'Tyler B. Martin, Peter A. Beaucage, Duncan R. Sutherland'
 
