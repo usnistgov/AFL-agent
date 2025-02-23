@@ -6,7 +6,7 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: usnistgov/Docs4NIST@0.7
+      - uses: martintb/Docs4NIST@themedir-bug
         with:
           docs-folder: docs/
           formats: |-
