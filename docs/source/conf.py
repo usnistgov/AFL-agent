@@ -62,21 +62,24 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 #
 # html_theme = 'alabaster'
 
-html_theme = "pydata_sphinx_theme"
-# html_logo = "source/_static/agent_loop.svg"
-html_theme_options = {
-    # "logo": {
-    #     "image_light": "source/_static/agent_loop.svg",
-    #     "image_dark": "source/_static/agent_loop.svg",
-    # },
-    "github_url": "https://github.com/usnistgov/afl-agent",
-    "collapse_navigation": True,
-    #       ],
-    "header_links_before_dropdown": 6,
-    # Add light/dark mode and documentation version switcher:
-    "navbar_end": ["theme-switcher", "navbar-icon-links"],
-
-}
+# html_theme = "pydata_sphinx_theme"
+# # html_logo = "source/_static/agent_loop.svg"
+# html_theme_options = {
+#     # "logo": {
+#     #     "image_light": "source/_static/agent_loop.svg",
+#     #     "image_dark": "source/_static/agent_loop.svg",
+#     # },
+#     "github_url": "https://github.com/usnistgov/afl-agent",
+#     "collapse_navigation": True,
+#     #       ],
+#     "header_links_before_dropdown": 6,
+#     # Add light/dark mode and documentation version switcher:
+#     "navbar_end": ["theme-switcher", "navbar-icon-links"],
+# 
+# }
+import sphinx_rtd_theme
+html_theme = 'sphinx_rtd_theme'
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

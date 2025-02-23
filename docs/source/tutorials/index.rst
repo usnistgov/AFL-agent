@@ -1,12 +1,10 @@
 Tutorials
 =========
 
-Learn AFL-agent by following these step-by-step tutorials.
+Learn how to build AFL-agent pipelines by following these step-by-step tutorials.
 
 .. toctree::
    :maxdepth: 1
-   :caption: Available Tutorials:
 
    installation
-   building_pipelines
-   phase_mapping 
+   getting_started
