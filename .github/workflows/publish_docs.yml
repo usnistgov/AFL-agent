@@ -6,9 +6,10 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      #  - uses: usnistgov/Docs4NIST@0.7
-      - uses: martintb/Docs4NIST@themedir-bug
+      # - uses: martintb/Docs4NIST@themedir-bug
+      - uses: usnistgov/Docs4NIST@0.7
         with:
           docs-folder: docs/
-          pip-requirements: "requirements_sphinx820.txt"
+          # pip-requirements: "requirements_sphinx820.txt"
+          pip-requirements: "requirements.txt"
 
