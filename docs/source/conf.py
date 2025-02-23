@@ -60,26 +60,19 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = 'alabaster'
+import os
+from importlib import import_module
 
-# html_theme = "pydata_sphinx_theme"
-# # html_logo = "source/_static/agent_loop.svg"
-# html_theme_options = {
-#     # "logo": {
-#     #     "image_light": "source/_static/agent_loop.svg",
-#     #     "image_dark": "source/_static/agent_loop.svg",
-#     # },
-#     "github_url": "https://github.com/usnistgov/afl-agent",
-#     "collapse_navigation": True,
-#     #       ],
-#     "header_links_before_dropdown": 6,
-#     # Add light/dark mode and documentation version switcher:
-#     "navbar_end": ["theme-switcher", "navbar-icon-links"],
-# 
-# }
-import sphinx_rtd_theme
-html_theme = 'sphinx_rtd_theme'
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme = "pydata_sphinx_theme"
+theme_module = import_module(html_theme.replace("-", "_"))
+html_theme_path = [os.path.dirname(os.path.abspath(theme_module.__file__))]
+
+html_theme_options = {
+    "github_url": "https://github.com/usnistgov/afl-agent",
+    "collapse_navigation": True,
+    "header_links_before_dropdown": 6,
+    "navbar_end": ["theme-switcher", "navbar-icon-links"],
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
