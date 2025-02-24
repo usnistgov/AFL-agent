@@ -6,62 +6,93 @@ This short example will help you get started with AFL-agent. See
 
 .. code-block:: python
 
-   from AFL.double_agent import *
-   import numpy as np
-   import xarray as xr
+    from AFL.double_agent import *
+    import numpy as np
+    import xarray as xr
 
-   with Pipeline() as pipeline:
-
-       SavgolFilter(
-           input_variable='measurement', 
-           output_variable='derivative', 
-           dim='x', 
-           derivative=1
-           )
-
-       Similarity(
-           input_variable='derivative', 
-           output_variable='similarity', 
-           params={'metric': 'cosine'}
-           )
-
-       SpectralClustering(
-           input_variable='similarity',
-           output_variable='labels',
-           )
-
-       GaussianProcessClassifier(
-           feature_input_variable='composition',
-           predictor_input_variable='labels',
-           output_prefix='extrap',
-       )
-
-       MaxValueAF(
-           input_variable='extrap_variance',
-           output_variable='next_sample'
-       )
+    with Pipeline() as my_first_pipeline:
+    
+        Standardize(
+            input_variable='composition',
+            output_variable='normalized_composition',
+            dim='sample',
+            component_dim='component',
+            min_val={'A':0.0,'B':0.0},
+            max_val={'A':10.0,'B':25.0},
+        )
+    
+        Standardize(
+            input_variable='composition_grid',
+            output_variable='normalized_composition_grid',
+            dim='grid',
+            component_dim='component',
+            min_val={'A':0.0,'B':0.0},
+            max_val={'A':10.0,'B':25.0},
+        )
+    
+        SavgolFilter(
+            input_variable='measurement', 
+            output_variable='derivative', 
+            dim='x', 
+            derivative=1
+            )
+    
+        Similarity(
+            input_variable='derivative', 
+            output_variable='similarity', 
+            sample_dim='sample',
+            params={'metric': 'laplacian','gamma':1e-4}
+            )
+    
+        SpectralClustering(
+            input_variable='similarity',
+            output_variable='labels',
+            dim='sample',
+            params={'n_phases': 2}
+            )
+    
+        
+        GaussianProcessClassifier(
+            feature_input_variable='normalized_composition',
+            predictor_input_variable='labels',
+            output_prefix='extrap',
+            sample_dim='sample',
+            grid_variable='normalized_composition_grid',
+            grid_dim='grid',
+        )
+    
+        MaxValueAF(
+            input_variables=['extrap_entropy'],
+            output_variable='next_sample',
+            grid_variable='composition_grid',
+        )
+    
 
    # Generate synthetic data
    n_samples = 10
    n_points = 100
    x = np.linspace(0, 10, n_points)
    measurements = ... # data from your measurement
-   compositions = ... # composition of your samples
+   composition = ... # composition of your samples
+   composition_grid = ... # composition of the search grid for the acquisitin function
+
 
    # Create dataset
    ds = xr.Dataset(
        data_vars={
            'measurement': (['sample', 'x'], measurements),
-           'composition': (['sample', 'components'], compositions)
+           'composition': (['sample', 'component'], composition)
+           'composition_grid': (['grid', 'component_grid'], composition_grid)
        },
        coords={
            'x': x,
-           'components': ['A', 'B', 'C']
+           'component': ['A', 'B', 'C']
        }
    )
 
    # Run the pipeline
-   ds_out = pipeline.calculate(ds)
+   ds_out = my_first_pipeline.calculate(ds)
+   
 
 Understanding the Example
 -------------------------
