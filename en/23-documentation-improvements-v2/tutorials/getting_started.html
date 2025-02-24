@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Quick Start Example &#8212; AFL-agent 0.1.dev351 documentation</title>
+    <title>Quick Start Example &#8212; AFL-agent 0.0.0 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=22db34b0"></script>
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=525cde36"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -54,7 +54,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.dev351" />
+  <meta name="docsearch:version" content="0.0.0" />
 
   <link rel="stylesheet" href="https://pages.nist.gov/nist-header-footer/css/nist-combined.css">
   <script src="https://code.jquery.com/jquery-3.6.2.min.js" type="text/javascript" defer="defer"></script>
@@ -122,7 +122,7 @@
   
   
   
-    <p class="title logo__title">AFL-agent 0.1.dev351 documentation</p>
+    <p class="title logo__title">AFL-agent 0.0.0 documentation</p>
   
 </a></div>
     
@@ -340,6 +340,7 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Setup</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Quick Start Example</a></li>
 <li class="toctree-l1"><a class="reference internal" href="building_pipelines.html">Building Pipelines</a></li>
+
 </ul>
 </div>
 </nav></div>
@@ -404,62 +405,92 @@
 <h1>Quick Start Example<a class="headerlink" href="#quick-start-example" title="Permalink to this heading">#</a></h1>
 <p>This short example will help you get started with AFL-agent. See
 :doc:’building_pipelines’ for a more detailed tutorial.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span> <span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+ <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+ <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
 
-<span class="k">with</span> <span class="n">Pipeline</span><span class="p">()</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
+ <span class="k">with</span> <span class="n">Pipeline</span><span class="p">()</span> <span class="k">as</span> <span class="n">my_first_pipeline</span><span class="p">:</span>
 
-    <span class="n">SavgolFilter</span><span class="p">(</span>
-        <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
-        <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;derivative&#39;</span><span class="p">,</span>
-        <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
-        <span class="n">derivative</span><span class="o">=</span><span class="mi">1</span>
-        <span class="p">)</span>
+     <span class="n">Standardize</span><span class="p">(</span>
+         <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;composition&#39;</span><span class="p">,</span>
+         <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;normalized_composition&#39;</span><span class="p">,</span>
+         <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span>
+         <span class="n">component_dim</span><span class="o">=</span><span class="s1">&#39;component&#39;</span><span class="p">,</span>
+         <span class="n">min_val</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s1">&#39;B&#39;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">},</span>
+         <span class="n">max_val</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span><span class="mf">10.0</span><span class="p">,</span><span class="s1">&#39;B&#39;</span><span class="p">:</span><span class="mf">25.0</span><span class="p">},</span>
+     <span class="p">)</span>
 
-    <span class="n">Similarity</span><span class="p">(</span>
-        <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;derivative&#39;</span><span class="p">,</span>
-        <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;similarity&#39;</span><span class="p">,</span>
-        <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;metric&#39;</span><span class="p">:</span> <span class="s1">&#39;cosine&#39;</span><span class="p">}</span>
-        <span class="p">)</span>
+     <span class="n">Standardize</span><span class="p">(</span>
+         <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;composition_grid&#39;</span><span class="p">,</span>
+         <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;normalized_composition_grid&#39;</span><span class="p">,</span>
+         <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;grid&#39;</span><span class="p">,</span>
+         <span class="n">component_dim</span><span class="o">=</span><span class="s1">&#39;component&#39;</span><span class="p">,</span>
+         <span class="n">min_val</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s1">&#39;B&#39;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">},</span>
+         <span class="n">max_val</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span><span class="mf">10.0</span><span class="p">,</span><span class="s1">&#39;B&#39;</span><span class="p">:</span><span class="mf">25.0</span><span class="p">},</span>
+     <span class="p">)</span>
 
-    <span class="n">SpectralClustering</span><span class="p">(</span>
-        <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;similarity&#39;</span><span class="p">,</span>
-        <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;labels&#39;</span><span class="p">,</span>
-        <span class="p">)</span>
+     <span class="n">SavgolFilter</span><span class="p">(</span>
+         <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
+         <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;derivative&#39;</span><span class="p">,</span>
+         <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
+         <span class="n">derivative</span><span class="o">=</span><span class="mi">1</span>
+         <span class="p">)</span>
 
-    <span class="n">GaussianProcessClassifier</span><span class="p">(</span>
-        <span class="n">feature_input_variable</span><span class="o">=</span><span class="s1">&#39;composition&#39;</span><span class="p">,</span>
-        <span class="n">predictor_input_variable</span><span class="o">=</span><span class="s1">&#39;labels&#39;</span><span class="p">,</span>
-        <span class="n">output_prefix</span><span class="o">=</span><span class="s1">&#39;extrap&#39;</span><span class="p">,</span>
-    <span class="p">)</span>
+     <span class="n">Similarity</span><span class="p">(</span>
+         <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;derivative&#39;</span><span class="p">,</span>
+         <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;similarity&#39;</span><span class="p">,</span>
+         <span class="n">sample_dim</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span>
+         <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;metric&#39;</span><span class="p">:</span> <span class="s1">&#39;laplacian&#39;</span><span class="p">,</span><span class="s1">&#39;gamma&#39;</span><span class="p">:</span><span class="mf">1e-4</span><span class="p">}</span>
+         <span class="p">)</span>
 
-    <span class="n">MaxValueAF</span><span class="p">(</span>
-        <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;extrap_variance&#39;</span><span class="p">,</span>
-        <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;next_sample&#39;</span>
-    <span class="p">)</span>
+     <span class="n">SpectralClustering</span><span class="p">(</span>
+         <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;similarity&#39;</span><span class="p">,</span>
+         <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;labels&#39;</span><span class="p">,</span>
+         <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span>
+         <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;n_phases&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+         <span class="p">)</span>
+
+
+     <span class="n">GaussianProcessClassifier</span><span class="p">(</span>
+         <span class="n">feature_input_variable</span><span class="o">=</span><span class="s1">&#39;normalized_composition&#39;</span><span class="p">,</span>
+         <span class="n">predictor_input_variable</span><span class="o">=</span><span class="s1">&#39;labels&#39;</span><span class="p">,</span>
+         <span class="n">output_prefix</span><span class="o">=</span><span class="s1">&#39;extrap&#39;</span><span class="p">,</span>
+         <span class="n">sample_dim</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span>
+         <span class="n">grid_variable</span><span class="o">=</span><span class="s1">&#39;normalized_composition_grid&#39;</span><span class="p">,</span>
+         <span class="n">grid_dim</span><span class="o">=</span><span class="s1">&#39;grid&#39;</span><span class="p">,</span>
+     <span class="p">)</span>
+
+     <span class="n">MaxValueAF</span><span class="p">(</span>
+         <span class="n">input_variables</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;extrap_entropy&#39;</span><span class="p">],</span>
+         <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;next_sample&#39;</span><span class="p">,</span>
+         <span class="n">grid_variable</span><span class="o">=</span><span class="s1">&#39;composition_grid&#39;</span><span class="p">,</span>
+     <span class="p">)</span>
+
 
 <span class="c1"># Generate synthetic data</span>
 <span class="n">n_samples</span> <span class="o">=</span> <span class="mi">10</span>
 <span class="n">n_points</span> <span class="o">=</span> <span class="mi">100</span>
 <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">n_points</span><span class="p">)</span>
 <span class="n">measurements</span> <span class="o">=</span> <span class="o">...</span> <span class="c1"># data from your measurement</span>
-<span class="n">compositions</span> <span class="o">=</span> <span class="o">...</span> <span class="c1"># composition of your samples</span>
+<span class="n">composition</span> <span class="o">=</span> <span class="o">...</span> <span class="c1"># composition of your samples</span>
+<span class="n">composition_grid</span> <span class="o">=</span> <span class="o">...</span> <span class="c1"># composition of the search grid for the acquisitin function</span>
+
 
 <span class="c1"># Create dataset</span>
 <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
     <span class="n">data_vars</span><span class="o">=</span><span class="p">{</span>
         <span class="s1">&#39;measurement&#39;</span><span class="p">:</span> <span class="p">([</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">measurements</span><span class="p">),</span>
-        <span class="s1">&#39;composition&#39;</span><span class="p">:</span> <span class="p">([</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;components&#39;</span><span class="p">],</span> <span class="n">compositions</span><span class="p">)</span>
+        <span class="s1">&#39;composition&#39;</span><span class="p">:</span> <span class="p">([</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;component&#39;</span><span class="p">],</span> <span class="n">composition</span><span class="p">)</span>
+        <span class="s1">&#39;composition_grid&#39;</span><span class="p">:</span> <span class="p">([</span><span class="s1">&#39;grid&#39;</span><span class="p">,</span> <span class="s1">&#39;component_grid&#39;</span><span class="p">],</span> <span class="n">composition_grid</span><span class="p">)</span>
     <span class="p">},</span>
     <span class="n">coords</span><span class="o">=</span><span class="p">{</span>
         <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
-        <span class="s1">&#39;components&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">]</span>
+        <span class="s1">&#39;component&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">]</span>
     <span class="p">}</span>
 <span class="p">)</span>
 
 <span class="c1"># Run the pipeline</span>
-<span class="n">ds_out</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">calculate</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+<span class="n">ds_out</span> <span class="o">=</span> <span class="n">my_first_pipeline</span><span class="o">.</span><span class="n">calculate</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
 </pre></div>
 </div>
 <section id="understanding-the-example">
