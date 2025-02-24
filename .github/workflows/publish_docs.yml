@@ -12,5 +12,5 @@ jobs:
           docs-folder: docs/
           # pip-requirements: "requirements_sphinx820.txt"
           conda-environment: "docs.yml"
-          pip-requirements: "requirements.txt"
+          # pip-requirements: "requirements.txt"
 
