@@ -6,6 +6,6 @@ Guides for specific tasks
 .. toctree::
    :maxdepth: 1
 
-   create_pipelineop
    building_xarray_datasets
+   create_pipelineop
    appending_to_xarray
