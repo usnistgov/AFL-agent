@@ -251,5 +251,5 @@ dependencies:
     - zarr==2.18.4
     - zipp==3.21.0
     - zstandard==0.23.0
-    - pygraphviz==1.14
     - nbsphinx==0.9.6
+    # - pygraphviz==1.14
