@@ -194,17 +194,16 @@ class SavgolFilter(Preprocessor):
         if self.pedestal is not None:
             data1 += self.pedestal
             data1 = data1.where(~np.isnan(data1)).fillna(self.pedestal)
-
-        # interpolate to constant log(dq) grid
-        if self.apply_log_scale:
-            x_new = np.geomspace(data1[dim].min(), data1[dim].max(), self.npts)
-        else:
-            x_new = np.linspace(data1[dim].min(), data1[dim].max(), self.npts)
+        
+        # interpolate to constant lin or log(dq) grid
+        x_new = np.linspace(data1[dim].min(), data1[dim].max(), self.npts)
         dx = float(x_new[1] - x_new[0])
         data1 = data1.interp({dim: x_new})
 
         # filter out any q that have NaN
         data1 = data1.dropna(dim, how="any")
+
+
 
         # take derivative
         data1_filtered = savgol_filter(
