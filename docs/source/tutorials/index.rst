@@ -9,4 +9,3 @@ Step-by-step guides for beginners to use AFL-agent
    installation
    getting_started
    building_pipelines
-   example
