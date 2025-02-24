@@ -32,6 +32,7 @@
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="_static/ntd2d.css?v=525a25f0" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
   
   <!-- So that users can add custom icons -->
   <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -42,6 +43,9 @@
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=22db34b0"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -359,15 +363,22 @@
   <section id="afl-agent">
 <h1>AFL-agent<a class="headerlink" href="#afl-agent" title="Permalink to this heading">#</a></h1>
 <a class="reference internal image-reference" href="_images/agent_loop.svg"><img alt="AFL-agent Logo" src="_images/agent_loop.svg" width="800" /></a>
-<p>AFL-agent is a Python library that implements autonomous active learning agents for material science applications, as described in the manuscript <em>“Autonomous Small-Angle Scattering for Accelerated Soft Material Formulation Optimization”</em>. The library is designed to autonomously guide experimental measurement campaigns to efficiently map phase boundaries and optimize material properties in soft material formulations using advanced machine learning techniques.</p>
+<p>AFL-agent is a Python library that allows users to implement active learning
+agents for material science applications. [1] Rather than providing canned
+algorithms, the library provides a framework that allows users to build their own.
+This is achieved through a modular, extensible API that allows users to compose
+multiple machine learning operations into executable pipelines.</p>
+<p>If you use AFL-agent in your research, please cite the manuscript:</p>
+<p>[1] <em>“Autonomous Small-Angle Scattering for Accelerated Soft Material Formulation Optimization”</em> (under review)</p>
 <section id="key-features">
 <h2>Key Features<a class="headerlink" href="#key-features" title="Permalink to this heading">#</a></h2>
 <ul class="simple">
-<li><p>Library of machine learning operations that can be composed into pipelines</p></li>
+<li><p>Library of machine learning operations that can be composed into executable pipelines</p></li>
 <li><p>Pipelines are modular, visualizable, serializable, and self-documenting</p></li>
-<li><p>Trivial support for multimodal data processing</p></li>
 <li><p>All intermediate pipeline operations are stored in a xarray-based data model</p></li>
 <li><p>Rich visualization tools for analyzing calculations</p></li>
+<li><p>Trivial support for multimodal data processing</p></li>
+<li><p>Support for phase boundary mapping and material property optimization</p></li>
 </ul>
 </section>
 <section id="installation">
@@ -378,18 +389,13 @@
 </div>
 <p>Please see the <a class="reference internal" href="tutorials/installation.html"><span class="doc">Setup</span></a> page for more details.</p>
 </section>
-<section id="citation">
-<h2>Citation<a class="headerlink" href="#citation" title="Permalink to this heading">#</a></h2>
-<p>If you use AFL-agent in your research, please cite the manuscript:</p>
-<p><em>“Autonomous Small-Angle Scattering for Accelerated Soft Material Formulation Optimization”</em> (under review)</p>
-</section>
 <section id="contents">
 <h2>Contents<a class="headerlink" href="#contents" title="Permalink to this heading">#</a></h2>
-<p>This documentation is organized according to the philosphy described by <a class="reference external" href="https://diataxis.fr">diataxis.fr</a>. It is organized into four sections:</p>
+<p>This documentation is organized according to the philosphy described by Daniele Procida at <a class="reference external" href="https://diataxis.fr">diataxis.fr</a>. It is organized into four sections:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="tutorials/index.html"><span class="doc">Tutorials</span></a>: Step-by-step guides for beginners to use AFL-agent</p></li>
+<li><p><a class="reference internal" href="tutorials/index.html"><span class="doc">Tutorials</span></a>: Step-by-step guides for beginners</p></li>
 <li><p><a class="reference internal" href="how-to/index.html"><span class="doc">How-to</span></a>: Guides for specific tasks</p></li>
-<li><p><a class="reference internal" href="explanations/index.html"><span class="doc">Explanations</span></a>: Discussions outlining the principles and underlying concepts of AFL-agent</p></li>
+<li><p><a class="reference internal" href="explanations/index.html"><span class="doc">Explanations</span></a>: Discussions of underlying principles and concepts</p></li>
 <li><p><a class="reference internal" href="reference/index.html"><span class="doc">Reference</span></a>: Detailed technical reference</p></li>
 </ul>
 <div class="toctree-wrapper compound">
@@ -412,12 +418,14 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="how-to/index.html">How-To Guides</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="how-to/building_xarray_datasets.html">Building xarray.Datasets from Scratch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how-to/create_pipelineop.html">Creating a New PipelineOp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how-to/building_xarray_datasets.html">Build an xarray.Dataset from Scratch</a></li>
 <li class="toctree-l2"><a class="reference internal" href="how-to/appending_to_xarray.html">Appending Data to xarray.Datasets</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="explanations/index.html">Explanations</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="explanations/pipelines.html">Pipelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="explanations/context_manager.html">Pipeline Context Manager</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="reference/index.html">Reference</a><ul>
@@ -470,7 +478,6 @@
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#key-features">Key Features</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation">Installation</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#citation">Citation</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contents">Contents</a></li>
 </ul>
   </nav></div>
