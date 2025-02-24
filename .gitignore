@@ -1,12 +1,13 @@
-AFL/double_agent/_version.py
 *egg-info*
 data/*
 *pyc
 .DS_Store
 
+AFL/double_agent/_version.py
+
 venv/
-venv2/
 .venv/
+
 # Sphinx documentation
 docs/build/
 docs/source/reference/_autosummary/
@@ -17,4 +18,3 @@ objects.inv
 _build/
 .doctrees/
 *.mo
-
