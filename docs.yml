@@ -4,6 +4,7 @@ channels:
   - defaults
 dependencies:
   - python=3.11
+  - pip
   - pandoc
   - pip:
     - accessible-pygments==0.0.5
@@ -252,4 +253,3 @@ dependencies:
     - zipp==3.21.0
     - zstandard==0.23.0
     - nbsphinx==0.9.6
-    # - pygraphviz==1.14
