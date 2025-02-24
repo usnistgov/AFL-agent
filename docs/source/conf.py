@@ -27,9 +27,9 @@ author = 'Tyler B. Martin, Peter A. Beaucage, Duncan R. Sutherland'
 
 
 # The full version, including alpha/beta/rc tags
-from AFL.double_agent import __version__
-version = __version__.split('+')[0]
-release = version
+#from AFL.double_agent import __version__
+#version = None#__version__.split('+')[0]
+#release = None#version
 
 
 # -- General configuration ---------------------------------------------------
