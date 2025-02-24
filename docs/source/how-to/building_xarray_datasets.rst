@@ -3,4 +3,4 @@ Building xarray.Datasets from Scratch
 
 .. warning::
 
-    This tutorial is a work in progress.
+    This how-to is a work in progress stub.

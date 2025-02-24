@@ -46,6 +46,7 @@ dependencies = [
     "sympy",
     "tiled[all]",
     "sasdata",
+    "pygraphviz",
 ]
 
 [project.optional-dependencies]
@@ -87,8 +88,9 @@ dev = [
     "sphinx-rtd-theme",
     "sphinxcontrib-apidoc",
     "sphinxcontrib-napoleon",
-    "piccolo_theme",
+    "sphinx-copybutton",
     "pydata-sphinx-theme",
+    "sphinx-autosummary-accessors",
 ]
 
 all = [
@@ -117,7 +119,9 @@ all = [
     "sphinx-rtd-theme",
     "sphinxcontrib-apidoc",
     "sphinxcontrib-napoleon",
-    "piccolo_theme"
+    "pydata-sphinx-theme",
+    "sphinx-copybutton",
+    "sphinx-autosummary-accessors",
 ]
 
 [tool.hatch.build.targets.wheel]

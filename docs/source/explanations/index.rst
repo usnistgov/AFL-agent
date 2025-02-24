@@ -8,3 +8,4 @@ Tho goal of this section is to deepens and broadens the your understanding of th
    :caption: Topics:
 
    pipelines
+   context_manager

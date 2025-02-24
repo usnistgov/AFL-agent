@@ -41,7 +41,11 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",  # numpydoc and google docstrings
+    "sphinx_copybutton",
+    "nbsphinx",
 ]
+
+
 
 # Ignore annoying type exception warnings which often come from newlines
 nitpick_ignore = [("py:class", "type")]
