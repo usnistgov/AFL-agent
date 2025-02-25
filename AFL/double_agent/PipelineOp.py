@@ -11,8 +11,20 @@ from AFL.double_agent.PipelineContext import PipelineContext, NoContextException
 
 
 class PipelineOp(ABC):
-    """
-    Abstract base class for data processors. All operations in AFL.double_agent should inherit PipelineOpBase.
+    """Abstract base class for data processors. All operations in AFL.double_agent should inherit PipelineOpBase.
+
+    Parameters
+    ----------
+    name : Optional[str] | List[str]
+        The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
+    input_variable : Optional[str] | List[str]
+        The name of the `xarray.Dataset` data variable to extract from the input dataset
+    output_variable : Optional[str] | List[str]
+        The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+    input_prefix : Optional[str] | List[str]
+        Prefix for input variables when using pattern matching
+    output_prefix : Optional[str] | List[str]
+        Prefix for output variables when using pattern matching
     """
 
     def __init__(self,

@@ -1,5 +1,15 @@
-"""
-PairMetrics are PipelineOps that produce pair matrices as results
+"""PipelineOps for Pairwise Metrics
+
+This module contains operations that compute pairwise relationships between samples.
+PairMetrics generate matrices that capture similarity, distance, or other relationships between pairs of data points.
+
+These metrics are useful for:
+- Measuring similarity or distance between samples
+- Constructing adjacency matrices for graph-based algorithms
+- Identifying clusters or patterns in data
+- Quantifying relationships between different observations
+
+Each PairMetric is implemented as a PipelineOp that can be composed with others in a processing pipeline.
 """
 
 import copy
@@ -17,7 +27,29 @@ from AFL.double_agent.util import listify
 
 
 class PairMetric(PipelineOp):
-    """Base class for all PairMetrics"""
+    """Base class for all PairMetrics that produce similarity or distance matrices
+
+    This abstract base class provides common functionality for computing and manipulating
+    pairwise metrics between samples. It handles similarity constraints, normalization,
+    and provides a framework for different metric implementations.
+
+    Parameters
+    ----------
+    input_variable : str | List[str]
+        The name of the data variable to extract from the input dataset
+    output_variable : str
+        The name of the variable to be inserted into the dataset
+    sample_dim : str, default="sample"
+        The dimension containing different samples
+    params : Optional[Dict[str, Any]], default=None
+        Additional parameters for metric calculation
+    constrain_same : Optional[List], default=None
+        List of pairs that should have perfect similarity
+    constrain_different : Optional[List], default=None
+        List of pairs that should have zero similarity
+    name : str, default="PairMetric"
+        The name to use when added to a Pipeline
+    """
     def __init__(
         self,
         input_variable: str | List[str],
@@ -95,7 +127,29 @@ class PairMetric(PipelineOp):
 
 
 class Dummy(PairMetric):
-    """PairMetric that returns only self-similarity (S[i,i] 1.0, S[i,j!=i]=0.0)"""
+    """PairMetric that returns only self-similarity (identity matrix)
+    
+    This simple metric creates an identity matrix where diagonal elements (self-similarity)
+    are 1.0 and all off-diagonal elements are 0.0. This can be useful as a baseline
+    or for testing purposes.
+
+    Parameters
+    ----------
+    input_variable : str
+        The name of the data variable to extract from the input dataset
+    output_variable : str
+        The name of the variable to be inserted into the dataset
+    sample_dim : str
+        The dimension containing different samples
+    params : Optional[Dict[str, Any]], default=None
+        Additional parameters for metric calculation (not used in this class)
+    constrain_same : Optional[List], default=None
+        List of pairs that should have perfect similarity
+    constrain_different : Optional[List], default=None
+        List of pairs that should have zero similarity
+    name : str, default="DummyMetric"
+        The name to use when added to a Pipeline
+    """
     def __init__(
         self,
         input_variable: str,
@@ -125,6 +179,32 @@ class Dummy(PairMetric):
 
 
 class Similarity(PairMetric):
+    """Computes pairwise similarity between samples using kernel functions
+    
+    This class uses scikit-learn's pairwise_kernels to compute similarity matrices
+    between samples. Various kernel functions can be specified through the params
+    dictionary (e.g., 'linear', 'rbf', 'polynomial').
+
+    For details on available kernel functions and their parameters, see:
+    https://scikit-learn.org/stable/modules/metrics.html#metrics
+
+    Parameters
+    ----------
+    input_variable : str
+        The name of the data variable to extract from the input dataset
+    output_variable : str
+        The name of the variable to be inserted into the dataset
+    sample_dim : str
+        The dimension containing different samples
+    params : Optional[Dict[str, Any]], default=None
+        Parameters for the kernel function, including 'metric' to specify the kernel type
+    constrain_same : Optional[List], default=None
+        List of pairs that should have perfect similarity
+    constrain_different : Optional[List], default=None
+        List of pairs that should have zero similarity
+    name : str, default="SimilarityMetric"
+        The name to use when added to a Pipeline
+    """
     def __init__(
         self,
         input_variable: str,
@@ -163,6 +243,32 @@ class Similarity(PairMetric):
 
 
 class Distance(PairMetric):
+    """Computes pairwise distances between samples
+    
+    This class uses scikit-learn's pairwise_distances to compute distance matrices
+    between samples. Various distance metrics can be specified through the params
+    dictionary (e.g., 'euclidean', 'manhattan', 'cosine').
+
+    For details on available distance metrics and their parameters, see:
+    https://scikit-learn.org/stable/modules/metrics.html#metrics
+
+    Parameters
+    ----------
+    input_variable : str
+        The name of the data variable to extract from the input dataset
+    output_variable : str
+        The name of the variable to be inserted into the dataset
+    sample_dim : str
+        The dimension containing different samples
+    params : Optional[Dict[str, Any]], default=None
+        Parameters for the distance function, including 'metric' to specify the distance type
+    constrain_same : Optional[List], default=None
+        List of pairs that should have perfect similarity
+    constrain_different : Optional[List], default=None
+        List of pairs that should have zero similarity
+    name : str, default="DistanceMetric"
+        The name to use when added to a Pipeline
+    """
     def __init__(
         self,
         input_variable: str,
@@ -196,6 +302,30 @@ class Distance(PairMetric):
 
 
 class Delaunay(PairMetric):
+    """Creates a similarity matrix based on Delaunay triangulation
+    
+    This class constructs a binary adjacency matrix where samples that share
+    an edge in the Delaunay triangulation have a similarity of 1.0, and all
+    other pairs have a similarity of 0.0. This is useful for identifying
+    natural neighbors in the data.
+
+    Parameters
+    ----------
+    input_variable : str
+        The name of the data variable to extract from the input dataset
+    output_variable : str
+        The name of the variable to be inserted into the dataset
+    sample_dim : str
+        The dimension containing different samples
+    params : Optional[Dict[str, Any]], default=None
+        Additional parameters (not used in this class)
+    constrain_same : Optional[List], default=None
+        List of pairs that should have perfect similarity
+    constrain_different : Optional[List], default=None
+        List of pairs that should have zero similarity
+    name : str, default="DelaunayMetric"
+        The name to use when added to a Pipeline
+    """
     def __init__(
         self,
         input_variable: str,
@@ -232,6 +362,35 @@ class Delaunay(PairMetric):
 
 
 class CombineMetric(PairMetric):
+    """Combines multiple similarity/distance matrices into a single matrix
+    
+    This class allows for the combination of multiple similarity or distance matrices
+    using either product or sum operations. Each matrix can be weighted differently
+    using powers (for product) or coefficients (for sum).
+
+    Parameters
+    ----------
+    input_variables : List[str]
+        List of variable names containing similarity/distance matrices to combine
+    output_variable : str
+        The name of the variable to be inserted into the dataset
+    sample_dim : str
+        The dimension containing different samples
+    combine_by : str
+        Method to combine matrices, either "prod" (product) or "sum"
+    combine_by_powers : Optional[List[Number]], default=None
+        List of powers to apply to each matrix when using "prod" combination
+    combine_by_coeffs : Optional[List[Number]], default=None
+        List of coefficients to multiply each matrix by when using "sum" combination
+    params : Optional[str], default=None
+        Additional parameters
+    constrain_same : Optional[List], default=None
+        List of pairs that should have perfect similarity
+    constrain_different : Optional[List], default=None
+        List of pairs that should have zero similarity
+    name : str, default="CombineMetric"
+        The name to use when added to a Pipeline
+    """
     def __init__(
         self,
         input_variables: List[str],

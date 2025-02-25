@@ -14,7 +14,7 @@ Pipeline Operations
    Generator
    MaskGrid
    PairMetric
-   PhaseLabeler
+   Labeler
    Preprocessor
    TensorFlowExtrapolator
 
