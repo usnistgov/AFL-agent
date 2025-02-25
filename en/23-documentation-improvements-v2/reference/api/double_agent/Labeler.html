@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>AFL.double_agent.PhaseLabeler module &#8212; AFL-agent  documentation</title>
+    <title>AFL.double_agent.Labeler module &#8212; AFL-agent  documentation</title>
   
   
   
@@ -46,7 +46,7 @@
     <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../../_static/copybutton.js?v=f281be69"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/api/double_agent/PhaseLabeler';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/api/double_agent/Labeler';</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="AFL.double_agent.Preprocessor module" href="Preprocessor.html" />
@@ -345,7 +345,7 @@
 <li class="toctree-l2"><a class="reference internal" href="Generator.html">AFL.double_agent.Generator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="MaskGrid.html">AFL.double_agent.MaskGrid module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PairMetric.html">AFL.double_agent.PairMetric module</a></li>
-<li class="toctree-l2 current active"><a class="current reference internal" href="#">AFL.double_agent.PhaseLabeler module</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">AFL.double_agent.Labeler module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Preprocessor.html">AFL.double_agent.Preprocessor module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="TensorFlowExtrapolator.html">AFL.double_agent.TensorFlowExtrapolator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a></li>
@@ -408,7 +408,7 @@
     
     <li class="breadcrumb-item"><a href="index.html" class="nav-link">AFL.double_agent Package</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">AFL.double_agent.PhaseLabeler module</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">AFL.double_agent.Labeler module</span></li>
   </ul>
 </nav>
 </div>
@@ -425,54 +425,180 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-AFL.double_agent.PhaseLabeler">
-<span id="afl-double-agent-phaselabeler-module"></span><h1>AFL.double_agent.PhaseLabeler module<a class="headerlink" href="#module-AFL.double_agent.PhaseLabeler" title="Permalink to this heading">#</a></h1>
+  <section id="module-AFL.double_agent.Labeler">
+<span id="afl-double-agent-labeler-module"></span><h1>AFL.double_agent.Labeler module<a class="headerlink" href="#module-AFL.double_agent.Labeler" title="Permalink to this heading">#</a></h1>
+<p>Phase labeling tools for clustering and classification of materials data.</p>
+<p>This module provides classes for automatically identifying and labeling phases in
+materials science data. It includes various clustering algorithms and methods for
+determining optimal number of phases using silhouette analysis.</p>
+<p>Key features:
+- Multiple clustering algorithms (Spectral, GMM, Affinity Propagation)
+- Automatic determination of number of phases via Silhouette analysis
+- Support for precomputed similarity/distance matrices
+- Integration with scikit-learn clustering algorithms</p>
 <dl class="py class">
-<dt class="sig sig-object py" id="AFL.double_agent.PhaseLabeler.AffinityPropagation">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.PhaseLabeler.</span></span><span class="sig-name descname"><span class="pre">AffinityPropagation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AffinityPropagation'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.PhaseLabeler.AffinityPropagation" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.PhaseLabeler.PhaseLabeler" title="AFL.double_agent.PhaseLabeler.PhaseLabeler"><code class="xref py py-class docutils literal notranslate"><span class="pre">PhaseLabeler</span></code></a></p>
+<dt class="sig sig-object py" id="AFL.double_agent.Labeler.AffinityPropagation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Labeler.</span></span><span class="sig-name descname"><span class="pre">AffinityPropagation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AffinityPropagation'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Labeler.AffinityPropagation" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Labeler.Labeler" title="AFL.double_agent.Labeler.Labeler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Labeler</span></code></a></p>
+<p>Affinity Propagation for phase identification.</p>
+<p>Uses Affinity Propagation clustering to identify phases. This method
+automatically determines the number of phases based on the data structure
+and similarity matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the variable containing the similarity matrix</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable where labels will be stored</p></li>
+<li><p><strong>dim</strong> (<em>str</em>) – The dimension name for samples in the dataset</p></li>
+<li><p><strong>params</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional parameters for Affinity Propagation. Defaults include:
+- damping: 0.75
+- max_iter: 5000
+- convergence_iter: 250
+- affinity: ‘precomputed’</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default='AffinityPropagation'</em>) – The name to use when added to a Pipeline</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="AFL.double_agent.PhaseLabeler.AffinityPropagation.calculate">
-<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.PhaseLabeler.AffinityPropagation.calculate" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="AFL.double_agent.Labeler.AffinityPropagation.calculate">
+<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Labeler.AffinityPropagation.calculate" title="Permalink to this definition">#</a></dt>
+<dd><p>Apply Affinity Propagation clustering to the dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset containing the similarity matrix</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The AffinityPropagation instance with computed labels</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="AFL.double_agent.PhaseLabeler.GaussianMixtureModel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.PhaseLabeler.</span></span><span class="sig-name descname"><span class="pre">GaussianMixtureModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'GaussianMixtureModel'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.PhaseLabeler.GaussianMixtureModel" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.PhaseLabeler.PhaseLabeler" title="AFL.double_agent.PhaseLabeler.PhaseLabeler"><code class="xref py py-class docutils literal notranslate"><span class="pre">PhaseLabeler</span></code></a></p>
+<dt class="sig sig-object py" id="AFL.double_agent.Labeler.GaussianMixtureModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Labeler.</span></span><span class="sig-name descname"><span class="pre">GaussianMixtureModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'GaussianMixtureModel'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Labeler.GaussianMixtureModel" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Labeler.Labeler" title="AFL.double_agent.Labeler.Labeler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Labeler</span></code></a></p>
+<p>Gaussian Mixture Model for phase identification.</p>
+<p>Uses a Gaussian Mixture Model to identify phases based on their distribution
+in feature space. Particularly useful when phases are expected to have
+Gaussian distributions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the variable containing the feature data</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable where labels will be stored</p></li>
+<li><p><strong>dim</strong> (<em>str</em>) – The dimension name for samples in the dataset</p></li>
+<li><p><strong>params</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional parameters for the GMM</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default='GaussianMixtureModel'</em>) – The name to use when added to a Pipeline</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="AFL.double_agent.PhaseLabeler.GaussianMixtureModel.calculate">
-<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.PhaseLabeler.GaussianMixtureModel.calculate" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="AFL.double_agent.Labeler.GaussianMixtureModel.calculate">
+<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Labeler.GaussianMixtureModel.calculate" title="Permalink to this definition">#</a></dt>
+<dd><p>Apply GMM clustering to the dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset containing the feature data</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The GaussianMixtureModel instance with computed labels</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="AFL.double_agent.PhaseLabeler.PhaseLabeler">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.PhaseLabeler.</span></span><span class="sig-name descname"><span class="pre">PhaseLabeler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sample'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_silhouette</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'PhaseLabeler'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.PhaseLabeler.PhaseLabeler" title="Permalink to this definition">#</a></dt>
+<dt class="sig sig-object py" id="AFL.double_agent.Labeler.Labeler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Labeler.</span></span><span class="sig-name descname"><span class="pre">Labeler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sample'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_silhouette</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'PhaseLabeler'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Labeler.Labeler" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp" title="AFL.double_agent.PipelineOp.PipelineOp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineOp</span></code></a></p>
+<p>Base class for phase labeling operations.</p>
+<p>This abstract base class provides common functionality for labeling phases
+in materials data. It supports various clustering approaches and includes
+methods for label manipulation and silhouette analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the variable containing the data to be labeled</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable where labels will be stored</p></li>
+<li><p><strong>dim</strong> (<em>str</em><em>, </em><em>default='sample'</em>) – The dimension name for samples in the dataset</p></li>
+<li><p><strong>use_silhouette</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to use silhouette analysis to determine optimal number of phases</p></li>
+<li><p><strong>params</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional parameters for the labeling algorithm</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default='PhaseLabeler'</em>) – The name to use when added to a Pipeline</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="AFL.double_agent.PhaseLabeler.PhaseLabeler.remap_labels_by_count">
-<span class="sig-name descname"><span class="pre">remap_labels_by_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.PhaseLabeler.PhaseLabeler.remap_labels_by_count" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="AFL.double_agent.Labeler.Labeler.remap_labels_by_count">
+<span class="sig-name descname"><span class="pre">remap_labels_by_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Labeler.Labeler.remap_labels_by_count" title="Permalink to this definition">#</a></dt>
+<dd><p>Remap phase labels to be ordered by frequency.</p>
+<p>Reorders labels so that the most common phase is labeled 0,
+second most common is 1, etc.</p>
+</dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="AFL.double_agent.PhaseLabeler.PhaseLabeler.silhouette">
-<span class="sig-name descname"><span class="pre">silhouette</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">W</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.PhaseLabeler.PhaseLabeler.silhouette" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="AFL.double_agent.Labeler.Labeler.silhouette">
+<span class="sig-name descname"><span class="pre">silhouette</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">W</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Labeler.Labeler.silhouette" title="Permalink to this definition">#</a></dt>
+<dd><p>Perform silhouette analysis to determine optimal number of phases.</p>
+<p>Uses silhouette scores to automatically determine the best number of
+phases by trying different numbers of clusters and analyzing the
+clustering quality.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>W</strong> (<em>array-like</em>) – The similarity/distance matrix to use for clustering</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This method modifies the instance’s n_phases and labels attributes
+based on the silhouette analysis results.</p>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="AFL.double_agent.PhaseLabeler.SpectralClustering">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.PhaseLabeler.</span></span><span class="sig-name descname"><span class="pre">SpectralClustering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'SpectralClustering'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_silhouette</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.PhaseLabeler.SpectralClustering" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.PhaseLabeler.PhaseLabeler" title="AFL.double_agent.PhaseLabeler.PhaseLabeler"><code class="xref py py-class docutils literal notranslate"><span class="pre">PhaseLabeler</span></code></a></p>
+<dt class="sig sig-object py" id="AFL.double_agent.Labeler.SpectralClustering">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Labeler.</span></span><span class="sig-name descname"><span class="pre">SpectralClustering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'SpectralClustering'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_silhouette</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Labeler.SpectralClustering" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Labeler.Labeler" title="AFL.double_agent.Labeler.Labeler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Labeler</span></code></a></p>
+<p>Spectral clustering for phase identification.</p>
+<p>Uses spectral clustering to identify phases based on a similarity matrix.
+Particularly effective for non-spherical clusters and when working with
+similarity rather than distance metrics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the variable containing the similarity matrix</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable where labels will be stored</p></li>
+<li><p><strong>dim</strong> (<em>str</em>) – The dimension name for samples in the dataset</p></li>
+<li><p><strong>params</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional parameters for spectral clustering</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default='SpectralClustering'</em>) – The name to use when added to a Pipeline</p></li>
+<li><p><strong>use_silhouette</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to use silhouette analysis to determine optimal number of phases</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="AFL.double_agent.PhaseLabeler.SpectralClustering.calculate">
-<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.PhaseLabeler.SpectralClustering.calculate" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="AFL.double_agent.Labeler.SpectralClustering.calculate">
+<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Labeler.SpectralClustering.calculate" title="Permalink to this definition">#</a></dt>
+<dd><p>Apply spectral clustering to the dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset containing the similarity matrix</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The SpectralClustering instance with computed labels</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -525,21 +651,21 @@
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.PhaseLabeler.AffinityPropagation"><code class="docutils literal notranslate"><span class="pre">AffinityPropagation</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.PhaseLabeler.AffinityPropagation.calculate"><code class="docutils literal notranslate"><span class="pre">AffinityPropagation.calculate()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Labeler.AffinityPropagation"><code class="docutils literal notranslate"><span class="pre">AffinityPropagation</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Labeler.AffinityPropagation.calculate"><code class="docutils literal notranslate"><span class="pre">AffinityPropagation.calculate()</span></code></a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.PhaseLabeler.GaussianMixtureModel"><code class="docutils literal notranslate"><span class="pre">GaussianMixtureModel</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.PhaseLabeler.GaussianMixtureModel.calculate"><code class="docutils literal notranslate"><span class="pre">GaussianMixtureModel.calculate()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Labeler.GaussianMixtureModel"><code class="docutils literal notranslate"><span class="pre">GaussianMixtureModel</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Labeler.GaussianMixtureModel.calculate"><code class="docutils literal notranslate"><span class="pre">GaussianMixtureModel.calculate()</span></code></a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.PhaseLabeler.PhaseLabeler"><code class="docutils literal notranslate"><span class="pre">PhaseLabeler</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.PhaseLabeler.PhaseLabeler.remap_labels_by_count"><code class="docutils literal notranslate"><span class="pre">PhaseLabeler.remap_labels_by_count()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.PhaseLabeler.PhaseLabeler.silhouette"><code class="docutils literal notranslate"><span class="pre">PhaseLabeler.silhouette()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Labeler.Labeler"><code class="docutils literal notranslate"><span class="pre">Labeler</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Labeler.Labeler.remap_labels_by_count"><code class="docutils literal notranslate"><span class="pre">Labeler.remap_labels_by_count()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Labeler.Labeler.silhouette"><code class="docutils literal notranslate"><span class="pre">Labeler.silhouette()</span></code></a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.PhaseLabeler.SpectralClustering"><code class="docutils literal notranslate"><span class="pre">SpectralClustering</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.PhaseLabeler.SpectralClustering.calculate"><code class="docutils literal notranslate"><span class="pre">SpectralClustering.calculate()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Labeler.SpectralClustering"><code class="docutils literal notranslate"><span class="pre">SpectralClustering</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Labeler.SpectralClustering.calculate"><code class="docutils literal notranslate"><span class="pre">SpectralClustering.calculate()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -549,7 +675,7 @@
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="../../../_sources/reference/api/double_agent/PhaseLabeler.rst.txt"
+      <li><a href="../../../_sources/reference/api/double_agent/Labeler.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div></div>

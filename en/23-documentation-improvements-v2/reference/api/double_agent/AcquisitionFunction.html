@@ -345,7 +345,7 @@
 <li class="toctree-l2"><a class="reference internal" href="Generator.html">AFL.double_agent.Generator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="MaskGrid.html">AFL.double_agent.MaskGrid module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PairMetric.html">AFL.double_agent.PairMetric module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhaseLabeler.html">AFL.double_agent.PhaseLabeler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Labeler.html">AFL.double_agent.Labeler module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Preprocessor.html">AFL.double_agent.Preprocessor module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="TensorFlowExtrapolator.html">AFL.double_agent.TensorFlowExtrapolator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a></li>
@@ -427,8 +427,16 @@
                   
   <section id="module-AFL.double_agent.AcquisitionFunction">
 <span id="afl-double-agent-acquisitionfunction-module"></span><h1>AFL.double_agent.AcquisitionFunction module<a class="headerlink" href="#module-AFL.double_agent.AcquisitionFunction" title="Permalink to this heading">#</a></h1>
-<p>Acquisition functions gather one or more inputs and use that information to choose one or more points from a
-from a supplied composition grid.</p>
+<p>Acquisition functions for active learning and optimization.</p>
+<p>This module provides various acquisition functions that help guide the selection of new samples
+in active learning and optimization tasks. Each acquisition function evaluates a set of candidate
+points and determines which points would be most valuable to sample next.</p>
+<p>Key features:
+- Support for single and multi-point acquisition
+- Ability to exclude previously sampled points
+- Random and maximum value acquisition strategies
+- Upper confidence bound acquisition
+- Support for multi-modal acquisition with masking</p>
 <dl class="py exception">
 <dt class="sig sig-object py" id="AFL.double_agent.AcquisitionFunction.AcquisitionError">
 <em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.AcquisitionFunction.</span></span><span class="sig-name descname"><span class="pre">AcquisitionError</span></span><a class="headerlink" href="#AFL.double_agent.AcquisitionFunction.AcquisitionError" title="Permalink to this definition">#</a></dt>
@@ -438,28 +446,89 @@ from a supplied composition grid.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="AFL.double_agent.AcquisitionFunction.AcquisitionFunction">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.AcquisitionFunction.</span></span><span class="sig-name descname"><span class="pre">AcquisitionFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'grid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'next_compositions'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_rtol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excluded_comps_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excluded_comps_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'component'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusion_radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'AcquisitionFunctionBase'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.AcquisitionFunction.AcquisitionFunction" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.AcquisitionFunction.</span></span><span class="sig-name descname"><span class="pre">AcquisitionFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'grid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'next_compositions'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_rtol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excluded_comps_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excluded_comps_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusion_radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'AcquisitionFunctionBase'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.AcquisitionFunction.AcquisitionFunction" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp" title="AFL.double_agent.PipelineOp.PipelineOp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineOp</span></code></a></p>
-<p>Base acquisition function</p>
+<p>Base acquisition function for selecting next points to sample.</p>
+<p>Acquisition functions gather one or more inputs and use that information to choose one or more points from a
+supplied composition grid. This base class provides common functionality for implementing specific
+acquisition strategies.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variables</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – The name of the <cite>xarray.Dataset</cite> data variables to extract from the input <cite>xarray.Dataset</cite></p></li>
+<li><p><strong>grid_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as a evaluation grid.</p></li>
+<li><p><strong>grid_dim</strong> (<em>str</em>) – The xarray dimension over each grid_point. Grid equivalent to sample.</p></li>
+<li><p><strong>output_prefix</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – If provided, all outputs of this <cite>PipelineOp</cite> will be prefixed with this string</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite> by this <cite>PipelineOp</cite></p></li>
+<li><p><strong>decision_rtol</strong> (<em>float</em>) – The next sample will be randomly chosen from all grid points that are within <cite>decision_rtol</cite> percent of the
+maximum of the decision surface. This</p></li>
+<li><p><strong>excluded_comps_variables</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A list of <cite>xarray.Dataset</cite> composition variables to use in building an exclusion surface that is added to
+the decision surface. This exclusion surface is built but placing multidimensional inverted Gaussians at
+every composition point specified in the <cite>excluded_comps_variables</cite>. This is done using the <cite>GaussianPoints</cite>
+generator.</p></li>
+<li><p><strong>excluded_comps_dim</strong> (<em>str</em>) – The <cite>xarray</cite> dimension over the components of a composition.</p></li>
+<li><p><strong>exclusion_radius</strong> (<em>float</em>) – The width of the Gaussian placed by the <cite>GaussianPoints</cite> generator. See that documentation for more details.</p></li>
+<li><p><strong>count</strong> (<em>int</em>) – The number of samples to pull from the grid.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name to use when added to a Pipeline. This name is used when calling Pipeline.search()</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.AcquisitionFunction.AcquisitionFunction.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.AcquisitionFunction.AcquisitionFunction.calculate" title="Permalink to this definition">#</a></dt>
 <dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.dataset</cite></p>
+<p>This method must be implemented by subclasses to define how the acquisition function
+evaluates and selects points from the grid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset containing variables to evaluate</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The acquisition function instance with updated outputs</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.AcquisitionFunction.AcquisitionFunction.exclude_previous_samples">
 <span class="sig-name descname"><span class="pre">exclude_previous_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="headerlink" href="#AFL.double_agent.AcquisitionFunction.AcquisitionFunction.exclude_previous_samples" title="Permalink to this definition">#</a></dt>
-<dd><p>Modify the decision surface by placing Gaussian exclusion zones over previously measured compositions.</p>
+<dd><p>Modify the decision surface by placing Gaussian exclusion zones.</p>
+<p>This method modifies the decision surface by adding Gaussian exclusion zones around
+previously measured compositions to prevent resampling of similar points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – Dataset containing the decision surface and compositions to exclude</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Modified dataset with updated decision surface including exclusion zones</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xr.Dataset</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#AFL.double_agent.AcquisitionFunction.AcquisitionError" title="AFL.double_agent.AcquisitionFunction.AcquisitionError"><strong>AcquisitionError</strong></a> – If required variables are missing from the dataset</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.AcquisitionFunction.AcquisitionFunction.get_next_samples">
 <span class="sig-name descname"><span class="pre">get_next_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#AFL.double_agent.AcquisitionFunction.AcquisitionFunction.get_next_samples" title="Permalink to this definition">#</a></dt>
-<dd><p>Choose the next composition by evaluating the decision surface in a provided dataset</p>
-<p>This method first finds all compositions that are within <cite>self.decision_rtol</cite> of the maximum values of the
-decision surface. From this set of compositions, it randomly chooses <cite>self.count</cite> composition as the next
-sample composition.</p>
+<dd><p>Choose the next compositions by evaluating the decision surface.</p>
+<p>This method finds all compositions that are within decision_rtol of the maximum values
+of the decision surface. From this set of compositions, it randomly chooses count
+compositions as the next sample compositions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – Dataset containing the decision surface and composition grid</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#AFL.double_agent.AcquisitionFunction.AcquisitionError" title="AFL.double_agent.AcquisitionFunction.AcquisitionError"><strong>AcquisitionError</strong></a> – If required variables are missing or if no valid points are found</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -468,10 +537,49 @@ sample composition.</p>
 <dt class="sig sig-object py" id="AFL.double_agent.AcquisitionFunction.MaxValueAF">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.AcquisitionFunction.</span></span><span class="sig-name descname"><span class="pre">MaxValueAF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'grid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">combine_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'next_samples'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_rtol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excluded_comps_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excluded_comps_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusion_radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'MaxValueAF'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.AcquisitionFunction.MaxValueAF" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.AcquisitionFunction.AcquisitionFunction" title="AFL.double_agent.AcquisitionFunction.AcquisitionFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">AcquisitionFunction</span></code></a></p>
+<p>Acquisition function that selects points based on maximum values.</p>
+<p>This acquisition function chooses points by finding the maximum values in the decision surface.
+It can combine multiple input variables with optional scaling coefficients and supports
+exclusion of previously measured points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variables</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – The name of the <cite>xarray.Dataset</cite> data variables to extract from the input <cite>xarray.Dataset</cite></p></li>
+<li><p><strong>grid_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as a evaluation grid.</p></li>
+<li><p><strong>grid_dim</strong> (<em>str</em>) – The xarray dimension over each grid_point. Grid equivalent to sample.</p></li>
+<li><p><strong>combine_coeffs</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>float</em><em>]</em><em>]</em>) – If provided, the <cite>self.input_variables</cite> will be scaled by these coefficients before being summed.</p></li>
+<li><p><strong>output_prefix</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – If provided, all outputs of this <cite>PipelineOp</cite> will be prefixed with this string</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite> by this <cite>PipelineOp</cite></p></li>
+<li><p><strong>decision_rtol</strong> (<em>float</em>) – The next sample will be randomly chosen from all grid points that are within <cite>decision_rtol</cite> percent of the
+maximum of the decision surface. This</p></li>
+<li><p><strong>excluded_comps_variables</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A list of <cite>xarray.Dataset</cite> composition variables to use in building an exclusion surface that is added to
+the decision surface. This exclusion surface is built but placing multidimensional inverted Gaussians at
+every composition point specified in the <cite>excluded_comps_variables</cite>. This is done using the <cite>GaussianPoints</cite>
+generator.</p></li>
+<li><p><strong>excluded_comps_dim</strong> (<em>str</em>) – The <cite>xarray</cite> dimension over the components of a composition.</p></li>
+<li><p><strong>exclusion_radius</strong> (<em>float</em>) – The width of the Gaussian placed by the <cite>GaussianPoints</cite> generator. See that documentation for more details.</p></li>
+<li><p><strong>count</strong> (<em>int</em>) – The number of samples to pull from the grid.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name to use when added to a Pipeline. This name is used when calling Pipeline.search()</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.AcquisitionFunction.MaxValueAF.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.AcquisitionFunction.MaxValueAF.calculate" title="Permalink to this definition">#</a></dt>
-<dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.dataset</cite></p>
+<dd><p>Apply this MaxValueAF to the supplied dataset.</p>
+<p>Combines multiple input variables with optional scaling coefficients to create
+a decision surface based on maximum values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset containing variables to evaluate</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The MaxValueAF instance with updated outputs</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -480,10 +588,48 @@ sample composition.</p>
 <dt class="sig sig-object py" id="AFL.double_agent.AcquisitionFunction.MultimodalMask_MaxValueAF">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.AcquisitionFunction.</span></span><span class="sig-name descname"><span class="pre">MultimodalMask_MaxValueAF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">decision_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_label_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase_select_coords</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'grid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">combine_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'next_samples'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_rtol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excluded_comps_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excluded_comps_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusion_radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'MaxValueAF'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.AcquisitionFunction.MultimodalMask_MaxValueAF" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.AcquisitionFunction.AcquisitionFunction" title="AFL.double_agent.AcquisitionFunction.AcquisitionFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">AcquisitionFunction</span></code></a></p>
+<p>Acquisition function that selects points based on maximum values within specific phase regions.</p>
+<p>This acquisition function extends MaxValueAF by adding the ability to focus sampling in specific
+phase regions of the composition space. It uses a mask label variable to identify different
+phase regions and selects points based on their proximity to target phase coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>decision_variable</strong> (<em>str</em>) – The name of the variable containing the decision surface values</p></li>
+<li><p><strong>mask_label_variable</strong> (<em>str</em>) – The name of the variable containing phase region labels</p></li>
+<li><p><strong>phase_select_coords</strong> (<em>dict</em><em>[</em><em>str</em><em>,</em><em>float</em><em>]</em>) – Dictionary mapping phase component names to target coordinates</p></li>
+<li><p><strong>grid_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as a evaluation grid</p></li>
+<li><p><strong>grid_dim</strong> (<em>str</em><em>, </em><em>default=&quot;grid&quot;</em>) – The xarray dimension over each grid_point. Grid equivalent to sample.</p></li>
+<li><p><strong>combine_coeffs</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>float</em><em>]</em><em>]</em><em>, </em><em>default=None</em>) – If provided, the input variables will be scaled by these coefficients before being summed</p></li>
+<li><p><strong>output_prefix</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – If provided, all outputs of this <cite>PipelineOp</cite> will be prefixed with this string</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em><em>, </em><em>default=&quot;next_samples&quot;</em>) – The name of the variable to be inserted into the dataset</p></li>
+<li><p><strong>decision_rtol</strong> (<em>float</em><em>, </em><em>default=0.05</em>) – The next sample will be randomly chosen from all grid points that are within
+decision_rtol percent of the maximum of the decision surface</p></li>
+<li><p><strong>excluded_comps_variables</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>, </em><em>default=None</em>) – List of composition variables to use in building an exclusion surface</p></li>
+<li><p><strong>excluded_comps_dim</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – The dimension over the components of a composition</p></li>
+<li><p><strong>exclusion_radius</strong> (<em>float</em><em>, </em><em>default=1e-3</em>) – The width of the Gaussian placed by the GaussianPoints generator</p></li>
+<li><p><strong>count</strong> (<em>int</em><em>, </em><em>default=1</em>) – The number of samples to pull from the grid</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;MaxValueAF&quot;</em>) – The name to use when added to a Pipeline</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.AcquisitionFunction.MultimodalMask_MaxValueAF.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.AcquisitionFunction.MultimodalMask_MaxValueAF.calculate" title="Permalink to this definition">#</a></dt>
-<dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.dataset</cite></p>
+<dd><p>Apply this MultimodalMask_MaxValueAF to the supplied dataset.</p>
+<p>Creates a decision surface by combining the decision variable with phase region
+masking based on proximity to target phase coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset containing variables to evaluate</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The MultimodalMask_MaxValueAF instance with updated outputs</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -492,10 +638,49 @@ sample composition.</p>
 <dt class="sig sig-object py" id="AFL.double_agent.AcquisitionFunction.PseudoUCB">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.AcquisitionFunction.</span></span><span class="sig-name descname"><span class="pre">PseudoUCB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'grid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lambdas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'next_samples'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_rtol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excluded_comps_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excluded_comps_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusion_radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'PseudoUCB'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.AcquisitionFunction.PseudoUCB" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.AcquisitionFunction.AcquisitionFunction" title="AFL.double_agent.AcquisitionFunction.AcquisitionFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">AcquisitionFunction</span></code></a></p>
+<p>Upper Confidence Bound (UCB) acquisition function.</p>
+<p>This acquisition function implements a pseudo Upper Confidence Bound strategy where
+points are selected based on a weighted combination of mean predictions and uncertainty
+estimates. The weights (lambdas) control the exploration-exploitation trade-off.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variables</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – The name of the <cite>xarray.Dataset</cite> data variables to extract from the input <cite>xarray.Dataset</cite></p></li>
+<li><p><strong>grid_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as a evaluation grid.</p></li>
+<li><p><strong>grid_dim</strong> (<em>str</em>) – The xarray dimension over each grid_point. Grid equivalent to sample.</p></li>
+<li><p><strong>lambdas</strong> (<em>List</em><em>[</em><em>float</em><em>]</em>) – Scaling parameters for each input variable to control exploration-exploitation trade-off</p></li>
+<li><p><strong>output_prefix</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – If provided, all outputs of this <cite>PipelineOp</cite> will be prefixed with this string</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite> by this <cite>PipelineOp</cite></p></li>
+<li><p><strong>decision_rtol</strong> (<em>float</em>) – The next sample will be randomly chosen from all grid points that are within <cite>decision_rtol</cite> percent of the
+maximum of the decision surface. This</p></li>
+<li><p><strong>excluded_comps_variables</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A list of <cite>xarray.Dataset</cite> composition variables to use in building an exclusion surface that is added to
+the decision surface. This exclusion surface is built but placing multidimensional inverted Gaussians at
+every composition point specified in the <cite>excluded_comps_variables</cite>. This is done using the <cite>GaussianPoints</cite>
+generator.</p></li>
+<li><p><strong>excluded_comps_dim</strong> (<em>str</em>) – The <cite>xarray</cite> dimension over the components of a composition.</p></li>
+<li><p><strong>exclusion_radius</strong> (<em>float</em>) – The width of the Gaussian placed by the <cite>GaussianPoints</cite> generator. See that documentation for more details.</p></li>
+<li><p><strong>count</strong> (<em>int</em>) – The number of samples to pull from the grid.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name to use when added to a Pipeline. This name is used when calling Pipeline.search()</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.AcquisitionFunction.PseudoUCB.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.AcquisitionFunction.PseudoUCB.calculate" title="Permalink to this definition">#</a></dt>
-<dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.dataset</cite></p>
+<dd><p>Apply this PseudoUCB to the supplied dataset.</p>
+<p>Creates a decision surface by combining input variables with lambda weights
+to balance exploration and exploitation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset containing variables to evaluate</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The PseudoUCB instance with updated outputs</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -504,11 +689,47 @@ sample composition.</p>
 <dt class="sig sig-object py" id="AFL.double_agent.AcquisitionFunction.RandomAF">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.AcquisitionFunction.</span></span><span class="sig-name descname"><span class="pre">RandomAF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'grid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'next_samples'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_rtol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excluded_comps_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excluded_comps_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusion_radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'RandomAF'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.AcquisitionFunction.RandomAF" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.AcquisitionFunction.AcquisitionFunction" title="AFL.double_agent.AcquisitionFunction.AcquisitionFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">AcquisitionFunction</span></code></a></p>
-<p>Randomly choose from the grid with or without excluding previous measurement compositions</p>
+<p>Randomly choose points from the grid with optional exclusion of previous measurements.</p>
+<p>This acquisition function implements a simple random sampling strategy where points are chosen
+uniformly at random from the available grid points. It can optionally exclude previously
+measured points using Gaussian exclusion zones.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as a evaluation grid.</p></li>
+<li><p><strong>grid_dim</strong> (<em>str</em>) – The xarray dimension over each grid_point. Grid equivalent to sample.</p></li>
+<li><p><strong>output_prefix</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – If provided, all outputs of this <cite>PipelineOp</cite> will be prefixed with this string</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite> by this <cite>PipelineOp</cite></p></li>
+<li><p><strong>decision_rtol</strong> (<em>float</em>) – The next sample will be randomly chosen from all grid points that are within <cite>decision_rtol</cite> percent of the
+maximum of the decision surface. This</p></li>
+<li><p><strong>excluded_comps_variables</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A list of <cite>xarray.Dataset</cite> composition variables to use in building an exclusion surface that is added to
+the decision surface. This exclusion surface is built but placing multidimensional inverted Gaussians at
+every composition point specified in the <cite>excluded_comps_variables</cite>. This is done using the <cite>GaussianPoints</cite>
+generator.</p></li>
+<li><p><strong>excluded_comps_dim</strong> (<em>str</em>) – The <cite>xarray</cite> dimension over the components of a composition.</p></li>
+<li><p><strong>exclusion_radius</strong> (<em>float</em>) – The width of the Gaussian placed by the <cite>GaussianPoints</cite> generator. See that documentation for more details.</p></li>
+<li><p><strong>count</strong> (<em>int</em>) – The number of samples to pull from the grid.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name to use when added to a Pipeline. This name is used when calling Pipeline.search()</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.AcquisitionFunction.RandomAF.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.AcquisitionFunction.RandomAF.calculate" title="Permalink to this definition">#</a></dt>
-<dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.dataset</cite></p>
+<dd><p>Apply this RandomAF to the supplied dataset.</p>
+<p>Creates a random decision surface and optionally applies exclusion zones
+around previously measured points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset containing the grid to sample from</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The RandomAF instance with updated outputs</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

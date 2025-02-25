@@ -345,7 +345,7 @@
 <li class="toctree-l2"><a class="reference internal" href="Generator.html">AFL.double_agent.Generator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="MaskGrid.html">AFL.double_agent.MaskGrid module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PairMetric.html">AFL.double_agent.PairMetric module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhaseLabeler.html">AFL.double_agent.PhaseLabeler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Labeler.html">AFL.double_agent.Labeler module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Preprocessor.html">AFL.double_agent.Preprocessor module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="TensorFlowExtrapolator.html">AFL.double_agent.TensorFlowExtrapolator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a></li>
@@ -427,15 +427,55 @@
                   
   <section id="module-AFL.double_agent.Extrapolator">
 <span id="afl-double-agent-extrapolator-module"></span><h1>AFL.double_agent.Extrapolator module<a class="headerlink" href="#module-AFL.double_agent.Extrapolator" title="Permalink to this heading">#</a></h1>
-<p>Extrapolators take discrete sample data and extrapolate the data onto a provided grid.</p>
+<p>Extrapolation tools for extending discrete sample data to continuous spaces.</p>
+<p>This module provides classes for extrapolating data from discrete sample points to continuous
+spaces, particularly useful in materials science and machine learning applications. The extrapolators
+can work with both classification and regression tasks.</p>
+<p>Key features:
+- Support for Gaussian Process Classification and Regression
+- Handling of uncertainty in measurements
+- Visualization tools for extrapolation results
+- Flexible kernel selection for GP models
+- Support for different sample and grid dimensions</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="AFL.double_agent.Extrapolator.DummyExtrapolator">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Extrapolator.</span></span><span class="sig-name descname"><span class="pre">DummyExtrapolator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">feature_input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor_input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'DummyExtrapolator'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Extrapolator.DummyExtrapolator" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Extrapolator.Extrapolator" title="AFL.double_agent.Extrapolator.Extrapolator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Extrapolator</span></code></a></p>
+<p>Simple extrapolator that returns zero values.</p>
+<p>This extrapolator serves as a baseline implementation, returning arrays of zeros
+for both mean and variance predictions. Useful for testing and as a template.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feature_input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as the input to the model that will be extrapolating
+the discrete data. This is typically a sample composition variable.</p></li>
+<li><p><strong>predictor_input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as the output of the model that will be extrapolating
+the discrete data. This is typically a class label or property variable.</p></li>
+<li><p><strong>output_prefix</strong> (<em>str</em>) – The string prefix to apply to each output variable before inserting into the output <cite>xarray.Dataset</cite></p></li>
+<li><p><strong>grid_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as an evaluation grid.</p></li>
+<li><p><strong>grid_dim</strong> (<em>str</em>) – The xarray dimension over each grid_point. Grid equivalent to sample.</p></li>
+<li><p><strong>sample_dim</strong> (<em>str</em>) – The <cite>xarray</cite> dimension over the discrete ‘samples’ in the <cite>feature_input_variable</cite>. This is typically
+a variant of <cite>sample</cite> e.g., <cite>saxs_sample</cite>.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name to use when added to a Pipeline. This name is used when calling Pipeline.search()</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Extrapolator.DummyExtrapolator.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Extrapolator.DummyExtrapolator.calculate" title="Permalink to this definition">#</a></dt>
-<dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.Dataset</cite></p>
+<dd><p>Apply this dummy extrapolator to the supplied dataset.</p>
+<p>Creates arrays of zeros for both mean and variance predictions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset containing the sample points and grid</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The dummy extrapolator instance with zero-valued outputs</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -444,17 +484,64 @@
 <dt class="sig sig-object py" id="AFL.double_agent.Extrapolator.Extrapolator">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Extrapolator.</span></span><span class="sig-name descname"><span class="pre">Extrapolator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">feature_input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor_input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Extrapolator'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Extrapolator.Extrapolator" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp" title="AFL.double_agent.PipelineOp.PipelineOp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineOp</span></code></a></p>
-<p>Base class for all extrapolators</p>
+<p>Base class for extrapolating discrete sample data onto continuous spaces.</p>
+<p>This abstract base class provides common functionality for extrapolating data from
+discrete sample points to a continuous grid. It handles data management and provides
+visualization capabilities.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feature_input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as the input to the model that will be extrapolating
+the discrete data. This is typically a sample composition variable.</p></li>
+<li><p><strong>predictor_input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as the output of the model that will be extrapolating
+the discrete data. This is typically a class label or property variable.</p></li>
+<li><p><strong>output_variables</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – The list of variables that will be output by this class.</p></li>
+<li><p><strong>output_prefix</strong> (<em>str</em>) – The string prefix to apply to each output variable before inserting into the output <cite>xarray.Dataset</cite></p></li>
+<li><p><strong>grid_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as an evaluation grid.</p></li>
+<li><p><strong>grid_dim</strong> (<em>str</em>) – The xarray dimension over each grid_point. Grid equivalent to sample.</p></li>
+<li><p><strong>sample_dim</strong> (<em>str</em>) – The <cite>xarray</cite> dimension over the discrete ‘samples’ in the <cite>feature_input_variable</cite>. This is typically
+a variant of <cite>sample</cite> e.g., <cite>saxs_sample</cite>.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name to use when added to a Pipeline. This name is used when calling Pipeline.search()</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Extrapolator.Extrapolator.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Extrapolator.Extrapolator.calculate" title="Permalink to this definition">#</a></dt>
-<dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.Dataset</cite></p>
+<dd><p>Apply this extrapolator to the supplied dataset.</p>
+<p>This method must be implemented by subclasses to define how the extrapolation
+is performed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset containing the sample points and grid</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The extrapolator instance with updated outputs</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Extrapolator.Extrapolator.plot">
 <span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">mpl_kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Figure</span></span></span><a class="headerlink" href="#AFL.double_agent.Extrapolator.Extrapolator.plot" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Plot the extrapolation results.</p>
+<p>Creates visualization of the extrapolated data, with different plotting styles
+depending on the data dimensions and type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>**mpl_kwargs</strong> (<em>dict</em>) – Additional keyword arguments to pass to matplotlib plotting functions</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The matplotlib figure containing the plots</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>plt.Figure</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -462,11 +549,46 @@
 <dt class="sig sig-object py" id="AFL.double_agent.Extrapolator.GaussianProcessClassifier">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Extrapolator.</span></span><span class="sig-name descname"><span class="pre">GaussianProcessClassifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">feature_input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor_input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'fmin_l_bfgs_b'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'GaussianProcessClassifier'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Extrapolator.GaussianProcessClassifier" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Extrapolator.Extrapolator" title="AFL.double_agent.Extrapolator.Extrapolator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Extrapolator</span></code></a></p>
-<p>Use a Gaussian process classifier to extrapolate class labels at discrete compositions onto a composition grid</p>
+<p>Gaussian Process classifier for extrapolating class labels.</p>
+<p>This extrapolator uses scikit-learn’s GaussianProcessClassifier to predict class
+probabilities across the grid based on discrete labeled samples. It provides both
+class predictions and uncertainty estimates through entropy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feature_input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as the input to the model that will be extrapolating
+the discrete data. This is typically a sample composition variable.</p></li>
+<li><p><strong>predictor_input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as the output of the model that will be extrapolating
+the discrete data. For this <cite>PipelineOp</cite> this should be a class label vector.</p></li>
+<li><p><strong>output_prefix</strong> (<em>str</em>) – The string prefix to apply to each output variable before inserting into the output <cite>xarray.Dataset</cite></p></li>
+<li><p><strong>grid_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as an evaluation grid.</p></li>
+<li><p><strong>grid_dim</strong> (<em>str</em>) – The xarray dimension over each grid_point. Grid equivalent to sample.</p></li>
+<li><p><strong>sample_dim</strong> (<em>str</em>) – The <cite>xarray</cite> dimension over the discrete ‘samples’ in the <cite>feature_input_variable</cite>. This is typically
+a variant of <cite>sample</cite> e.g., <cite>saxs_sample</cite>.</p></li>
+<li><p><strong>kernel</strong> (<em>Optional</em><em>[</em><em>object</em><em>]</em>) – A optional sklearn.gaussian_process.kernel to use the classifier. If not provided, will default to
+<cite>Matern</cite>.</p></li>
+<li><p><strong>optimizer</strong> (<em>str</em>) – The name of the optimizer to use in optimizer the gaussian process parameters</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name to use when added to a Pipeline. This name is used when calling Pipeline.search()</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Extrapolator.GaussianProcessClassifier.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Extrapolator.GaussianProcessClassifier.calculate" title="Permalink to this definition">#</a></dt>
-<dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.Dataset</cite></p>
+<dd><p>Apply this GP classifier to the supplied dataset.</p>
+<p>Fits a Gaussian Process classifier to the input data and makes predictions
+across the grid, including class probabilities and entropy-based uncertainty.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset containing labeled samples and prediction grid</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The GP classifier instance with predictions and uncertainty estimates</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -475,11 +597,49 @@
 <dt class="sig sig-object py" id="AFL.double_agent.Extrapolator.GaussianProcessRegressor">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Extrapolator.</span></span><span class="sig-name descname"><span class="pre">GaussianProcessRegressor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">feature_input_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor_input_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor_uncertainty_variable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fmin_l_bfgs_b'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'GaussianProcessRegressor'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fix_nans</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Extrapolator.GaussianProcessRegressor" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Extrapolator.Extrapolator" title="AFL.double_agent.Extrapolator.Extrapolator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Extrapolator</span></code></a></p>
-<p>Use a Gaussian process regressor to extrapolate a property at discrete points onto a provided composition grid</p>
+<p>Gaussian Process regressor for extrapolating continuous values.</p>
+<p>This extrapolator uses scikit-learn’s GaussianProcessRegressor to predict continuous
+values across the grid based on discrete samples. It handles measurement uncertainty
+and provides both mean predictions and variance estimates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feature_input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as the input to the model that will be extrapolating
+the discrete data. This is typically a sample composition variable.</p></li>
+<li><p><strong>predictor_input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as the output of the model that will be extrapolating
+the discrete data. For this <cite>PipelineOp</cite> this should be a continuous value vector.</p></li>
+<li><p><strong>output_prefix</strong> (<em>str</em>) – The string prefix to apply to each output variable before inserting into the output <cite>xarray.Dataset</cite></p></li>
+<li><p><strong>grid_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as an evaluation grid.</p></li>
+<li><p><strong>grid_dim</strong> (<em>str</em>) – The xarray dimension over each grid_point. Grid equivalent to sample.</p></li>
+<li><p><strong>sample_dim</strong> (<em>str</em>) – The <cite>xarray</cite> dimension over the discrete ‘samples’ in the <cite>feature_input_variable</cite>. This is typically
+a variant of <cite>sample</cite> e.g., <cite>saxs_sample</cite>.</p></li>
+<li><p><strong>predictor_uncertainty_variable</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Variable containing uncertainty estimates for the predictor values</p></li>
+<li><p><strong>optimizer</strong> (<em>str</em>) – The name of the optimizer to use in optimizer the gaussian process parameters</p></li>
+<li><p><strong>kernel</strong> (<em>Optional</em><em>[</em><em>object</em><em>]</em>) – A optional sklearn.gaussian_process.kernel to use the regressor. If not provided, will default to
+<cite>Matern</cite>.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name to use when added to a Pipeline. This name is used when calling Pipeline.search()</p></li>
+<li><p><strong>fix_nans</strong> (<em>bool</em>) – Whether to handle NaN values in the input data</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Extrapolator.GaussianProcessRegressor.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Extrapolator.GaussianProcessRegressor.calculate" title="Permalink to this definition">#</a></dt>
-<dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.Dataset</cite></p>
+<dd><p>Apply this GP regressor to the supplied dataset.</p>
+<p>Fits a Gaussian Process regressor to the input data and makes predictions
+across the grid, including mean values and variance estimates. Can handle
+heteroscedastic noise if uncertainty values are provided.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset containing samples and prediction grid</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The GP regressor instance with predictions and uncertainty estimates</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

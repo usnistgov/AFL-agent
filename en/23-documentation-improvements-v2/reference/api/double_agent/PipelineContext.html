@@ -345,7 +345,7 @@
 <li class="toctree-l2"><a class="reference internal" href="Generator.html">AFL.double_agent.Generator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="MaskGrid.html">AFL.double_agent.MaskGrid module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PairMetric.html">AFL.double_agent.PairMetric module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhaseLabeler.html">AFL.double_agent.PhaseLabeler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Labeler.html">AFL.double_agent.Labeler module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Preprocessor.html">AFL.double_agent.Preprocessor module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="TensorFlowExtrapolator.html">AFL.double_agent.TensorFlowExtrapolator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a></li>
@@ -437,8 +437,30 @@
 <dt class="sig sig-object py" id="AFL.double_agent.PipelineContext.PipelineContext">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.PipelineContext.</span></span><span class="sig-name descname"><span class="pre">PipelineContext</span></span><a class="headerlink" href="#AFL.double_agent.PipelineContext.PipelineContext" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Inherited by Pipeline to allow for context manager abuse</p>
-<p>See <a class="reference external" href="https://stackoverflow.com/questions/49573131/how-are-pymc3-variables-assigned-to-the-currently-active-model">https://stackoverflow.com/questions/49573131/how-are-pymc3-variables-assigned-to-the-currently-active-model</a></p>
+<p>Base class that provides context manager functionality for pipeline operations.</p>
+<p>This class implements a thread-local context stack pattern that allows pipeline
+operations to be associated with their parent pipeline. When a Pipeline instance
+is used as a context manager (with statement), it pushes itself onto the context
+stack, making it available to operations created within that context.</p>
+<p>This pattern enables a more intuitive API where operations can automatically
+associate with the currently active pipeline without explicit references.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_pipeline&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipe</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="c1"># Operations created here can access the pipeline via get_context()</span>
+<span class="gp">... </span>    <span class="n">op</span> <span class="o">=</span> <span class="n">SomeOperation</span><span class="p">(</span><span class="n">input_var</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_var</span><span class="o">=</span><span class="s2">&quot;result&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="c1"># op can now reference the pipeline context</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>This implementation uses thread-local storage to ensure thread safety when
+multiple pipelines are being constructed simultaneously in different threads.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pipeline</span></code></dt><dd><p>Main container class that inherits this context functionality</p>
+</dd>
+</dl>
+</div>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="AFL.double_agent.PipelineContext.PipelineContext.contexts">
 <span class="sig-name descname"><span class="pre">contexts</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;_thread._local</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#AFL.double_agent.PipelineContext.PipelineContext.contexts" title="Permalink to this definition">#</a></dt>

@@ -345,7 +345,7 @@
 <li class="toctree-l2"><a class="reference internal" href="Generator.html">AFL.double_agent.Generator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="MaskGrid.html">AFL.double_agent.MaskGrid module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PairMetric.html">AFL.double_agent.PairMetric module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhaseLabeler.html">AFL.double_agent.PhaseLabeler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Labeler.html">AFL.double_agent.Labeler module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Preprocessor.html">AFL.double_agent.Preprocessor module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="TensorFlowExtrapolator.html">AFL.double_agent.TensorFlowExtrapolator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a></li>
@@ -427,14 +427,54 @@
                   
   <section id="module-AFL.double_agent.Boundary">
 <span id="afl-double-agent-boundary-module"></span><h1>AFL.double_agent.Boundary module<a class="headerlink" href="#module-AFL.double_agent.Boundary" title="Permalink to this heading">#</a></h1>
+<p>Boundary analysis tools for phase diagram and compositional spaces.</p>
+<p>This module provides tools for analyzing and comparing boundaries in phase diagrams
+and compositional spaces. It includes functionality for creating concave hulls around
+phase regions and computing similarity scores between different boundary sets.</p>
+<p>Key features:
+- Concave hull generation for phase regions
+- Boundary comparison metrics
+- Support for 2D compositional spaces
+- Visualization tools for boundary analysis
+- Handling of multi-phase systems</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="AFL.double_agent.Boundary.BoundaryScore">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Boundary.</span></span><span class="sig-name descname"><span class="pre">BoundaryScore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gt_hull_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">al_hull_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'boundary_score'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'BoundaryScore'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Boundary.BoundaryScore" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp" title="AFL.double_agent.PipelineOp.PipelineOp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineOp</span></code></a></p>
+<p>Computes similarity scores between two sets of phase boundaries.</p>
+<p>This class calculates metrics comparing the boundaries of phase regions
+between two different datasets (e.g., ground truth vs. predicted phases).
+It provides both numerical scores and optional visualization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gt_hull_variable</strong> (<em>str</em>) – Name of variable containing ground truth hull data</p></li>
+<li><p><strong>al_hull_variable</strong> (<em>str</em>) – Name of variable containing comparison hull data</p></li>
+<li><p><strong>output_prefix</strong> (<em>str</em><em>, </em><em>default=&quot;boundary_score&quot;</em>) – Prefix to use for output variable names</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;BoundaryScore&quot;</em>) – Name to use when added to a Pipeline</p></li>
+<li><p><strong>plot</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to create visualizations of the boundary comparisons</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Boundary.BoundaryScore.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Boundary.BoundaryScore.calculate" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Calculate boundary similarity scores between hull sets.</p>
+<p>Computes mean and standard deviation of distances between corresponding
+points on hull boundaries. Optionally creates visualizations of the
+comparison.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – Dataset containing both sets of hulls to compare</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The BoundaryScore instance with computed scores</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -442,10 +482,47 @@
 <dt class="sig sig-object py" id="AFL.double_agent.Boundary.ConcaveHull">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Boundary.</span></span><span class="sig-name descname"><span class="pre">ConcaveHull</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hull_tracing_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_phases</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'components'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segmentize_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.025</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_holes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ConcaveHull'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Boundary.ConcaveHull" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp" title="AFL.double_agent.PipelineOp.PipelineOp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineOp</span></code></a></p>
+<p>Creates concave hulls around points in 2D space.</p>
+<p>This class generates concave hulls (alpha shapes) around sets of points,
+useful for identifying phase boundaries in compositional spaces. It can
+handle multiple phases and provides options for hull generation parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the variable containing the points to create hulls around</p></li>
+<li><p><strong>output_prefix</strong> (<em>str</em>) – Prefix to use for output variable names</p></li>
+<li><p><strong>hull_tracing_ratio</strong> (<em>float</em><em>, </em><em>default=0.2</em>) – Controls the concavity of the hull. Lower values create tighter hulls</p></li>
+<li><p><strong>drop_phases</strong> (<em>Optional</em><em>[</em><em>List</em><em>]</em><em>, </em><em>default=None</em>) – List of phase labels to exclude from hull generation</p></li>
+<li><p><strong>component_dim</strong> (<em>str</em><em>, </em><em>default=&quot;components&quot;</em>) – Name of the dimension containing component coordinates</p></li>
+<li><p><strong>label_variable</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Name of variable containing phase labels. If None, all points are treated
+as one phase</p></li>
+<li><p><strong>segmentize_length</strong> (<em>float</em><em>, </em><em>default=0.025</em>) – Length to use when segmenting hull boundaries for smoother visualization</p></li>
+<li><p><strong>allow_holes</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to allow holes in the generated hulls</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;ConcaveHull&quot;</em>) – Name to use when added to a Pipeline</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Boundary.ConcaveHull.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Boundary.ConcaveHull.calculate" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Generate concave hulls for each phase in the dataset.</p>
+<p>Creates concave hulls around points grouped by their phase labels.
+Handles 2D data only and includes options for hull parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset containing points and optional phase labels</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The ConcaveHull instance with generated hulls</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the input data is not 2D</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 

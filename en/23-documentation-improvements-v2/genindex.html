@@ -417,7 +417,7 @@
       <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.AffinityPropagation">AffinityPropagation (class in AFL.agent.PhaseLabeler)</a>
 
       <ul>
-        <li><a href="reference/api/double_agent/PhaseLabeler.html#AFL.double_agent.PhaseLabeler.AffinityPropagation">(class in AFL.double_agent.PhaseLabeler)</a>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.AffinityPropagation">(class in AFL.double_agent.Labeler)</a>
 </li>
       </ul></li>
       <li>
@@ -521,6 +521,13 @@
 </li>
       </ul></li>
       <li>
+    AFL.double_agent.Labeler
+
+      <ul>
+        <li><a href="reference/api/double_agent/Labeler.html#module-AFL.double_agent.Labeler">module</a>
+</li>
+      </ul></li>
+      <li>
     AFL.double_agent.MaskGrid
 
       <ul>
@@ -532,13 +539,6 @@
 
       <ul>
         <li><a href="reference/api/double_agent/PairMetric.html#module-AFL.double_agent.PairMetric">module</a>
-</li>
-      </ul></li>
-      <li>
-    AFL.double_agent.PhaseLabeler
-
-      <ul>
-        <li><a href="reference/api/double_agent/PhaseLabeler.html#module-AFL.double_agent.PhaseLabeler">module</a>
 </li>
       </ul></li>
       <li>
@@ -689,6 +689,12 @@
 </li>
         <li><a href="reference/api/double_agent/Generator.html#AFL.double_agent.Generator.Generator.calculate">(AFL.double_agent.Generator.Generator method)</a>
 </li>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.AffinityPropagation.calculate">(AFL.double_agent.Labeler.AffinityPropagation method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.GaussianMixtureModel.calculate">(AFL.double_agent.Labeler.GaussianMixtureModel method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.SpectralClustering.calculate">(AFL.double_agent.Labeler.SpectralClustering method)</a>
+</li>
         <li><a href="reference/api/double_agent/MaskGrid.html#AFL.double_agent.MaskGrid.MaskGrid.calculate">(AFL.double_agent.MaskGrid.MaskGrid method)</a>
 </li>
         <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.CombineMetric.calculate">(AFL.double_agent.PairMetric.CombineMetric method)</a>
@@ -702,12 +708,6 @@
         <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.PairMetric.calculate">(AFL.double_agent.PairMetric.PairMetric method)</a>
 </li>
         <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.Similarity.calculate">(AFL.double_agent.PairMetric.Similarity method)</a>
-</li>
-        <li><a href="reference/api/double_agent/PhaseLabeler.html#AFL.double_agent.PhaseLabeler.AffinityPropagation.calculate">(AFL.double_agent.PhaseLabeler.AffinityPropagation method)</a>
-</li>
-        <li><a href="reference/api/double_agent/PhaseLabeler.html#AFL.double_agent.PhaseLabeler.GaussianMixtureModel.calculate">(AFL.double_agent.PhaseLabeler.GaussianMixtureModel method)</a>
-</li>
-        <li><a href="reference/api/double_agent/PhaseLabeler.html#AFL.double_agent.PhaseLabeler.SpectralClustering.calculate">(AFL.double_agent.PhaseLabeler.SpectralClustering method)</a>
 </li>
         <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.calculate">(AFL.double_agent.Pipeline.Pipeline method)</a>
 </li>
@@ -905,7 +905,7 @@
       <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.GaussianMixtureModel">GaussianMixtureModel (class in AFL.agent.PhaseLabeler)</a>
 
       <ul>
-        <li><a href="reference/api/double_agent/PhaseLabeler.html#AFL.double_agent.PhaseLabeler.GaussianMixtureModel">(class in AFL.double_agent.PhaseLabeler)</a>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.GaussianMixtureModel">(class in AFL.double_agent.Labeler)</a>
 </li>
       </ul></li>
       <li><a href="reference/api/double_agent/Generator.html#AFL.double_agent.Generator.GaussianPoints">GaussianPoints (class in AFL.double_agent.Generator)</a>
@@ -926,14 +926,14 @@
 </li>
       <li><a href="reference/api/double_agent/PipelineContext.html#AFL.double_agent.PipelineContext.PipelineContext.get_contexts">get_contexts() (AFL.double_agent.PipelineContext.PipelineContext class method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.CompositionTools.get_grid">get_grid() (AFL.agent.xarray_extensions.CompositionTools method)</a>
 
       <ul>
         <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.CompositionTools.get_grid">(AFL.double_agent.xarray_extensions.CompositionTools method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.CompositionTools.get_grid_old">get_grid_old() (AFL.agent.xarray_extensions.CompositionTools method)</a>
 
       <ul>
@@ -964,6 +964,10 @@
         <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.CompositionTools.get_standard_scaled">(AFL.double_agent.xarray_extensions.CompositionTools method)</a>
 </li>
       </ul></li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.graph">graph (AFL.double_agent.Pipeline.Pipeline attribute)</a>
+</li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.graph_edge_labels">graph_edge_labels (AFL.double_agent.Pipeline.Pipeline attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -1006,10 +1010,12 @@
       </ul></li>
       <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.label_encoder">label_encoder (AFL.agent.PhaseMap_pandas.PhaseMap property)</a>
 </li>
-      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.labels">labels (AFL.agent.PhaseMap_pandas.PhaseMap property)</a>
+      <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.Labeler">Labeler (class in AFL.double_agent.Labeler)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.labels">labels (AFL.agent.PhaseMap_pandas.PhaseMap property)</a>
+</li>
       <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.labels_ordinal">labels_ordinal (AFL.agent.PhaseMap_pandas.PhaseMap property)</a>
 </li>
       <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.LabelTools">LabelTools (class in AFL.agent.xarray_extensions)</a>
@@ -1092,11 +1098,11 @@
 </li>
         <li><a href="reference/api/double_agent/Generator.html#module-AFL.double_agent.Generator">AFL.double_agent.Generator</a>
 </li>
+        <li><a href="reference/api/double_agent/Labeler.html#module-AFL.double_agent.Labeler">AFL.double_agent.Labeler</a>
+</li>
         <li><a href="reference/api/double_agent/MaskGrid.html#module-AFL.double_agent.MaskGrid">AFL.double_agent.MaskGrid</a>
 </li>
         <li><a href="reference/api/double_agent/PairMetric.html#module-AFL.double_agent.PairMetric">AFL.double_agent.PairMetric</a>
-</li>
-        <li><a href="reference/api/double_agent/PhaseLabeler.html#module-AFL.double_agent.PhaseLabeler">AFL.double_agent.PhaseLabeler</a>
 </li>
         <li><a href="reference/api/double_agent/Pipeline.html#module-AFL.double_agent.Pipeline">AFL.double_agent.Pipeline</a>
 </li>
@@ -1151,6 +1157,10 @@
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.ops">ops (AFL.double_agent.Pipeline.Pipeline attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.output_variables">output_variables() (AFL.double_agent.Pipeline.Pipeline method)</a>
 </li>
   </ul></td>
@@ -1162,11 +1172,7 @@
       <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.PairMetric">PairMetric (class in AFL.double_agent.PairMetric)</a>
 </li>
       <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.PhaseLabeler">PhaseLabeler (class in AFL.agent.PhaseLabeler)</a>
-
-      <ul>
-        <li><a href="reference/api/double_agent/PhaseLabeler.html#AFL.double_agent.PhaseLabeler.PhaseLabeler">(class in AFL.double_agent.PhaseLabeler)</a>
 </li>
-      </ul></li>
       <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap">PhaseMap (class in AFL.agent.PhaseMap_pandas)</a>
 </li>
       <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.phasemap_grid_factory">phasemap_grid_factory() (in module AFL.agent.PhaseMap_pandas)</a>
@@ -1296,7 +1302,7 @@
       <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.PhaseLabeler.remap_labels_by_count">remap_labels_by_count() (AFL.agent.PhaseLabeler.PhaseLabeler method)</a>
 
       <ul>
-        <li><a href="reference/api/double_agent/PhaseLabeler.html#AFL.double_agent.PhaseLabeler.PhaseLabeler.remap_labels_by_count">(AFL.double_agent.PhaseLabeler.PhaseLabeler method)</a>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.Labeler.remap_labels_by_count">(AFL.double_agent.Labeler.Labeler method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -1315,6 +1321,8 @@
         <li><a href="reference/api/agent/UCB_AcquisitionFunction.html#AFL.agent.UCB_AcquisitionFunction.Acquisition.reset_phasemap">(AFL.agent.UCB_AcquisitionFunction.Acquisition method)</a>
 </li>
       </ul></li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.result">result (AFL.double_agent.Pipeline.Pipeline attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -1342,7 +1350,7 @@
       <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.PhaseLabeler.silhouette">silhouette() (AFL.agent.PhaseLabeler.PhaseLabeler method)</a>
 
       <ul>
-        <li><a href="reference/api/double_agent/PhaseLabeler.html#AFL.double_agent.PhaseLabeler.PhaseLabeler.silhouette">(AFL.double_agent.PhaseLabeler.PhaseLabeler method)</a>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.Labeler.silhouette">(AFL.double_agent.Labeler.Labeler method)</a>
 </li>
       </ul></li>
       <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.Similarity">Similarity (class in AFL.agent.Metric)</a>
@@ -1360,7 +1368,7 @@
       <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.SpectralClustering">SpectralClustering (class in AFL.agent.PhaseLabeler)</a>
 
       <ul>
-        <li><a href="reference/api/double_agent/PhaseLabeler.html#AFL.double_agent.PhaseLabeler.SpectralClustering">(class in AFL.double_agent.PhaseLabeler)</a>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.SpectralClustering">(class in AFL.double_agent.Labeler)</a>
 </li>
       </ul></li>
       <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.Standardize">Standardize (class in AFL.double_agent.Preprocessor)</a>

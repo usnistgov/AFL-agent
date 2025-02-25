@@ -345,7 +345,7 @@
 <li class="toctree-l2"><a class="reference internal" href="Generator.html">AFL.double_agent.Generator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="MaskGrid.html">AFL.double_agent.MaskGrid module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PairMetric.html">AFL.double_agent.PairMetric module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhaseLabeler.html">AFL.double_agent.PhaseLabeler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Labeler.html">AFL.double_agent.Labeler module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Preprocessor.html">AFL.double_agent.Preprocessor module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="TensorFlowExtrapolator.html">AFL.double_agent.TensorFlowExtrapolator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a></li>
@@ -427,22 +427,81 @@
                   
   <section id="module-AFL.double_agent.Pipeline">
 <span id="afl-double-agent-pipeline-module"></span><h1>AFL.double_agent.Pipeline module<a class="headerlink" href="#module-AFL.double_agent.Pipeline" title="Permalink to this heading">#</a></h1>
-<p>All operators/calculations in agent should be formatted as PipelinesOps double_agent</p>
-<p>All PipelineOps should:
-- take input_variable and output_variable in their constructor
-- have a .calculate method</p>
+<p>Pipeline module for the double_agent package.</p>
+<p>This module provides the Pipeline class, which serves as a container for defining
+and executing computational workflows. Pipelines are composed of PipelineOp objects
+that perform specific operations on data.</p>
+<p>PipelineOps in this system follow these conventions:
+- Each operator takes input_variable and output_variable parameters in its constructor
+- Each operator implements a .calculate method that:</p>
 <blockquote>
 <div><ul class="simple">
-<li><p>with exact signature as base class (PipelineOpBase)</p></li>
-<li><p>that writes a xr.Dataset or xr.DataArray (preferred)</p></li>
-<li><p>that returns self</p></li>
+<li><p>Maintains the same signature as the base class (PipelineOp)</p></li>
+<li><p>Writes results to an xarray Dataset or DataArray</p></li>
+<li><p>Returns self for method chaining</p></li>
 </ul>
 </div></blockquote>
 <dl class="py class">
 <dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Pipeline.</span></span><span class="sig-name descname"><span class="pre">Pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ops</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="PipelineContext.html#AFL.double_agent.PipelineContext.PipelineContext" title="AFL.double_agent.PipelineContext.PipelineContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineContext</span></code></a></p>
-<p>Container class for defining and building pipelines.</p>
+<p>Container class for defining and executing computational workflows.</p>
+<p>The Pipeline class serves as a framework for organizing and running sequences of
+operations (PipelineOps) on data. Each operation in the pipeline takes input data,
+performs a specific transformation, and produces output data that can be used by
+subsequent operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Name of the pipeline. If None, defaults to “Pipeline”.</p></li>
+<li><p><strong>ops</strong> (<em>Optional</em><em>[</em><em>List</em><em>]</em><em>, </em><em>default=None</em>) – List of PipelineOp objects to initialize the pipeline with.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline.result">
+<span class="sig-name descname"><span class="pre">result</span></span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline.result" title="Permalink to this definition">#</a></dt>
+<dd><p>Stores the final result after pipeline execution</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline.ops">
+<span class="sig-name descname"><span class="pre">ops</span></span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline.ops" title="Permalink to this definition">#</a></dt>
+<dd><p>List of PipelineOp objects in the pipeline</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline.graph">
+<span class="sig-name descname"><span class="pre">graph</span></span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline.graph" title="Permalink to this definition">#</a></dt>
+<dd><p>NetworkX directed graph representation of the pipeline</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>nx.DiGraph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline.graph_edge_labels">
+<span class="sig-name descname"><span class="pre">graph_edge_labels</span></span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline.graph_edge_labels" title="Permalink to this definition">#</a></dt>
+<dd><p>Edge labels for the pipeline graph visualization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline.append">
 <span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp" title="AFL.double_agent.PipelineOp.PipelineOp"><span class="pre">PipelineOp</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline.append" title="Permalink to this definition">#</a></dt>
@@ -607,6 +666,10 @@ an identical Pipeline to this method. Use with caution.</p>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline"><code class="docutils literal notranslate"><span class="pre">Pipeline</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.result"><code class="docutils literal notranslate"><span class="pre">Pipeline.result</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.ops"><code class="docutils literal notranslate"><span class="pre">Pipeline.ops</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.graph"><code class="docutils literal notranslate"><span class="pre">Pipeline.graph</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.graph_edge_labels"><code class="docutils literal notranslate"><span class="pre">Pipeline.graph_edge_labels</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.append"><code class="docutils literal notranslate"><span class="pre">Pipeline.append()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.calculate"><code class="docutils literal notranslate"><span class="pre">Pipeline.calculate()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.clear_outputs"><code class="docutils literal notranslate"><span class="pre">Pipeline.clear_outputs()</span></code></a></li>
