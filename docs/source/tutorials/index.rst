@@ -7,5 +7,5 @@ Step-by-step guides for beginners to use AFL-agent
    :maxdepth: 1
 
    installation
-   getting_started
+   quickstart
    building_pipelines
