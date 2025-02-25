@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Pipelines &#8212; AFL-agent  documentation</title>
+    <title>Understanding Pipelines in AFL-agent &#8212; AFL-agent  documentation</title>
   
   
   
@@ -49,7 +49,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'explanations/pipelines';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Pipeline Context Manager" href="context_manager.html" />
+    <link rel="next" title="The Context Manager Pattern" href="context_manager.html" />
     <link rel="prev" title="Explanations" href="index.html" />
   
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -338,8 +338,8 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Topics:</span></p>
 <ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context_manager.html">Pipeline Context Manager</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Understanding Pipelines in AFL-agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context_manager.html">The Context Manager Pattern</a></li>
 </ul>
 </div>
 </nav></div>
@@ -383,7 +383,7 @@
     
     <li class="breadcrumb-item"><a href="index.html" class="nav-link">Explanations</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Pipelines</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Understanding Pipelines in AFL-agent</span></li>
   </ul>
 </nav>
 </div>
@@ -400,12 +400,79 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This section is a work in progress.</p>
-</div>
-<section id="pipelines">
-<h1>Pipelines<a class="headerlink" href="#pipelines" title="Permalink to this heading">#</a></h1>
+  <section id="understanding-pipelines-in-afl-agent">
+<h1>Understanding Pipelines in AFL-agent<a class="headerlink" href="#understanding-pipelines-in-afl-agent" title="Permalink to this heading">#</a></h1>
+<p>Pipelines are a fundamental concept in the AFL agent framework, providing a systematic way to organize and execute data processing operations. This document explains the underlying principles of the pipeline system, why it was designed this way, and how the various components fit together conceptually.</p>
+<section id="core-principles">
+<h2>Core Principles<a class="headerlink" href="#core-principles" title="Permalink to this heading">#</a></h2>
+<p>The pipeline system is built around several key design principles:</p>
+<dl class="simple">
+<dt><strong>Composability</strong></dt><dd><p>Pipelines are designed to be composable - individual operations can be combined in various sequences to create complex processing workflows. This modularity allows for flexible, reusable, and maintainable data processing code.</p>
+</dd>
+<dt><strong>Explicitness</strong></dt><dd><p>Each operation in a pipeline explicitly declares its inputs and outputs, making the data flow transparent and traceable. This clarity helps with debugging and understanding how data moves through the system.</p>
+</dd>
+<dt><strong>Directed Acyclic Graph (DAG) Structure</strong></dt><dd><p>Conceptually, a pipeline represents a directed acyclic graph where:</p>
+<ul class="simple">
+<li><p>Nodes are data variables</p></li>
+<li><p>Edges represent operations that transform input variables into output variables</p></li>
+</ul>
+</dd>
+<dt><strong>State Management</strong></dt><dd><p>Pipelines maintain state during execution via a shared xarray Dataset, capturing the input-output relationships and allowing for inspection and visualization of the data flow.</p>
+</dd>
+</dl>
+</section>
+<section id="pipeline-architecture">
+<h2>Pipeline Architecture<a class="headerlink" href="#pipeline-architecture" title="Permalink to this heading">#</a></h2>
+<p>A pipeline is composed of the following key components:</p>
+<dl class="simple">
+<dt><strong>Pipeline</strong></dt><dd><p>The container that holds and manages operations. It provides methods for adding operations, executing the pipeline, visualizing the pipeline structure, and managing the flow of data between operations.</p>
+</dd>
+<dt><strong>PipelineOp</strong></dt><dd><p>The abstract base class for all operations in a pipeline. At a minimum, an operation defines:</p>
+<ul class="simple">
+<li><p>Input variables - what data it requires</p></li>
+<li><p>Output variables - what data it produces</p></li>
+<li><p>A calculate method - the logic for transforming inputs to outputs</p></li>
+</ul>
+</dd>
+<dt><strong>Pipeline Context</strong></dt><dd><p>The context management system that enables the convenient creation of pipelines using Python’s context manager pattern.</p>
+</dd>
+</dl>
+</section>
+<section id="data-flow-model">
+<h2>Data Flow Model<a class="headerlink" href="#data-flow-model" title="Permalink to this heading">#</a></h2>
+<p>The pipeline system uses a data flow model where operations consume and produce named variables within a shared xarray Dataset. This approach has several advantages:</p>
+<ol class="arabic simple">
+<li><p><strong>Common Data Format</strong>: Using xarray provides a consistent format with labeled dimensions and coordinates.</p></li>
+<li><p><strong>Metadata Preservation</strong>: Each operation can attach metadata to its outputs, preserving the provenance of the data.</p></li>
+<li><p><strong>Explicit Declaration of Inputs and Outputs</strong>: Users are required to explicitly declare the inputs and outputs of each operation, making the data flow transparent and traceable.</p></li>
+<li><p><strong>Lazy Evaluation Potential</strong>: The system could be extended to support lazy evaluation, where operations are only executed when their outputs are needed.</p></li>
+<li><p><strong>Visualization</strong>: The explicit declaration of inputs and outputs enables visualization of the data flow as a graph.</p></li>
+</ol>
+</section>
+<section id="execution-model">
+<h2>Execution Model<a class="headerlink" href="#execution-model" title="Permalink to this heading">#</a></h2>
+<p>When a pipeline is executed:</p>
+<ol class="arabic simple">
+<li><p>Each operation is processed sequentially in the order they were added to the pipeline.</p></li>
+<li><p>For each operation, the <cite>calculate</cite> method is called with the current dataset.</p></li>
+<li><p>The operation processes its inputs and stores results in its output dictionary.</p></li>
+<li><p>These outputs are then merged into the dataset before moving to the next operation.</p></li>
+</ol>
+<p>This execution model ensures that data flows correctly through the pipeline, with each operation having access to the outputs of all previous operations.</p>
+</section>
+<section id="visualization-and-inspection">
+<h2>Visualization and Inspection<a class="headerlink" href="#visualization-and-inspection" title="Permalink to this heading">#</a></h2>
+<p>One of the strengths of this pipeline architecture is the ability to visualize and inspect the pipeline’s structure. Pipelines can generate visual representations of their structure as graphs, making it easier to understand complex data flows.</p>
+<p>The visualization capabilities include:
+- NetworkX graph visualization
+- Plotly interactive graph visualization
+- Listing input and output variables</p>
+<p>These tools are invaluable for understanding, debugging, and documenting complex pipelines.</p>
+</section>
+<section id="conclusion">
+<h2>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this heading">#</a></h2>
+<p>The pipeline system in AFL-agent provides a powerful framework for organizing, executing, and understanding data processing workflows. By adhering to principles of composability, explicitness, and structured data flow, it enables the creation of complex yet maintainable data processing code.</p>
+</section>
 </section>
 
 
@@ -432,7 +499,7 @@
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Pipeline Context Manager</p>
+        <p class="prev-next-title">The Context Manager Pattern</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -446,6 +513,23 @@
                 <dialog id="pst-secondary-sidebar-modal"></dialog>
                 <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#core-principles">Core Principles</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pipeline-architecture">Pipeline Architecture</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-flow-model">Data Flow Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#execution-model">Execution Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#visualization-and-inspection">Visualization and Inspection</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#conclusion">Conclusion</a></li>
+</ul>
+  </nav></div>
 
   <div class="sidebar-secondary-item">
   <div role="note" aria-label="source link">
