@@ -55,7 +55,6 @@ This documentation is organized according to the philosphy described by Daniele 
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
    tutorials/installation
    tutorials/index
