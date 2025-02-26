@@ -126,4 +126,7 @@ all = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["AFL"]
+include = ["data/*.nc"]
 
+[tool.hatch.build.targets.sdist]
+include = ["AFL", "data"]

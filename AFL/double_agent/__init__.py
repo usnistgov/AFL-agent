@@ -13,6 +13,12 @@ import subprocess
 import warnings
 from pathlib import Path
 
+# Import datasets module
+try:
+    from . import datasets
+except ImportError:
+    warnings.warn("Could not import datasets module. Example datasets will not be available.", ImportWarning)
+
 def _get_version():
     try:
         # First try to import existing version
