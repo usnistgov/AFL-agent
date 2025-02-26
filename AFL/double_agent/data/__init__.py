@@ -21,39 +21,14 @@ def get_data_dir():
     pathlib.Path
         Path to the data directory.
     """
-    # First try to find the data directory in the package
-    try:
-        # For Python 3.9+
-        with importlib.resources.files("AFL") as p:
-            package_data_dir = p / "data"
-            if package_data_dir.exists():
-                return package_data_dir
-    except (ImportError, AttributeError):
-        pass
-    
-    # Try to find the data directory relative to this file
+    # The data directory is now located in AFL/double_agent/data
     module_dir = pathlib.Path(__file__).parent
+    data_dir = module_dir#.parent / "data"
     
-    # Check several possible locations
-    possible_locations = [
-        # Inside the package
-        module_dir.parent.parent / "data",
-        # At the project root (development mode)
-        module_dir.parent.parent.parent / "data",
-        # One level up from project root (some development environments)
-        module_dir.parent.parent.parent.parent / "data",
-    ]
+    if not data_dir.exists():
+        warnings.warn(f"Data directory not found at {data_dir}")
     
-    for location in possible_locations:
-        if location.exists():
-            return location
-    
-    # If we can't find the data directory, warn the user and return the most likely location
-    warnings.warn(
-        "Could not find data directory. Looked in: " + 
-        ", ".join(str(loc) for loc in possible_locations)
-    )
-    return possible_locations[0]  # Return the first location as a fallback
+    return data_dir
 
 def list_datasets():
     """
