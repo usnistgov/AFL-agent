@@ -42,8 +42,8 @@ You can install AFL-agent using pip:
 
 Please see the :doc:`tutorials/installation` page for more details.
 
-Contents
---------
+Documentation Structure
+------------------------
 
 This documentation is organized according to the philosphy described by Daniele Procida at `diataxis.fr <https://diataxis.fr>`_. It is organized into four sections:
 
@@ -53,6 +53,8 @@ This documentation is organized according to the philosphy described by Daniele 
 * :doc:`Reference <reference/index>`: Detailed technical reference 
 
 
+Table of Contents
+------------------
 .. toctree::
    :maxdepth: 2
 
