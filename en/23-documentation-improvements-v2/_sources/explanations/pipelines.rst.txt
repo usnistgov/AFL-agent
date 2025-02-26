@@ -75,6 +75,7 @@ Visualization and Inspection
 One of the strengths of this pipeline architecture is the ability to visualize and inspect the pipeline's structure. Pipelines can generate visual representations of their structure as graphs, making it easier to understand complex data flows.
 
 The visualization capabilities include:
+
 - NetworkX graph visualization
 - Plotly interactive graph visualization
 - Listing input and output variables
