@@ -51,6 +51,11 @@ You can also load a dataset by name using the ``load_dataset`` function:
     # Load a dataset by name
     ds = load_dataset("example_dataset")
 
+Dataset Location
+---------------
+
+The example datasets are stored in the ``AFL/double_agent/data`` directory within the package. The datasets module automatically locates and loads these files when you import and use the dataset functions.
+
 Example: Using the Example Dataset with a Pipeline
 -------------------------------------------------
 

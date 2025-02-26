@@ -403,11 +403,23 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <p><a class="reference external" href="https://colab.research.google.com/github/usnistgov/AFL-agent/blob/23-documentation-improvements-v2/docs/source/how-to/building_xarray_datasets.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
+  <p><a class="reference external" href="https://colab.research.google.com/github/usnistgov/AFL-agent/blob/main/docs/source/how-to/building_xarray_datasets.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
 <section id="Build-an-xarray.Dataset-from-Scratch">
 <h1>Build an xarray.Dataset from Scratch<a class="headerlink" href="#Build-an-xarray.Dataset-from-Scratch" title="Permalink to this heading">#</a></h1>
 <p>In this <code class="docutils literal notranslate"><span class="pre">How-To</span></code> we’ll go through the process of building up an xarray.Dataset that could be used as an input to <code class="docutils literal notranslate"><span class="pre">Pipeline.calculate</span></code>. We’ll generate random compositions and fake data to go along with these compositions.</p>
 <p>The dataset generated in this notebook is the basis for the <code class="docutils literal notranslate"><span class="pre">Building</span> <span class="pre">Pipelines</span></code> tutorial.</p>
+<section id="Google-Colab-Setup">
+<h2>Google Colab Setup<a class="headerlink" href="#Google-Colab-Setup" title="Permalink to this heading">#</a></h2>
+<p>Only uncomment and run the next cell if you are running this notebook in Google Colab or if don’t already have the AFL-agent package installed.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># !pip install git+https://github.com/usnistgov/AFL-agent.git</span>
+</pre></div>
+</div>
+</div>
+</section>
 <section id="First-Steps">
 <h2>First Steps<a class="headerlink" href="#First-Steps" title="Permalink to this heading">#</a></h2>
 <p>To begin, let’s import the necessary libraries for this document and then make an empty :py:class:<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code></p>
@@ -1817,7 +1829,7 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/how-to_building_xarray_datasets_13_0.png" src="../_images/how-to_building_xarray_datasets_13_0.png" />
+<img alt="../_images/how-to_building_xarray_datasets_15_0.png" src="../_images/how-to_building_xarray_datasets_15_0.png" />
 </div>
 </div>
 </section>
@@ -2363,14 +2375,14 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/how-to_building_xarray_datasets_20_0.png" src="../_images/how-to_building_xarray_datasets_20_0.png" />
+<img alt="../_images/how-to_building_xarray_datasets_22_0.png" src="../_images/how-to_building_xarray_datasets_22_0.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/how-to_building_xarray_datasets_20_1.png" src="../_images/how-to_building_xarray_datasets_20_1.png" />
+<img alt="../_images/how-to_building_xarray_datasets_22_1.png" src="../_images/how-to_building_xarray_datasets_22_1.png" />
 </div>
 </div>
 </section>
@@ -2885,7 +2897,7 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/how-to_building_xarray_datasets_25_0.png" src="../_images/how-to_building_xarray_datasets_25_0.png" />
+<img alt="../_images/how-to_building_xarray_datasets_27_0.png" src="../_images/how-to_building_xarray_datasets_27_0.png" />
 </div>
 </div>
 </section>
@@ -2971,6 +2983,7 @@ Data variables:
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Google-Colab-Setup">Google Colab Setup</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#First-Steps">First Steps</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Compositions">Compositions</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Simulated-Measurement-Data">Simulated Measurement Data</a></li>

@@ -403,12 +403,21 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <p><a class="reference external" href="https://colab.research.google.com/github/usnistgov/AFL-agent/blob/23-documentation-improvements-v2/docs/source/how-to/create_pipelineop.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
+  <p><a class="reference external" href="https://colab.research.google.com/github/usnistgov/AFL-agent/blob/main/docs/source/how-to/create_pipelineop.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
 <section id="Creating-a-New-Pipeline-Operation">
 <h1>Creating a New Pipeline Operation<a class="headerlink" href="#Creating-a-New-Pipeline-Operation" title="Permalink to this heading">#</a></h1>
 <p>This guide will walk you through creating a custom Pipeline Operation in AFL-agent. Pipeline Operations are the building blocks of AFL-agent pipelines - they perform specific data transformations and analyses that can be chained together. By creating your own Pipeline Operation, you can extend AFL-agent’s functionality to meet your specific needs.</p>
 <p>In this tutorial, we’ll a <code class="docutils literal notranslate"><span class="pre">PipelineOp</span></code>s that implements a new data normalization algorithm.</p>
-<p>Let’s start by importing the parent PipelineOp class. All pipeline operations should import this directly or indirectly through another parent class.</p>
+<p>To begin, only uncomment and run the next cell if you are running this notebook in Google Colab or if don’t already have the AFL-agent package installed.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># !pip install git+https://github.com/usnistgov/AFL-agent.git</span>
+</pre></div>
+</div>
+</div>
+<p>Let’s start the development by importing the parent PipelineOp class. All pipeline operations <strong>must</strong> import this directly or indirectly through another parent class.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -1478,7 +1487,7 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/how-to_create_pipelineop_11_0.png" src="../_images/how-to_create_pipelineop_11_0.png" />
+<img alt="../_images/how-to_create_pipelineop_12_0.png" src="../_images/how-to_create_pipelineop_12_0.png" />
 </div>
 </div>
 <p>Note the differences in the y-axis!</p>

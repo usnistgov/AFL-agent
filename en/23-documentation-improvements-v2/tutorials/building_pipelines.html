@@ -405,7 +405,7 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <p><a class="reference external" href="https://colab.research.google.com/github/usnistgov/AFL-agent/blob/23-documentation-improvements-v2/docs/source/tutorials/building_pipelines.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
+  <p><a class="reference external" href="https://colab.research.google.com/github/usnistgov/AFL-agent/blob/main/docs/source/tutorials/building_pipelines.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
 <section id="Building-Pipelines">
 <h1>Building Pipelines<a class="headerlink" href="#Building-Pipelines" title="Permalink to this heading">#</a></h1>
 <p>Here we’ll go into more detail on the Quick Start Example from <a class="reference external" href="getting_started.rst">Getting Started</a>. In this example, we’ll build a pipeline that</p>
@@ -417,6 +417,17 @@
 <li><p>fits a Gaussian Process classifier to the data.</p></li>
 <li><p>chooses the next optimal measurement based on the entropy of the Gaussian Process posterior</p></li>
 </ul>
+<section id="Setup">
+<h2>Setup<a class="headerlink" href="#Setup" title="Permalink to this heading">#</a></h2>
+<p>Only uncomment and run the next cell if you are running this notebook in Google Colab or if don’t already have the AFL-agent package installed.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># !pip install git+https://github.com/usnistgov/AFL-agent.git</span>
+</pre></div>
+</div>
+</div>
 <p>Below are the imported modules used in this tutorial</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -431,6 +442,7 @@
 </pre></div>
 </div>
 </div>
+</section>
 <section id="Load-Input-Data">
 <h2>Load Input Data<a class="headerlink" href="#Load-Input-Data" title="Permalink to this heading">#</a></h2>
 <p>Okay, to begin, we’ll load in a pre-prepared <code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>. These are powerful and flexible data structures for working with multi-dimensional data, and <code class="docutils literal notranslate"><span class="pre">AFL.double_agent</span></code> uses them for all input, intermediate and output data.</p>
@@ -1608,7 +1620,7 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_building_pipelines_17_1.png" src="../_images/tutorials_building_pipelines_17_1.png" />
+<img alt="../_images/tutorials_building_pipelines_20_1.png" src="../_images/tutorials_building_pipelines_20_1.png" />
 </div>
 </div>
 <p>Note that the relative data positions are unchanged, only the magnitude of the axes is changed.</p>
@@ -2265,7 +2277,7 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_building_pipelines_25_1.png" src="../_images/tutorials_building_pipelines_25_1.png" />
+<img alt="../_images/tutorials_building_pipelines_28_1.png" src="../_images/tutorials_building_pipelines_28_1.png" />
 </div>
 </div>
 <p>The data on the right has more flat, constant regions than the data on the left making it easier for the simlarity and clustering analyses below to separate.</p>
@@ -2929,7 +2941,7 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_building_pipelines_33_1.png" src="../_images/tutorials_building_pipelines_33_1.png" />
+<img alt="../_images/tutorials_building_pipelines_36_1.png" src="../_images/tutorials_building_pipelines_36_1.png" />
 </div>
 </div>
 <p>Each pixel indexed by (i,j) in this image corresponds to the similarity between measurement i and j. The bright pixels indicate high similarity and the darker pixels reduced similarity. A check on this calculation is that the diagonal should have a perfect similarity = 1.0 because each data is perfectly self similar to itself, i.e. <code class="docutils literal notranslate"><span class="pre">S(i,i)</span> <span class="pre">=</span> <span class="pre">S(j,j)</span> <span class="pre">=</span> <span class="pre">1.0</span></code></p>
@@ -3605,7 +3617,7 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_building_pipelines_41_1.png" src="../_images/tutorials_building_pipelines_41_1.png" />
+<img alt="../_images/tutorials_building_pipelines_44_1.png" src="../_images/tutorials_building_pipelines_44_1.png" />
 </div>
 </div>
 </section>
@@ -4348,7 +4360,7 @@ Attributes:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_building_pipelines_48_1.png" src="../_images/tutorials_building_pipelines_48_1.png" />
+<img alt="../_images/tutorials_building_pipelines_51_1.png" src="../_images/tutorials_building_pipelines_51_1.png" />
 </div>
 </div>
 <p>The right subplot is related to our confidence in the label prediction and is a powerful tool for finding label boundaries because, by construction, it is maximized at label boundaries.</p>
@@ -5102,7 +5114,7 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_building_pipelines_56_1.png" src="../_images/tutorials_building_pipelines_56_1.png" />
+<img alt="../_images/tutorials_building_pipelines_59_1.png" src="../_images/tutorials_building_pipelines_59_1.png" />
 </div>
 </div>
 <p>See that the red X is placed near the boundary of the two phases. Running the pipeline several times, you should see the X move about the bright region of entropy. This is because the <code class="docutils literal notranslate"><span class="pre">MaxValueAF</span></code> acquisition function doesn’t choose the absolute maximum, but rather randomly chooses from the top <code class="docutils literal notranslate"><span class="pre">acquisition_rtol</span></code> percent of the entropy.</p>
@@ -5215,7 +5227,7 @@ Output Variables
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_building_pipelines_62_0.png" src="../_images/tutorials_building_pipelines_62_0.png" />
+<img alt="../_images/tutorials_building_pipelines_65_0.png" src="../_images/tutorials_building_pipelines_65_0.png" />
 </div>
 </div>
 <p>While this doesn’t always produce the more visually appealling graphs, it is a powerful way to check the consistency and flow of complex pipelines.</p>
@@ -5283,6 +5295,7 @@ Output Variables
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Setup">Setup</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Load-Input-Data">Load Input Data</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Step-1:-Composition-Preprocessing">Step 1: Composition Preprocessing</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Step-2:-Savitsky-Golay-Filter">Step 2: Savitsky-Golay Filter</a></li>
