@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Tutorials &#8212; AFL-agent  documentation</title>
+    <title>Using Example Datasets &#8212; AFL-agent  documentation</title>
   
   
   
@@ -46,11 +46,11 @@
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/index';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/using_datasets';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Quickstart" href="quickstart.html" />
-    <link rel="prev" title="Setup" href="installation.html" />
+    <link rel="next" title="Interactive Tutorials" href="interactive.html" />
+    <link rel="prev" title="Building Pipelines" href="building_pipelines.html" />
   
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -144,7 +144,7 @@
 
 
 <li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#">
+  <a class="nav-link nav-internal" href="index.html">
     Tutorials
   </a>
 </li>
@@ -267,7 +267,7 @@
 
 
 <li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#">
+  <a class="nav-link nav-internal" href="index.html">
     Tutorials
   </a>
 </li>
@@ -336,11 +336,11 @@
 <nav class="bd-docs-nav bd-links"
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Setup</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="building_pipelines.html">Building Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="using_datasets.html">Using Example Datasets</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Using Example Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="interactive.html">Interactive Tutorials</a></li>
 </ul>
 </div>
@@ -382,7 +382,10 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Tutorials</span></li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Using Example Datasets</span></li>
   </ul>
 </nav>
 </div>
@@ -399,18 +402,90 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="tutorials">
-<h1>Tutorials<a class="headerlink" href="#tutorials" title="Permalink to this heading">#</a></h1>
-<p>Step-by-step guides for beginners to use AFL-agent</p>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Setup</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="building_pipelines.html">Building Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="using_datasets.html">Using Example Datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="interactive.html">Interactive Tutorials</a></li>
-</ul>
+  <section id="using-example-datasets">
+<h1>Using Example Datasets<a class="headerlink" href="#using-example-datasets" title="Permalink to this heading">#</a></h1>
+<p>AFL-agent comes with example datasets that you can use to learn and experiment with the library. These datasets are accessible through the <code class="docutils literal notranslate"><span class="pre">AFL.double_agent.datasets</span></code> module.</p>
+<section id="loading-example-datasets">
+<h2>Loading Example Datasets<a class="headerlink" href="#loading-example-datasets" title="Permalink to this heading">#</a></h2>
+<p>You can load the example datasets using the following code:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">example_dataset1</span>
+
+<span class="c1"># Load the example dataset</span>
+<span class="n">ds</span> <span class="o">=</span> <span class="n">example_dataset1</span><span class="p">()</span>
+
+<span class="c1"># Print information about the dataset</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataset dimensions: </span><span class="si">{</span><span class="nb">dict</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataset variables: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataset coordinates: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
 </div>
+</section>
+<section id="available-datasets">
+<h2>Available Datasets<a class="headerlink" href="#available-datasets" title="Permalink to this heading">#</a></h2>
+<p>Currently, the following datasets are available:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">example_dataset1</span></code>: A synthetic dataset with compositions, measurements, and ground truth labels.</p></li>
+</ul>
+</section>
+<section id="listing-available-datasets">
+<h2>Listing Available Datasets<a class="headerlink" href="#listing-available-datasets" title="Permalink to this heading">#</a></h2>
+<p>You can list all available datasets using the <code class="docutils literal notranslate"><span class="pre">list_datasets</span></code> function:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">list_datasets</span>
+
+<span class="c1"># List all available datasets</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">())</span>
+</pre></div>
+</div>
+</section>
+<section id="loading-a-dataset-by-name">
+<h2>Loading a Dataset by Name<a class="headerlink" href="#loading-a-dataset-by-name" title="Permalink to this heading">#</a></h2>
+<p>You can also load a dataset by name using the <code class="docutils literal notranslate"><span class="pre">load_dataset</span></code> function:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dataset</span>
+
+<span class="c1"># Load a dataset by name</span>
+<span class="n">ds</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="s2">&quot;example_dataset&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="example-using-the-example-dataset-with-a-pipeline">
+<h2>Example: Using the Example Dataset with a Pipeline<a class="headerlink" href="#example-using-the-example-dataset-with-a-pipeline" title="Permalink to this heading">#</a></h2>
+<p>Here’s an example of how to use the example dataset with a pipeline:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span><span class="p">,</span> <span class="n">SavgolFilter</span><span class="p">,</span> <span class="n">Similarity</span><span class="p">,</span> <span class="n">SpectralClustering</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">example_dataset1</span>
+
+<span class="c1"># Load the example dataset</span>
+<span class="n">ds</span> <span class="o">=</span> <span class="n">example_dataset1</span><span class="p">()</span>
+
+<span class="c1"># Create a pipeline</span>
+<span class="k">with</span> <span class="n">Pipeline</span><span class="p">()</span> <span class="k">as</span> <span class="n">clustering_pipeline</span><span class="p">:</span>
+    <span class="n">SavgolFilter</span><span class="p">(</span>
+        <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
+        <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;derivative&#39;</span><span class="p">,</span>
+        <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
+        <span class="n">derivative</span><span class="o">=</span><span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="n">Similarity</span><span class="p">(</span>
+        <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;derivative&#39;</span><span class="p">,</span>
+        <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;similarity&#39;</span><span class="p">,</span>
+        <span class="n">sample_dim</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">SpectralClustering</span><span class="p">(</span>
+        <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;similarity&#39;</span><span class="p">,</span>
+        <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;labels&#39;</span><span class="p">,</span>
+        <span class="n">n_clusters</span><span class="o">=</span><span class="mi">2</span>
+    <span class="p">)</span>
+
+<span class="c1"># Run the pipeline</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">clustering_pipeline</span><span class="o">.</span><span class="n">calculate</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+
+<span class="c1"># Compare the predicted labels with the ground truth</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Predicted labels:&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ground truth labels:&quot;</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">ground_truth_labels</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
 </section>
 
 
@@ -424,20 +499,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="installation.html"
+       href="building_pipelines.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Setup</p>
+        <p class="prev-next-title">Building Pipelines</p>
       </div>
     </a>
     <a class="right-next"
-       href="quickstart.html"
+       href="interactive.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Quickstart</p>
+        <p class="prev-next-title">Interactive Tutorials</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -453,10 +528,26 @@
 
 
   <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-example-datasets">Loading Example Datasets</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#available-datasets">Available Datasets</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#listing-available-datasets">Listing Available Datasets</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-a-dataset-by-name">Loading a Dataset by Name</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-using-the-example-dataset-with-a-pipeline">Example: Using the Example Dataset with a Pipeline</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="../_sources/tutorials/index.rst.txt"
+      <li><a href="../_sources/tutorials/using_datasets.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div></div>
