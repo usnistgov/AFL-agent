@@ -7,9 +7,31 @@ class NoContextException(Exception):
 
 
 class PipelineContext:
-    """Inherited by Pipeline to allow for context manager abuse
-
-    See https://stackoverflow.com/questions/49573131/how-are-pymc3-variables-assigned-to-the-currently-active-model
+    """Base class that provides context manager functionality for pipeline operations.
+    
+    This class implements a thread-local context stack pattern that allows pipeline
+    operations to be associated with their parent pipeline. When a Pipeline instance
+    is used as a context manager (with statement), it pushes itself onto the context
+    stack, making it available to operations created within that context.
+    
+    This pattern enables a more intuitive API where operations can automatically
+    associate with the currently active pipeline without explicit references.
+    
+    Examples
+    --------
+    >>> with Pipeline(name="my_pipeline") as pipe:
+    ...     # Operations created here can access the pipeline via get_context()
+    ...     op = SomeOperation(input_var="data", output_var="result")
+    ...     # op can now reference the pipeline context
+    
+    Notes
+    -----
+    This implementation uses thread-local storage to ensure thread safety when
+    multiple pipelines are being constructed simultaneously in different threads.
+    
+    See Also
+    --------
+    Pipeline : Main container class that inherits this context functionality
     """
 
     contexts = threading.local()

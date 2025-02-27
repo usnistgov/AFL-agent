@@ -1,3 +1,18 @@
+"""
+Visualization tools for materials composition and phase data.
+
+This module provides plotting utilities for visualizing compositional data and phase
+diagrams. It supports both 2D and ternary plots using matplotlib, with special
+handling for labeled data and phase regions.
+
+Key features:
+- Support for both 2D and ternary plots
+- Surface and scatter plot styles
+- Automatic handling of phase labels
+- Flexible customization through matplotlib parameters
+- Integration with xarray data structures
+"""
+
 import itertools
 from typing import Union, List, Optional
 
@@ -16,6 +31,50 @@ def plot_surface_mpl(
         set_axes_labels: bool = True,
         ternary: bool = True,
         **mpl_kw) -> List[plt.Artist]:
+    """Create a surface plot of compositional data using matplotlib.
+    
+    Generates a filled surface plot of compositional data, supporting both
+    2D Cartesian and ternary plots. The surface is colored according to
+    phase labels or other specified values.
+
+    Parameters
+    ----------
+    dataset : xr.Dataset
+        Dataset containing compositional data and optional labels
+
+    component_variable : str
+        Name of the variable containing component coordinates
+
+    component_dim : str, default='component'
+        Name of the dimension containing component names
+
+    labels : Union[Optional[str], List], default=None
+        Labels for coloring the surface. Can be:
+        - None: Will try to use 'labels' from dataset
+        - str: Name of variable in dataset containing labels
+        - List: Direct list of label values
+
+    set_axes_labels : bool, default=True
+        Whether to set axis labels using component names
+
+    ternary : bool, default=True
+        Whether to create a ternary plot for 3-component data
+
+    **mpl_kw : dict
+        Additional keyword arguments passed to matplotlib's tripcolor
+
+    Returns
+    -------
+    List[plt.Artist]
+        List of created matplotlib artists
+
+    Raises
+    ------
+    ValueError
+        If number of components is not 2 or 3
+    ImportError
+        If mpltern is not installed for ternary plots
+    """
     components = dataset.coords[component_dim]
 
     if len(components) == 3 and ternary:
@@ -72,6 +131,58 @@ def plot_scatter_mpl(
         set_axes_labels: bool = True,
         ternary: bool = True,
         **mpl_kw) -> List[plt.Artist]:
+    """Create a scatter plot of compositional data using matplotlib.
+    
+    Generates a scatter plot of compositional data, supporting both 2D
+    Cartesian and ternary plots. Points can be colored and marked according
+    to phase labels or other values.
+
+    Parameters
+    ----------
+    dataset : xr.Dataset
+        Dataset containing compositional data and optional labels
+
+    component_variable : str
+        Name of the variable containing component coordinates
+
+    component_dim : str, default='component'
+        Name of the dimension containing component names
+
+    labels : Union[Optional[str], List], default=None
+        Labels for coloring points. Can be:
+        - None: Will try to use 'labels' from dataset
+        - str: Name of variable in dataset containing labels
+        - List: Direct list of label values
+
+    discrete_labels : bool, default=True
+        Whether to treat labels as discrete categories (True) or continuous values (False)
+
+    set_axes_labels : bool, default=True
+        Whether to set axis labels using component names
+
+    ternary : bool, default=True
+        Whether to create a ternary plot for 3-component data
+
+    **mpl_kw : dict
+        Additional keyword arguments passed to matplotlib's scatter
+
+    Returns
+    -------
+    List[plt.Artist]
+        List of created matplotlib artists
+
+    Raises
+    ------
+    ValueError
+        If number of components is not 2 or 3
+    ImportError
+        If mpltern is not installed for ternary plots
+
+    Notes
+    -----
+    When discrete_labels is True, different marker styles are used for each
+    unique label value, cycling through a predefined set of markers.
+    """
     components = dataset.coords[component_dim]
 
     if len(components) == 3 and ternary:
