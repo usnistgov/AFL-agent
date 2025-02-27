@@ -31,7 +31,7 @@ Here's a simple example of how this pattern improves code readability:
    pipeline.append(op2)
 
 The Stack-Based Context Design
------------------------------
+-------------------------------
 
 At the heart of the context manager implementation is a thread-local stack of pipeline contexts:
 
@@ -112,7 +112,7 @@ Here's the code from `PipelineOp.py` that illustrates how operations automatical
 This process creates a natural, hierarchical relationship between pipelines and their operations, making the code structure visually reflect the pipeline structure.
 
 Benefits of the Context Manager Approach
----------------------------------------
+-----------------------------------------
 
 This design provides several important benefits:
 
@@ -129,7 +129,7 @@ This design provides several important benefits:
     If an operation is created outside any pipeline context, it gracefully handles the situation rather than raising an error, allowing for more flexible usage patterns.
 
 Implementation Details and Considerations
-----------------------------------------
+------------------------------------------
 
 There are a few important implementation details to be aware of:
 
