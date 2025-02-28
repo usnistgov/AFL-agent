@@ -19,6 +19,7 @@ from typing import Union, List, Optional
 import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D  # Import for 3D plotting
 
 from AFL.double_agent.util import listify
 
@@ -58,10 +59,11 @@ def plot_surface_mpl(
         Whether to set axis labels using component names
 
     ternary : bool, default=False
-        Whether to create a ternary plot for 3-component data
+        Whether to create a ternary plot for 3-component data.
+        If False with 3 components, will create a 3D plot using matplotlib's 3D projection.
 
     **mpl_kw : dict
-        Additional keyword arguments passed to matplotlib's tripcolor
+        Additional keyword arguments passed to matplotlib's plotting functions
 
     Returns
     -------
@@ -83,6 +85,8 @@ def plot_surface_mpl(
         except ImportError as e:
             raise ImportError('Could not import mpltern. Please install via conda or pip') from e
         projection = 'ternary'
+    elif len(components) == 3 and not ternary:
+        projection = '3d'
     elif len(components) == 2:
         projection = None
     else:
@@ -108,17 +112,42 @@ def plot_surface_mpl(
     if 'ax' in mpl_kw:
         ax = mpl_kw.pop('ax')
     else:
-        fig, ax = plt.subplots(1, 1, subplot_kw=dict(projection=projection))
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection=projection)
 
-    artists = ax.tripcolor(*coords.T, labels, **mpl_kw)
+    # For 3 components with ternary=False, use 3D projection
+    if len(components) == 3 and not ternary:
+        x, y, z = coords.T
+        
+        # Create a triangulation for the 3D surface
+        from matplotlib.tri import Triangulation
+        tri = Triangulation(x, y)
+        
+        # Plot the triangulated surface in 3D
+        artists = ax.plot_trisurf(x, y, z, triangles=tri.triangles, cmap=mpl_kw.get('cmap'), 
+                                 edgecolor=mpl_kw.get('edgecolor'), alpha=mpl_kw.get('alpha', 0.8))
+        
+        # Add color based on labels if provided
+        if labels is not None:
+            artists.set_array(labels)
+    else:
+        artists = ax.tripcolor(*coords.T, labels, **mpl_kw)
 
     if set_axes_labels:
         if projection == 'ternary':
-            labels = {k: v.values[()] for k, v in zip(['tlabel', 'llabel', 'rlabel'], components)}
+            labels_dict = {k: v.values[()] for k, v in zip(['tlabel', 'llabel', 'rlabel'], components)}
+            ax.set(**labels_dict)
+        elif projection == '3d':
+            ax.set_xlabel(components[0].values[()])
+            ax.set_ylabel(components[1].values[()])
+            ax.set_zlabel(components[2].values[()])
         else:
-            labels = {k: v.values[()] for k, v in zip(['xlabel', 'ylabel'], components)}
-        ax.set(**labels)
-        ax.grid('on', color='black')
+            labels_dict = {k: v.values[()] for k, v in zip(['xlabel', 'ylabel'], components)}
+            ax.set(**labels_dict)
+        
+        if projection != '3d':  # Only set grid for 2D plots
+            ax.grid('on', color='black')
+    
     return artists
 
 
@@ -161,7 +190,8 @@ def plot_scatter_mpl(
         Whether to set axis labels using component names
 
     ternary : bool, default=False
-        Whether to create a ternary plot for 3-component data
+        Whether to create a ternary plot for 3-component data.
+        If False with 3 components, will create a 3D plot using matplotlib's 3D projection.
 
     **mpl_kw : dict
         Additional keyword arguments passed to matplotlib's scatter
@@ -191,6 +221,8 @@ def plot_scatter_mpl(
         except ImportError as e:
             raise ImportError('Could not import mpltern. Please install via conda or pip') from e
         projection = 'ternary'
+    elif len(components) == 3 and not ternary:
+        projection = '3d'
     elif len(components) == 2:
         projection = None
     else:
@@ -211,23 +243,48 @@ def plot_scatter_mpl(
     if 'ax' in mpl_kw:
         ax = mpl_kw.pop('ax')
     else:
-        fig, ax = plt.subplots(1, 1, subplot_kw=dict(projection=projection))
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection=projection)
 
-    if discrete_labels:
-        markers = itertools.cycle(listify(mpl_kw.get('marker', ['^', 'v', '<', '>', 'o', 'd', 'p', 'x'])))
-        artists = []
-        for label in np.unique(labels):
-            mask = (labels == label)
-            mpl_kw['marker'] = next(markers)
-            artists.append(ax.scatter(*coords[mask].T, **mpl_kw))
+    # For 3 components with ternary=False, use 3D projection
+    if len(components) == 3 and not ternary:
+        x, y, z = coords.T
+        
+        if discrete_labels:
+            markers = itertools.cycle(listify(mpl_kw.get('marker', ['^', 'v', '<', '>', 'o', 'd', 'p', 'x'])))
+            artists = []
+            for label in np.unique(labels):
+                mask = (labels == label)
+                mpl_kw['marker'] = next(markers)
+                # Use scatter3D for 3D scatter plots
+                artists.append(ax.scatter3D(x[mask], y[mask], z[mask], **mpl_kw))
+        else:
+            # Use scatter3D for 3D scatter plots
+            artists = ax.scatter3D(x, y, z, c=labels, **mpl_kw)
     else:
-        artists = ax.scatter(*coords.T, c=labels, **mpl_kw)
+        if discrete_labels:
+            markers = itertools.cycle(listify(mpl_kw.get('marker', ['^', 'v', '<', '>', 'o', 'd', 'p', 'x'])))
+            artists = []
+            for label in np.unique(labels):
+                mask = (labels == label)
+                mpl_kw['marker'] = next(markers)
+                artists.append(ax.scatter(*coords[mask].T, **mpl_kw))
+        else:
+            artists = ax.scatter(*coords.T, c=labels, **mpl_kw)
 
     if set_axes_labels:
         if projection == 'ternary':
-            labels = {k: v.values[()] for k, v in zip(['tlabel', 'llabel', 'rlabel'], components)}
+            labels_dict = {k: v.values[()] for k, v in zip(['tlabel', 'llabel', 'rlabel'], components)}
+            ax.set(**labels_dict)
+        elif projection == '3d':
+            ax.set_xlabel(components[0].values[()])
+            ax.set_ylabel(components[1].values[()])
+            ax.set_zlabel(components[2].values[()])
         else:
-            labels = {k: v.values[()] for k, v in zip(['xlabel', 'ylabel'], components)}
-        ax.set(**labels)
-        ax.grid('on', color='black')
+            labels_dict = {k: v.values[()] for k, v in zip(['xlabel', 'ylabel'], components)}
+            ax.set(**labels_dict)
+        
+        if projection != '3d':  # Only set grid for 2D plots
+            ax.grid('on', color='black')
+    
     return artists
