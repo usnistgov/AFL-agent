@@ -15,7 +15,7 @@
    "source": [
     "This guide will walk you through creating a custom Pipeline Operation in AFL-agent. Pipeline Operations are the building blocks of AFL-agent pipelines - they perform specific data transformations and analyses that can be chained together. By creating your own Pipeline Operation, you can extend AFL-agent's functionality to meet your specific needs.\n",
     "\n",
-    "In this tutorial, we'll a `PipelineOp`s that implements a new data normalization algorithm.\n",
+    "In this tutorial, we'll create a `PipelineOp`s that implements a new data normalization algorithm.\n",
     "\n",
     "\n",
     "To begin, only uncomment and run the next cell if you are running this notebook in Google Colab or if don't already have the AFL-agent package installed."
@@ -595,9 +595,9 @@
     }
    ],
    "source": [
-    "import xarray as xr\n",
+    "from AFL.double_agent.data import example_dataset1\n",
     "\n",
-    "ds = xr.load_dataset('../data/example_dataset.nc')\n",
+    "ds = example_dataset1()\n",
     "ds"
    ]
   },

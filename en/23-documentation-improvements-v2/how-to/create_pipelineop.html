@@ -414,7 +414,7 @@
 <section id="Creating-a-New-Pipeline-Operation">
 <h1>Creating a New Pipeline Operation<a class="headerlink" href="#Creating-a-New-Pipeline-Operation" title="Permalink to this heading">#</a></h1>
 <p>This guide will walk you through creating a custom Pipeline Operation in AFL-agent. Pipeline Operations are the building blocks of AFL-agent pipelines - they perform specific data transformations and analyses that can be chained together. By creating your own Pipeline Operation, you can extend AFL-agent’s functionality to meet your specific needs.</p>
-<p>In this tutorial, we’ll a <code class="docutils literal notranslate"><span class="pre">PipelineOp</span></code>s that implements a new data normalization algorithm.</p>
+<p>In this tutorial, we’ll create a <code class="docutils literal notranslate"><span class="pre">PipelineOp</span></code>s that implements a new data normalization algorithm.</p>
 <p>To begin, only uncomment and run the next cell if you are running this notebook in Google Colab or if don’t already have the AFL-agent package installed.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -472,9 +472,9 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">example_dataset1</span>
 
-<span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">load_dataset</span><span class="p">(</span><span class="s1">&#39;../data/example_dataset.nc&#39;</span><span class="p">)</span>
+<span class="n">ds</span> <span class="o">=</span> <span class="n">example_dataset1</span><span class="p">()</span>
 <span class="n">ds</span>
 </pre></div>
 </div>
