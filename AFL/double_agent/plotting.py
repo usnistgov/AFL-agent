@@ -29,7 +29,7 @@ def plot_surface_mpl(
         component_dim: str = 'component',
         labels: Union[Optional[str], List] = None,
         set_axes_labels: bool = True,
-        ternary: bool = True,
+        ternary: bool = False,
         **mpl_kw) -> List[plt.Artist]:
     """Create a surface plot of compositional data using matplotlib.
     
@@ -57,7 +57,7 @@ def plot_surface_mpl(
     set_axes_labels : bool, default=True
         Whether to set axis labels using component names
 
-    ternary : bool, default=True
+    ternary : bool, default=False
         Whether to create a ternary plot for 3-component data
 
     **mpl_kw : dict
@@ -129,7 +129,7 @@ def plot_scatter_mpl(
         labels: Union[Optional[str], List] = None,
         discrete_labels: bool = True,
         set_axes_labels: bool = True,
-        ternary: bool = True,
+        ternary: bool = False,
         **mpl_kw) -> List[plt.Artist]:
     """Create a scatter plot of compositional data using matplotlib.
     
@@ -160,7 +160,7 @@ def plot_scatter_mpl(
     set_axes_labels : bool, default=True
         Whether to set axis labels using component names
 
-    ternary : bool, default=True
+    ternary : bool, default=False
         Whether to create a ternary plot for 3-component data
 
     **mpl_kw : dict
