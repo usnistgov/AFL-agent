@@ -31,6 +31,18 @@ Key Features
 * Support for phase boundary mapping and material property optimization
 
 
+Autonomous Formulation Lab
+--------------------------
+
+The Autonomous Formulation Lab (AFL) is a National Institute of Standards and
+Technology (NIST) program that seeks to accelerate the discovery and
+optimization of soft materials through the development and application of
+autonomous techniques to high-value measurements. Specifically, we design
+robotic platforms that autonomously mix, synthesize and evaluate soft materials
+and we study them using small-angle scattering (SANS) and small-angle X-ray
+scattering (SAXS) and other techniques.
+
+
 Installation
 ------------
 
