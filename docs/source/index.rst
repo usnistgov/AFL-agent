@@ -3,9 +3,10 @@ AFL-agent
 
 .. only:: html 
 
-    .. image:: _static/agent_loop.svg
+    .. image:: _static/pipeline_horizontal.svg
         :alt: AFL-agent Logo
         :width: 800
+
 
 
 AFL-agent is a Python library that allows users to implement active learning

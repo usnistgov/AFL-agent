@@ -71,14 +71,24 @@ html_theme = "pydata_sphinx_theme"
 theme_module = import_module(html_theme.replace("-", "_"))
 html_theme_path = [os.path.dirname(os.path.abspath(theme_module.__file__))]
 
+# Add the favicon
+html_favicon = "_static/logo.svg"
+
+# Add the logo to replace the title text
+html_logo = "_static/logo_text.svg"
+
 html_theme_options = {
     "github_url": "https://github.com/usnistgov/afl-agent",
     "collapse_navigation": True,
     "header_links_before_dropdown": 6,
     "navbar_end": ["theme-switcher", "navbar-icon-links"],
+    "logo": {
+        "image_light": "_static/logo_text.svg",
+        "image_dark": "_static/logo_text.svg",
+    },
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["source/_static"]
+html_static_path = ["_static"]
