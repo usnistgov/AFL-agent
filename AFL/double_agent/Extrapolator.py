@@ -1,5 +1,16 @@
 """
-Extrapolators take discrete sample data and extrapolate the data onto a provided grid.
+Extrapolation tools for extending discrete sample data to continuous spaces.
+
+This module provides classes for extrapolating data from discrete sample points to continuous
+spaces, particularly useful in materials science and machine learning applications. The extrapolators
+can work with both classification and regression tasks.
+
+Key features:
+- Support for Gaussian Process Classification and Regression
+- Handling of uncertainty in measurements
+- Visualization tools for extrapolation results
+- Flexible kernel selection for GP models
+- Support for different sample and grid dimensions
 """
 
 from typing import List, Optional
@@ -16,7 +27,41 @@ from AFL.double_agent.util import listify
 
 
 class Extrapolator(PipelineOp):
-    """Base class for all extrapolators """
+    """Base class for extrapolating discrete sample data onto continuous spaces.
+
+    This abstract base class provides common functionality for extrapolating data from
+    discrete sample points to a continuous grid. It handles data management and provides
+    visualization capabilities.
+
+    Parameters
+    ----------
+    feature_input_variable : str
+        The name of the `xarray.Dataset` data variable to use as the input to the model that will be extrapolating
+        the discrete data. This is typically a sample composition variable.
+
+    predictor_input_variable : str
+        The name of the `xarray.Dataset` data variable to use as the output of the model that will be extrapolating
+        the discrete data. This is typically a class label or property variable.
+
+    output_variables: List[str]
+        The list of variables that will be output by this class.
+
+    output_prefix: str
+        The string prefix to apply to each output variable before inserting into the output `xarray.Dataset`
+
+    grid_variable: str
+        The name of the `xarray.Dataset` data variable to use as an evaluation grid.
+
+    grid_dim: str
+        The xarray dimension over each grid_point. Grid equivalent to sample.
+
+    sample_dim: str
+        The `xarray` dimension over the discrete 'samples' in the `feature_input_variable`. This is typically
+        a variant of `sample` e.g., `saxs_sample`.
+
+    name: str
+        The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
+    """
     def __init__(
         self,
         feature_input_variable: str,
@@ -28,40 +73,6 @@ class Extrapolator(PipelineOp):
         sample_dim: str,
         name: str = "Extrapolator",
     ) -> None:
-        """
-        Parameters
-        ----------
-        feature_input_variable : str
-            The name of the `xarray.Dataset` data variable to use as the input to the model that will be extrapolating
-            the discrete data. This is typically a sample composition variable.
-
-        predictor_input_variable : str
-            The name of the `xarray.Dataset` data variable to use as the output of the model that will be extrapolating
-            the discrete data. This is typically a class label or property variable.
-
-        output_variables: List[str]
-            The list of variables that will be output by this class.
-
-        output_prefix: str
-            The string prefix to apply to each output variable before inserting into the output `xarray.Dataset`
-
-        grid_variable: str
-            The name of the `xarray.Dataset` data variable to use as an evaluation grid.
-
-        grid_dim: str
-            The xarray dimension over each grid_point. Grid equivalent to sample.
-
-        output_prefix: Optional[str]
-            If provided, all outputs of this `PipelineOp` will be prefixed with this string
-
-        sample_dim: str
-            The `xarray` dimension over the discrete 'samples' in the `feature_input_variable`. This is typically
-            a variant of `sample` e.g., `saxs_sample`.
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
-        """
-
         super().__init__(
             name=name,
             input_variable=[
@@ -84,10 +95,39 @@ class Extrapolator(PipelineOp):
         self._banned_from_attrs.extend(["kernel"])
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
+        """Apply this extrapolator to the supplied dataset.
+        
+        This method must be implemented by subclasses to define how the extrapolation
+        is performed.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            The input dataset containing the sample points and grid
+
+        Returns
+        -------
+        Self
+            The extrapolator instance with updated outputs
+        """
         return NotImplementedError(".calculate must be implemented in subclasses")  # type: ignore
 
     def plot(self,**mpl_kwargs) -> plt.Figure:
+        """Plot the extrapolation results.
+        
+        Creates visualization of the extrapolated data, with different plotting styles
+        depending on the data dimensions and type.
+
+        Parameters
+        ----------
+        **mpl_kwargs : dict
+            Additional keyword arguments to pass to matplotlib plotting functions
+
+        Returns
+        -------
+        plt.Figure
+            The matplotlib figure containing the plots
+        """
         n = len(self.output)
         if n>0:
             fig, axes = plt.subplots(n,1,figsize=(6,n*4))
@@ -115,6 +155,38 @@ class Extrapolator(PipelineOp):
 
 
 class DummyExtrapolator(Extrapolator):
+    """Simple extrapolator that returns zero values.
+    
+    This extrapolator serves as a baseline implementation, returning arrays of zeros
+    for both mean and variance predictions. Useful for testing and as a template.
+
+    Parameters
+    ----------
+    feature_input_variable : str
+        The name of the `xarray.Dataset` data variable to use as the input to the model that will be extrapolating
+        the discrete data. This is typically a sample composition variable.
+
+    predictor_input_variable : str
+        The name of the `xarray.Dataset` data variable to use as the output of the model that will be extrapolating
+        the discrete data. This is typically a class label or property variable.
+
+    output_prefix: str
+        The string prefix to apply to each output variable before inserting into the output `xarray.Dataset`
+
+    grid_variable: str
+        The name of the `xarray.Dataset` data variable to use as an evaluation grid.
+
+    grid_dim: str
+        The xarray dimension over each grid_point. Grid equivalent to sample.
+
+    sample_dim: str
+        The `xarray` dimension over the discrete 'samples' in the `feature_input_variable`. This is typically
+        a variant of `sample` e.g., `saxs_sample`.
+
+    name: str
+        The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
+    """
+
     def __init__(
         self,
         feature_input_variable: str,
@@ -125,33 +197,6 @@ class DummyExtrapolator(Extrapolator):
         sample_dim: str,
         name="DummyExtrapolator",
     ) -> None:
-        """
-        Parameters
-        ----------
-        feature_input_variable : str
-            The name of the `xarray.Dataset` data variable to use as the input to the model that will be extrapolating
-            the discrete data. This is typically a sample composition variable.
-
-        predictor_input_variable : str
-            The name of the `xarray.Dataset` data variable to use as the output of the model that will be extrapolating
-            the discrete data. This is typically a class label or property variable.
-
-        output_prefix: str
-            The string prefix to apply to each output variable before inserting into the output `xarray.Dataset`
-
-        grid_variable: str
-            The name of the `xarray.Dataset` data variable to use as an evaluation grid.
-
-        grid_dim: str
-            The xarray dimension over each grid_point. Grid equivalent to sample.
-
-        sample_dim: str
-            The `xarray` dimension over the discrete 'samples' in the `feature_input_variable`. This is typically
-            a variant of `sample` e.g., `saxs_sample`.
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
-        """
         super().__init__(
             name=name,
             feature_input_variable=feature_input_variable,
@@ -164,7 +209,20 @@ class DummyExtrapolator(Extrapolator):
         )
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
+        """Apply this dummy extrapolator to the supplied dataset.
+        
+        Creates arrays of zeros for both mean and variance predictions.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            The input dataset containing the sample points and grid
+
+        Returns
+        -------
+        Self
+            The dummy extrapolator instance with zero-valued outputs
+        """
         grid = dataset[self.grid_variable].transpose(self.sample_dim, ...)
         dummy = xr.DataArray(np.zeros_like(grid), dims=grid.dims)
         self.output[self._prefix_output("mean")] = dummy.copy()
@@ -173,7 +231,46 @@ class DummyExtrapolator(Extrapolator):
 
 
 class GaussianProcessClassifier(Extrapolator):
-    """Use a Gaussian process classifier to extrapolate class labels at discrete compositions onto a composition grid"""
+    """Gaussian Process classifier for extrapolating class labels.
+    
+    This extrapolator uses scikit-learn's GaussianProcessClassifier to predict class
+    probabilities across the grid based on discrete labeled samples. It provides both
+    class predictions and uncertainty estimates through entropy.
+
+    Parameters
+    ----------
+    feature_input_variable : str
+        The name of the `xarray.Dataset` data variable to use as the input to the model that will be extrapolating
+        the discrete data. This is typically a sample composition variable.
+
+    predictor_input_variable : str
+        The name of the `xarray.Dataset` data variable to use as the output of the model that will be extrapolating
+        the discrete data. For this `PipelineOp` this should be a class label vector.
+
+    output_prefix: str
+        The string prefix to apply to each output variable before inserting into the output `xarray.Dataset`
+
+    grid_variable: str
+        The name of the `xarray.Dataset` data variable to use as an evaluation grid.
+
+    grid_dim: str
+        The xarray dimension over each grid_point. Grid equivalent to sample.
+
+    sample_dim: str
+        The `xarray` dimension over the discrete 'samples' in the `feature_input_variable`. This is typically
+        a variant of `sample` e.g., `saxs_sample`.
+
+    kernel: Optional[object]
+        A optional sklearn.gaussian_process.kernel to use the classifier. If not provided, will default to
+        `Matern`.
+
+    optimizer: str
+        The name of the optimizer to use in optimizer the gaussian process parameters
+
+    name: str
+        The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
+    """
+
     def __init__(
         self,
         feature_input_variable: str,
@@ -186,40 +283,6 @@ class GaussianProcessClassifier(Extrapolator):
         optimizer: str = "fmin_l_bfgs_b",
         name: str = "GaussianProcessClassifier",
     ) -> None:
-        """
-        Parameters
-        ----------
-        feature_input_variable : str
-            The name of the `xarray.Dataset` data variable to use as the input to the model that will be extrapolating
-            the discrete data. This is typically a sample composition variable.
-
-        predictor_input_variable : str
-            The name of the `xarray.Dataset` data variable to use as the output of the model that will be extrapolating
-            the discrete data. For this `PipelineOp` this should be a class label vector.
-
-        output_prefix: str
-            The string prefix to apply to each output variable before inserting into the output `xarray.Dataset`
-
-        grid_variable: str
-            The name of the `xarray.Dataset` data variable to use as an evaluation grid.
-
-        grid_dim: str
-            The xarray dimension over each grid_point. Grid equivalent to sample.
-
-        sample_dim: str
-            The `xarray` dimension over the discrete 'samples' in the `feature_input_variable`. This is typically
-            a variant of `sample` e.g., `saxs_sample`.
-
-        kernel: Optional[object]
-            A optional sklearn.gaussian_process.kernel to use the classifier. If not provided, will default to
-            `Matern`.
-
-        optimizer: str
-            The name of the optimizer to use in optimizer the gaussian process parameters
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
-        """
 
         super().__init__(
             name=name,
@@ -246,7 +309,21 @@ class GaussianProcessClassifier(Extrapolator):
             self.optimizer = None
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
+        """Apply this GP classifier to the supplied dataset.
+        
+        Fits a Gaussian Process classifier to the input data and makes predictions
+        across the grid, including class probabilities and entropy-based uncertainty.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            The input dataset containing labeled samples and prediction grid
+
+        Returns
+        -------
+        Self
+            The GP classifier instance with predictions and uncertainty estimates
+        """
         X = dataset[self.feature_input_variable].transpose(self.sample_dim, ...)
         y = dataset[self.predictor_input_variable].transpose(self.sample_dim, ...)
         self.grid = dataset[self.grid_variable]# store grid for plotting
@@ -289,7 +366,52 @@ class GaussianProcessClassifier(Extrapolator):
 
 
 class GaussianProcessRegressor(Extrapolator):
-    """Use a Gaussian process regressor to extrapolate a property at discrete points onto a provided composition grid"""
+    """Gaussian Process regressor for extrapolating continuous values.
+    
+    This extrapolator uses scikit-learn's GaussianProcessRegressor to predict continuous
+    values across the grid based on discrete samples. It handles measurement uncertainty
+    and provides both mean predictions and variance estimates.
+
+    Parameters
+    ----------
+    feature_input_variable : str
+        The name of the `xarray.Dataset` data variable to use as the input to the model that will be extrapolating
+        the discrete data. This is typically a sample composition variable.
+
+    predictor_input_variable : str
+        The name of the `xarray.Dataset` data variable to use as the output of the model that will be extrapolating
+        the discrete data. For this `PipelineOp` this should be a continuous value vector.
+
+    output_prefix: str
+        The string prefix to apply to each output variable before inserting into the output `xarray.Dataset`
+
+    grid_variable: str
+        The name of the `xarray.Dataset` data variable to use as an evaluation grid.
+
+    grid_dim: str
+        The xarray dimension over each grid_point. Grid equivalent to sample.
+
+    sample_dim: str
+        The `xarray` dimension over the discrete 'samples' in the `feature_input_variable`. This is typically
+        a variant of `sample` e.g., `saxs_sample`.
+
+    predictor_uncertainty_variable: Optional[str]
+        Variable containing uncertainty estimates for the predictor values
+
+    optimizer: str
+        The name of the optimizer to use in optimizer the gaussian process parameters
+
+    kernel: Optional[object]
+        A optional sklearn.gaussian_process.kernel to use the regressor. If not provided, will default to
+        `Matern`.
+
+    name: str
+        The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
+
+    fix_nans: bool
+        Whether to handle NaN values in the input data
+    """
+
     def __init__(
         self,
         feature_input_variable,
@@ -304,40 +426,6 @@ class GaussianProcessRegressor(Extrapolator):
         name="GaussianProcessRegressor",
         fix_nans=True,
     ) -> None:
-        """
-        Parameters
-        ----------
-        feature_input_variable : str
-            The name of the `xarray.Dataset` data variable to use as the input to the model that will be extrapolating
-            the discrete data. This is typically a sample composition variable.
-
-        predictor_input_variable : str
-            The name of the `xarray.Dataset` data variable to use as the output of the model that will be extrapolating
-            the discrete data. For this `PipelineOp` this should be a class label vector.
-
-        output_prefix: str
-            The string prefix to apply to each output variable before inserting into the output `xarray.Dataset`
-
-        grid_variable: str
-            The name of the `xarray.Dataset` data variable to use as an evaluation grid.
-
-        grid_dim: str
-            The xarray dimension over each grid_point. Grid equivalent to sample.
-
-        sample_dim: str
-            The `xarray` dimension over the discrete 'samples' in the `feature_input_variable`. This is typically
-            a variant of `sample` e.g., `saxs_sample`.
-
-        kernel: Optional[object]
-            A optional sklearn.gaussian_process.kernel to use the classifier. If not provided, will default to
-            `Matern`.
-
-        optimizer: str
-            The name of the optimizer to use in optimizer the gaussian process parameters
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
-        """
 
         super().__init__(
             name=name,
@@ -370,7 +458,22 @@ class GaussianProcessRegressor(Extrapolator):
         self._banned_from_attrs.append("predictor_uncertainty_variable")
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
+        """Apply this GP regressor to the supplied dataset.
+        
+        Fits a Gaussian Process regressor to the input data and makes predictions
+        across the grid, including mean values and variance estimates. Can handle
+        heteroscedastic noise if uncertainty values are provided.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            The input dataset containing samples and prediction grid
+
+        Returns
+        -------
+        Self
+            The GP regressor instance with predictions and uncertainty estimates
+        """
         X = (
             dataset[self.feature_input_variable]
             .transpose(self.sample_dim, ...)

@@ -1,3 +1,18 @@
+"""
+Boundary analysis tools for phase diagram and compositional spaces.
+
+This module provides tools for analyzing and comparing boundaries in phase diagrams
+and compositional spaces. It includes functionality for creating concave hulls around
+phase regions and computing similarity scores between different boundary sets.
+
+Key features:
+- Concave hull generation for phase regions
+- Boundary comparison metrics
+- Support for 2D compositional spaces
+- Visualization tools for boundary analysis
+- Handling of multi-phase systems
+"""
+
 from typing import Dict, List, Optional, Generator
 from typing_extensions import Self
 
@@ -22,6 +37,43 @@ EXCLUDED_HULL_TYPES = ["Point", "LineString"]
 
 
 class ConcaveHull(PipelineOp):
+    """Creates concave hulls around points in 2D space.
+    
+    This class generates concave hulls (alpha shapes) around sets of points,
+    useful for identifying phase boundaries in compositional spaces. It can
+    handle multiple phases and provides options for hull generation parameters.
+
+    Parameters
+    ----------
+    input_variable : str
+        The name of the variable containing the points to create hulls around
+
+    output_prefix : str
+        Prefix to use for output variable names
+
+    hull_tracing_ratio : float, default=0.2
+        Controls the concavity of the hull. Lower values create tighter hulls
+
+    drop_phases : Optional[List], default=None
+        List of phase labels to exclude from hull generation
+
+    component_dim : str, default="components"
+        Name of the dimension containing component coordinates
+
+    label_variable : Optional[str], default=None
+        Name of variable containing phase labels. If None, all points are treated
+        as one phase
+
+    segmentize_length : float, default=0.025
+        Length to use when segmenting hull boundaries for smoother visualization
+
+    allow_holes : bool, default=False
+        Whether to allow holes in the generated hulls
+
+    name : str, default="ConcaveHull"
+        Name to use when added to a Pipeline
+    """
+
     def __init__(
         self,
         input_variable: str,
@@ -50,6 +102,26 @@ class ConcaveHull(PipelineOp):
         self.allow_holes = allow_holes
 
     def calculate(self, dataset: xr.Dataset) -> Self:
+        """Generate concave hulls for each phase in the dataset.
+        
+        Creates concave hulls around points grouped by their phase labels.
+        Handles 2D data only and includes options for hull parameters.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            The input dataset containing points and optional phase labels
+
+        Returns
+        -------
+        Self
+            The ConcaveHull instance with generated hulls
+
+        Raises
+        ------
+        ValueError
+            If the input data is not 2D
+        """
         input_data = self._get_variable(dataset).transpose(..., self.component_dim)
         if input_data.sizes[self.component_dim] != 2:
             raise ValueError(
@@ -102,7 +174,18 @@ class ConcaveHull(PipelineOp):
 
 
 def _get_xy(hull):
-    """Extract xy coordinates from shapely object"""
+    """Extract xy coordinates from shapely object.
+    
+    Parameters
+    ----------
+    hull : shapely.geometry
+        The shapely geometry object to extract coordinates from
+
+    Returns
+    -------
+    tuple[list, list]
+        The x and y coordinates of the hull boundary
+    """
     try:
         x, y = hull.boundary.xy
     except NotImplementedError:
@@ -121,16 +204,21 @@ def _get_xy(hull):
 def _get_hulls(
     dataset: xr.Dataset, hull_variable: str
 ):  # -> Generator[object, (xr.Dataset,str), None]: # to-fix when I have wifi...
-    """Iterate over a data variable of shapely hull strings and convert to shapely objects
+    """Iterate over a data variable of shapely hull strings and convert to shapely objects.
 
     Parameters
     ----------
     dataset: xr.Dataset
-        Input dataset
+        Input dataset containing hull data
 
     hull_variable: str
         Name of variable containing a data variable of stringified shapely objects. Should have only
         one dimension with a coordinate of hull_labels.
+
+    Yields
+    ------
+    tuple[str, shapely.geometry]
+        Tuple of (hull_label, hull_object) for each hull in the dataset
     """
     dims = dataset[hull_variable].dims
     if len(dims) > 1:
@@ -146,6 +234,23 @@ def _get_hulls(
 
 
 def _calculate_perimeter_score(hull1, hull2):
+    """Calculate a similarity score between two hull perimeters.
+    
+    Computes a score based on the average minimum distance between points
+    on the perimeters of two hulls.
+
+    Parameters
+    ----------
+    hull1 : shapely.geometry
+        First hull to compare
+    hull2 : shapely.geometry
+        Second hull to compare
+
+    Returns
+    -------
+    dict
+        Dictionary containing score statistics and visualization data
+    """
     hull1_xy = np.vstack(_get_xy(hull1)).T
     hull2_xy = np.vstack(_get_xy(hull2)).T
 
@@ -184,6 +289,18 @@ def _calculate_perimeter_score(hull1, hull2):
 
 
 def _make_boundary_plots(score_dict):
+    """Create plotly visualization of hull boundaries and their comparison.
+    
+    Parameters
+    ----------
+    score_dict : dict
+        Dictionary containing hull coordinates and comparison data
+
+    Returns
+    -------
+    dict
+        Dictionary of plotly traces for visualization
+    """
     gt_xy = score_dict["hull1_xy"]
     xy = score_dict["hull2_xy"]
     pair_xy = score_dict["pair_coord"]
@@ -212,6 +329,30 @@ def _make_boundary_plots(score_dict):
 
 
 class BoundaryScore(PipelineOp):
+    """Computes similarity scores between two sets of phase boundaries.
+    
+    This class calculates metrics comparing the boundaries of phase regions
+    between two different datasets (e.g., ground truth vs. predicted phases).
+    It provides both numerical scores and optional visualization.
+
+    Parameters
+    ----------
+    gt_hull_variable : str
+        Name of variable containing ground truth hull data
+
+    al_hull_variable : str
+        Name of variable containing comparison hull data
+
+    output_prefix : str, default="boundary_score"
+        Prefix to use for output variable names
+
+    name : str, default="BoundaryScore"
+        Name to use when added to a Pipeline
+
+    plot : bool, default=False
+        Whether to create visualizations of the boundary comparisons
+    """
+
     def __init__(
         self,
         gt_hull_variable: str,
@@ -232,7 +373,22 @@ class BoundaryScore(PipelineOp):
         self.plot = plot
 
     def calculate(self, dataset: xr.Dataset) -> Self:
+        """Calculate boundary similarity scores between hull sets.
+        
+        Computes mean and standard deviation of distances between corresponding
+        points on hull boundaries. Optionally creates visualizations of the
+        comparison.
 
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            Dataset containing both sets of hulls to compare
+
+        Returns
+        -------
+        Self
+            The BoundaryScore instance with computed scores
+        """
         all_scores = []
         for gt_name, gt_hull in _get_hulls(dataset, self.gt_hull_variable):
             if gt_hull.geom_type in EXCLUDED_HULL_TYPES:

@@ -1,14 +1,16 @@
 """
-All operators/calculations in agent should be formatted as PipelinesOps double_agent
+Pipeline module for the double_agent package.
 
+This module provides the Pipeline class, which serves as a container for defining
+and executing computational workflows. Pipelines are composed of PipelineOp objects
+that perform specific operations on data.
 
-All PipelineOps should:
-- take input_variable and output_variable in their constructor
-- have a .calculate method
-    - with exact signature as base class (PipelineOpBase)
-    - that writes a xr.Dataset or xr.DataArray (preferred)
-    - that returns self
-
+PipelineOps in this system follow these conventions:
+- Each operator takes input_variable and output_variable parameters in its constructor
+- Each operator implements a .calculate method that:
+  - Maintains the same signature as the base class (PipelineOp)
+  - Writes results to an xarray Dataset or DataArray
+  - Returns self for method chaining
 """
 
 import copy
@@ -32,7 +34,30 @@ from AFL.double_agent.util import extract_parameters
 
 class Pipeline(PipelineContext):
     """
-    Container class for defining and building pipelines.
+    Container class for defining and executing computational workflows.
+    
+    The Pipeline class serves as a framework for organizing and running sequences of
+    operations (PipelineOps) on data. Each operation in the pipeline takes input data,
+    performs a specific transformation, and produces output data that can be used by
+    subsequent operations.
+    
+    Parameters
+    ----------
+    name : Optional[str], default=None
+        Name of the pipeline. If None, defaults to "Pipeline".
+    ops : Optional[List], default=None
+        List of PipelineOp objects to initialize the pipeline with.
+        
+    Attributes
+    ----------
+    result : Any
+        Stores the final result after pipeline execution
+    ops : List
+        List of PipelineOp objects in the pipeline
+    graph : nx.DiGraph
+        NetworkX directed graph representation of the pipeline
+    graph_edge_labels : Dict
+        Edge labels for the pipeline graph visualization
     """
 
     def __init__(self, name: Optional[str] = None, ops: Optional[List] = None) -> None:

@@ -33,6 +33,7 @@ dependencies = [
     "pandas",
     "scipy",
     "matplotlib",
+    "plotly",
     "seaborn",
     "pint",
     "periodictable",
@@ -45,6 +46,8 @@ dependencies = [
     "sympy",
     "tiled[all]",
     "sasdata",
+    "pygraphviz",
+    "mpltern",
 ]
 
 [project.optional-dependencies]
@@ -82,6 +85,13 @@ dev = [
     "isort",
     "mypy",
     "pytest",
+    "sphinx",
+    "sphinx-rtd-theme",
+    "sphinxcontrib-apidoc",
+    "sphinxcontrib-napoleon",
+    "sphinx-copybutton",
+    "pydata-sphinx-theme",
+    "sphinx-autosummary-accessors",
 ]
 
 all = [
@@ -106,8 +116,21 @@ all = [
     "isort",
     "mypy",
     "pytest",
+    "sphinx",
+    "sphinx-rtd-theme",
+    "sphinxcontrib-apidoc",
+    "sphinxcontrib-napoleon",
+    "pydata-sphinx-theme",
+    "sphinx-copybutton",
+    "sphinx-autosummary-accessors",
 ]
+
+[tool.hatch.build]
+packages = ["AFL"]
+include-package-data = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["AFL"]
 
+[tool.hatch.build.targets.sdist]
+packages = ["AFL"]
