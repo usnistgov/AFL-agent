@@ -254,3 +254,4 @@ dependencies:
     - zstandard==0.23.0
     - nbsphinx==0.9.6
     - mpltern==1.0.4
+    - kaleido==0.2.1

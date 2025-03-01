@@ -45,7 +45,7 @@ extensions = [
     "nbsphinx",
 ]
 
-
+nbsphinx_requirejs_path = "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"
 
 # Ignore annoying type exception warnings which often come from newlines
 nitpick_ignore = [("py:class", "type")]
