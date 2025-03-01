@@ -436,17 +436,147 @@
 <span id="afl-double-agent-plotting-module"></span><h1>AFL.double_agent.plotting module<a class="headerlink" href="#module-AFL.double_agent.plotting" title="Permalink to this heading">#</a></h1>
 <p>Visualization tools for materials composition and phase data.</p>
 <p>This module provides plotting utilities for visualizing compositional data and phase
-diagrams. It supports both 2D and ternary plots using matplotlib, with special
+diagrams. It supports both 2D, 3D and ternary plots using matplotlib, with special
 handling for labeled data and phase regions.</p>
 <p>Key features:
-- Support for both 2D and ternary plots
+- Support for 2D, 3D and ternary plots
 - Surface and scatter plot styles
 - Automatic handling of phase labels
 - Flexible customization through matplotlib parameters
 - Integration with xarray data structures</p>
 <dl class="py function">
+<dt class="sig sig-object py" id="AFL.double_agent.plotting.plot">
+<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.plotting.</span></span><span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'scatter'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mpl'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Artist</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.plotting.plot" title="Permalink to this definition">#</a></dt>
+<dd><p>Master plotting function that dispatches to specialized plotting functions.</p>
+<p>This function serves as a unified interface for all plotting functions in the module.
+It dispatches to the appropriate specialized function based on the plottype and backend.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<em>xr.Dataset</em>) – Dataset containing the data to plot</p></li>
+<li><p><strong>plottype</strong> (<em>str</em><em>, </em><em>default='scatter'</em>) – Type of plot to create. Options:
+- ‘scatter’: Scatter plot of compositional data
+- ‘surface’: Surface plot of compositional data
+- ‘sas’: Small-angle scattering plot</p></li>
+<li><p><strong>backend</strong> (<em>str</em><em>, </em><em>default='mpl'</em>) – Plotting backend to use. Options:
+- ‘mpl’: Matplotlib
+- ‘plotly’: Plotly</p></li>
+<li><p><strong>**kwargs</strong> (<em>dict</em>) – Additional keyword arguments passed to the specialized plotting function.
+See the documentation of the specialized functions for details.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The return value of the specialized plotting function, which is either
+a list of matplotlib artists or a plotly figure object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[List[plt.Artist], Dict[str, Any]]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If an invalid plottype or backend is specified.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create a scatter plot using matplotlib</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plot</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">plottype</span><span class="o">=</span><span class="s1">&#39;scatter&#39;</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;mpl&#39;</span><span class="p">,</span>
+<span class="gp">... </span>     <span class="n">component_variable</span><span class="o">=</span><span class="s1">&#39;compositions&#39;</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;labels&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create a surface plot using plotly</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plot</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">plottype</span><span class="o">=</span><span class="s1">&#39;surface&#39;</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span>
+<span class="gp">... </span>     <span class="n">component_variable</span><span class="o">=</span><span class="s1">&#39;compositions&#39;</span><span class="p">,</span> <span class="n">ternary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create a small-angle scattering plot using matplotlib</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plot</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">plottype</span><span class="o">=</span><span class="s1">&#39;sas&#39;</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;mpl&#39;</span><span class="p">,</span>
+<span class="gp">... </span>     <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;loglog&#39;</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s1">&#39;q&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;intensity&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="AFL.double_agent.plotting.plot_sas_mpl">
+<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_sas_mpl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'loglog'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'q'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Intensity</span> <span class="pre">[A.U.]'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'q</span> <span class="pre">[$Å^{-1}$]'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">waterfall</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clean_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">mpl_kw</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Artist</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.plotting.plot_sas_mpl" title="Permalink to this definition">#</a></dt>
+<dd><p>Create a plot of small-angle scattering data using matplotlib.</p>
+<p>Generates a plot of scattering data with various options for visualization,
+including log-log plots, waterfalls.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<em>xr.Dataset</em>) – Dataset containing scattering data</p></li>
+<li><p><strong>plot_type</strong> (<em>str</em><em>, </em><em>default='loglog'</em>) – Type of plot to create. Options:
+- ‘loglog’: Log-log plot
+- ‘linlin’: Linear-linear plot
+- ‘logwaterfall’: Log waterfall plot
+- ‘waterfall’: Linear waterfall plot</p></li>
+<li><p><strong>x</strong> (<em>str</em><em>, </em><em>default='q'</em>) – Name of the x-axis variable</p></li>
+<li><p><strong>y</strong> (<em>str</em><em>, </em><em>default=None</em>) – Name of the y-axis variable. If None, will use the first data variable that isn’t x.</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>default='Intensity</em><em> [</em><em>A.U.</em><em>]</em><em>'</em>) – Label for the y-axis</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>default='q</em><em> [</em><em>$Å^{-1}$</em><em>]</em><em>'</em>) – Label for the x-axis</p></li>
+<li><p><strong>legend</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to show a legend</p></li>
+<li><p><strong>base</strong> (<em>float</em><em>, </em><em>default=10</em>) – Base for waterfall plots</p></li>
+<li><p><strong>waterfall</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to create a waterfall plot (overrides plot_type)</p></li>
+<li><p><strong>**mpl_kw</strong> (<em>dict</em>) – Additional keyword arguments passed to matplotlib’s plotting functions</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of created matplotlib artists</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[plt.Artist]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="AFL.double_agent.plotting.plot_sas_plotly">
+<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_sas_plotly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'loglog'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'q'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Intensity</span> <span class="pre">[A.U.]'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'q</span> <span class="pre">[$Å^{-1}$]'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">waterfall</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">plotly_kw</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.plotting.plot_sas_plotly" title="Permalink to this definition">#</a></dt>
+<dd><p>Create a plot of small-angle scattering data using Plotly.</p>
+<p>Generates an interactive plot of scattering data with various options for visualization,
+including log-log plots, waterfalls, and data cleaning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<em>xr.Dataset</em>) – Dataset containing scattering data</p></li>
+<li><p><strong>plot_type</strong> (<em>str</em><em>, </em><em>default='loglog'</em>) – Type of plot to create. Options:
+- ‘loglog’: Log-log plot
+- ‘linlin’: Linear-linear plot
+- ‘logwaterfall’: Log waterfall plot
+- ‘waterfall’: Linear waterfall plot</p></li>
+<li><p><strong>x</strong> (<em>str</em><em>, </em><em>default='q'</em>) – Name of the x-axis variable</p></li>
+<li><p><strong>y</strong> (<em>str</em><em>, </em><em>default=None</em>) – Name of the y-axis variable. If None, will use the first data variable that isn’t x.</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>default='Intensity</em><em> [</em><em>A.U.</em><em>]</em><em>'</em>) – Label for the y-axis</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>default='q</em><em> [</em><em>$Å^{-1}$</em><em>]</em><em>'</em>) – Label for the x-axis</p></li>
+<li><p><strong>legend</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to show a legend</p></li>
+<li><p><strong>base</strong> (<em>float</em><em>, </em><em>default=10</em>) – Base for waterfall plots</p></li>
+<li><p><strong>waterfall</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to create a waterfall plot (overrides plot_type)</p></li>
+<li><p><strong>**plotly_kw</strong> (<em>dict</em>) – </p></li>
+<li><p><strong>clean_params</strong> (<em>dict</em><em>, </em><em>default=None</em>) – Parameters for data cleaning. Options include:
+- qlo: Lower q limit
+- qhi: Upper q limit
+- qlo_isel: Lower q index
+- qhi_isel: Upper q index
+- pedestal: Pedestal value
+- npts: Number of points
+- derivative: Derivative order
+- sgf_window_length: Savitzky-Golay filter window length
+- sgf_polyorder: Savitzky-Golay filter polynomial order
+- apply_log_scale: Whether to apply log scale</p></li>
+<li><p><strong>**plotly_kw</strong> – Additional keyword arguments passed to plotly’s plotting functions</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Plotly figure object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="AFL.double_agent.plotting.plot_scatter_mpl">
-<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_scatter_mpl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'component'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discrete_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_axes_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ternary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">mpl_kw</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Artist</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.plotting.plot_scatter_mpl" title="Permalink to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_scatter_mpl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'component'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discrete_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_axes_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ternary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">mpl_kw</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Artist</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.plotting.plot_scatter_mpl" title="Permalink to this definition">#</a></dt>
 <dd><p>Create a scatter plot of compositional data using matplotlib.</p>
 <p>Generates a scatter plot of compositional data, supporting both 2D
 Cartesian and ternary plots. Points can be colored and marked according
@@ -463,7 +593,8 @@ to phase labels or other values.</p>
 - List: Direct list of label values</p></li>
 <li><p><strong>discrete_labels</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to treat labels as discrete categories (True) or continuous values (False)</p></li>
 <li><p><strong>set_axes_labels</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to set axis labels using component names</p></li>
-<li><p><strong>ternary</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to create a ternary plot for 3-component data</p></li>
+<li><p><strong>ternary</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to create a ternary plot for 3-component data.
+If False with 3 components, will create a 3D plot using matplotlib’s 3D projection.</p></li>
 <li><p><strong>**mpl_kw</strong> (<em>dict</em>) – Additional keyword arguments passed to matplotlib’s scatter</p></li>
 </ul>
 </dd>
@@ -486,8 +617,50 @@ unique label value, cycling through a predefined set of markers.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="AFL.double_agent.plotting.plot_scatter_plotly">
+<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_scatter_plotly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'component'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discrete_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_axes_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ternary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">plotly_kw</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.plotting.plot_scatter_plotly" title="Permalink to this definition">#</a></dt>
+<dd><p>Create a scatter plot of compositional data using Plotly.</p>
+<p>Generates an interactive scatter plot of compositional data, supporting both 2D
+Cartesian, 3D, and ternary plots. Points can be colored and marked according
+to phase labels or other values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<em>xr.Dataset</em>) – Dataset containing compositional data and optional labels</p></li>
+<li><p><strong>component_variable</strong> (<em>str</em>) – Name of the variable containing component coordinates</p></li>
+<li><p><strong>component_dim</strong> (<em>str</em><em>, </em><em>default='component'</em>) – Name of the dimension containing component names</p></li>
+<li><p><strong>labels</strong> (<em>Union</em><em>[</em><em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>]</em><em>, </em><em>default=None</em>) – Labels for coloring points. Can be:
+- None: Will try to use ‘labels’ from dataset
+- str: Name of variable in dataset containing labels
+- List: Direct list of label values</p></li>
+<li><p><strong>discrete_labels</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to treat labels as discrete categories (True) or continuous values (False)</p></li>
+<li><p><strong>set_axes_labels</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to set axis labels using component names</p></li>
+<li><p><strong>ternary</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to create a ternary plot for 3-component data.
+If False with 3 components, will create a 3D plot.</p></li>
+<li><p><strong>**plotly_kw</strong> (<em>dict</em>) – Additional keyword arguments passed to plotly’s plotting functions</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Plotly figure object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Any]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If number of components is not 2 or 3</p></li>
+<li><p><strong>ImportError</strong> – If plotly is not installed</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>When discrete_labels is True, different marker symbols are used for each
+unique label value, cycling through a predefined set of markers.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="AFL.double_agent.plotting.plot_surface_mpl">
-<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_surface_mpl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'component'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_axes_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ternary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">mpl_kw</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Artist</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.plotting.plot_surface_mpl" title="Permalink to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_surface_mpl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'component'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_axes_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ternary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">mpl_kw</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Artist</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.plotting.plot_surface_mpl" title="Permalink to this definition">#</a></dt>
 <dd><p>Create a surface plot of compositional data using matplotlib.</p>
 <p>Generates a filled surface plot of compositional data, supporting both
 2D Cartesian and ternary plots. The surface is colored according to
@@ -503,8 +676,9 @@ phase labels or other specified values.</p>
 - str: Name of variable in dataset containing labels
 - List: Direct list of label values</p></li>
 <li><p><strong>set_axes_labels</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to set axis labels using component names</p></li>
-<li><p><strong>ternary</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to create a ternary plot for 3-component data</p></li>
-<li><p><strong>**mpl_kw</strong> (<em>dict</em>) – Additional keyword arguments passed to matplotlib’s tripcolor</p></li>
+<li><p><strong>ternary</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to create a ternary plot for 3-component data.
+If False with 3 components, will create a 3D plot using matplotlib’s 3D projection.</p></li>
+<li><p><strong>**mpl_kw</strong> (<em>dict</em>) – Additional keyword arguments passed to matplotlib’s plotting functions</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -517,6 +691,44 @@ phase labels or other specified values.</p>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>ValueError</strong> – If number of components is not 2 or 3</p></li>
 <li><p><strong>ImportError</strong> – If mpltern is not installed for ternary plots</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="AFL.double_agent.plotting.plot_surface_plotly">
+<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_surface_plotly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'component'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_axes_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ternary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">plotly_kw</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.plotting.plot_surface_plotly" title="Permalink to this definition">#</a></dt>
+<dd><p>Create a surface plot of compositional data using Plotly.</p>
+<p>Generates an interactive filled surface plot of compositional data, supporting both
+2D Cartesian, 3D, and ternary plots. The surface is colored according to
+phase labels or other specified values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<em>xr.Dataset</em>) – Dataset containing compositional data and optional labels</p></li>
+<li><p><strong>component_variable</strong> (<em>str</em>) – Name of the variable containing component coordinates</p></li>
+<li><p><strong>component_dim</strong> (<em>str</em><em>, </em><em>default='component'</em>) – Name of the dimension containing component names</p></li>
+<li><p><strong>labels</strong> (<em>Union</em><em>[</em><em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>]</em><em>, </em><em>default=None</em>) – Labels for coloring the surface. Can be:
+- None: Will try to use ‘labels’ from dataset
+- str: Name of variable in dataset containing labels
+- List: Direct list of label values</p></li>
+<li><p><strong>set_axes_labels</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to set axis labels using component names</p></li>
+<li><p><strong>ternary</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to create a ternary plot for 3-component data.
+If False with 3 components, will create a 3D plot.</p></li>
+<li><p><strong>**plotly_kw</strong> (<em>dict</em>) – Additional keyword arguments passed to plotly’s plotting functions</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Plotly figure object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Any]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If number of components is not 2 or 3</p></li>
+<li><p><strong>ImportError</strong> – If plotly is not installed</p></li>
 </ul>
 </dd>
 </dl>
@@ -571,8 +783,13 @@ phase labels or other specified values.</p>
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.plotting.plot"><code class="docutils literal notranslate"><span class="pre">plot()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.plotting.plot_sas_mpl"><code class="docutils literal notranslate"><span class="pre">plot_sas_mpl()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.plotting.plot_sas_plotly"><code class="docutils literal notranslate"><span class="pre">plot_sas_plotly()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.plotting.plot_scatter_mpl"><code class="docutils literal notranslate"><span class="pre">plot_scatter_mpl()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.plotting.plot_scatter_plotly"><code class="docutils literal notranslate"><span class="pre">plot_scatter_plotly()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.plotting.plot_surface_mpl"><code class="docutils literal notranslate"><span class="pre">plot_surface_mpl()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.plotting.plot_surface_plotly"><code class="docutils literal notranslate"><span class="pre">plot_surface_plotly()</span></code></a></li>
 </ul>
   </nav></div>
 
