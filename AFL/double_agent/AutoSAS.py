@@ -275,8 +275,8 @@ class SASFitter:
         {
             "name": "power_law_1",
             "sasmodel": "power_law",
-            "q_min": 0.01,
-            "q_max": 0.4,
+            "q_min": 0.001,
+            "q_max": 1.0,
             "fit_params": {
                 "power": {"value": 4, "bounds": (3, 4.5)},
                 "background": {"value": 1e-4, "bounds": (1e-10, 1e2)},
@@ -444,7 +444,7 @@ class SASFitter:
         
         # Build report and results dataset
         report = self._build_report()
-        fit_uuid = 'AS-' + str(uuid.uuid4())
+        fit_uuid = 'ASAS-' + str(uuid.uuid4())
         output_dataset = self._create_output_dataset(report, fit_uuid)
         
         return fit_uuid, output_dataset
@@ -595,7 +595,10 @@ class SASFitter:
                 for param_name, param_data in model["output_fit_params"].items():
                     param_key = f"{model_name}_{param_name}"
                     param_values[model_name][param_key].append(param_data["value"])
-                    param_errors[model_name][param_key].append(param_data["error"])
+                    try:
+                        param_errors[model_name][param_key].append(param_data["error"])
+                    except:
+                        param_errors[model_name][param_key].append(0)
         
         # Add parameter values and errors to dataset
         for model_name in param_values:
@@ -710,7 +713,7 @@ class AutoSAS(PipelineOp):
         model_inputs: Optional[List[Dict[str, Any]]] = None,
         fit_method: Optional[Dict[str, Any]] = None,
         server_id: Optional[str] = None,  # Set to None to run locally
-        name: str = "AutoSAS_fit",
+        name: str = "AutoSAS",
     ):
         output_variables = ["all_chisq"]
         super().__init__(
