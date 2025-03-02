@@ -21,7 +21,32 @@ from sklearn.preprocessing import OrdinalEncoder
 
 
 class TFExtrapolator(PipelineOp):
-    """Base class for all tensorflow based extrapolators"""
+    """Base class for all tensorflow based extrapolators
+
+    Parameters
+    ----------
+    feature_input_variable : str
+        The name of the `xarray.Dataset` data variable to use as the input to the model that will be extrapolating
+        the discrete data. This is typically a sample composition variable.
+    predictor_input_variable : str
+        The name of the `xarray.Dataset` data variable to use as the output of the model that will be extrapolating
+        the discrete data. This is typically a class label or property variable.
+    output_variables : List[str]
+        The list of variables that will be output by this class.
+    output_prefix : str
+        The string prefix to apply to each output variable before inserting into the output `xarray.Dataset`
+    grid_variable : str
+        The name of the `xarray.Dataset` data variable to use as an evaluation grid.
+    grid_dim : str
+        The xarray dimension over each grid_point. Grid equivalent to sample.
+    sample_dim : str
+        The `xarray` dimension over the discrete 'samples' in the `feature_input_variable`. This is typically
+        a variant of `sample` e.g., `saxs_sample`.
+    optimize : bool
+        Whether to optimize the model parameters
+    name : str, default="Extrapolator"
+        The name to use when added to a Pipeline
+    """
 
     def __init__(
         self,
@@ -35,39 +60,6 @@ class TFExtrapolator(PipelineOp):
         optimize: bool,
         name: str = "Extrapolator",
     ) -> None:
-        """
-        Parameters
-        ----------
-        feature_input_variable : str
-            The name of the `xarray.Dataset` data variable to use as the input to the model that will be extrapolating
-            the discrete data. This is typically a sample composition variable.
-
-        predictor_input_variable : str
-            The name of the `xarray.Dataset` data variable to use as the output of the model that will be extrapolating
-            the discrete data. This is typically a class label or property variable.
-
-        output_variables: List[str]
-            The list of variables that will be output by this class.
-
-        output_prefix: str
-            The string prefix to apply to each output variable before inserting into the output `xarray.Dataset`
-
-        grid_variable: str
-            The name of the `xarray.Dataset` data variable to use as an evaluation grid.
-
-        grid_dim: str
-            The xarray dimension over each grid_point. Grid equivalent to sample.
-
-        output_prefix: Optional[str]
-            If provided, all outputs of this `PipelineOp` will be prefixed with this string
-
-        sample_dim: str
-            The `xarray` dimension over the discrete 'samples' in the `feature_input_variable`. This is typically
-            a variant of `sample` e.g., `saxs_sample`.
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
-        """
 
         super().__init__(
             name=name,

@@ -1,7 +1,14 @@
 """PipelineOps for Data Preprocessing
 
-Preprocessing ops generally take in measurement or composition data and scale, correct, and transform it
+This module contains preprocessing operations that transform, normalize, and prepare data for analysis.
+Preprocessors handle tasks such as:
+- Scaling and normalizing data
+- Transforming between coordinate systems
+- Filtering and smoothing signals
+- Extracting features from raw measurements
+- Converting between different data representations
 
+Each preprocessor is implemented as a PipelineOp that can be composed with others in a processing pipeline.
 """
 
 import warnings
@@ -19,7 +26,17 @@ from AFL.double_agent.util import listify
 
 
 class Preprocessor(PipelineOp):
-    """Base class stub for all preprocessors"""
+    """Base class stub for all preprocessors
+
+    Parameters
+    ----------
+    input_variable : str
+        The name of the `xarray.Dataset` data variable to extract from the input dataset
+    output_variable : str
+        The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+    name : str
+        The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
+    """
 
     def __init__(
         self,
@@ -27,18 +44,6 @@ class Preprocessor(PipelineOp):
         output_variable: str = None,
         name: str = "PreprocessorBase",
     ) -> None:
-        """
-        Parameters
-        ----------
-        input_variable : str
-            The name of the `xarray.Dataset` data variable to extract from the input dataset
-
-        output_variable : str
-            The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
-        """
         super().__init__(
             name=name, input_variable=input_variable, output_variable=output_variable
         )
@@ -54,8 +59,37 @@ class SavgolFilter(Preprocessor):
     This `PipelineOp` cleans measurement data and takes smoothed derivatives using `scipy.signal.savgol_filter`. Below
     is a summary of the steps taken.
 
-    Steps
+    Parameters
+    ----------
+    input_variable : str
+        The name of the `xarray.Dataset` data variable to extract from the input dataset
+    output_variable : str
+        The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+    dim: str
+        The dimension in the `xarray.Dataset` to apply this filter over
+    xlo, xhi: Optional[Number]
+        The values of the input dimension (dim, above) to trim the data to
+    xlo_isel, xhi_isel: Optional[int]
+        The integer indices of the input dimension (dim, above) to trim the data to
+    pedestal: Optional[Number]
+        This value is added to the input_variable to establish a fixed data 'floor'
+    npts: int
+        The size of the grid to interpolate onto
+    derivative: int
+        The order of the derivative to return. If derivative=0, the data is smoothed with no derivative taken.
+    window_length: int
+        The width of the window used in the savgol smoothing. See `scipy.signal.savgol_filter` for more information.
+    polyorder: int
+        The order of polynomial used in the savgol smoothing. See `scipy.signal.savgol_filter` for more information.
+    apply_log_scale: bool
+        If True, the `input_variable` and associated `dim` coordinated are scaled with `numpy.log10`
+    name: str
+        The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
+
+    Notes
     -----
+    This `PipelineOp` performs the following steps:
+
     1. Data is trimmed to `(xlo, xhi)` and then `(xlo_isel, xhi_isel)` in that order. The former trims the data to a
     numerical while the latter trims to integer indices. It is generally not advisable to supply both varieties and a
     warning will be raised if this is attempted.
@@ -68,12 +102,11 @@ class SavgolFilter(Preprocessor):
 
     4. If `pedestal` is specified, the pedestal value is added to the data and all NaNs are filled with the pedestal
 
-    5. The data is interpolated onto a constant grid with `npts` values from the trimmed minimum to the trimmed maximum.
-    If `apply_log_scale=True`, the grid is geometrically rather than linearly spaced.
+    5. The data is interpolated onto a constant grid with `npts` values from the trimmed minimum to the trimmed maximum.  If `apply_log_scale=True`, the grid is geometrically rather than linearly spaced.
 
-    4. All remaining NaN values are dropped along `dim`
+    6. All remaining NaN values are dropped along `dim`
 
-    5. Finally, `scipy.signal.savgol_filter` is applied with the `window_length`, `polyorder`, and `derivative`
+    7. Finally, `scipy.signal.savgol_filter` is applied with the `window_length`, `polyorder`, and `derivative`
     parameters specified in the constructor.
 
     """
@@ -95,46 +128,6 @@ class SavgolFilter(Preprocessor):
         apply_log_scale: bool = True,
         name: str = "SavgolFilter",
     ) -> None:
-        """
-        Parameters
-        ----------
-        input_variable : str
-            The name of the `xarray.Dataset` data variable to extract from the input dataset
-
-        output_variable : str
-            The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
-
-        dim: str
-            The dimension in the `xarray.Dataset` to apply this filter over
-
-        xlo, xhi: Optional[Number]
-            The values of the input dimension (dim, above) to trim the data to
-
-        xlo_isel, xhi_isel: Optional[int]
-            The integer indices of the input dimension (dim, above) to trim the data to
-
-        pedestal: Optional[Number]
-            This value is added to the input_variable to establish a fixed data 'floor'
-
-        npts: int
-            The size of the grid to interpolate onto
-
-        derivative: int
-            The order of the derivative to return. If derivative=0, the data is smoothed with no derivative taken.
-
-        window_length: int
-            The width of the window used in the savgol smoothing. See `scipy.signal.savgol_filter` for more information.
-
-        polyorder: int
-            The order of polynomial used in the savgol smoothing. See `scipy.signal.savgol_filter` for more information.
-
-        apply_log_scale: bool
-            If True, the `input_variable` and associated `dim` coordinated are scaled with `numpy.log10`
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
-        """
-
         super().__init__(
             name=name, input_variable=input_variable, output_variable=output_variable
         )
@@ -321,7 +314,28 @@ class Subtract(Preprocessor):
 
 
 class Standardize(Preprocessor):
-    """Standardize the data to have min 0 and max 1"""
+    """Standardize the data to have min 0 and max 1
+
+    Parameters
+    ----------
+    input_variable : str
+        The name of the `xarray.Dataset` data variable to extract from the input dataset
+    output_variable : str
+        The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+    dim : str
+        The dimension used for calculating the data minimum
+    component_dim : Optional[str], default="component"
+        The dimension for component-wise operations
+    scale_variable : Optional[str], default=None
+        If specified, the min/max of this data variable in the supplied `xarray.Dataset` will be used to scale the
+        data rather than min/max of the `input_variable` or the supplied `min_val` or `max_val`
+    min_val : Optional[Number], default=None
+        Value used to scale the data minimum
+    max_val : Optional[Number], default=None
+        Value used to scale the data maximum
+    name : str, default="Standardize"
+        The name to use when added to a Pipeline
+    """
 
     def __init__(
         self,
@@ -334,29 +348,6 @@ class Standardize(Preprocessor):
         max_val: Optional[Number] = None,
         name: str = "Standardize",
     ) -> None:
-        """
-        Parameters
-        ----------
-        input_variable : str
-            The name of the `xarray.Dataset` data variable to extract from the input dataset
-
-        output_variable : str
-            The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
-
-        dim: str
-             The dimension to use when calculating the data minimum
-
-        scale_variable: Optional[str]
-            If specified, the min/max of this data variable in the supplied `xarray.Dataset` will be used to scale the
-            data rather than min/max of the `input_variable` or the supplied `min_val` or `max_val`.
-
-        min_val, max_val: Optional[Number]
-            Values used to scale the data
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
-
-        """
         super().__init__(
             name=name, input_variable=input_variable, output_variable=output_variable
         )
@@ -400,7 +391,28 @@ class Standardize(Preprocessor):
 
 
 class Destandardize(Preprocessor):
-    """Transform the data from 0->1 scaling"""
+    """Transform the data from 0->1 scaling
+
+    Parameters
+    ----------
+    input_variable : str
+        The name of the `xarray.Dataset` data variable to extract from the input dataset
+    output_variable : str
+        The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+    dim : str
+        The dimension used for calculating the data minimum
+    component_dim : Optional[str], default="component"
+        The dimension for component-wise operations
+    scale_variable : Optional[str], default=None
+        If specified, the min/max of this data variable in the supplied `xarray.Dataset` will be used to scale the
+        data rather than min/max of the `input_variable` or the supplied `min_val` or `max_val`
+    min_val : Optional[Number], default=None
+        Value used to scale the data minimum
+    max_val : Optional[Number], default=None
+        Value used to scale the data maximum
+    name : str, default="Destandardize"
+        The name to use when added to a Pipeline
+    """
 
     def __init__(
         self,
@@ -413,29 +425,7 @@ class Destandardize(Preprocessor):
         max_val: Optional[Number] = None,
         name: str = "Destandardize",
     ) -> None:
-        """
-        Parameters
-        ----------
-        input_variable : str
-            The name of the `xarray.Dataset` data variable to extract from the input dataset
 
-        output_variable : str
-            The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
-
-        dim: str
-             The dimension to use when calculating the data minimum
-
-        scale_variable: Optional[str]
-            If specified, the min/max of this data variable in the supplied `xarray.Dataset` will be used to scale the
-            data rather than min/max of the `input_variable` or the supplied `min_val` or `max_val`.
-
-        min_val, max_val: Optional[Number]
-            Values used to scale the data
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
-
-        """
         super().__init__(
             name=name, input_variable=input_variable, output_variable=output_variable
         )
@@ -479,12 +469,8 @@ class Destandardize(Preprocessor):
 
 
 class Zscale(Preprocessor):
-    """Z-scale the data to have mean 0 and standard deviation scaling"""
+    """Z-scale the data to have mean 0 and standard deviation scaling
 
-    def __init__(
-        self, input_variable: str, output_variable: str, dim: str, name: str = "Zscale"
-    ) -> None:
-        """
         Parameters
         ----------
         input_variable : str
@@ -499,6 +485,10 @@ class Zscale(Preprocessor):
         name: str
             The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
         """
+
+    def __init__(
+        self, input_variable: str, output_variable: str, dim: str, name: str = "Zscale"
+    ) -> None:
         super().__init__(
             name=name, input_variable=input_variable, output_variable=output_variable
         )
@@ -523,7 +513,19 @@ class Zscale(Preprocessor):
 
 
 class ZscaleError(Preprocessor):
-    """Scale the y_err data, first input is y, second input is y_err"""
+    """Scale the y_err data, first input is y, second input is y_err
+
+    Parameters
+    ----------
+    input_variables : Union[Optional[str], List[str]]
+        The names of the input variables - first is y, second is y_err
+    output_variable : str
+        The name of the variable to be inserted into the dataset
+    dim : str
+        The dimension to use when calculating the data minimum
+    name : str, default="Zscale_error"
+        The name to use when added to a Pipeline
+    """
 
     def __init__(
         self,
@@ -559,6 +561,19 @@ class BarycentricToTernaryXY(Preprocessor):
     Note ---- Adapted from BaryCentric transform mpltern:
     https://github.com/yuzie007/mpltern/blob/master/mpltern/ternary/transforms.py
 
+    Parameters
+    ----------
+    input_variable : str
+        The name of the `xarray.Dataset` data variable to extract from the input dataset
+
+    output_variable : str
+        The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+
+    sample_dim: str
+         The dimension to use when calculating the data minimum
+
+    name: str
+        The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
     """
 
     def __init__(
@@ -568,22 +583,6 @@ class BarycentricToTernaryXY(Preprocessor):
         sample_dim: str,
         name: str = "BarycentricToTernaryXY",
     ) -> None:
-        """
-        Parameters
-        ----------
-        input_variable : str
-            The name of the `xarray.Dataset` data variable to extract from the input dataset
-
-        output_variable : str
-            The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
-
-        sample_dim: str
-             The dimension to use when calculating the data minimum
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
-
-        """
         super().__init__(
             name=name, input_variable=input_variable, output_variable=output_variable
         )
@@ -611,12 +610,23 @@ class BarycentricToTernaryXY(Preprocessor):
 
 
 class TernaryXYToBarycentric(Preprocessor):
-    """
-    Transform to ternary coordinates from xy coordinates
+    """Transform to ternary coordinates from xy coordinates
 
-    Note ---- Adapted from BaryCentric transform mpltern:
+    Note 
+    ---- 
+    Adapted from BaryCentric transform mpltern:
     https://github.com/yuzie007/mpltern/blob/master/mpltern/ternary/transforms.py
 
+    Parameters
+    ----------
+    input_variable : str
+        The name of the `xarray.Dataset` data variable to extract from the input dataset
+    output_variable : str
+        The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+    sample_dim : str
+        The dimension to use when calculating the data minimum
+    name : str, default="TernaryXYToBarycentric"
+        The name to use when added to a Pipeline
     """
 
     def __init__(
@@ -668,7 +678,58 @@ class TernaryXYToBarycentric(Preprocessor):
 
 
 class SympyTransform(Preprocessor):
-    """Transform data using sympy expressions"""
+    """Transform data using sympy expressions
+
+    Parameters
+    ----------
+    input_variable : str
+        The name of the `xarray.Dataset` data variable to extract from the input dataset
+    output_variable : str
+        The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+    sample_dim : str
+        The sample dimension i.e., the dimension of compositions or grid points
+    component_dim : str, default="component"
+        The dimension of the component of each gridpoint
+    transforms : Dict[str,object]
+        A dictionary of transforms (sympy expressions) to evaluate to generate new variables. For this method to
+        function, the transforms must be completely specified except for the names in component_dim of the
+        input_variable
+    transform_dim : str
+        The name of the dimension that the 'component_dim' will be transformed to
+    name : str, default="SympyTransform"
+        The name to use when added to a Pipeline
+
+    Example
+    -------
+    ```python
+    from AFL.double_agent import *
+    import sympy
+    with Pipeline() as p:
+        CartesianGrid(
+            output_variable='comps',
+            grid_spec={
+                'A':{'min':1,'max':25,'steps':5},
+                'B':{'min':1,'max':25,'steps':5},
+                'C':{'min':1,'max':25,'steps':5},
+            },
+            sample_dim='grid'
+        )
+
+        A,B,C = sympy.symbols('A B C')
+        vA = A/(A+B+C)
+        vB = B/(A+B+C)
+        vC = C/(A+B+C)
+        SympyTransform(
+            input_variable='comps',
+            output_variable='trans_comps',
+            sample_dim='grid',
+            transforms={'vA':vA,'vB':vB,'vC':vC},
+            transform_dim='trans_component'
+        )
+
+    p.calculate(xr.Dataset())# returns dataset with grid and transformed grid
+    ```
+    """
 
     def __init__(
         self,
@@ -680,66 +741,6 @@ class SympyTransform(Preprocessor):
         component_dim: str = "component",
         name: str = "SympyTransform",
     ) -> None:
-        """
-
-        Parameters
-        ----------
-        input_variable : str
-            The name of the `xarray.Dataset` data variable to extract from the input dataset
-
-        output_variable : str
-            The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
-
-        sample_dim: str
-             The sample dimension i.e., the dimension of compositions or grid points
-
-        component_dim: str
-             The dimension of the component of each gridpoint
-
-        transforms: Dict[str,object]
-            A dictionary of transforms (sympy expressions) to evaluate to generate new variables. For this method to
-            function, the transforms must be completely specified except for the names in component_dim of the
-            input_variable
-
-        transform_dim: str
-            The name of the dimension that the 'component_dim' will be transformed to
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
-
-        Example
-        -------
-        ```python
-        from AFL.double_agent import *
-        import sympy
-        with Pipeline() as p:
-            CartesianGrid(
-                output_variable='comps',
-                grid_spec={
-                    'A':{'min':1,'max':25,'steps':5},
-                    'B':{'min':1,'max':25,'steps':5},
-                    'C':{'min':1,'max':25,'steps':5},
-                },
-                sample_dim='grid'
-            )
-
-
-            A,B,C = sympy.symbols('A B C')
-            vA = A/(A+B+C)
-            vB = B/(A+B+C)
-            vC = C/(A+B+C)
-            SympyTransform(
-                input_variable='comps',
-                output_variable='trans_comps',
-                sample_dim='grid',
-                transforms={'vA':vA,'vB':vB,'vC':vC},
-                transform_dim='trans_component'
-            )
-
-        p.calculate(xr.Dataset())# returns dataset with grid and transformed grid
-        ```
-
-        """
 
         super().__init__(
             name=name, input_variable=input_variable, output_variable=output_variable
@@ -846,14 +847,32 @@ class Extrema(Preprocessor):
         return self
 
 class VarsToArray(Preprocessor):
+    """Convert multiple variables into a single array
+
+    Parameters
+    ----------
+    input_variables : List
+        List of input variables to combine into an array
+    output_variable : str
+        The name of the variable to be inserted into the dataset
+    variable_dim : str
+        The dimension name for the variables in the output array
+    squeeze : bool, default=False
+        Whether to squeeze out single-dimension axes
+    variable_mapping : Dict, default=None
+        Optional mapping to rename variables
+    name : str, default='VarsToArray'
+        The name to use when added to a Pipeline
+    """
+
     def __init__(
         self, 
         input_variables: List, 
         output_variable: str, 
-        variable_dim:str,
+        variable_dim: str,
         squeeze: bool = False,
         variable_mapping: Dict = None,
-        name:str='VarsToArray'):
+        name: str = 'VarsToArray'):
 
         super().__init__(name=name, input_variable=input_variables, output_variable=output_variable)
         print(self.input_variable,self.output_variable)
@@ -876,30 +895,32 @@ class VarsToArray(Preprocessor):
         return self
 
 class ArrayToVars(Preprocessor):
+    """Convert an array into multiple variables
+
+    Parameters
+    ----------
+    input_variable : str
+        The name of the array variable to split into separate variables
+    output_variables : list
+        The names of the variables to create from the array
+    split_dim : str
+        The dimension to split the array along
+    postfix : str, default=''
+        String to append to output variable names
+    squeeze : bool, default=False
+        Whether to squeeze out single-dimension axes
+    name : str, default='DatasetToVars'
+        The name to use when added to a Pipeline
     """
-        Parameters
-        ----------
-        input_variable : str
-            The name of the `xarray.Dataset` data variable to extract from the input dataset
 
-        output_variables : list or str
-            The name of the variables to be inserted into the `xarray.Dataset` by this `PipelineOp`
-
-        split_dim: str
-             The dimension to use when splitting a dataset or datarray over
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
-
-        """
     def __init__(
         self, 
         input_variable: str, 
         output_variables: list, 
         split_dim: list,
-        postfix='',
+        postfix: str = '',
         squeeze: bool = False,
-        name:str='DatasetToVars'):
+        name: str = 'DatasetToVars'):
 
         super().__init__(name=name, input_variable=input_variable, output_variable=output_variables)
         print(self.input_variable,self.output_variable)

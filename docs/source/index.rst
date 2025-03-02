@@ -3,9 +3,10 @@ AFL-agent
 
 .. only:: html 
 
-    .. image:: _static/agent_loop.svg
+    .. image:: _static/pipeline_horizontal.svg
         :alt: AFL-agent Logo
         :width: 800
+
 
 
 AFL-agent is a Python library that allows users to implement active learning
@@ -30,6 +31,18 @@ Key Features
 * Support for phase boundary mapping and material property optimization
 
 
+Autonomous Formulation Lab
+--------------------------
+
+The Autonomous Formulation Lab (AFL) is a National Institute of Standards and
+Technology (NIST) program that seeks to accelerate the discovery and
+optimization of soft materials through the development and application of
+autonomous techniques to high-value measurements. Specifically, we design
+robotic platforms that autonomously mix, synthesize and evaluate soft materials
+and we study them using small-angle scattering (SANS) and small-angle X-ray
+scattering (SAXS) and other techniques.
+
+
 Installation
 ------------
 
@@ -42,8 +55,8 @@ You can install AFL-agent using pip:
 
 Please see the :doc:`tutorials/installation` page for more details.
 
-Contents
---------
+Documentation Structure
+------------------------
 
 This documentation is organized according to the philosphy described by Daniele Procida at `diataxis.fr <https://diataxis.fr>`_. It is organized into four sections:
 
@@ -53,9 +66,10 @@ This documentation is organized according to the philosphy described by Daniele 
 * :doc:`Reference <reference/index>`: Detailed technical reference 
 
 
+Table of Contents
+------------------
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
    tutorials/installation
    tutorials/index

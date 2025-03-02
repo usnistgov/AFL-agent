@@ -8,4 +8,4 @@ Guides for specific tasks
 
    building_xarray_datasets
    create_pipelineop
-   appending_to_xarray
+   appending

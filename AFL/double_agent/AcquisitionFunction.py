@@ -1,6 +1,17 @@
 """
-Acquisition functions gather one or more inputs and use that information to choose one or more points from a
-from a supplied composition grid.
+Acquisition functions for active learning and optimization.
+
+This module provides various acquisition functions that help guide the selection of new samples
+in active learning and optimization tasks. Each acquisition function evaluates a set of candidate
+points and determines which points would be most valuable to sample next.
+
+Key features:
+- Support for single and multi-point acquisition
+- Ability to exclude previously sampled points
+- Random and maximum value acquisition strategies
+- Upper confidence bound acquisition
+- Support for multi-modal acquisition with masking
+
 """
 
 import copy
@@ -22,7 +33,51 @@ class AcquisitionError(Exception):
 
 
 class AcquisitionFunction(PipelineOp):
-    """Base acquisition function"""
+    """Base acquisition function for selecting next points to sample.
+
+    Acquisition functions gather one or more inputs and use that information to choose one or more points from a
+    supplied composition grid. This base class provides common functionality for implementing specific
+    acquisition strategies.
+
+    Parameters
+    ----------
+    input_variables : List[str]
+        The name of the `xarray.Dataset` data variables to extract from the input `xarray.Dataset`
+
+    grid_variable: str
+        The name of the `xarray.Dataset` data variable to use as a evaluation grid.
+
+    grid_dim: str
+        The xarray dimension over each grid_point. Grid equivalent to sample.
+
+    output_prefix: Optional[str]
+        If provided, all outputs of this `PipelineOp` will be prefixed with this string
+
+    output_variable : str
+        The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+
+    decision_rtol: float
+        The next sample will be randomly chosen from all grid points that are within `decision_rtol` percent of the
+        maximum of the decision surface. This
+
+    excluded_comps_variables: Optional[List[str]]
+        A list of `xarray.Dataset` composition variables to use in building an exclusion surface that is added to
+        the decision surface. This exclusion surface is built but placing multidimensional inverted Gaussians at
+        every composition point specified in the `excluded_comps_variables`. This is done using the `GaussianPoints`
+        generator.
+
+    excluded_comps_dim: str
+        The `xarray` dimension over the components of a composition.
+
+    exclusion_radius: float
+        The width of the Gaussian placed by the `GaussianPoints` generator. See that documentation for more details.
+
+    count: int
+        The number of samples to pull from the grid.
+
+    name: str
+        The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
+    """
 
     def __init__(
         self,
@@ -33,51 +88,11 @@ class AcquisitionFunction(PipelineOp):
         output_variable: str = "next_compositions",
         decision_rtol: float = 0.05,
         excluded_comps_variables: Optional[List[str]] = None,
-        excluded_comps_dim: str = "component",
+        excluded_comps_dim: Optional[str] = None,
         exclusion_radius: float = 1e-3,
         count: int = 1,
         name: str = "AcquisitionFunctionBase",
     ) -> None:
-        """
-        Parameters
-        ----------
-        input_variables : List[str]
-            The name of the `xarray.Dataset` data variables to extract from the input `xarray.Dataset`
-
-        grid_variable: str
-            The name of the `xarray.Dataset` data variable to use as a evaluation grid.
-
-        grid_dim: str
-            The xarray dimension over each grid_point. Grid equivalent to sample.
-
-        output_prefix: Optional[str]
-            If provided, all outputs of this `PipelineOp` will be prefixed with this string
-
-        output_variable : str
-            The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
-
-        decision_rtol: float
-            The next sample will be randomly chosen from all grid points that are within `decision_rtol` percent of the
-            maximum of the decision surface. This
-
-        excluded_comps_variables: Optional[List[str]]
-            A list of `xarray.Dataset` composition variables to use in building an exclusion surface that is added to
-            the decision surface. This exclusion surface is built but placing multidimensional inverted Gaussians at
-            every composition point specified in the `excluded_comps_variables`. This is done using the `GaussianPoints`
-            generator.
-
-        excluded_comps_dim: str
-            The `xarray` dimension over the components of a composition.
-
-        exclusion_radius: float
-            The width of the Gaussian placed by the `GaussianPoints` generator. See that documentation for more details.
-
-        count: int
-            The number of samples to pull from the grid.
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
-        """
         super().__init__(
             input_variable=listify(input_variables)
             + [grid_variable],  # add in grid variable for visualization
@@ -96,17 +111,41 @@ class AcquisitionFunction(PipelineOp):
         self.exclusion_radius = exclusion_radius
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
+        """Apply this `PipelineOp` to the supplied `xarray.dataset`
+        
+        This method must be implemented by subclasses to define how the acquisition function
+        evaluates and selects points from the grid.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            The input dataset containing variables to evaluate
+
+        Returns
+        -------
+        Self
+            The acquisition function instance with updated outputs
+        """
         return NotImplementedError(".calculate must be implemented in subclasses")  # type: ignore
 
     def _get_excluded_comps(self, dataset: xr.Dataset) -> xr.DataArray | None:
-        """
-        Gather all compositions listed in `self.excluded_comps_variables` and combine into a single
-        `xarray.DataArray`
+        """Gather all compositions listed in excluded_comps_variables into a single array.
+        
+        This helper method combines all the compositions that should be excluded into a single
+        DataArray for use in creating exclusion zones.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            The input dataset containing composition variables to exclude
+
+        Returns
+        -------
+        xr.DataArray | None
+            Combined array of compositions to exclude, or None if no exclusions specified
         """
         if self.excluded_comps_variables is None:
             return None
-
 
         merge_list = []
         for var in listify(self.excluded_comps_variables):
@@ -124,8 +163,26 @@ class AcquisitionFunction(PipelineOp):
         return excluded_comps
 
     def exclude_previous_samples(self, dataset: xr.Dataset) -> xr.Dataset:
-        """Modify the decision surface by placing Gaussian exclusion zones over previously measured compositions."""
+        """Modify the decision surface by placing Gaussian exclusion zones.
+        
+        This method modifies the decision surface by adding Gaussian exclusion zones around
+        previously measured compositions to prevent resampling of similar points.
 
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            Dataset containing the decision surface and compositions to exclude
+
+        Returns
+        -------
+        xr.Dataset
+            Modified dataset with updated decision surface including exclusion zones
+
+        Raises
+        ------
+        AcquisitionError
+            If required variables are missing from the dataset
+        """
         if (
             ("decision_surface" not in dataset)
             or ("comp_grid" not in dataset)
@@ -165,11 +222,21 @@ class AcquisitionFunction(PipelineOp):
         return dataset
 
     def get_next_samples(self, dataset: xr.Dataset) -> None:
-        """Choose the next composition by evaluating the decision surface in a provided dataset
+        """Choose the next compositions by evaluating the decision surface.
 
-        This method first finds all compositions that are within `self.decision_rtol` of the maximum values of the
-        decision surface. From this set of compositions, it randomly chooses `self.count` composition as the next
-        sample composition.
+        This method finds all compositions that are within decision_rtol of the maximum values
+        of the decision surface. From this set of compositions, it randomly chooses count
+        compositions as the next sample compositions.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            Dataset containing the decision surface and composition grid
+
+        Raises
+        ------
+        AcquisitionError
+            If required variables are missing or if no valid points are found
         """
         if ("decision_surface" not in dataset) or ("comp_grid" not in dataset):
             raise AcquisitionError(
@@ -218,7 +285,48 @@ class AcquisitionFunction(PipelineOp):
 
 
 class RandomAF(AcquisitionFunction):
-    """Randomly choose from the grid with or without excluding previous measurement compositions"""
+    """Randomly choose points from the grid with optional exclusion of previous measurements.
+    
+    This acquisition function implements a simple random sampling strategy where points are chosen
+    uniformly at random from the available grid points. It can optionally exclude previously
+    measured points using Gaussian exclusion zones.
+
+    Parameters
+    ----------
+    grid_variable: str
+        The name of the `xarray.Dataset` data variable to use as a evaluation grid.
+
+    grid_dim: str
+        The xarray dimension over each grid_point. Grid equivalent to sample.
+
+    output_prefix: Optional[str]
+        If provided, all outputs of this `PipelineOp` will be prefixed with this string
+
+    output_variable : str
+        The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+
+    decision_rtol: float
+        The next sample will be randomly chosen from all grid points that are within `decision_rtol` percent of the
+        maximum of the decision surface. This
+
+    excluded_comps_variables: Optional[List[str]]
+        A list of `xarray.Dataset` composition variables to use in building an exclusion surface that is added to
+        the decision surface. This exclusion surface is built but placing multidimensional inverted Gaussians at
+        every composition point specified in the `excluded_comps_variables`. This is done using the `GaussianPoints`
+        generator.
+
+    excluded_comps_dim: str
+        The `xarray` dimension over the components of a composition.
+
+    exclusion_radius: float
+        The width of the Gaussian placed by the `GaussianPoints` generator. See that documentation for more details.
+
+    count: int
+        The number of samples to pull from the grid.
+
+    name: str
+        The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
+    """
 
     def __init__(
         self,
@@ -233,43 +341,6 @@ class RandomAF(AcquisitionFunction):
         count: int = 1,
         name: str = "RandomAF",
     ) -> None:
-        """
-        Parameters
-        ----------
-        grid_variable: str
-            The name of the `xarray.Dataset` data variable to use as a evaluation grid.
-
-        grid_dim: str
-            The xarray dimension over each grid_point. Grid equivalent to sample.
-
-        output_prefix: Optional[str]
-            If provided, all outputs of this `PipelineOp` will be prefixed with this string
-
-        output_variable : str
-            The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
-
-        decision_rtol: float
-            The next sample will be randomly chosen from all grid points that are within `decision_rtol` percent of the
-            maximum of the decision surface. This
-
-        excluded_comps_variables: Optional[List[str]]
-            A list of `xarray.Dataset` composition variables to use in building an exclusion surface that is added to
-            the decision surface. This exclusion surface is built but placing multidimensional inverted Gaussians at
-            every composition point specified in the `excluded_comps_variables`. This is done using the `GaussianPoints`
-            generator.
-
-        excluded_comps_dim: str
-            The `xarray` dimension over the components of a composition.
-
-        exclusion_radius: float
-            The width of the Gaussian placed by the `GaussianPoints` generator. See that documentation for more details.
-
-        count: int
-            The number of samples to pull from the grid.
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
-        """
         super().__init__(
             input_variables=[],
             grid_variable=grid_variable,
@@ -288,7 +359,21 @@ class RandomAF(AcquisitionFunction):
         self.acquisition = None
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
+        """Apply this RandomAF to the supplied dataset.
+        
+        Creates a random decision surface and optionally applies exclusion zones
+        around previously measured points.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            The input dataset containing the grid to sample from
+
+        Returns
+        -------
+        Self
+            The RandomAF instance with updated outputs
+        """
         self.acquisition = xr.Dataset()
 
         self.acquisition["comp_grid"] = dataset[self.grid_variable].transpose(
@@ -317,6 +402,57 @@ class RandomAF(AcquisitionFunction):
         return self
 
 class MultimodalMask_MaxValueAF(AcquisitionFunction):
+    """Acquisition function that selects points based on maximum values within specific phase regions.
+    
+    This acquisition function extends MaxValueAF by adding the ability to focus sampling in specific
+    phase regions of the composition space. It uses a mask label variable to identify different
+    phase regions and selects points based on their proximity to target phase coordinates.
+
+    Parameters
+    ----------
+    decision_variable : str
+        The name of the variable containing the decision surface values
+    
+    mask_label_variable : str
+        The name of the variable containing phase region labels
+    
+    phase_select_coords : dict[str,float]
+        Dictionary mapping phase component names to target coordinates
+    
+    grid_variable : str
+        The name of the `xarray.Dataset` data variable to use as a evaluation grid
+    
+    grid_dim : str, default="grid"
+        The xarray dimension over each grid_point. Grid equivalent to sample.
+    
+    combine_coeffs : Optional[List[float]], default=None
+        If provided, the input variables will be scaled by these coefficients before being summed
+    
+    output_prefix : Optional[str], default=None
+        If provided, all outputs of this `PipelineOp` will be prefixed with this string
+    
+    output_variable : str, default="next_samples"
+        The name of the variable to be inserted into the dataset
+    
+    decision_rtol : float, default=0.05
+        The next sample will be randomly chosen from all grid points that are within
+        decision_rtol percent of the maximum of the decision surface
+    
+    excluded_comps_variables : Optional[List[str]], default=None
+        List of composition variables to use in building an exclusion surface
+    
+    excluded_comps_dim : Optional[str], default=None
+        The dimension over the components of a composition
+    
+    exclusion_radius : float, default=1e-3
+        The width of the Gaussian placed by the GaussianPoints generator
+    
+    count : int, default=1
+        The number of samples to pull from the grid
+    
+    name : str, default="MaxValueAF"
+        The name to use when added to a Pipeline
+    """
 
     def __init__(
             self,
@@ -334,51 +470,7 @@ class MultimodalMask_MaxValueAF(AcquisitionFunction):
             exclusion_radius: float = 1e-3,
             count: int = 1,
             name: str = "MaxValueAF",
-    ):
-        """
-        Parameters
-        ----------
-        input_variables : List[str]
-            The name of the `xarray.Dataset` data variables to extract from the input `xarray.Dataset`
-
-        grid_variable: str
-            The name of the `xarray.Dataset` data variable to use as a evaluation grid.
-
-        grid_dim: str
-            The xarray dimension over each grid_point. Grid equivalent to sample.
-
-        combine_coeffs: Optional[List[float]]
-            If provided, the `self.input_variables` will be scaled by these coefficients before being summed.
-
-        output_prefix: Optional[str]
-            If provided, all outputs of this `PipelineOp` will be prefixed with this string
-
-        output_variable : str
-            The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
-
-        decision_rtol: float
-            The next sample will be randomly chosen from all grid points that are within `decision_rtol` percent of the
-            maximum of the decision surface. This
-
-        excluded_comps_variables: Optional[List[str]]
-            A list of `xarray.Dataset` composition variables to use in building an exclusion surface that is added to
-            the decision surface. This exclusion surface is built but placing multidimensional inverted Gaussians at
-            every composition point specified in the `excluded_comps_variables`. This is done using the `GaussianPoints`
-            generator.
-
-        excluded_comps_dim: str
-            The `xarray` dimension over the components of a composition.
-
-        exclusion_radius: float
-            The width of the Gaussian placed by the `GaussianPoints` generator. See that documentation for more details.
-
-        count: int
-            The number of samples to pull from the grid.
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
-        """
-
+    ) -> None:
         super().__init__(
             input_variables=[mask_label_variable,decision_variable],
             grid_variable=grid_variable,
@@ -401,22 +493,21 @@ class MultimodalMask_MaxValueAF(AcquisitionFunction):
         self.acquisition = None
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
+        """Apply this MultimodalMask_MaxValueAF to the supplied dataset.
+        
+        Creates a decision surface by combining the decision variable with phase region
+        masking based on proximity to target phase coordinates.
 
-        # grid_dim = 'grid'
-        # grid_variable = 'comps_grid_trans'
-        # mask_labels_variable = 'sans_labels_extrap_mean'
-        # component_dim = 'trans_component'
-        # target = {'PVC': 0.0, 'phi_T': 0.175}
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            The input dataset containing variables to evaluate
 
-        # label_com = ds_out[grid_variable].groupby(ds_out[mask_labels_variable]).mean()
-
-        # target = xr.Dataset(target).to_array(component_dim)
-        # diff_min = diff[diff.argmin()]
-        # label = label_com[diff.argmin()][mask_labels_variable].values[()]
-
-        # grid_selected = ds_out.set_index({grid_dim: mask_labels_variable}).sel({grid_dim: label})
-
+        Returns
+        -------
+        Self
+            The MultimodalMask_MaxValueAF instance with updated outputs
+        """
         self.acquisition = xr.Dataset()
 
         self.acquisition["comp_grid"] = dataset[self.grid_variable].transpose(
@@ -431,8 +522,7 @@ class MultimodalMask_MaxValueAF(AcquisitionFunction):
                     decision_surface.max() - decision_surface.min()
             )
 
-        # 1. Calculate the mean of the "mask_label_variable"
-        ## MASKING
+        # Apply phase region masking
         if len(np.unique(dataset[self.mask_label_variable]))>1:
             label_com = self.acquisition["comp_grid"].groupby(dataset[self.mask_label_variable]).mean()
             component_dim = self.acquisition["comp_grid"].dims[1] # should always be [1] due to the transpose above
@@ -462,6 +552,54 @@ class MultimodalMask_MaxValueAF(AcquisitionFunction):
 
 
 class MaxValueAF(AcquisitionFunction):
+    """Acquisition function that selects points based on maximum values.
+    
+    This acquisition function chooses points by finding the maximum values in the decision surface.
+    It can combine multiple input variables with optional scaling coefficients and supports
+    exclusion of previously measured points.
+
+    Parameters
+    ----------
+    input_variables : List[str]
+        The name of the `xarray.Dataset` data variables to extract from the input `xarray.Dataset`
+
+    grid_variable: str
+        The name of the `xarray.Dataset` data variable to use as a evaluation grid.
+
+    grid_dim: str
+        The xarray dimension over each grid_point. Grid equivalent to sample.
+
+    combine_coeffs: Optional[List[float]]
+        If provided, the `self.input_variables` will be scaled by these coefficients before being summed.
+
+    output_prefix: Optional[str]
+        If provided, all outputs of this `PipelineOp` will be prefixed with this string
+
+    output_variable : str
+        The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+
+    decision_rtol: float
+        The next sample will be randomly chosen from all grid points that are within `decision_rtol` percent of the
+        maximum of the decision surface. This
+
+    excluded_comps_variables: Optional[List[str]]
+        A list of `xarray.Dataset` composition variables to use in building an exclusion surface that is added to
+        the decision surface. This exclusion surface is built but placing multidimensional inverted Gaussians at
+        every composition point specified in the `excluded_comps_variables`. This is done using the `GaussianPoints`
+        generator.
+
+    excluded_comps_dim: str
+        The `xarray` dimension over the components of a composition.
+
+    exclusion_radius: float
+        The width of the Gaussian placed by the `GaussianPoints` generator. See that documentation for more details.
+
+    count: int
+        The number of samples to pull from the grid.
+
+    name: str
+        The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
+    """
 
     def __init__(
         self,
@@ -477,51 +615,7 @@ class MaxValueAF(AcquisitionFunction):
         exclusion_radius: float = 1e-3,
         count: int = 1,
         name: str = "MaxValueAF",
-    ):
-        """
-        Parameters
-        ----------
-        input_variables : List[str]
-            The name of the `xarray.Dataset` data variables to extract from the input `xarray.Dataset`
-
-        grid_variable: str
-            The name of the `xarray.Dataset` data variable to use as a evaluation grid.
-
-        grid_dim: str
-            The xarray dimension over each grid_point. Grid equivalent to sample.
-
-        combine_coeffs: Optional[List[float]]
-            If provided, the `self.input_variables` will be scaled by these coefficients before being summed.
-
-        output_prefix: Optional[str]
-            If provided, all outputs of this `PipelineOp` will be prefixed with this string
-
-        output_variable : str
-            The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
-
-        decision_rtol: float
-            The next sample will be randomly chosen from all grid points that are within `decision_rtol` percent of the
-            maximum of the decision surface. This
-
-        excluded_comps_variables: Optional[List[str]]
-            A list of `xarray.Dataset` composition variables to use in building an exclusion surface that is added to
-            the decision surface. This exclusion surface is built but placing multidimensional inverted Gaussians at
-            every composition point specified in the `excluded_comps_variables`. This is done using the `GaussianPoints`
-            generator.
-
-        excluded_comps_dim: str
-            The `xarray` dimension over the components of a composition.
-
-        exclusion_radius: float
-            The width of the Gaussian placed by the `GaussianPoints` generator. See that documentation for more details.
-
-        count: int
-            The number of samples to pull from the grid.
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
-        """
-
+    ) -> None:
         super().__init__(
             input_variables=input_variables,
             grid_variable=grid_variable,
@@ -541,7 +635,21 @@ class MaxValueAF(AcquisitionFunction):
         self.acquisition = None
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
+        """Apply this MaxValueAF to the supplied dataset.
+        
+        Combines multiple input variables with optional scaling coefficients to create
+        a decision surface based on maximum values.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            The input dataset containing variables to evaluate
+
+        Returns
+        -------
+        Self
+            The MaxValueAF instance with updated outputs
+        """
         self.acquisition = xr.Dataset()
 
         self.acquisition["comp_grid"] = dataset[self.grid_variable].transpose(
@@ -587,6 +695,54 @@ class MaxValueAF(AcquisitionFunction):
 
 
 class PseudoUCB(AcquisitionFunction):
+    """Upper Confidence Bound (UCB) acquisition function.
+    
+    This acquisition function implements a pseudo Upper Confidence Bound strategy where
+    points are selected based on a weighted combination of mean predictions and uncertainty
+    estimates. The weights (lambdas) control the exploration-exploitation trade-off.
+
+    Parameters
+    ----------
+    input_variables : List[str]
+        The name of the `xarray.Dataset` data variables to extract from the input `xarray.Dataset`
+
+    grid_variable: str
+        The name of the `xarray.Dataset` data variable to use as a evaluation grid.
+
+    grid_dim: str
+        The xarray dimension over each grid_point. Grid equivalent to sample.
+
+    lambdas: List[float]
+        Scaling parameters for each input variable to control exploration-exploitation trade-off
+
+    output_prefix: Optional[str]
+        If provided, all outputs of this `PipelineOp` will be prefixed with this string
+
+    output_variable : str
+        The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+
+    decision_rtol: float
+        The next sample will be randomly chosen from all grid points that are within `decision_rtol` percent of the
+        maximum of the decision surface. This
+
+    excluded_comps_variables: Optional[List[str]]
+        A list of `xarray.Dataset` composition variables to use in building an exclusion surface that is added to
+        the decision surface. This exclusion surface is built but placing multidimensional inverted Gaussians at
+        every composition point specified in the `excluded_comps_variables`. This is done using the `GaussianPoints`
+        generator.
+
+    excluded_comps_dim: str
+        The `xarray` dimension over the components of a composition.
+
+    exclusion_radius: float
+        The width of the Gaussian placed by the `GaussianPoints` generator. See that documentation for more details.
+
+    count: int
+        The number of samples to pull from the grid.
+
+    name: str
+        The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
+    """
 
     def __init__(
         self,
@@ -602,47 +758,7 @@ class PseudoUCB(AcquisitionFunction):
         exclusion_radius: float = 1e-3,
         count: int = 1,
         name: str="PseudoUCB",
-    ):
-        """
-        Parameters
-        ----------
-        input_variables : List[str]
-            The name of the `xarray.Dataset` data variables to extract from the input `xarray.Dataset`
-
-        grid_variable: str
-            The name of the `xarray.Dataset` data variable to use as a evaluation grid.
-
-        grid_dim: str
-            The xarray dimension over each grid_point. Grid equivalent to sample.
-
-        output_prefix: Optional[str]
-            If provided, all outputs of this `PipelineOp` will be prefixed with this string
-
-        output_variable : str
-            The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
-
-        decision_rtol: float
-            The next sample will be randomly chosen from all grid points that are within `decision_rtol` percent of the
-            maximum of the decision surface. This
-
-        excluded_comps_variables: Optional[List[str]]
-            A list of `xarray.Dataset` composition variables to use in building an exclusion surface that is added to
-            the decision surface. This exclusion surface is built but placing multidimensional inverted Gaussians at
-            every composition point specified in the `excluded_comps_variables`. This is done using the `GaussianPoints`
-            generator.
-
-        excluded_comps_dim: str
-            The `xarray` dimension over the components of a composition.
-
-        exclusion_radius: float
-            The width of the Gaussian placed by the `GaussianPoints` generator. See that documentation for more details.
-
-        count: int
-            The number of samples to pull from the grid.
-
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
-        """
+    ) -> None:
 
         super().__init__(
             input_variables=input_variables,
@@ -673,7 +789,21 @@ class PseudoUCB(AcquisitionFunction):
         self.lambdas = lambdas
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
+        """Apply this PseudoUCB to the supplied dataset.
+        
+        Creates a decision surface by combining input variables with lambda weights
+        to balance exploration and exploitation.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            The input dataset containing variables to evaluate
+
+        Returns
+        -------
+        Self
+            The PseudoUCB instance with updated outputs
+        """
         self.acquisition = xr.Dataset()
 
         self.acquisition["comp_grid"] = dataset[self.grid_variable].transpose(
