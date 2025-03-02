@@ -1,9 +1,8 @@
-import time
 import copy
 import uuid
 from collections import defaultdict
-from dataclasses import dataclass, field
-from typing import Dict, Any, Optional, List, Union, Tuple, TypeVar, ClassVar
+from dataclasses import dataclass
+from typing import Dict, Any, Optional, List, Tuple, ClassVar
 from typing_extensions import Self
 
 import numpy as np
@@ -669,19 +668,49 @@ class SASFitter:
 
 
 class AutoSAS(PipelineOp):
+    """AutoSAS is a pipeline operation for fitting small-angle scattering (SAS) data.
+    
+    This class provides an interface to the SAS fitting functionality, allowing users
+    to fit various scattering models to experimental data. It can operate either locally
+    or by connecting to a remote AutoSAS server.
+    
+    Attributes
+    ----------
+    sas_variable : str
+        The variable name for scattering intensity in the dataset
+    sas_err_variable : str
+        The variable name for scattering intensity uncertainty in the dataset
+    output_prefix : str
+        Prefix to add to output variable names
+    q_dim : str
+        The dimension name for q values in the dataset
+    resolution : Optional[Any]
+        Resolution function for the data, if available
+    sample_dim : str
+        The dimension containing each sample
+    model_dim : str
+        The dimension name for different models
+    model_inputs : Optional[List[Dict[str, Any]]]
+        List of model configurations to fit
+    fit_method : Optional[Dict[str, Any]]
+        Configuration for the fitting algorithm
+    server_id : Optional[str]
+        Server ID in the format "host:port" for remote execution, or None for local execution
+    """
+
     def __init__(
         self,
-        sas_variable,
-        sas_err_variable,
-        resolution,
-        output_prefix,
-        q_dim,
-        sample_dim,
-        model_dim,
-        model_inputs=None,
-        fit_method=None,
-        server_id=None,  # Set to None to run locally
-        name="AutoSAS_fit",
+        sas_variable: str,
+        sas_err_variable: str,
+        output_prefix: str,
+        q_dim: str,
+        resolution: Optional[Any] = None,
+        sample_dim: str = 'sample',
+        model_dim: str = 'models',
+        model_inputs: Optional[List[Dict[str, Any]]] = None,
+        fit_method: Optional[Dict[str, Any]] = None,
+        server_id: Optional[str] = None,  # Set to None to run locally
+        name: str = "AutoSAS_fit",
     ):
         output_variables = ["all_chisq"]
         super().__init__(
@@ -815,6 +844,27 @@ class AutoSAS(PipelineOp):
         return self
 
 class ModelSelectBestChiSq(PipelineOp):
+    """ModelSelectBestChiSq is a pipeline operation for model selection based on the best chi-square value.
+    
+    This class evaluates competing SAS models based solely on their goodness of fit (chi-square),
+    selecting the model with the lowest chi-square value for each sample. This approach prioritizes
+    fit quality without considering model complexity.
+    
+    Note that selecting models based only on chi-square may lead to overfitting, as more complex models
+    with more parameters will generally fit better. For model selection that balances fit quality with
+    model complexity, consider using ModelSelectAIC or ModelSelectBIC instead.
+    
+    Attributes
+    ----------
+    all_chisq_var : str
+        The variable name containing chi-square values for all models
+    model_names_var : str
+        The variable name containing model names
+    sample_dim : str
+        The dimension containing each sample
+    output_prefix : str
+        Prefix to add to output variable names
+    """
     def __init__(
         self,
         all_chisq_var,
@@ -868,6 +918,35 @@ class ModelSelectBestChiSq(PipelineOp):
 
 
 class ModelSelectParsimony(PipelineOp):
+    """ModelSelectParsimony is a pipeline operation for selecting SAS models based on parsimony.
+    
+    This class selects the simplest model that provides an acceptable fit to the data,
+    using a chi-squared threshold to determine acceptable fits. It can operate either
+    locally or by connecting to a remote AutoSAS server.
+    
+    The parsimony principle selects the model with the fewest parameters (lowest complexity)
+    among those that fit the data adequately. This helps avoid overfitting by preferring
+    simpler explanations when they are sufficient.
+    
+    Attributes
+    ----------
+    all_chisq_var : str
+        The variable name for chi-squared values in the dataset
+    model_names_var : str
+        The variable name for model names in the dataset
+    sample_dim : str
+        The dimension containing each sample
+    cutoff_threshold : float
+        The chi-squared threshold for acceptable fits (default: 1.0)
+    model_complexity : Optional[Dict[str, int]]
+        Dictionary mapping model names to their complexity (number of parameters)
+    model_inputs : Optional[List[Dict[str, Any]]]
+        List of model configurations, used to determine complexity if model_complexity is None
+    server_id : Optional[str]
+        Server ID in the format "host:port" for remote execution, or None for local execution
+    output_prefix : str
+        Prefix to add to output variable names
+    """
     def __init__(
         self,
         all_chisq_var,
@@ -984,6 +1063,30 @@ class ModelSelectParsimony(PipelineOp):
 
 
 class ModelSelectAIC(PipelineOp):
+    """ModelSelectAIC is a pipeline operation for model selection using the Akaike Information Criterion (AIC).
+    
+    This class selects the best model for each sample based on the AIC, which balances
+    model fit quality (chi-square) with model complexity (number of parameters). AIC helps
+    prevent overfitting by penalizing models with more parameters.
+    
+    The AIC is calculated as: AIC = chi_square + 2 * k
+    where k is the number of free parameters in the model.
+    
+    The model with the lowest AIC value is selected as the best model for each sample.
+    
+    Attributes
+    ----------
+    all_chisq_var : str
+        The variable name for chi-square values in the dataset
+    model_names_var : str
+        The variable name for model names in the dataset
+    sample_dim : str
+        The dimension containing each sample
+    model_inputs : Optional[List[Dict[str, Any]]]
+        List of model configurations to determine complexity
+    server_id : Optional[str]
+        Server ID in the format "host:port" for remote execution, or None for local execution
+    """
     def __init__(
         self,
         all_chisq_var,
@@ -1080,6 +1183,30 @@ class ModelSelectAIC(PipelineOp):
 
 
 class ModelSelectBIC(PipelineOp):
+    """ModelSelectBIC is a pipeline operation for model selection using the Bayesian Information Criterion (BIC).
+    
+    This class evaluates competing SAS models based on their goodness of fit (chi-square)
+    and model complexity (number of parameters), using the BIC formula:
+    BIC = chi-square + k * ln(n), where k is the number of parameters and n is the number of data points.
+    
+    The BIC penalizes model complexity more strongly than AIC, especially for larger datasets,
+    favoring simpler models when the evidence doesn't strongly support additional complexity.
+    
+    Attributes
+    ----------
+    all_chisq_var : str
+        The variable name containing chi-square values for all models
+    model_names_var : str
+        The variable name containing model names
+    sample_dim : str
+        The dimension containing each sample
+    model_inputs : Optional[List[Dict[str, Any]]]
+        List of model configurations to determine parameter counts
+    server_id : Optional[str]
+        Server ID in the format "host:port" for remote execution, or None for local execution
+    output_prefix : str
+        Prefix to add to output variable names
+    """
     def __init__(
         self,
         all_chisq_var,
@@ -1174,14 +1301,4 @@ class ModelSelectBIC(PipelineOp):
 
         return self
 
-
-class ModelSelectBayesianModelComparison(PipelineOp):
-    """Uses a Bayesian model comparison approach to calculating probabilities given a set of models and outputs"""
-    def __init__(
-        self,
-    ):
-        return
-    
-    def calculate(self):
-        return 
 
