@@ -439,24 +439,12 @@
 </pre></div>
 </div>
 </div>
-<p>Comment out the next two lines if running in a Colab or a local Jupyter instance. The documentation generation software (nbsphinx) is struggling with the interactive plotly plots.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">plotly.io</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pio</span>
-
-<span class="c1"># Use static PNG rendering (limits interactivity but avoids widget issues)</span>
-<span class="n">pio</span><span class="o">.</span><span class="n">renderers</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="s2">&quot;svg&quot;</span>
-</pre></div>
-</div>
-</div>
 </section>
 <section id="General-Setup">
 <h2>General Setup<a class="headerlink" href="#General-Setup" title="Permalink to this heading">#</a></h2>
 <p>First, let’s import the necessary modules and load our example dataset:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -470,6 +458,10 @@
 <span class="c1"># Load the example dataset</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">example_dataset1</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.io</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pio</span>
+<span class="n">pio</span><span class="o">.</span><span class="n">renderers</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="s2">&quot;iframe_connected&quot;</span>
+<span class="c1"># pio.renderers.default = &quot;plotly_mimetype&quot;</span>
+
 <span class="c1"># Load the dataset</span>
 <span class="n">ds</span> <span class="o">=</span> <span class="n">example_dataset1</span><span class="p">()</span>
 
@@ -479,7 +471,7 @@
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -863,7 +855,7 @@ Data variables:
     composition          (sample, component) float64 2kB ...
     ground_truth_labels  (sample) int64 800B ...
     measurement          (sample, x) float64 120kB ...
-    composition_grid     (grid, component) float64 40kB ...</pre><div class='xr-wrap' style='display:none'><div class='xr-header'><div class='xr-obj-type'>xarray.Dataset</div></div><ul class='xr-sections'><li class='xr-section-item'><input id='section-15c88672-6aa8-4a8c-8ac3-4a9a5551ca4f' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-15c88672-6aa8-4a8c-8ac3-4a9a5551ca4f' class='xr-section-summary'  title='Expand/collapse section'>Dimensions:</label><div class='xr-section-inline-details'><ul class='xr-dim-list'><li><span>sample</span>: 100</li><li><span class='xr-has-index'>component</span>: 2</li><li><span class='xr-has-index'>x</span>: 150</li><li><span>grid</span>: 2500</li></ul></div><div class='xr-section-details'></div></li><li class='xr-section-item'><input id='section-098466f0-950a-4550-96bc-dafd295cb750' class='xr-section-summary-in' type='checkbox'  checked><label for='section-098466f0-950a-4550-96bc-dafd295cb750' class='xr-section-summary' >Coordinates: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>component</span></div><div class='xr-var-dims'>(component)</div><div class='xr-var-dtype'>&lt;U1</div><div class='xr-var-preview xr-preview'>&#x27;A&#x27; &#x27;B&#x27;</div><input id='attrs-82045094-6a32-4c25-a95a-e82f2cac2702' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-82045094-6a32-4c25-a95a-e82f2cac2702' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-29bd519c-2149-46dc-9bbe-37e569627985' class='xr-var-data-in' type='checkbox'><label for='data-29bd519c-2149-46dc-9bbe-37e569627985' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([&#x27;A&#x27;, &#x27;B&#x27;], dtype=&#x27;&lt;U1&#x27;)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>x</span></div><div class='xr-var-dims'>(x)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>0.001 0.001047 ... 0.9547 1.0</div><input id='attrs-d2fc5985-b8bf-4974-92c4-7f024be7889d' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-d2fc5985-b8bf-4974-92c4-7f024be7889d' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-ea9d1d8b-58dc-4d01-88d2-1629aad5c116' class='xr-var-data-in' type='checkbox'><label for='data-ea9d1d8b-58dc-4d01-88d2-1629aad5c116' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([0.001   , 0.001047, 0.001097, 0.001149, 0.001204, 0.001261, 0.001321,
+    composition_grid     (grid, component) float64 40kB ...</pre><div class='xr-wrap' style='display:none'><div class='xr-header'><div class='xr-obj-type'>xarray.Dataset</div></div><ul class='xr-sections'><li class='xr-section-item'><input id='section-b905c35a-a3c8-465a-9e49-2900005e468a' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-b905c35a-a3c8-465a-9e49-2900005e468a' class='xr-section-summary'  title='Expand/collapse section'>Dimensions:</label><div class='xr-section-inline-details'><ul class='xr-dim-list'><li><span>sample</span>: 100</li><li><span class='xr-has-index'>component</span>: 2</li><li><span class='xr-has-index'>x</span>: 150</li><li><span>grid</span>: 2500</li></ul></div><div class='xr-section-details'></div></li><li class='xr-section-item'><input id='section-283177ea-fdb3-47e2-a415-05ff1dd9844f' class='xr-section-summary-in' type='checkbox'  checked><label for='section-283177ea-fdb3-47e2-a415-05ff1dd9844f' class='xr-section-summary' >Coordinates: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>component</span></div><div class='xr-var-dims'>(component)</div><div class='xr-var-dtype'>&lt;U1</div><div class='xr-var-preview xr-preview'>&#x27;A&#x27; &#x27;B&#x27;</div><input id='attrs-7262b261-b655-4bf3-9876-6a7beeb304ee' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-7262b261-b655-4bf3-9876-6a7beeb304ee' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-9a38fce6-82ea-4e18-bce5-8f4cdcbd93a8' class='xr-var-data-in' type='checkbox'><label for='data-9a38fce6-82ea-4e18-bce5-8f4cdcbd93a8' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([&#x27;A&#x27;, &#x27;B&#x27;], dtype=&#x27;&lt;U1&#x27;)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>x</span></div><div class='xr-var-dims'>(x)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>0.001 0.001047 ... 0.9547 1.0</div><input id='attrs-500d48ff-e163-4945-a04c-0d2b15af16f3' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-500d48ff-e163-4945-a04c-0d2b15af16f3' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-33699367-29e7-492e-9eba-86229ffc3f59' class='xr-var-data-in' type='checkbox'><label for='data-33699367-29e7-492e-9eba-86229ffc3f59' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([0.001   , 0.001047, 0.001097, 0.001149, 0.001204, 0.001261, 0.001321,
        0.001383, 0.001449, 0.001518, 0.00159 , 0.001665, 0.001744, 0.001827,
        0.001914, 0.002005, 0.0021  , 0.002199, 0.002304, 0.002413, 0.002527,
        0.002647, 0.002773, 0.002905, 0.003042, 0.003187, 0.003338, 0.003496,
@@ -884,7 +876,7 @@ Data variables:
        0.344281, 0.360618, 0.37773 , 0.395654, 0.414429, 0.434094, 0.454693,
        0.476269, 0.498869, 0.522542, 0.547337, 0.57331 , 0.600514, 0.62901 ,
        0.658858, 0.690122, 0.72287 , 0.757172, 0.793102, 0.830736, 0.870156,
-       0.911447, 0.954697, 1.      ])</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-ae4f2795-5075-4b75-a3fd-c841cb10383c' class='xr-section-summary-in' type='checkbox'  checked><label for='section-ae4f2795-5075-4b75-a3fd-c841cb10383c' class='xr-section-summary' >Data variables: <span>(4)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span>composition</span></div><div class='xr-var-dims'>(sample, component)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-eb1d871b-15dc-46e3-84c6-04d02b58a1d1' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-eb1d871b-15dc-46e3-84c6-04d02b58a1d1' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-37450597-88a2-46ec-9442-cd473353a648' class='xr-var-data-in' type='checkbox'><label for='data-37450597-88a2-46ec-9442-cd473353a648' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[200 values with dtype=float64]</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>ground_truth_labels</span></div><div class='xr-var-dims'>(sample)</div><div class='xr-var-dtype'>int64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-3afb1824-59a9-478b-bdae-7b7e34240f84' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-3afb1824-59a9-478b-bdae-7b7e34240f84' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-cd194e2f-639b-4490-aacc-0f74abf35b96' class='xr-var-data-in' type='checkbox'><label for='data-cd194e2f-639b-4490-aacc-0f74abf35b96' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[100 values with dtype=int64]</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>measurement</span></div><div class='xr-var-dims'>(sample, x)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-aceec791-187e-4c4c-8894-b8eedfaeea80' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-aceec791-187e-4c4c-8894-b8eedfaeea80' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-bd7335b9-868d-48ae-99de-3d58e54f0e2a' class='xr-var-data-in' type='checkbox'><label for='data-bd7335b9-868d-48ae-99de-3d58e54f0e2a' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[15000 values with dtype=float64]</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>composition_grid</span></div><div class='xr-var-dims'>(grid, component)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-e672ea91-5a20-45ed-95f7-d08dae94b838' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-e672ea91-5a20-45ed-95f7-d08dae94b838' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-4e941aec-1340-425e-b6ed-e3f65ae46a8e' class='xr-var-data-in' type='checkbox'><label for='data-4e941aec-1340-425e-b6ed-e3f65ae46a8e' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[5000 values with dtype=float64]</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-1bd5638b-1e4c-4095-9daa-3975ab753234' class='xr-section-summary-in' type='checkbox'  ><label for='section-1bd5638b-1e4c-4095-9daa-3975ab753234' class='xr-section-summary' >Indexes: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-index-name'><div>component</div></div><div class='xr-index-preview'>PandasIndex</div><input type='checkbox' disabled/><label></label><input id='index-d8df9bf0-e36d-4ac9-904d-837b9fbfa459' class='xr-index-data-in' type='checkbox'/><label for='index-d8df9bf0-e36d-4ac9-904d-837b9fbfa459' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(Index([&#x27;A&#x27;, &#x27;B&#x27;], dtype=&#x27;object&#x27;, name=&#x27;component&#x27;))</pre></div></li><li class='xr-var-item'><div class='xr-index-name'><div>x</div></div><div class='xr-index-preview'>PandasIndex</div><input type='checkbox' disabled/><label></label><input id='index-b03bb461-901e-40db-8a94-6470b37facb7' class='xr-index-data-in' type='checkbox'/><label for='index-b03bb461-901e-40db-8a94-6470b37facb7' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(Index([                0.001, 0.0010474522360006332, 0.0010971561867027272,
+       0.911447, 0.954697, 1.      ])</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-a0692600-7121-49c7-9844-81afe41f3840' class='xr-section-summary-in' type='checkbox'  checked><label for='section-a0692600-7121-49c7-9844-81afe41f3840' class='xr-section-summary' >Data variables: <span>(4)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span>composition</span></div><div class='xr-var-dims'>(sample, component)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-a5de8dc5-99cc-4287-a06b-b88d76a418fb' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-a5de8dc5-99cc-4287-a06b-b88d76a418fb' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-97f8b740-1106-4933-b8cd-359d81b39137' class='xr-var-data-in' type='checkbox'><label for='data-97f8b740-1106-4933-b8cd-359d81b39137' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[200 values with dtype=float64]</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>ground_truth_labels</span></div><div class='xr-var-dims'>(sample)</div><div class='xr-var-dtype'>int64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-07fcd9a2-311a-44bc-bce5-c54c34654a66' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-07fcd9a2-311a-44bc-bce5-c54c34654a66' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-d971ec10-0bc3-4d4c-a661-7b8ab6c3a288' class='xr-var-data-in' type='checkbox'><label for='data-d971ec10-0bc3-4d4c-a661-7b8ab6c3a288' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[100 values with dtype=int64]</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>measurement</span></div><div class='xr-var-dims'>(sample, x)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-31697090-f5b8-4b55-9ecf-c7f080456b7c' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-31697090-f5b8-4b55-9ecf-c7f080456b7c' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-29bd3de9-5046-4d76-8acb-5683e8a3b40a' class='xr-var-data-in' type='checkbox'><label for='data-29bd3de9-5046-4d76-8acb-5683e8a3b40a' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[15000 values with dtype=float64]</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>composition_grid</span></div><div class='xr-var-dims'>(grid, component)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-a01f1db9-0b63-4080-8e3b-45e5902882f7' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-a01f1db9-0b63-4080-8e3b-45e5902882f7' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-59e794cd-63eb-4348-877a-2a19e0049685' class='xr-var-data-in' type='checkbox'><label for='data-59e794cd-63eb-4348-877a-2a19e0049685' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[5000 values with dtype=float64]</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-3fe2aafb-2083-40c9-87d3-47b169c91d51' class='xr-section-summary-in' type='checkbox'  ><label for='section-3fe2aafb-2083-40c9-87d3-47b169c91d51' class='xr-section-summary' >Indexes: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-index-name'><div>component</div></div><div class='xr-index-preview'>PandasIndex</div><input type='checkbox' disabled/><label></label><input id='index-9678e9ef-0e27-485b-a579-3cf321b9f6cb' class='xr-index-data-in' type='checkbox'/><label for='index-9678e9ef-0e27-485b-a579-3cf321b9f6cb' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(Index([&#x27;A&#x27;, &#x27;B&#x27;], dtype=&#x27;object&#x27;, name=&#x27;component&#x27;))</pre></div></li><li class='xr-var-item'><div class='xr-index-name'><div>x</div></div><div class='xr-index-preview'>PandasIndex</div><input type='checkbox' disabled/><label></label><input id='index-7cd442ea-63fa-4722-beac-4a401ed29971' class='xr-index-data-in' type='checkbox'/><label for='index-7cd442ea-63fa-4722-beac-4a401ed29971' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(Index([                0.001, 0.0010474522360006332, 0.0010971561867027272,
        0.0011492187010036998, 0.0012037516980200685, 0.0012608724076806808,
         0.001320703622736631, 0.0013833739627296209,  0.001449018150486198,
        0.0015177773017322714,
@@ -893,7 +885,7 @@ Data variables:
             0.75717214883374,    0.7931016603333051,    0.8307361074919352,
           0.8701563933188907,    0.9114472598521185,    0.9546974703287516,
                          1.0],
-      dtype=&#x27;float64&#x27;, name=&#x27;x&#x27;, length=150))</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-bf691f86-f78f-4781-9455-0c125f5586ff' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-bf691f86-f78f-4781-9455-0c125f5586ff' class='xr-section-summary'  title='Expand/collapse section'>Attributes: <span>(0)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><dl class='xr-attrs'></dl></div></li></ul></div></div></div>
+      dtype=&#x27;float64&#x27;, name=&#x27;x&#x27;, length=150))</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-499f58f1-f377-440b-bd45-45900033f611' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-499f58f1-f377-440b-bd45-45900033f611' class='xr-section-summary'  title='Expand/collapse section'>Attributes: <span>(0)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><dl class='xr-attrs'></dl></div></li></ul></div></div></div>
 </div>
 <p>The example dataset contains compositional data and measurements that we can use for our plots.</p>
 </section>
@@ -903,7 +895,7 @@ Data variables:
 <h3>Scatter Plots<a class="headerlink" href="#Scatter-Plots" title="Permalink to this heading">#</a></h3>
 <p>Let’s start with a simple scatter plot of our compositional data using Matplotlib:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a scatter plot using Matplotlib</span>
@@ -931,12 +923,12 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_visualization_8_1.png" src="../_images/tutorials_visualization_8_1.png" />
+<img alt="../_images/tutorials_visualization_6_1.png" src="../_images/tutorials_visualization_6_1.png" />
 </div>
 </div>
 <p>We can also create the same plot using the unified <code class="docutils literal notranslate"><span class="pre">plot</span></code> function:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a scatter plot using the unified plot function</span>
@@ -966,12 +958,12 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_visualization_10_1.png" src="../_images/tutorials_visualization_10_1.png" />
+<img alt="../_images/tutorials_visualization_8_1.png" src="../_images/tutorials_visualization_8_1.png" />
 </div>
 </div>
-<p>Now, let’s create an interactive scatter plot using Plotly. Note that the plot will not be interactive in the html documentation but, if you restart your kernel and comment out <code class="docutils literal notranslate"><span class="pre">pio.renderers.default</span> <span class="pre">=</span> <span class="pre">&quot;png&quot;</span></code> at the top of the notebook, it will be interactive.</p>
+<p>Now, let’s create an interactive scatter plot using Plotly.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a scatter plot using Plotly</span>
@@ -983,14 +975,21 @@ Data variables:
 <span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Composition Scatter Plot (Plotly)&#39;</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorials_visualization_12_0.svg" src="../_images/tutorials_visualization_12_0.svg" /></div>
+<div class="output_area rendered_html docutils container">
+<iframe
+    scrolling="no"
+    width="660px"
+    height="500"
+    src="iframe_figures/figure_4.html"
+    frameborder="0"
+    allowfullscreen
+></iframe></div>
 </div>
 </section>
 </section>
@@ -998,7 +997,7 @@ Data variables:
 <h2>Surface Plots<a class="headerlink" href="#Surface-Plots" title="Permalink to this heading">#</a></h2>
 <p>Surface plots are useful for visualizing continuous fields over compositional space:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a surface plot using Matplotlib</span>
@@ -1026,12 +1025,12 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_visualization_15_1.png" src="../_images/tutorials_visualization_15_1.png" />
+<img alt="../_images/tutorials_visualization_13_1.png" src="../_images/tutorials_visualization_13_1.png" />
 </div>
 </div>
 <p>And with Plotly:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a surface plot using Plotly</span>
@@ -1048,8 +1047,15 @@ Data variables:
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorials_visualization_17_0.svg" src="../_images/tutorials_visualization_17_0.svg" /></div>
+<div class="output_area rendered_html docutils container">
+<iframe
+    scrolling="no"
+    width="660px"
+    height="500"
+    src="iframe_figures/figure_6.html"
+    frameborder="0"
+    allowfullscreen
+></iframe></div>
 </div>
 </section>
 <section id="Small-Angle-Scattering-Data-Visualization">
@@ -1059,7 +1065,7 @@ Data variables:
 <h3>Log-Log Plots<a class="headerlink" href="#Log-Log-Plots" title="Permalink to this heading">#</a></h3>
 <p>Log-log plots are commonly used for scattering data:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a log-log plot using Matplotlib</span>
@@ -1082,12 +1088,12 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_visualization_19_0.png" src="../_images/tutorials_visualization_19_0.png" />
+<img alt="../_images/tutorials_visualization_17_0.png" src="../_images/tutorials_visualization_17_0.png" />
 </div>
 </div>
 <p>And with Plotly:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a log-log plot using Plotly</span>
@@ -1107,15 +1113,22 @@ Data variables:
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorials_visualization_21_0.svg" src="../_images/tutorials_visualization_21_0.svg" /></div>
+<div class="output_area rendered_html docutils container">
+<iframe
+    scrolling="no"
+    width="660px"
+    height="500"
+    src="iframe_figures/figure_8.html"
+    frameborder="0"
+    allowfullscreen
+></iframe></div>
 </div>
 </section>
 <section id="Waterfall-Plots">
 <h3>Waterfall Plots<a class="headerlink" href="#Waterfall-Plots" title="Permalink to this heading">#</a></h3>
 <p>Waterfall plots are useful for comparing multiple scattering curves:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a log waterfall plot using Matplotlib</span>
@@ -1139,12 +1152,12 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_visualization_23_0.png" src="../_images/tutorials_visualization_23_0.png" />
+<img alt="../_images/tutorials_visualization_21_0.png" src="../_images/tutorials_visualization_21_0.png" />
 </div>
 </div>
 <p>And with Plotly:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a log waterfall plot using Plotly</span>
@@ -1165,18 +1178,26 @@ Data variables:
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorials_visualization_25_0.svg" src="../_images/tutorials_visualization_25_0.svg" /></div>
+<div class="output_area rendered_html docutils container">
+<iframe
+    scrolling="no"
+    width="660px"
+    height="500"
+    src="iframe_figures/figure_10.html"
+    frameborder="0"
+    allowfullscreen
+></iframe></div>
 </div>
 </section>
 <section id="Linear-Plots">
 <h3>Linear Plots<a class="headerlink" href="#Linear-Plots" title="Permalink to this heading">#</a></h3>
-<p>For some data, linear plots might be more appropriate:</p>
+<p>For some data, linear plots might be more appropriate. This is often used when the data has been log-scaled already.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a linear plot using Matplotlib</span>
+
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">artists</span> <span class="o">=</span> <span class="n">plot_sas_mpl</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
@@ -1195,7 +1216,7 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_visualization_27_0.png" src="../_images/tutorials_visualization_27_0.png" />
+<img alt="../_images/tutorials_visualization_25_0.png" src="../_images/tutorials_visualization_25_0.png" />
 </div>
 </div>
 </section>
@@ -1206,7 +1227,7 @@ Data variables:
 <h3>3D Plots for Three-Component Systems<a class="headerlink" href="#3D-Plots-for-Three-Component-Systems" title="Permalink to this heading">#</a></h3>
 <p>For three-component systems, we can create 3D plots:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a synthetic three-component dataset</span>
@@ -1247,15 +1268,22 @@ Data variables:
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorials_visualization_29_0.svg" src="../_images/tutorials_visualization_29_0.svg" /></div>
+<div class="output_area rendered_html docutils container">
+<iframe
+    scrolling="no"
+    width="660px"
+    height="500"
+    src="iframe_figures/figure_33.html"
+    frameborder="0"
+    allowfullscreen
+></iframe></div>
 </div>
 </section>
 <section id="Ternary-Plots">
 <h3>Ternary Plots<a class="headerlink" href="#Ternary-Plots" title="Permalink to this heading">#</a></h3>
 <p>For three-component systems, ternary plots are often more intuitive:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plot_scatter_plotly</span><span class="p">(</span>
@@ -1267,23 +1295,21 @@ Data variables:
 <span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Three-Component Scatter Plot (Ternary)&#39;</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-
-<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Three-Component Surface Plot (Ternary)&#39;</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorials_visualization_31_0.svg" src="../_images/tutorials_visualization_31_0.svg" /></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorials_visualization_31_1.svg" src="../_images/tutorials_visualization_31_1.svg" /></div>
+<div class="output_area rendered_html docutils container">
+<iframe
+    scrolling="no"
+    width="660px"
+    height="500"
+    src="iframe_figures/figure_34.html"
+    frameborder="0"
+    allowfullscreen
+></iframe></div>
 </div>
 </section>
 </section>
