@@ -289,8 +289,8 @@ class SASFitter:
         self, 
         model_inputs: Optional[List[Dict[str, Any]]] = None, 
         fit_method: Optional[Dict[str, Any]] = None,
-        q_min: float = 1e-2,
-        q_max: float = 1e-1,
+        q_min: Optional[float] = None,
+        q_max: Optional[float] = None,
         resolution: Optional[Any] = None,
     ):
         """Initialize the SAS fitter.
@@ -310,8 +310,8 @@ class SASFitter:
         """
         self.model_inputs = model_inputs or self.DEFAULT_MODEL_INPUTS
         self.fit_method = fit_method or self.DEFAULT_FIT_METHOD
-        self.q_min = q_min
-        self.q_max = q_max
+        self.q_min = q_min or 1e-3
+        self.q_max = q_max or 1
         self.resolution = resolution
         
         # Storage for data and results
@@ -687,7 +687,7 @@ class AutoSAS(PipelineOp):
         Prefix to add to output variable names
     q_dim : str
         The dimension name for q values in the dataset
-    resolution : Optional[Any]
+    sas_resolution_variable : Optional[Any]
         Resolution function for the data, if available
     sample_dim : str
         The dimension containing each sample
@@ -699,26 +699,32 @@ class AutoSAS(PipelineOp):
         Configuration for the fitting algorithm
     server_id : Optional[str]
         Server ID in the format "host:port" for remote execution, or None for local execution
+    q_min : float
+        Minimum q value to use if not provided in the model_input variable
+    q_max : float
+        Maximum q value to use if not provided in the model_input variable
     """
 
     def __init__(
         self,
         sas_variable: str,
         sas_err_variable: str,
+        q_variable: str,
         output_prefix: str,
-        q_dim: str,
-        resolution: Optional[Any] = None,
+        sas_resolution_variable: Optional[Any] = None,
         sample_dim: str = 'sample',
         model_dim: str = 'models',
         model_inputs: Optional[List[Dict[str, Any]]] = None,
         fit_method: Optional[Dict[str, Any]] = None,
         server_id: Optional[str] = None,  # Set to None to run locally
+        q_min: Optional[float] = None,
+        q_max: Optional[float] = None,
         name: str = "AutoSAS",
     ):
         output_variables = ["all_chisq"]
         super().__init__(
             name=name,
-            input_variable=[q_dim, sas_variable, sas_err_variable],
+            input_variable=[q_variable, sas_variable, sas_err_variable],
             output_variable=[
                 output_prefix + "_" + o for o in listify(output_variables)
             ],
@@ -729,14 +735,17 @@ class AutoSAS(PipelineOp):
         self.model_inputs = model_inputs
         self.results = dict()
 
-        self.q_dim = q_dim
+        self.q_variable = q_variable
         self.sas_variable = sas_variable
         self.sas_err_variable = sas_err_variable
-        self.resolution = resolution
+        self.resolution = sas_resolution_variable
 
         self.sample_dim = sample_dim
         self.model_dim = model_dim
         self._banned_from_attrs.extend(["AutoSAS_client"])
+
+        self.q_min = q_min
+        self.q_max = q_max
 
     def construct_clients(self):
         """
@@ -759,7 +768,7 @@ class AutoSAS(PipelineOp):
         Run SAS fitting on the input data either locally or via remote server
         """
         # Clone dataset to avoid modifying the original
-        sub_dataset = dataset[[self.q_dim, self.sas_variable, self.sas_err_variable]].copy(deep=True)
+        sub_dataset = dataset[[self.q_variable, self.sas_variable, self.sas_err_variable]].copy(deep=True)
         
         # Check whether to run locally or remotely
         if self.server_id is None:
@@ -777,14 +786,16 @@ class AutoSAS(PipelineOp):
         fitter = SASFitter(
             model_inputs=self.model_inputs,
             fit_method=self.fit_method,
-            resolution=self.resolution
+            resolution=self.resolution,
+            q_min=self.q_min,
+            q_max=self.q_max,
         )
         
         # Set the data to fit
         fitter.set_sasdata(
             dataset=dataset,
             sample_dim=self.sample_dim,
-            q_variable=self.q_dim,
+            q_variable=self.q_variable,
             sas_variable=self.sas_variable,
             sas_err_variable=self.sas_err_variable
         )
@@ -814,12 +825,18 @@ class AutoSAS(PipelineOp):
         # Send dataset to the server
         db_uuid = self.AutoSAS_client.deposit_obj(obj=dataset)
 
+        if self.q_min or self.q_max:
+            self.AutoSAS_client.set_config(
+                q_min=self.q_min,
+                q_max=self.q_max
+            )
+
         # Initialize the input data for fitting
         self.AutoSAS_client.enqueue(
             task_name="set_sasdata",
             db_uuid=db_uuid,
             sample_dim=self.sample_dim,
-            q_variable=self.q_dim,
+            q_variable=self.q_variable,
             sas_variable=self.sas_variable,
             sas_err_variable=self.sas_err_variable,
         )
