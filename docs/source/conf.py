@@ -12,7 +12,9 @@
 #
 import os
 import sys
+import shutil
 
+# Add the parent directory to the Python path
 sys.path.insert(0,os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("../.."))
 
@@ -58,6 +60,7 @@ templates_path = ["_templates"]
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
+html_extra_path = ["tutorials/iframe_figures"]
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -92,3 +95,40 @@ html_theme_options = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+
+
+# Copy the iframe_figures directories to the build output
+# This is a workaround to allow the iframe_figures from plotly 
+# to be displayed in the build output
+def copy_iframe_figures_dirs(app, exception):
+    """
+    After the build, walk through the source directory, find all directories
+    named "iframe_figures", and copy them (with their contents) to the corresponding
+    location in the build output.
+    """
+    if exception is not None:
+        return
+
+    src_root = app.srcdir
+    out_dir = app.builder.outdir
+
+    # Walk through the source directory.
+    for root, dirs, _ in os.walk(src_root):
+        for dirname in dirs:
+            if dirname == "iframe_figures":
+                # Full path to the found iframe_figures directory in the source.
+                src_iframe_dir = os.path.join(root, dirname)
+                # Determine relative path from the source root.
+                rel_path = os.path.relpath(src_iframe_dir, src_root)
+                # Determine the target path in the build directory.
+                target_dir = os.path.join(out_dir, rel_path)
+
+                # If a directory already exists at the target, remove it.
+                if os.path.exists(target_dir):
+                    shutil.rmtree(target_dir)
+
+                # Now copy the entire directory tree.
+                shutil.copytree(src_iframe_dir, target_dir)
+
+def setup(app):
+    app.connect("build-finished", copy_iframe_figures_dirs)
