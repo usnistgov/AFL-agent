@@ -47,6 +47,7 @@
     <script src="_static/copybutton.js?v=f281be69"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
+    <link rel="icon" href="_static/logo.svg"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Setup" href="tutorials/installation.html" />
@@ -120,8 +121,14 @@
   
   
   
+    
+    
+      
+    
+    
+    <img src="_static/logo_text_long.svg" class="logo__image only-light" alt="AFL-agent  documentation - Home"/>
+    <img src="_static/logo_text_long.svg" class="logo__image only-dark pst-js-only" alt="AFL-agent  documentation - Home"/>
   
-    <p class="title logo__title">AFL-agent  documentation</p>
   
 </a></div>
     
@@ -362,7 +369,7 @@
                   
   <section id="afl-agent">
 <h1>AFL-agent<a class="headerlink" href="#afl-agent" title="Permalink to this heading">#</a></h1>
-<a class="reference internal image-reference" href="_images/agent_loop.svg"><img alt="AFL-agent Logo" src="_images/agent_loop.svg" width="800" /></a>
+<a class="reference internal image-reference" href="_images/pipeline_horizontal.svg"><img alt="AFL-agent Logo" src="_images/pipeline_horizontal.svg" width="800" /></a>
 <p>AFL-agent is a Python library that allows users to implement active learning
 agents for material science applications. [1] Rather than providing canned
 algorithms, the library provides a framework that allows users to build their own.
@@ -381,6 +388,16 @@ multiple machine learning operations into executable pipelines.</p>
 <li><p>Support for phase boundary mapping and material property optimization</p></li>
 </ul>
 </section>
+<section id="autonomous-formulation-lab">
+<h2>Autonomous Formulation Lab<a class="headerlink" href="#autonomous-formulation-lab" title="Permalink to this heading">#</a></h2>
+<p>The Autonomous Formulation Lab (AFL) is a National Institute of Standards and
+Technology (NIST) program that seeks to accelerate the discovery and
+optimization of soft materials through the development and application of
+autonomous techniques to high-value measurements. Specifically, we design
+robotic platforms that autonomously mix, synthesize and evaluate soft materials
+and we study them using small-angle scattering (SANS) and small-angle X-ray
+scattering (SAXS) and other techniques.</p>
+</section>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">#</a></h2>
 <p>You can install AFL-agent using pip:</p>
@@ -389,8 +406,8 @@ multiple machine learning operations into executable pipelines.</p>
 </div>
 <p>Please see the <a class="reference internal" href="tutorials/installation.html"><span class="doc">Setup</span></a> page for more details.</p>
 </section>
-<section id="contents">
-<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this heading">#</a></h2>
+<section id="documentation-structure">
+<h2>Documentation Structure<a class="headerlink" href="#documentation-structure" title="Permalink to this heading">#</a></h2>
 <p>This documentation is organized according to the philosphy described by Daniele Procida at <a class="reference external" href="https://diataxis.fr">diataxis.fr</a>. It is organized into four sections:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="tutorials/index.html"><span class="doc">Tutorials</span></a>: Step-by-step guides for beginners</p></li>
@@ -398,8 +415,10 @@ multiple machine learning operations into executable pipelines.</p>
 <li><p><a class="reference internal" href="explanations/index.html"><span class="doc">Explanations</span></a>: Discussions of underlying principles and concepts</p></li>
 <li><p><a class="reference internal" href="reference/index.html"><span class="doc">Reference</span></a>: Detailed technical reference</p></li>
 </ul>
+</section>
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Permalink to this heading">#</a></h2>
 <div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/installation.html">Setup</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="tutorials/installation.html#prerequisites">Prerequisites</a></li>
@@ -415,13 +434,16 @@ multiple machine learning operations into executable pipelines.</p>
 <li class="toctree-l2"><a class="reference internal" href="tutorials/installation.html">Setup</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorials/quickstart.html">Quickstart</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorials/building_pipelines.html">Building Pipelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials/building_pipelines.html#Conclusion">Conclusion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/autosas_fitting.html">Basic Fitting with AutoSAS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/interactive.html">Interactive Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/using_datasets.html">Using Example Datasets</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="how-to/index.html">How-To Guides</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="how-to/building_xarray_datasets.html">Build an xarray.Dataset from Scratch</a></li>
 <li class="toctree-l2"><a class="reference internal" href="how-to/create_pipelineop.html">Creating a New Pipeline Operation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="how-to/appending_to_xarray.html">Appending Data to xarray.Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how-to/appending.html">Append Data to xarray.Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how-to/autosas_modal_selection.html">Do Model Selection with AutoSAS</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="explanations/index.html">Explanations</a><ul>
@@ -478,8 +500,10 @@ multiple machine learning operations into executable pipelines.</p>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#key-features">Key Features</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#autonomous-formulation-lab">Autonomous Formulation Lab</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation">Installation</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contents">Contents</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#documentation-structure">Documentation Structure</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#table-of-contents">Table of Contents</a></li>
 </ul>
   </nav></div>
 

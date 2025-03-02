@@ -47,6 +47,7 @@
     <script src="../../../_static/copybutton.js?v=f281be69"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'reference/api/double_agent/Generator';</script>
+    <link rel="icon" href="../../../_static/logo.svg"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="AFL.double_agent.MaskGrid module" href="MaskGrid.html" />
@@ -121,8 +122,14 @@
   
   
   
+    
+    
+      
+    
+    
+    <img src="../../../_static/logo_text_long.svg" class="logo__image only-light" alt="AFL-agent  documentation - Home"/>
+    <img src="../../../_static/logo_text_long.svg" class="logo__image only-dark pst-js-only" alt="AFL-agent  documentation - Home"/>
   
-    <p class="title logo__title">AFL-agent  documentation</p>
   
 </a></div>
     
@@ -345,7 +352,7 @@
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">AFL.double_agent.Generator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="MaskGrid.html">AFL.double_agent.MaskGrid module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PairMetric.html">AFL.double_agent.PairMetric module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhaseLabeler.html">AFL.double_agent.PhaseLabeler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Labeler.html">AFL.double_agent.Labeler module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Preprocessor.html">AFL.double_agent.Preprocessor module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="TensorFlowExtrapolator.html">AFL.double_agent.TensorFlowExtrapolator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a></li>
@@ -427,15 +434,55 @@
                   
   <section id="module-AFL.double_agent.Generator">
 <span id="afl-double-agent-generator-module"></span><h1>AFL.double_agent.Generator module<a class="headerlink" href="#module-AFL.double_agent.Generator" title="Permalink to this heading">#</a></h1>
-<p>Generators take parametric input to generate data</p>
+<p>Data generation tools for creating synthetic datasets and sampling spaces.</p>
+<p>This module provides classes for generating various types of data structures commonly used
+in materials science and machine learning applications. The generators can create regular
+grids, compositional spaces, and specialized point distributions.</p>
+<p>Key features:
+- Cartesian grid generation with flexible specifications
+- Barycentric grid generation for compositional spaces
+- Gaussian point distributions for exclusion zones
+- Support for multi-dimensional spaces
+- Integration with xarray data structures</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="AFL.double_agent.Generator.BarycentricGrid">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Generator.</span></span><span class="sig-name descname"><span class="pre">BarycentricGrid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pts_per_row</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">basis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-09</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'BarycentricGridGenerator'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Generator.BarycentricGrid" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Generator.Generator" title="AFL.double_agent.Generator.Generator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Generator</span></code></a></p>
+<p>Generator that produces a grid in barycentric coordinates.</p>
+<p>Creates a grid suitable for compositional spaces where the sum of components
+must equal a fixed value (typically 1.0). The grid is generated by systematically
+sampling points that satisfy the barycentric constraint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the dataset</p></li>
+<li><p><strong>components</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – List of component names for the compositional space</p></li>
+<li><p><strong>sample_dim</strong> (<em>str</em>) – Name of the dimension for different samples/points</p></li>
+<li><p><strong>pts_per_row</strong> (<em>int</em><em>, </em><em>default=50</em>) – Number of points to sample along each row of the simplex</p></li>
+<li><p><strong>basis</strong> (<em>float</em><em>, </em><em>default=1.0</em>) – The sum constraint for the compositions (typically 1.0)</p></li>
+<li><p><strong>dim</strong> (<em>int</em><em>, </em><em>default=3</em>) – Number of dimensions in the compositional space</p></li>
+<li><p><strong>eps</strong> (<em>float</em><em>, </em><em>default=1e-9</em>) – Small value for numerical stability in equality comparisons</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;BarycentricGridGenerator&quot;</em>) – The name to use when added to a Pipeline</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Generator.BarycentricGrid.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Generator.BarycentricGrid.calculate" title="Permalink to this definition">#</a></dt>
-<dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.dataset</cite></p>
+<dd><p>Generate the barycentric grid.</p>
+<p>Creates a grid of points that satisfy the barycentric constraint by
+systematically sampling the simplex space.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset (not used by this generator)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The generator instance with the created barycentric grid</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -444,11 +491,40 @@
 <dt class="sig sig-object py" id="AFL.double_agent.Generator.CartesianGrid">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Generator.</span></span><span class="sig-name descname"><span class="pre">CartesianGrid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'component'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'CartesianGridGenerator'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Generator.CartesianGrid" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Generator.Generator" title="AFL.double_agent.Generator.Generator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Generator</span></code></a></p>
-<p>Generator that produces a cartesian grid according to use provided min/max/step</p>
+<p>Generator that produces a cartesian grid according to user-provided specifications.</p>
+<p>Creates a regular grid in N-dimensional space where each dimension can have its own
+min, max, and step size specifications. The resulting grid contains all possible
+combinations of points along each dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite></p></li>
+<li><p><strong>grid_spec</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>int</em><em> | </em><em>float</em><em>]</em><em>]</em>) – Dictionary where each top-level key corresponds to a component in the system.
+Each top-level key points to a subdictionary that defines the minimum, maximum,
+and step size for that component with keys: min, max, steps.</p></li>
+<li><p><strong>sample_dim</strong> (<em>str</em>) – Name of the dimension for different samples/points in the grid</p></li>
+<li><p><strong>component_dim</strong> (<em>str</em><em>, </em><em>default='component'</em>) – Name of the dimension for different components</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;CartesianGridGenerator&quot;</em>) – The name to use when added to a Pipeline</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Generator.CartesianGrid.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Generator.CartesianGrid.calculate" title="Permalink to this definition">#</a></dt>
-<dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.dataset</cite></p>
+<dd><p>Generate the cartesian grid based on specifications.</p>
+<p>Creates a grid by taking the cartesian product of points along each dimension
+as specified in the grid_spec.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset (not used by this generator)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The generator instance with the created grid</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -457,10 +533,44 @@
 <dt class="sig sig-object py" id="AFL.double_agent.Generator.GaussianPoints">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Generator.</span></span><span class="sig-name descname"><span class="pre">GaussianPoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comps_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'component'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusion_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusion_radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'GaussianPointsGenerator'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Generator.GaussianPoints" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Generator.Generator" title="AFL.double_agent.Generator.Generator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Generator</span></code></a></p>
+<p>Generator that creates Gaussian-distributed points for exclusion zones.</p>
+<p>This generator places Gaussian distributions centered at specified points,
+useful for creating exclusion zones or smooth transitions around specific
+locations in the sampling space.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the variable containing points to center Gaussians around</p></li>
+<li><p><strong>sample_dim</strong> (<em>str</em>) – Name of the dimension for different samples/points</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the dataset</p></li>
+<li><p><strong>grid_variable</strong> (<em>str</em>) – The name of the grid variable to evaluate Gaussians on</p></li>
+<li><p><strong>grid_dim</strong> (<em>str</em>) – Name of the grid dimension</p></li>
+<li><p><strong>comps_dim</strong> (<em>str</em><em>, </em><em>default=&quot;component&quot;</em>) – Name of the components dimension</p></li>
+<li><p><strong>exclusion_depth</strong> (<em>float</em><em>, </em><em>default=1e-3</em>) – Maximum value of the Gaussian distributions</p></li>
+<li><p><strong>exclusion_radius</strong> (<em>float</em><em>, </em><em>default=1e-3</em>) – Width parameter for the Gaussian distributions</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;GaussianPointsGenerator&quot;</em>) – The name to use when added to a Pipeline</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Generator.GaussianPoints.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Generator.GaussianPoints.calculate" title="Permalink to this definition">#</a></dt>
-<dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.dataset</cite></p>
+<dd><p>Generate Gaussian-distributed points.</p>
+<p>Places multivariate normal distributions centered at each input point,
+creating a field of Gaussian peaks that can be used for exclusion zones
+or smooth transitions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset containing points to center Gaussians around and
+the grid to evaluate them on</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The generator instance with the created Gaussian field</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -469,11 +579,39 @@
 <dt class="sig sig-object py" id="AFL.double_agent.Generator.Generator">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Generator.</span></span><span class="sig-name descname"><span class="pre">Generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Generator'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'GeneratorBase'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Generator.Generator" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp" title="AFL.double_agent.PipelineOp.PipelineOp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineOp</span></code></a></p>
-<p>Base class stub for all generators</p>
+<p>Base class for all data generation operations.</p>
+<p>This abstract base class provides common functionality for generating synthetic data
+or sampling spaces. Unlike most PipelineOps, Generators typically don’t require
+input data but instead create new data based on parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variable</strong> (<em>str</em>) – Generators generally do not use input variables but this can be used to name
+the input node for a generator</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite> by this
+<cite>PipelineOp</cite></p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name to use when added to a Pipeline. This name is used when calling
+Pipeline.search()</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Generator.Generator.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Generator.Generator.calculate" title="Permalink to this definition">#</a></dt>
-<dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.dataset</cite></p>
+<dd><p>Apply this generator to the supplied dataset.</p>
+<p>This method must be implemented by subclasses to define how the data
+generation is performed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset (typically not used by generators)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The generator instance with generated outputs</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

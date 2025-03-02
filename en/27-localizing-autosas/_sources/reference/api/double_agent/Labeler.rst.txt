@@ -1,7 +1,7 @@
-AFL\.double\_agent\.PhaseLabeler module
+AFL\.double\_agent\.Labeler module
 ========================================
 
-.. automodule:: AFL.double_agent.PhaseLabeler
+.. automodule:: AFL.double_agent.Labeler
     :members:
     :undoc-members:
     :show-inheritance: 

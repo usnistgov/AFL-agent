@@ -47,6 +47,7 @@
     <script src="../../../_static/copybutton.js?v=f281be69"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'reference/api/double_agent/plotting';</script>
+    <link rel="icon" href="../../../_static/logo.svg"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="AFL.double_agent.Pipeline module" href="Pipeline.html" />
@@ -121,8 +122,14 @@
   
   
   
+    
+    
+      
+    
+    
+    <img src="../../../_static/logo_text_long.svg" class="logo__image only-light" alt="AFL-agent  documentation - Home"/>
+    <img src="../../../_static/logo_text_long.svg" class="logo__image only-dark pst-js-only" alt="AFL-agent  documentation - Home"/>
   
-    <p class="title logo__title">AFL-agent  documentation</p>
   
 </a></div>
     
@@ -345,7 +352,7 @@
 <li class="toctree-l2"><a class="reference internal" href="Generator.html">AFL.double_agent.Generator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="MaskGrid.html">AFL.double_agent.MaskGrid module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PairMetric.html">AFL.double_agent.PairMetric module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhaseLabeler.html">AFL.double_agent.PhaseLabeler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Labeler.html">AFL.double_agent.Labeler module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Preprocessor.html">AFL.double_agent.Preprocessor module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="TensorFlowExtrapolator.html">AFL.double_agent.TensorFlowExtrapolator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a></li>
@@ -427,15 +434,93 @@
                   
   <section id="module-AFL.double_agent.plotting">
 <span id="afl-double-agent-plotting-module"></span><h1>AFL.double_agent.plotting module<a class="headerlink" href="#module-AFL.double_agent.plotting" title="Permalink to this heading">#</a></h1>
+<p>Visualization tools for materials composition and phase data.</p>
+<p>This module provides plotting utilities for visualizing compositional data and phase
+diagrams. It supports both 2D and ternary plots using matplotlib, with special
+handling for labeled data and phase regions.</p>
+<p>Key features:
+- Support for both 2D and ternary plots
+- Surface and scatter plot styles
+- Automatic handling of phase labels
+- Flexible customization through matplotlib parameters
+- Integration with xarray data structures</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="AFL.double_agent.plotting.plot_scatter_mpl">
 <span class="sig-prename descclassname"><span class="pre">AFL.double_agent.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_scatter_mpl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'component'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discrete_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_axes_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ternary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">mpl_kw</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Artist</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.plotting.plot_scatter_mpl" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Create a scatter plot of compositional data using matplotlib.</p>
+<p>Generates a scatter plot of compositional data, supporting both 2D
+Cartesian and ternary plots. Points can be colored and marked according
+to phase labels or other values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<em>xr.Dataset</em>) – Dataset containing compositional data and optional labels</p></li>
+<li><p><strong>component_variable</strong> (<em>str</em>) – Name of the variable containing component coordinates</p></li>
+<li><p><strong>component_dim</strong> (<em>str</em><em>, </em><em>default='component'</em>) – Name of the dimension containing component names</p></li>
+<li><p><strong>labels</strong> (<em>Union</em><em>[</em><em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>]</em><em>, </em><em>default=None</em>) – Labels for coloring points. Can be:
+- None: Will try to use ‘labels’ from dataset
+- str: Name of variable in dataset containing labels
+- List: Direct list of label values</p></li>
+<li><p><strong>discrete_labels</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to treat labels as discrete categories (True) or continuous values (False)</p></li>
+<li><p><strong>set_axes_labels</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to set axis labels using component names</p></li>
+<li><p><strong>ternary</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to create a ternary plot for 3-component data</p></li>
+<li><p><strong>**mpl_kw</strong> (<em>dict</em>) – Additional keyword arguments passed to matplotlib’s scatter</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of created matplotlib artists</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[plt.Artist]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If number of components is not 2 or 3</p></li>
+<li><p><strong>ImportError</strong> – If mpltern is not installed for ternary plots</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>When discrete_labels is True, different marker styles are used for each
+unique label value, cycling through a predefined set of markers.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="AFL.double_agent.plotting.plot_surface_mpl">
 <span class="sig-prename descclassname"><span class="pre">AFL.double_agent.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_surface_mpl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'component'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_axes_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ternary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">mpl_kw</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Artist</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.plotting.plot_surface_mpl" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Create a surface plot of compositional data using matplotlib.</p>
+<p>Generates a filled surface plot of compositional data, supporting both
+2D Cartesian and ternary plots. The surface is colored according to
+phase labels or other specified values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<em>xr.Dataset</em>) – Dataset containing compositional data and optional labels</p></li>
+<li><p><strong>component_variable</strong> (<em>str</em>) – Name of the variable containing component coordinates</p></li>
+<li><p><strong>component_dim</strong> (<em>str</em><em>, </em><em>default='component'</em>) – Name of the dimension containing component names</p></li>
+<li><p><strong>labels</strong> (<em>Union</em><em>[</em><em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>]</em><em>, </em><em>default=None</em>) – Labels for coloring the surface. Can be:
+- None: Will try to use ‘labels’ from dataset
+- str: Name of variable in dataset containing labels
+- List: Direct list of label values</p></li>
+<li><p><strong>set_axes_labels</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to set axis labels using component names</p></li>
+<li><p><strong>ternary</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to create a ternary plot for 3-component data</p></li>
+<li><p><strong>**mpl_kw</strong> (<em>dict</em>) – Additional keyword arguments passed to matplotlib’s tripcolor</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of created matplotlib artists</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[plt.Artist]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If number of components is not 2 or 3</p></li>
+<li><p><strong>ImportError</strong> – If mpltern is not installed for ternary plots</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 

@@ -47,6 +47,7 @@
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'explanations/context_manager';</script>
+    <link rel="icon" href="../_static/logo.svg"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Reference" href="../reference/index.html" />
@@ -121,8 +122,14 @@
   
   
   
+    
+    
+      
+    
+    
+    <img src="../_static/logo_text_long.svg" class="logo__image only-light" alt="AFL-agent  documentation - Home"/>
+    <img src="../_static/logo_text_long.svg" class="logo__image only-dark pst-js-only" alt="AFL-agent  documentation - Home"/>
   
-    <p class="title logo__title">AFL-agent  documentation</p>
   
 </a></div>
     
@@ -412,64 +419,54 @@
 </ol>
 <p>In the AFL pipeline system, we leverage the second aspect - creating a temporary “context” in which operations are automatically associated with the current pipeline. This design creates a more readable, intuitive API that reduces boilerplate code and makes pipeline construction feel natural in Python.</p>
 <p>Here’s a simple example of how this pattern improves code readability:</p>
-<p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python
-# Using context manager approach
-with Pipeline(name=”MyPipeline”) as pipeline:</p>
-<blockquote>
-<div><p>MyOperation(input_variable=”data”, output_variable=”processed_data”)
-AnotherOperation(input_variable=”processed_data”, output_variable=”final_result”)</p>
-</div></blockquote>
-<p># Without context manager - more verbose and error-prone
-pipeline = Pipeline(name=”MyPipeline”)
-op1 = MyOperation(input_variable=”data”, output_variable=”processed_data”)
-pipeline.append(op1)
-op2 = AnotherOperation(input_variable=”processed_data”, output_variable=”final_result”)
-pipeline.append(op2)
-<a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Using context manager approach</span>
+<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;MyPipeline&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
+    <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;processed_data&quot;</span><span class="p">)</span>
+    <span class="n">AnotherOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;processed_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;final_result&quot;</span><span class="p">)</span>
+
+<span class="c1"># Without context manager - more verbose and error-prone</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;MyPipeline&quot;</span><span class="p">)</span>
+<span class="n">op1</span> <span class="o">=</span> <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;processed_data&quot;</span><span class="p">)</span>
+<span class="n">pipeline</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">op1</span><span class="p">)</span>
+<span class="n">op2</span> <span class="o">=</span> <span class="n">AnotherOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;processed_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;final_result&quot;</span><span class="p">)</span>
+<span class="n">pipeline</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">op2</span><span class="p">)</span>
+</pre></div>
+</div>
 </section>
 <section id="the-stack-based-context-design">
 <h2>The Stack-Based Context Design<a class="headerlink" href="#the-stack-based-context-design" title="Permalink to this heading">#</a></h2>
 <p>At the heart of the context manager implementation is a thread-local stack of pipeline contexts:</p>
-<p><code class="docutils literal notranslate"><span class="pre">`python</span>
-<span class="pre">contexts</span> <span class="pre">=</span> <span class="pre">threading.local()</span>
-<span class="pre">`</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">contexts</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">local</span><span class="p">()</span>
+</pre></div>
+</div>
 <p>The implementation in <cite>PipelineContext.py</cite> shows how this stack is managed:</p>
-<p><a href="#id9"><span class="problematic" id="id10">``</span></a><a href="#id11"><span class="problematic" id="id12">`</span></a>python
-class PipelineContext:</p>
-<blockquote>
-<div><p>“””Inherited by Pipeline to allow for context manager abuse”””</p>
-<p>contexts = threading.local()</p>
-<dl class="simple">
-<dt>def __enter__(self):</dt><dd><p>type(self).get_contexts().append(self)
-return self</p>
-</dd>
-<dt>def __exit__(self, typ, value, traceback):</dt><dd><p>type(self).get_contexts().pop()</p>
-</dd>
-</dl>
-<p>&#64;classmethod
-def get_contexts(cls) -&gt; List:</p>
-<blockquote>
-<div><dl class="simple">
-<dt>if not hasattr(cls.contexts, “stack”):</dt><dd><p>cls.contexts.stack = []</p>
-</dd>
-</dl>
-<p>return cls.contexts.stack</p>
-</div></blockquote>
-<p>&#64;classmethod
-def get_context(cls) -&gt; Any:</p>
-<blockquote>
-<div><p>“””Return the deepest context on the stack.”””
-try:</p>
-<blockquote>
-<div><p>return cls.get_contexts()[-1]</p>
-</div></blockquote>
-<dl class="simple">
-<dt>except IndexError:</dt><dd><p>raise NoContextException(“No context on context stack”)</p>
-</dd>
-</dl>
-</div></blockquote>
-</div></blockquote>
-<p><a href="#id13"><span class="problematic" id="id14">``</span></a><a href="#id15"><span class="problematic" id="id16">`</span></a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">PipelineContext</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inherited by Pipeline to allow for context manager abuse&quot;&quot;&quot;</span>
+
+    <span class="n">contexts</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">local</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">get_contexts</span><span class="p">()</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">typ</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+        <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">get_contexts</span><span class="p">()</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_contexts</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">contexts</span><span class="p">,</span> <span class="s2">&quot;stack&quot;</span><span class="p">):</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">stack</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_context</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the deepest context on the stack.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get_contexts</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NoContextException</span><span class="p">(</span><span class="s2">&quot;No context on context stack&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 <p>This design:</p>
 <ol class="arabic simple">
 <li><p><strong>Creates Thread Safety</strong>: Using <cite>threading.local()</cite> ensures that different threads maintain separate context stacks, preventing cross-thread interference.</p></li>
@@ -488,27 +485,23 @@ try:</p>
 <li><p>When the <cite>with</cite> block exits, the pipeline is popped from the stack, and any previous context becomes active again.</p></li>
 </ol>
 <p>Here’s the code from <cite>PipelineOp.py</cite> that illustrates how operations automatically register themselves:</p>
-<p><a href="#id17"><span class="problematic" id="id18">``</span></a><a href="#id19"><span class="problematic" id="id20">`</span></a>python
-def __init__(self,</p>
-<blockquote>
-<div><blockquote>
-<div><p>name: Optional[str] | List[str] = None,
-input_variable: Optional[str] | List[str] = None,
-output_variable: Optional[str] | List[str] = None,
-input_prefix: Optional[str] | List[str] = None,
-output_prefix: Optional[str] | List[str] = None):</p>
-</div></blockquote>
-<p># … other initialization code …</p>
-<dl class="simple">
-<dt>try:</dt><dd><p># try to add this object to current pipeline on context stack
-PipelineContext.get_context().append(self)</p>
-</dd>
-<dt>except NoContextException:</dt><dd><p># silently continue for those working outside a context manager
-pass</p>
-</dd>
-</dl>
-</div></blockquote>
-<p><a href="#id21"><span class="problematic" id="id22">``</span></a><a href="#id23"><span class="problematic" id="id24">`</span></a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+             <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="n">input_variable</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="n">output_variable</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="n">input_prefix</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="n">output_prefix</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+
+    <span class="c1"># ... other initialization code ...</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># try to add this object to current pipeline on context stack</span>
+        <span class="n">PipelineContext</span><span class="o">.</span><span class="n">get_context</span><span class="p">()</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">NoContextException</span><span class="p">:</span>
+        <span class="c1"># silently continue for those working outside a context manager</span>
+        <span class="k">pass</span>
+</pre></div>
+</div>
 <p>This process creates a natural, hierarchical relationship between pipelines and their operations, making the code structure visually reflect the pipeline structure.</p>
 </section>
 <section id="benefits-of-the-context-manager-approach">
@@ -532,29 +525,26 @@ pass</p>
 <dt><strong>The NoContextException</strong></dt><dd><p>When attempting to get the current context outside any <cite>with</cite> block, a <cite>NoContextException</cite> is raised. This is handled gracefully in the <cite>PipelineOp</cite> constructor.</p>
 </dd>
 </dl>
-<p><a href="#id25"><span class="problematic" id="id26">``</span></a><a href="#id27"><span class="problematic" id="id28">`</span></a>python
-class NoContextException(Exception):</p>
-<blockquote>
-<div><p>pass</p>
-</div></blockquote>
-<p><a href="#id29"><span class="problematic" id="id30">``</span></a><a href="#id31"><span class="problematic" id="id32">`</span></a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">NoContextException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
 <dl class="simple">
 <dt><strong>Thread Locality</strong></dt><dd><p>Since the context stack is thread-local, pipelines and operations must be created in the same thread. This is typically not an issue but could be important in multithreaded applications.</p>
 </dd>
 <dt><strong>Context Management vs. Manual Construction</strong></dt><dd><p>While the context manager provides a convenient way to build pipelines, you can still manually construct pipelines by explicitly adding operations. This flexibility accommodates different programming styles and requirements.</p>
 </dd>
 </dl>
-<p><a href="#id33"><span class="problematic" id="id34">``</span></a><a href="#id35"><span class="problematic" id="id36">`</span></a>python
-# Using context manager
-with Pipeline(name=”pipeline1”) as p1:</p>
-<blockquote>
-<div><p>MyOperation(input_variable=”x”, output_variable=”y”)</p>
-</div></blockquote>
-<p># Using manual construction
-p2 = Pipeline(name=”pipeline2”)
-op = MyOperation(input_variable=”x”, output_variable=”y”)
-p2.append(op)
-<a href="#id37"><span class="problematic" id="id38">``</span></a><a href="#id39"><span class="problematic" id="id40">`</span></a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Using context manager</span>
+<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;pipeline1&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">p1</span><span class="p">:</span>
+    <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+
+<span class="c1"># Using manual construction</span>
+<span class="n">p2</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;pipeline2&quot;</span><span class="p">)</span>
+<span class="n">op</span> <span class="o">=</span> <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+<span class="n">p2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
+</pre></div>
+</div>
 </section>
 <section id="advanced-patterns">
 <h2>Advanced Patterns<a class="headerlink" href="#advanced-patterns" title="Permalink to this heading">#</a></h2>
@@ -563,119 +553,97 @@ p2.append(op)
 <dt><strong>Pipeline Factories</strong></dt><dd><p>Functions that create and return pipelines can leverage the context manager pattern to provide a clean API for building configurable pipeline templates.</p>
 </dd>
 </dl>
-<p><a href="#id41"><span class="problematic" id="id42">``</span></a><a href="#id43"><span class="problematic" id="id44">`</span></a>python
-def create_processing_pipeline(data_type, threshold=0.5):</p>
-<blockquote>
-<div><p>“””Factory function to create standardized processing pipelines”””
-with Pipeline(name=f”{data_type}_processing”) as pipeline:</p>
-<blockquote>
-<div><p># Common operations for all data types
-Normalize(input_variable=”raw_data”, output_variable=”normalized_data”)</p>
-<p># Conditional operations based on data_type
-if data_type == “image”:</p>
-<blockquote>
-<div><dl class="simple">
-<dt>ImageFilter(input_variable=”normalized_data”, output_variable=”filtered_data”,</dt><dd><p>filter_type=”gaussian”)</p>
-</dd>
-</dl>
-<p>threshold_var = “filtered_data”</p>
-</div></blockquote>
-<dl>
-<dt>elif data_type == “signal”:</dt><dd><dl class="simple">
-<dt>SignalFilter(input_variable=”normalized_data”, output_variable=”filtered_data”,</dt><dd><p>filter_type=”lowpass”)</p>
-</dd>
-</dl>
-<p>threshold_var = “filtered_data”</p>
-</dd>
-<dt>else:</dt><dd><p>threshold_var = “normalized_data”</p>
-</dd>
-</dl>
-<p># Final thresholding operation with configurable threshold
-Threshold(input_variable=threshold_var, output_variable=”thresholded_data”,</p>
-<blockquote>
-<div><p>threshold=threshold)</p>
-</div></blockquote>
-</div></blockquote>
-<p>return pipeline</p>
-</div></blockquote>
-<p># Usage
-image_pipeline = create_processing_pipeline(“image”, threshold=0.75)
-signal_pipeline = create_processing_pipeline(“signal”, threshold=0.25)
-<a href="#id45"><span class="problematic" id="id46">``</span></a><a href="#id47"><span class="problematic" id="id48">`</span></a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_processing_pipeline</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Factory function to create standardized processing pipelines&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">_processing&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
+        <span class="c1"># Common operations for all data types</span>
+        <span class="n">Normalize</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;normalized_data&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Conditional operations based on data_type</span>
+        <span class="k">if</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">&quot;image&quot;</span><span class="p">:</span>
+            <span class="n">ImageFilter</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;normalized_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;filtered_data&quot;</span><span class="p">,</span>
+                        <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;gaussian&quot;</span><span class="p">)</span>
+            <span class="n">threshold_var</span> <span class="o">=</span> <span class="s2">&quot;filtered_data&quot;</span>
+        <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">&quot;signal&quot;</span><span class="p">:</span>
+            <span class="n">SignalFilter</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;normalized_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;filtered_data&quot;</span><span class="p">,</span>
+                         <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;lowpass&quot;</span><span class="p">)</span>
+            <span class="n">threshold_var</span> <span class="o">=</span> <span class="s2">&quot;filtered_data&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">threshold_var</span> <span class="o">=</span> <span class="s2">&quot;normalized_data&quot;</span>
+
+        <span class="c1"># Final thresholding operation with configurable threshold</span>
+        <span class="n">Threshold</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">threshold_var</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;thresholded_data&quot;</span><span class="p">,</span>
+                  <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pipeline</span>
+
+<span class="c1"># Usage</span>
+<span class="n">image_pipeline</span> <span class="o">=</span> <span class="n">create_processing_pipeline</span><span class="p">(</span><span class="s2">&quot;image&quot;</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)</span>
+<span class="n">signal_pipeline</span> <span class="o">=</span> <span class="n">create_processing_pipeline</span><span class="p">(</span><span class="s2">&quot;signal&quot;</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="simple">
 <dt><strong>Nested Pipelines</strong></dt><dd><p>While not directly supported in the current implementation, the stack-based design could be extended to support nested pipelines, where sub-pipelines operate within parent pipelines.</p>
 </dd>
 </dl>
-<p><a href="#id49"><span class="problematic" id="id50">``</span></a><a href="#id51"><span class="problematic" id="id52">`</span></a>python
-# Conceptual example of how nested pipelines might work
-with Pipeline(name=”master_pipeline”) as master:</p>
-<blockquote>
-<div><p># Some operations in the master pipeline
-DataLoader(input_variable=”file_path”, output_variable=”raw_data”)</p>
-<p># Create a nested pipeline for preprocessing
-with NestedPipeline(name=”preprocessing”, input_variable=”raw_data”,</p>
-<blockquote>
-<div><blockquote>
-<div><p>output_variable=”preprocessed_data”) as preprocess:</p>
-</div></blockquote>
-<p>Normalize(input_variable=”raw_data”, output_variable=”normalized”)
-RemoveOutliers(input_variable=”normalized”, output_variable=”cleaned”)
-# The last output becomes the nested pipeline’s output</p>
-</div></blockquote>
-<p># Continue with operations in the master pipeline
-ModelPredictor(input_variable=”preprocessed_data”, output_variable=”predictions”)</p>
-</div></blockquote>
-<p><a href="#id53"><span class="problematic" id="id54">``</span></a><a href="#id55"><span class="problematic" id="id56">`</span></a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Conceptual example of how nested pipelines might work</span>
+<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;master_pipeline&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">master</span><span class="p">:</span>
+    <span class="c1"># Some operations in the master pipeline</span>
+    <span class="n">DataLoader</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;file_path&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Create a nested pipeline for preprocessing</span>
+    <span class="k">with</span> <span class="n">NestedPipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;preprocessing&quot;</span><span class="p">,</span> <span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">,</span>
+                         <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;preprocessed_data&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">preprocess</span><span class="p">:</span>
+        <span class="n">Normalize</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;normalized&quot;</span><span class="p">)</span>
+        <span class="n">RemoveOutliers</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;normalized&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;cleaned&quot;</span><span class="p">)</span>
+        <span class="c1"># The last output becomes the nested pipeline&#39;s output</span>
+
+    <span class="c1"># Continue with operations in the master pipeline</span>
+    <span class="n">ModelPredictor</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;preprocessed_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;predictions&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="simple">
 <dt><strong>Dynamic Pipeline Construction</strong></dt><dd><p>The context approach makes it easier to conditionally add operations to a pipeline based on runtime parameters, enhancing flexibility.</p>
 </dd>
 </dl>
-<p><a href="#id57"><span class="problematic" id="id58">``</span></a><a href="#id59"><span class="problematic" id="id60">`</span></a>python
-def build_adaptive_pipeline(data_properties):</p>
-<blockquote>
-<div><p>“””Builds a pipeline that adapts to properties of the data”””
-with Pipeline(name=”adaptive_pipeline”) as pipeline:</p>
-<blockquote>
-<div><p># Basic operations for all cases
-LoadData(input_variable=”data_path”, output_variable=”raw_data”)</p>
-<p># Add preprocessing operations based on data properties
-if data_properties.get(“has_missing_values”, False):</p>
-<blockquote>
-<div><p>ImputeMissingValues(input_variable=”raw_data”, output_variable=”imputed_data”)
-current_data = “imputed_data”</p>
-</div></blockquote>
-<dl class="simple">
-<dt>else:</dt><dd><p>current_data = “raw_data”</p>
-</dd>
-<dt>if data_properties.get(“needs_normalization”, True):</dt><dd><p>Normalize(input_variable=current_data, output_variable=”normalized_data”)
-current_data = “normalized_data”</p>
-</dd>
-</dl>
-<p># Add dimensionality reduction if data has high dimensions
-if data_properties.get(“dimensions”, 0) &gt; 100:</p>
-<blockquote>
-<div><dl class="simple">
-<dt>PCA(input_variable=current_data, output_variable=”reduced_data”,</dt><dd><p>n_components=data_properties.get(“target_dimensions”, 50))</p>
-</dd>
-</dl>
-<p>current_data = “reduced_data”</p>
-</div></blockquote>
-<p># Final output operation
-Analyze(input_variable=current_data, output_variable=”results”)</p>
-</div></blockquote>
-<p>return pipeline</p>
-</div></blockquote>
-<p># Usage
-data_props = {</p>
-<blockquote>
-<div><p>“has_missing_values”: True,
-“needs_normalization”: True,
-“dimensions”: 500,
-“target_dimensions”: 50</p>
-</div></blockquote>
-<p>}
-my_pipeline = build_adaptive_pipeline(data_props)
-<a href="#id61"><span class="problematic" id="id62">``</span></a><a href="#id63"><span class="problematic" id="id64">`</span></a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_adaptive_pipeline</span><span class="p">(</span><span class="n">data_properties</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Builds a pipeline that adapts to properties of the data&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;adaptive_pipeline&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
+        <span class="c1"># Basic operations for all cases</span>
+        <span class="n">LoadData</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data_path&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Add preprocessing operations based on data properties</span>
+        <span class="k">if</span> <span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;has_missing_values&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="n">ImputeMissingValues</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;imputed_data&quot;</span><span class="p">)</span>
+            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">&quot;imputed_data&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">&quot;raw_data&quot;</span>
+
+        <span class="k">if</span> <span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;needs_normalization&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+            <span class="n">Normalize</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">current_data</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;normalized_data&quot;</span><span class="p">)</span>
+            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">&quot;normalized_data&quot;</span>
+
+        <span class="c1"># Add dimensionality reduction if data has high dimensions</span>
+        <span class="k">if</span> <span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dimensions&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
+            <span class="n">PCA</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">current_data</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;reduced_data&quot;</span><span class="p">,</span>
+                <span class="n">n_components</span><span class="o">=</span><span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target_dimensions&quot;</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">&quot;reduced_data&quot;</span>
+
+        <span class="c1"># Final output operation</span>
+        <span class="n">Analyze</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">current_data</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;results&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pipeline</span>
+
+<span class="c1"># Usage</span>
+<span class="n">data_props</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;has_missing_values&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;needs_normalization&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+    <span class="s2">&quot;target_dimensions&quot;</span><span class="p">:</span> <span class="mi">50</span>
+<span class="p">}</span>
+<span class="n">my_pipeline</span> <span class="o">=</span> <span class="n">build_adaptive_pipeline</span><span class="p">(</span><span class="n">data_props</span><span class="p">)</span>
+</pre></div>
+</div>
 </section>
 <section id="alternatives-considered">
 <h2>Alternatives Considered<a class="headerlink" href="#alternatives-considered" title="Permalink to this heading">#</a></h2>
@@ -684,46 +652,42 @@ my_pipeline = build_adaptive_pipeline(data_props)
 <dt><strong>Fluent Builder Pattern</strong></dt><dd><p>A chained method approach (e.g., <cite>pipeline.add_op1().add_op2()</cite>) would be less verbose but wouldn’t provide the visual structure of nested blocks.</p>
 </dd>
 </dl>
-<p><a href="#id65"><span class="problematic" id="id66">``</span></a><a href="#id67"><span class="problematic" id="id68">`</span></a>python
-# Hypothetical fluent builder approach
-pipeline = (Pipeline(name=”MyPipeline”)</p>
-<blockquote>
-<div><p>.add(DataLoader(input_variable=”path”, output_variable=”data”))
-.add(Process(input_variable=”data”, output_variable=”processed”)))</p>
-</div></blockquote>
-<p><a href="#id69"><span class="problematic" id="id70">``</span></a><a href="#id71"><span class="problematic" id="id72">`</span></a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Hypothetical fluent builder approach</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="p">(</span><span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;MyPipeline&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;path&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">))</span>
+            <span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Process</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;processed&quot;</span><span class="p">)))</span>
+</pre></div>
+</div>
 <dl class="simple">
 <dt><strong>Explicit Registration</strong></dt><dd><p>Requiring each operation to be explicitly added to a pipeline would be more transparent but more verbose and prone to errors.</p>
 </dd>
 </dl>
-<p><code class="docutils literal notranslate"><span class="pre">`python</span>
-<span class="pre">#</span> <span class="pre">Explicit</span> <span class="pre">registration</span> <span class="pre">approach</span>
-<span class="pre">pipeline</span> <span class="pre">=</span> <span class="pre">Pipeline(name=&quot;MyPipeline&quot;)</span>
-<span class="pre">loader</span> <span class="pre">=</span> <span class="pre">DataLoader(input_variable=&quot;path&quot;,</span> <span class="pre">output_variable=&quot;data&quot;)</span>
-<span class="pre">processor</span> <span class="pre">=</span> <span class="pre">Process(input_variable=&quot;data&quot;,</span> <span class="pre">output_variable=&quot;processed&quot;)</span>
-<span class="pre">pipeline.add(loader)</span>
-<span class="pre">pipeline.add(processor)</span>
-<span class="pre">`</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Explicit registration approach</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;MyPipeline&quot;</span><span class="p">)</span>
+<span class="n">loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;path&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">)</span>
+<span class="n">processor</span> <span class="o">=</span> <span class="n">Process</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;processed&quot;</span><span class="p">)</span>
+<span class="n">pipeline</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">loader</span><span class="p">)</span>
+<span class="n">pipeline</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">processor</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="simple">
 <dt><strong>Decorator-Based Approach</strong></dt><dd><p>Using decorators to define pipeline operations would be elegant but might limit flexibility in operation reuse.</p>
 </dd>
 </dl>
-<p><a href="#id73"><span class="problematic" id="id74">``</span></a><a href="#id75"><span class="problematic" id="id76">`</span></a>python
-# Hypothetical decorator-based approach
-pipeline = Pipeline(name=”MyPipeline”)</p>
-<p>&#64;pipeline.operation(input_variable=”path”, output_variable=”data”)
-def load_data(dataset):</p>
-<blockquote>
-<div><p># Load data implementation
-return loaded_data</p>
-</div></blockquote>
-<p>&#64;pipeline.operation(input_variable=”data”, output_variable=”processed”)
-def process_data(dataset):</p>
-<blockquote>
-<div><p># Processing implementation
-return processed_data</p>
-</div></blockquote>
-<p><a href="#id77"><span class="problematic" id="id78">``</span></a><a href="#id79"><span class="problematic" id="id80">`</span></a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Hypothetical decorator-based approach</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;MyPipeline&quot;</span><span class="p">)</span>
+
+<span class="nd">@pipeline</span><span class="o">.</span><span class="n">operation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;path&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">(</span><span class="n">dataset</span><span class="p">):</span>
+    <span class="c1"># Load data implementation</span>
+    <span class="k">return</span> <span class="n">loaded_data</span>
+
+<span class="nd">@pipeline</span><span class="o">.</span><span class="n">operation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;processed&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_data</span><span class="p">(</span><span class="n">dataset</span><span class="p">):</span>
+    <span class="c1"># Processing implementation</span>
+    <span class="k">return</span> <span class="n">processed_data</span>
+</pre></div>
+</div>
 </section>
 <section id="conclusion">
 <h2>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this heading">#</a></h2>

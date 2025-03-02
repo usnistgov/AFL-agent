@@ -47,10 +47,11 @@
     <script src="../../../_static/copybutton.js?v=f281be69"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'reference/api/double_agent/Preprocessor';</script>
+    <link rel="icon" href="../../../_static/logo.svg"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="AFL.double_agent.TensorFlowExtrapolator module" href="TensorFlowExtrapolator.html" />
-    <link rel="prev" title="AFL.double_agent.PhaseLabeler module" href="PhaseLabeler.html" />
+    <link rel="prev" title="AFL.double_agent.Labeler module" href="Labeler.html" />
   
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -121,8 +122,14 @@
   
   
   
+    
+    
+      
+    
+    
+    <img src="../../../_static/logo_text_long.svg" class="logo__image only-light" alt="AFL-agent  documentation - Home"/>
+    <img src="../../../_static/logo_text_long.svg" class="logo__image only-dark pst-js-only" alt="AFL-agent  documentation - Home"/>
   
-    <p class="title logo__title">AFL-agent  documentation</p>
   
 </a></div>
     
@@ -345,7 +352,7 @@
 <li class="toctree-l2"><a class="reference internal" href="Generator.html">AFL.double_agent.Generator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="MaskGrid.html">AFL.double_agent.MaskGrid module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PairMetric.html">AFL.double_agent.PairMetric module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhaseLabeler.html">AFL.double_agent.PhaseLabeler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Labeler.html">AFL.double_agent.Labeler module</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">AFL.double_agent.Preprocessor module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="TensorFlowExtrapolator.html">AFL.double_agent.TensorFlowExtrapolator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a></li>
@@ -428,18 +435,28 @@
   <section id="module-AFL.double_agent.Preprocessor">
 <span id="afl-double-agent-preprocessor-module"></span><h1>AFL.double_agent.Preprocessor module<a class="headerlink" href="#module-AFL.double_agent.Preprocessor" title="Permalink to this heading">#</a></h1>
 <p>PipelineOps for Data Preprocessing</p>
-<p>Preprocessing ops generally take in measurement or composition data and scale, correct, and transform it</p>
+<p>This module contains preprocessing operations that transform, normalize, and prepare data for analysis.
+Preprocessors handle tasks such as:
+- Scaling and normalizing data
+- Transforming between coordinate systems
+- Filtering and smoothing signals
+- Extracting features from raw measurements
+- Converting between different data representations</p>
+<p>Each preprocessor is implemented as a PipelineOp that can be composed with others in a processing pipeline.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="AFL.double_agent.Preprocessor.ArrayToVars">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Preprocessor.</span></span><span class="sig-name descname"><span class="pre">ArrayToVars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">postfix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'DatasetToVars'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Preprocessor.ArrayToVars" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Preprocessor.</span></span><span class="sig-name descname"><span class="pre">ArrayToVars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">postfix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'DatasetToVars'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Preprocessor.ArrayToVars" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Preprocessor.Preprocessor" title="AFL.double_agent.Preprocessor.Preprocessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Preprocessor</span></code></a></p>
+<p>Convert an array into multiple variables</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to extract from the input dataset</p></li>
-<li><p><strong>output_variables</strong> (<em>list</em><em> or </em><em>str</em>) – The name of the variables to be inserted into the <cite>xarray.Dataset</cite> by this <cite>PipelineOp</cite></p></li>
-<li><p><strong>split_dim</strong> (<em>str</em>) – The dimension to use when splitting a dataset or datarray over</p></li>
-<li><p><strong>name</strong> (<em>str</em>) – The name to use when added to a Pipeline. This name is used when calling Pipeline.search(</p></li>
+<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the array variable to split into separate variables</p></li>
+<li><p><strong>output_variables</strong> (<em>list</em>) – The names of the variables to create from the array</p></li>
+<li><p><strong>split_dim</strong> (<em>str</em>) – The dimension to split the array along</p></li>
+<li><p><strong>postfix</strong> (<em>str</em><em>, </em><em>default=''</em>) – String to append to output variable names</p></li>
+<li><p><strong>squeeze</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to squeeze out single-dimension axes</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default='DatasetToVars'</em>) – The name to use when added to a Pipeline</p></li>
 </ul>
 </dd>
 </dl>
@@ -458,6 +475,16 @@
 <p>Transform from ternary coordinates to xy coordinates</p>
 <p>Note —- Adapted from BaryCentric transform mpltern:
 <a class="github reference external" href="https://github.com/yuzie007/mpltern/blob/master/mpltern/ternary/transforms.py">yuzie007/mpltern</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to extract from the input dataset</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite> by this <cite>PipelineOp</cite></p></li>
+<li><p><strong>sample_dim</strong> (<em>str</em>) – The dimension to use when calculating the data minimum</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name to use when added to a Pipeline. This name is used when calling Pipeline.search(</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Preprocessor.BarycentricToTernaryXY.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Preprocessor.BarycentricToTernaryXY.calculate" title="Permalink to this definition">#</a></dt>
@@ -471,6 +498,21 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Preprocessor.</span></span><span class="sig-name descname"><span class="pre">Destandardize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'component'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Number</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Number</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Destandardize'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Preprocessor.Destandardize" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Preprocessor.Preprocessor" title="AFL.double_agent.Preprocessor.Preprocessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Preprocessor</span></code></a></p>
 <p>Transform the data from 0-&gt;1 scaling</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to extract from the input dataset</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite> by this <cite>PipelineOp</cite></p></li>
+<li><p><strong>dim</strong> (<em>str</em>) – The dimension used for calculating the data minimum</p></li>
+<li><p><strong>component_dim</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=&quot;component&quot;</em>) – The dimension for component-wise operations</p></li>
+<li><p><strong>scale_variable</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – If specified, the min/max of this data variable in the supplied <cite>xarray.Dataset</cite> will be used to scale the
+data rather than min/max of the <cite>input_variable</cite> or the supplied <cite>min_val</cite> or <cite>max_val</cite></p></li>
+<li><p><strong>min_val</strong> (<em>Optional</em><em>[</em><em>Number</em><em>]</em><em>, </em><em>default=None</em>) – Value used to scale the data minimum</p></li>
+<li><p><strong>max_val</strong> (<em>Optional</em><em>[</em><em>Number</em><em>]</em><em>, </em><em>default=None</em>) – Value used to scale the data maximum</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;Destandardize&quot;</em>) – The name to use when added to a Pipeline</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Preprocessor.Destandardize.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Preprocessor.Destandardize.calculate" title="Permalink to this definition">#</a></dt>
@@ -497,6 +539,15 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Preprocessor.</span></span><span class="sig-name descname"><span class="pre">Preprocessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'PreprocessorBase'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Preprocessor.Preprocessor" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp" title="AFL.double_agent.PipelineOp.PipelineOp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineOp</span></code></a></p>
 <p>Base class stub for all preprocessors</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to extract from the input dataset</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite> by this <cite>PipelineOp</cite></p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name to use when added to a Pipeline. This name is used when calling Pipeline.search()</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Preprocessor.Preprocessor.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Preprocessor.Preprocessor.calculate" title="Permalink to this definition">#</a></dt>
@@ -512,8 +563,28 @@
 <p>Smooth and take derivatives of input data via a Savitsky-Golay filter</p>
 <p>This <cite>PipelineOp</cite> cleans measurement data and takes smoothed derivatives using <cite>scipy.signal.savgol_filter</cite>. Below
 is a summary of the steps taken.</p>
-<section id="steps">
-<h2>Steps<a class="headerlink" href="#steps" title="Permalink to this heading">#</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to extract from the input dataset</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite> by this <cite>PipelineOp</cite></p></li>
+<li><p><strong>dim</strong> (<em>str</em>) – The dimension in the <cite>xarray.Dataset</cite> to apply this filter over</p></li>
+<li><p><strong>xlo</strong> (<em>Optional</em><em>[</em><em>Number</em><em>]</em>) – The values of the input dimension (dim, above) to trim the data to</p></li>
+<li><p><strong>xhi</strong> (<em>Optional</em><em>[</em><em>Number</em><em>]</em>) – The values of the input dimension (dim, above) to trim the data to</p></li>
+<li><p><strong>xlo_isel</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – The integer indices of the input dimension (dim, above) to trim the data to</p></li>
+<li><p><strong>xhi_isel</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – The integer indices of the input dimension (dim, above) to trim the data to</p></li>
+<li><p><strong>pedestal</strong> (<em>Optional</em><em>[</em><em>Number</em><em>]</em>) – This value is added to the input_variable to establish a fixed data ‘floor’</p></li>
+<li><p><strong>npts</strong> (<em>int</em>) – The size of the grid to interpolate onto</p></li>
+<li><p><strong>derivative</strong> (<em>int</em>) – The order of the derivative to return. If derivative=0, the data is smoothed with no derivative taken.</p></li>
+<li><p><strong>window_length</strong> (<em>int</em>) – The width of the window used in the savgol smoothing. See <cite>scipy.signal.savgol_filter</cite> for more information.</p></li>
+<li><p><strong>polyorder</strong> (<em>int</em>) – The order of polynomial used in the savgol smoothing. See <cite>scipy.signal.savgol_filter</cite> for more information.</p></li>
+<li><p><strong>apply_log_scale</strong> (<em>bool</em>) – If True, the <cite>input_variable</cite> and associated <cite>dim</cite> coordinated are scaled with <cite>numpy.log10</cite></p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name to use when added to a Pipeline. This name is used when calling Pipeline.search()</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This <cite>PipelineOp</cite> performs the following steps:</p>
 <p>1. Data is trimmed to <cite>(xlo, xhi)</cite> and then <cite>(xlo_isel, xhi_isel)</cite> in that order. The former trims the data to a
 numerical while the latter trims to integer indices. It is generally not advisable to supply both varieties and a
 warning will be raised if this is attempted.</p>
@@ -523,13 +594,10 @@ warning will be raised if this is attempted.</p>
 duplicates.</p>
 <ol class="arabic simple" start="4">
 <li><p>If <cite>pedestal</cite> is specified, the pedestal value is added to the data and all NaNs are filled with the pedestal</p></li>
-</ol>
-<p>5. The data is interpolated onto a constant grid with <cite>npts</cite> values from the trimmed minimum to the trimmed maximum.
-If <cite>apply_log_scale=True</cite>, the grid is geometrically rather than linearly spaced.</p>
-<ol class="arabic simple" start="4">
+<li><p>The data is interpolated onto a constant grid with <cite>npts</cite> values from the trimmed minimum to the trimmed maximum.  If <cite>apply_log_scale=True</cite>, the grid is geometrically rather than linearly spaced.</p></li>
 <li><p>All remaining NaN values are dropped along <cite>dim</cite></p></li>
 </ol>
-<p>5. Finally, <cite>scipy.signal.savgol_filter</cite> is applied with the <cite>window_length</cite>, <cite>polyorder</cite>, and <cite>derivative</cite>
+<p>7. Finally, <cite>scipy.signal.savgol_filter</cite> is applied with the <cite>window_length</cite>, <cite>polyorder</cite>, and <cite>derivative</cite>
 parameters specified in the constructor.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Preprocessor.SavgolFilter.calculate">
@@ -537,7 +605,6 @@ parameters specified in the constructor.</p>
 <dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.dataset</cite></p>
 </dd></dl>
 
-</section>
 </dd></dl>
 
 <dl class="py class">
@@ -545,6 +612,21 @@ parameters specified in the constructor.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Preprocessor.</span></span><span class="sig-name descname"><span class="pre">Standardize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'component'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Number</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Number</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Standardize'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Preprocessor.Standardize" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Preprocessor.Preprocessor" title="AFL.double_agent.Preprocessor.Preprocessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Preprocessor</span></code></a></p>
 <p>Standardize the data to have min 0 and max 1</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to extract from the input dataset</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite> by this <cite>PipelineOp</cite></p></li>
+<li><p><strong>dim</strong> (<em>str</em>) – The dimension used for calculating the data minimum</p></li>
+<li><p><strong>component_dim</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=&quot;component&quot;</em>) – The dimension for component-wise operations</p></li>
+<li><p><strong>scale_variable</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – If specified, the min/max of this data variable in the supplied <cite>xarray.Dataset</cite> will be used to scale the
+data rather than min/max of the <cite>input_variable</cite> or the supplied <cite>min_val</cite> or <cite>max_val</cite></p></li>
+<li><p><strong>min_val</strong> (<em>Optional</em><em>[</em><em>Number</em><em>]</em><em>, </em><em>default=None</em>) – Value used to scale the data minimum</p></li>
+<li><p><strong>max_val</strong> (<em>Optional</em><em>[</em><em>Number</em><em>]</em><em>, </em><em>default=None</em>) – Value used to scale the data maximum</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;Standardize&quot;</em>) – The name to use when added to a Pipeline</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Preprocessor.Standardize.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Preprocessor.Standardize.calculate" title="Permalink to this definition">#</a></dt>
@@ -584,6 +666,56 @@ parameters specified in the constructor.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Preprocessor.</span></span><span class="sig-name descname"><span class="pre">SympyTransform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transforms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'component'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'SympyTransform'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Preprocessor.SympyTransform" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Preprocessor.Preprocessor" title="AFL.double_agent.Preprocessor.Preprocessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Preprocessor</span></code></a></p>
 <p>Transform data using sympy expressions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to extract from the input dataset</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite> by this <cite>PipelineOp</cite></p></li>
+<li><p><strong>sample_dim</strong> (<em>str</em>) – The sample dimension i.e., the dimension of compositions or grid points</p></li>
+<li><p><strong>component_dim</strong> (<em>str</em><em>, </em><em>default=&quot;component&quot;</em>) – The dimension of the component of each gridpoint</p></li>
+<li><p><strong>transforms</strong> (<em>Dict</em><em>[</em><em>str</em><em>,</em><em>object</em><em>]</em>) – A dictionary of transforms (sympy expressions) to evaluate to generate new variables. For this method to
+function, the transforms must be completely specified except for the names in component_dim of the
+input_variable</p></li>
+<li><p><strong>transform_dim</strong> (<em>str</em>) – The name of the dimension that the ‘component_dim’ will be transformed to</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;SympyTransform&quot;</em>) – The name to use when added to a Pipeline</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python
+from AFL.double_agent import *
+import sympy
+with Pipeline() as p:</p>
+<blockquote>
+<div><dl>
+<dt>CartesianGrid(</dt><dd><p>output_variable=’comps’,
+grid_spec={</p>
+<blockquote>
+<div><p>‘A’:{‘min’:1,’max’:25,’steps’:5},
+‘B’:{‘min’:1,’max’:25,’steps’:5},
+‘C’:{‘min’:1,’max’:25,’steps’:5},</p>
+</div></blockquote>
+<p>},
+sample_dim=’grid’</p>
+</dd>
+</dl>
+<p>)</p>
+<p>A,B,C = sympy.symbols(‘A B C’)
+vA = A/(A+B+C)
+vB = B/(A+B+C)
+vC = C/(A+B+C)
+SympyTransform(</p>
+<blockquote>
+<div><p>input_variable=’comps’,
+output_variable=’trans_comps’,
+sample_dim=’grid’,
+transforms={‘vA’:vA,’vB’:vB,’vC’:vC},
+transform_dim=’trans_component’</p>
+</div></blockquote>
+<p>)</p>
+</div></blockquote>
+<p>p.calculate(xr.Dataset())# returns dataset with grid and transformed grid
+<a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Preprocessor.SympyTransform.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Preprocessor.SympyTransform.calculate" title="Permalink to this definition">#</a></dt>
@@ -597,8 +729,21 @@ parameters specified in the constructor.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Preprocessor.</span></span><span class="sig-name descname"><span class="pre">TernaryXYToBarycentric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'TernaryXYToBarycentric'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Preprocessor.TernaryXYToBarycentric" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Preprocessor.Preprocessor" title="AFL.double_agent.Preprocessor.Preprocessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Preprocessor</span></code></a></p>
 <p>Transform to ternary coordinates from xy coordinates</p>
-<p>Note —- Adapted from BaryCentric transform mpltern:
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Adapted from BaryCentric transform mpltern:
 <a class="github reference external" href="https://github.com/yuzie007/mpltern/blob/master/mpltern/ternary/transforms.py">yuzie007/mpltern</a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to extract from the input dataset</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite> by this <cite>PipelineOp</cite></p></li>
+<li><p><strong>sample_dim</strong> (<em>str</em>) – The dimension to use when calculating the data minimum</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;TernaryXYToBarycentric&quot;</em>) – The name to use when added to a Pipeline</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Preprocessor.TernaryXYToBarycentric.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Preprocessor.TernaryXYToBarycentric.calculate" title="Permalink to this definition">#</a></dt>
@@ -611,6 +756,19 @@ parameters specified in the constructor.</p>
 <dt class="sig sig-object py" id="AFL.double_agent.Preprocessor.VarsToArray">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Preprocessor.</span></span><span class="sig-name descname"><span class="pre">VarsToArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_mapping</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'VarsToArray'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Preprocessor.VarsToArray" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Preprocessor.Preprocessor" title="AFL.double_agent.Preprocessor.Preprocessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Preprocessor</span></code></a></p>
+<p>Convert multiple variables into a single array</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variables</strong> (<em>List</em>) – List of input variables to combine into an array</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the dataset</p></li>
+<li><p><strong>variable_dim</strong> (<em>str</em>) – The dimension name for the variables in the output array</p></li>
+<li><p><strong>squeeze</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to squeeze out single-dimension axes</p></li>
+<li><p><strong>variable_mapping</strong> (<em>Dict</em><em>, </em><em>default=None</em>) – Optional mapping to rename variables</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default='VarsToArray'</em>) – The name to use when added to a Pipeline</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Preprocessor.VarsToArray.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Preprocessor.VarsToArray.calculate" title="Permalink to this definition">#</a></dt>
@@ -624,6 +782,16 @@ parameters specified in the constructor.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Preprocessor.</span></span><span class="sig-name descname"><span class="pre">Zscale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Zscale'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Preprocessor.Zscale" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Preprocessor.Preprocessor" title="AFL.double_agent.Preprocessor.Preprocessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Preprocessor</span></code></a></p>
 <p>Z-scale the data to have mean 0 and standard deviation scaling</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to extract from the input dataset</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite> by this <cite>PipelineOp</cite></p></li>
+<li><p><strong>dim</strong> (<em>str</em>) – The dimension to use when calculating the data minimum</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name to use when added to a Pipeline. This name is used when calling Pipeline.search(</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Preprocessor.Zscale.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Preprocessor.Zscale.calculate" title="Permalink to this definition">#</a></dt>
@@ -637,6 +805,16 @@ parameters specified in the constructor.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Preprocessor.</span></span><span class="sig-name descname"><span class="pre">ZscaleError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Zscale_error'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Preprocessor.ZscaleError" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Preprocessor.Preprocessor" title="AFL.double_agent.Preprocessor.Preprocessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Preprocessor</span></code></a></p>
 <p>Scale the y_err data, first input is y, second input is y_err</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variables</strong> (<em>Union</em><em>[</em><em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – The names of the input variables - first is y, second is y_err</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the dataset</p></li>
+<li><p><strong>dim</strong> (<em>str</em>) – The dimension to use when calculating the data minimum</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;Zscale_error&quot;</em>) – The name to use when added to a Pipeline</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Preprocessor.ZscaleError.calculate">
 <span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Preprocessor.ZscaleError.calculate" title="Permalink to this definition">#</a></dt>
@@ -658,12 +836,12 @@ parameters specified in the constructor.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="PhaseLabeler.html"
+       href="Labeler.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">AFL.double_agent.PhaseLabeler module</p>
+        <p class="prev-next-title">AFL.double_agent.Labeler module</p>
       </div>
     </a>
     <a class="right-next"
