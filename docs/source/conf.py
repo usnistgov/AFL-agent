@@ -72,10 +72,10 @@ theme_module = import_module(html_theme.replace("-", "_"))
 html_theme_path = [os.path.dirname(os.path.abspath(theme_module.__file__))]
 
 # Add the favicon
-html_favicon = "_static/logo.svg"
+html_favicon = "_static/logo_light.svg"
 
 # Add the logo to replace the title text
-html_logo = "_static/logo_text_long.svg"
+html_logo = "_static/logo_text_large_light.svg"
 
 html_theme_options = {
     "github_url": "https://github.com/usnistgov/afl-agent",
@@ -83,8 +83,8 @@ html_theme_options = {
     "header_links_before_dropdown": 6,
     "navbar_end": ["theme-switcher", "navbar-icon-links"],
     "logo": {
-        "image_light": html_logo,
-        "image_dark": html_logo,
+        "image_light": "_static/logo_text_large_light.svg",
+        "image_dark": "_static/logo_text_large_dark.svg",
     },
 }
 

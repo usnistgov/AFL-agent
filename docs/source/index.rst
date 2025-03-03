@@ -3,9 +3,15 @@ AFL-agent
 
 .. only:: html 
 
-    .. image:: _static/pipeline_horizontal.svg
+    .. image:: _static/pipeline_horizontal_light.svg
         :alt: AFL-agent Logo
         :width: 800
+        :class: only-light
+
+    .. image:: _static/pipeline_horizontal_dark.svg
+        :alt: AFL-agent Logo
+        :width: 800
+        :class: only-dark
 
 
 
