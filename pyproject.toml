@@ -46,9 +46,10 @@ dependencies = [
     "tiled[all]",
     "sasmodels",
     "sasdata",
-    "bumps"
+    "bumps",
     "pygraphviz",
     "mpltern",
+    "anywidget",
 ]
 
 [project.optional-dependencies]
