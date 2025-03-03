@@ -111,6 +111,15 @@ class AutoSASWidget:
             
             # Remove tab from view
             self.view.remove_model_tab(current_tab)
+            
+            # Update titles for remaining tabs
+            for i, tab_id in enumerate(self.view.tab_ids):
+                # Get the base model name (remove the _N suffix)
+                base_name = self.model.models[tab_id]["sasmodel"]
+                # Update the tab title with new index
+                self.view.tabs.set_title(i, f"{base_name}_{i + 1}")
+                # Update the model name in the model data
+                self.model.models[tab_id]["name"] = f"{base_name}_{i + 1}"
     
     def _setup_parameter_controls(self, model_id):
         """Set up parameter controls for a model."""
