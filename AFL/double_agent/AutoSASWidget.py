@@ -9,6 +9,8 @@ import sasmodels.data
 import sasmodels.core
 import ipywidgets as widgets
 from IPython.display import display, JSON
+import re
+import xarray as xr
 
 # Make sure plotly works well in Jupyter
 #from plotly.offline import init_notebook_mode
@@ -27,7 +29,8 @@ class AutoSASWidget:
     def __init__(
         self,
         q_range: Optional[np.ndarray] = None,
-        default_models: Optional[List[Dict[str, Any]]] = None
+        default_models: Optional[List[Dict[str, Any]]] = None,
+        data: Optional[xr.Dataset] = None
     ):
         """Initialize the AutoSASWidget.
         
@@ -38,7 +41,8 @@ class AutoSASWidget:
             If None, a default range will be created.
         default_models : Optional[List[Dict[str, Any]]]
             List of model configurations to initialize with.
-            If None, starts with an empty model list.
+        data : Optional[xr.Dataset]
+            Dataset containing experimental scattering data.
         """
         # Set up default q_range if not provided
         if q_range is None:
@@ -48,7 +52,7 @@ class AutoSASWidget:
             
         # Create the model and view
         self.model = AutoSASWidget_Model(q_range=self.q_range, default_models=default_models)
-        self.view = AutoSASWidget_View(available_models=self.model.available_sasmodels)
+        self.view = AutoSASWidget_View(available_models=self.model.available_sasmodels, data=data)
         
         # Connect model and view
         self._setup_callbacks()
@@ -80,6 +84,9 @@ class AutoSASWidget:
         
         # Update the plot
         self.update_plot(model_id)
+
+        self.view.figures[model_id].update_layout(height=599)
+        self.view.figures[model_id].update_layout(height=600)
     
     def remove_model_callback(self, b):
         """Handle remove model button click."""
@@ -97,7 +104,7 @@ class AutoSASWidget:
     
     def _setup_parameter_controls(self, model_id):
         """Set up parameter controls for a model."""
-        # Get parameters for the model
+        # Get all parameters for this model
         params = self.model.get_model_parameters(model_id)
         
         # Set up q_min and q_max controls
@@ -122,31 +129,37 @@ class AutoSASWidget:
             names="value"
         )
         
-        # Create controls for each parameter
+        # Add controls for each parameter
         for param_name, param_info in params.items():
-            # Create a slider for this parameter with the current value
-            value = param_info["value"]
-            param_name = str(param_name)
-            
-            # Create the parameter control in the view
+            # Add the control
             self.view.add_parameter_control(
                 model_id, 
-                param_name,
-                value,
-                param_info.get("bounds", None)
+                param_name, 
+                param_info["value"],
+                param_info.get("bounds")
             )
             
-            # Set up callback for value changes
-            self.view.get_parameter_control(model_id, param_name).observe(
+            # Get the control and set up callback
+            control = self.view.get_parameter_control(model_id, param_name)
+            control.observe(
                 lambda change, mid=model_id, pname=param_name: 
                     self.parameter_change_callback(change, mid, pname),
                 names="value"
             )
             
-            # Set up callback for checkbox changes
-            checkbox = self.view.get_parameter_checkbox(model_id, param_name)
-            if checkbox:
-                checkbox.observe(
+            # Get the AutoSAS checkbox and set up callback
+            autosas_checkbox = self.view.get_parameter_checkbox(model_id, param_name)
+            if autosas_checkbox:
+                autosas_checkbox.observe(
+                    lambda change, mid=model_id, pname=param_name: 
+                        self.parameter_checkbox_callback(change, mid, pname),
+                    names="value"
+                )
+            
+            # Get the bounds checkbox and set up callback
+            bounds_checkbox = self.view.get_bounds_checkbox(model_id, param_name)
+            if bounds_checkbox:
+                bounds_checkbox.observe(
                     lambda change, mid=model_id, pname=param_name: 
                         self.parameter_checkbox_callback(change, mid, pname),
                     names="value"
@@ -162,39 +175,31 @@ class AutoSASWidget:
     
     def parameter_checkbox_callback(self, change, model_id, param_name):
         """Handle parameter checkbox change (fixed/variable)."""
-        # Get current controls
-        control = self.view.get_parameter_control(model_id, param_name)
+        # Determine which checkbox was changed (AutoSAS or Bounds)
+        checkbox_type = change.get('owner').description.lower()
         
-        # If checkbox is checked, we want to enable slider mode
-        if change["new"]:
-            # Get current value
-            current_value = control.value
+        if checkbox_type == 'autosas':
+            # Update model parameter to reflect AutoSAS mode (include in model_inputs)
+            self.model.models[model_id]["params"][param_name]["autosas"] = change["new"]
+        elif checkbox_type == 'bounds':
+            # Update model parameter to reflect Bounds mode (show slider and include bounds)
+            self.model.models[model_id]["params"][param_name]["use_bounds"] = change["new"]
             
-            # Get default bounds for this parameter
+            # Get current controls
+            control = self.view.get_parameter_control(model_id, param_name)
+            
+            # Get parameter bounds
             bounds = self.model.get_parameter_bounds(model_id, param_name)
             
-            # Replace text input with slider
-            self.view.replace_with_slider(model_id, param_name, current_value, bounds)
-            
-            # Set up callback for slider
-            slider = self.view.get_parameter_control(model_id, param_name)
-            slider.observe(
-                lambda change, mid=model_id, pname=param_name: 
-                    self.parameter_change_callback(change, mid, pname),
-                names="value"
-            )
-        else:
-            # Replace slider with text input
-            current_value = control.value
-            self.view.replace_with_text(model_id, param_name, current_value)
-            
-            # Set up callback for text input
-            text = self.view.get_parameter_control(model_id, param_name)
-            text.observe(
-                lambda change, mid=model_id, pname=param_name: 
-                    self.parameter_change_callback(change, mid, pname),
-                names="value"
-            )
+            # If bounds checkbox is checked, replace with slider
+            if change["new"]:
+                self.view.replace_with_slider(model_id, param_name, control.value, bounds)
+            # If bounds checkbox is unchecked, replace with text input
+            else:
+                self.view.replace_with_text(model_id, param_name, control.value)
+        
+        # Update the plot after any checkbox change
+        self.update_plot(model_id)
     
     def update_plot(self, model_id):
         """Update the plot for a model."""
@@ -210,9 +215,65 @@ class AutoSASWidget:
         Returns
         -------
         List[Dict[str, Any]]
-            List of model configurations that can be passed to AutoSAS.
+            List of model configurations
         """
-        return self.model.get_model_inputs()
+        result = []
+        
+        for model_id, model in self.model.models.items():
+            # Convert our internal format to AutoSAS format
+            fit_params = {}
+            # Group parameters by their base name (for polydispersity)
+            param_groups = {}
+            
+            for name, param_info in model["params"].items():
+                # Only include parameter if AutoSAS is enabled
+                if param_info.get("autosas", False):
+                    # Check if this is a polydispersity parameter
+                    if name.endswith(('_pd', '_pd_type', '_pd_n', '_pd_nsigma')):
+                        # Get the base parameter name
+                        base_name = name.rsplit('_pd', 1)[0]
+                        if base_name not in param_groups:
+                            param_groups[base_name] = {}
+                        
+                        # Store the polydispersity parameter
+                        if name.endswith('_pd'):
+                            param_groups[base_name]['pd'] = param_info["value"]
+                        elif name.endswith('_pd_type'):
+                            param_groups[base_name]['pd_type'] = param_info["value"]
+                        elif name.endswith('_pd_n'):
+                            param_groups[base_name]['pd_n'] = param_info["value"]
+                        elif name.endswith('_pd_nsigma'):
+                            param_groups[base_name]['pd_nsigma'] = param_info["value"]
+                    else:
+                        # Regular parameter
+                        param_dict = {"value": param_info["value"]}
+                        
+                        # Only include bounds if bounds mode is enabled and bounds exist
+                        if (param_info.get("use_bounds", False) and 
+                            param_info.get("bounds") is not None):
+                            param_dict["bounds"] = param_info["bounds"]
+                        
+                        fit_params[name] = param_dict
+            
+            # Add polydispersity parameters to their base parameters
+            for base_name, pd_params in param_groups.items():
+                if base_name in fit_params:
+                    # Only add polydispersity if the base parameter is included
+                    for pd_key, pd_value in pd_params.items():
+                        fit_params[base_name][pd_key] = pd_value
+            
+            # Create the model config
+            model_config = {
+                "name": model["name"],
+                "sasmodel": model["sasmodel"],
+                "q_min": model["q_min"],
+                "q_max": model["q_max"],
+                "fit_params": fit_params
+            }
+            
+            result.append(model_config)
+        
+        return result
     
     def run(self):
         """Display the widget interface."""
@@ -220,17 +281,9 @@ class AutoSASWidget:
     
     def export_callback(self, b):
         """Handle export button click."""
-        # Get model inputs
-        model_inputs = self.get_model_inputs()
+        # Get model inputs and store in widget attribute
+        self.model_inputs = self.get_model_inputs()
         
-        # Display the model inputs as formatted JSON
-        display(JSON(model_inputs))
-        
-        # Show a message about usage with AutoSAS
-        display(widgets.HTML(
-            "<p><b>How to use:</b> Copy the above JSON data and use it as the model_inputs parameter for AutoSAS.</p>"
-            "<p>Example:<br><code>autosas = AutoSAS(..., model_inputs=model_inputs)</code></p>"
-        ))
     
     def load_model_inputs(self, model_inputs: List[Dict[str, Any]]) -> None:
         """Load model inputs from an existing configuration.
@@ -348,6 +401,9 @@ class AutoSASWidget_Model:
         # Create model kernel
         kernel = sasmodels.core.load_model(model_name)
         
+        # Get polydispersity parameters
+        pd_params = kernel.info.parameters.pd_1d if hasattr(kernel.info.parameters, 'pd_1d') else []
+        
         # Get default parameters
         params = {}
         for name, value in kernel.info.parameters.defaults.items():
@@ -365,6 +421,36 @@ class AutoSASWidget_Model:
                 "bounds": bounds,
                 "fixed": False
             }
+            
+            # Add polydispersity parameters if this parameter supports it
+            if name in pd_params:
+                # Add width parameter
+                params[f"{name}_pd"] = {
+                    "value": 0.0,
+                    "bounds": (0.0, 1.0),
+                    "fixed": False
+                }
+                
+                # Add distribution type parameter
+                params[f"{name}_pd_type"] = {
+                    "value": "gaussian",
+                    "options": ["gaussian", "rectangular", "schulz"],
+                    "fixed": False
+                }
+                
+                # Add number of points parameter
+                params[f"{name}_pd_n"] = {
+                    "value": 35,
+                    "bounds": (3, 200),
+                    "fixed": False
+                }
+                
+                # Add number of sigmas parameter
+                params[f"{name}_pd_nsigma"] = {
+                    "value": 3.0,
+                    "bounds": (1.0, 10.0),
+                    "fixed": False
+                }
         
         # Store the model
         self.models[model_id] = {
@@ -549,14 +635,45 @@ class AutoSASWidget_Model:
         for model_id, model in self.models.items():
             # Convert our internal format to AutoSAS format
             fit_params = {}
+            # Group parameters by their base name (for polydispersity)
+            param_groups = {}
+            
             for name, param_info in model["params"].items():
-                param_dict = {"value": param_info["value"]}
-                
-                # Only include bounds if the parameter is not fixed
-                if not param_info["fixed"] and param_info.get("bounds") is not None:
-                    param_dict["bounds"] = param_info["bounds"]
-                
-                fit_params[name] = param_dict
+                # Only include parameter if AutoSAS is enabled
+                if param_info.get("autosas", False):
+                    # Check if this is a polydispersity parameter
+                    if name.endswith(('_pd', '_pd_type', '_pd_n', '_pd_nsigma')):
+                        # Get the base parameter name
+                        base_name = name.rsplit('_pd', 1)[0]
+                        if base_name not in param_groups:
+                            param_groups[base_name] = {}
+                        
+                        # Store the polydispersity parameter
+                        if name.endswith('_pd'):
+                            param_groups[base_name]['pd'] = param_info["value"]
+                        elif name.endswith('_pd_type'):
+                            param_groups[base_name]['pd_type'] = param_info["value"]
+                        elif name.endswith('_pd_n'):
+                            param_groups[base_name]['pd_n'] = param_info["value"]
+                        elif name.endswith('_pd_nsigma'):
+                            param_groups[base_name]['pd_nsigma'] = param_info["value"]
+                    else:
+                        # Regular parameter
+                        param_dict = {"value": param_info["value"]}
+                        
+                        # Only include bounds if bounds mode is enabled and bounds exist
+                        if (param_info.get("use_bounds", False) and 
+                            param_info.get("bounds") is not None):
+                            param_dict["bounds"] = param_info["bounds"]
+                        
+                        fit_params[name] = param_dict
+            
+            # Add polydispersity parameters to their base parameters
+            for base_name, pd_params in param_groups.items():
+                if base_name in fit_params:
+                    # Only add polydispersity if the base parameter is included
+                    for pd_key, pd_value in pd_params.items():
+                        fit_params[base_name][pd_key] = pd_value
             
             # Create the model config
             model_config = {
@@ -596,13 +713,19 @@ class AutoSASWidget_View:
     Handles the UI elements and their layout.
     """
     
-    def __init__(self, available_models=None):
+    def __init__(
+        self,
+        available_models=None,
+        data: Optional[xr.Dataset] = None
+    ):
         """Initialize the view component.
         
         Parameters
         ----------
         available_models : List[str], optional
             List of available SAS model names
+        data : Optional[xr.Dataset]
+            Dataset containing experimental scattering data.
         """
         # Containers for UI elements
         self.tabs = widgets.Tab()
@@ -625,6 +748,9 @@ class AutoSASWidget_View:
         self.parameter_controls = {}
         self.parameter_checkboxes = {}
         
+        # Store the dataset
+        self.data = data
+        
         # Initialize the UI
         self._init_ui()
     
@@ -632,6 +758,103 @@ class AutoSASWidget_View:
         """Initialize the UI elements."""
         # Create title
         title = widgets.HTML("<h2>AutoSAS Model Builder</h2>")
+        
+        # Create data selection controls if data is provided
+        data_controls = None
+        if self.data is not None:
+            # Get data variables that could be intensity data (1D or 2D arrays)
+            data_vars = [var for var, da in self.data.data_vars.items() 
+                        if len(da.dims) in [1, 2]]
+            
+            # Create data variable dropdown
+            self.dropdown["data_var"] = widgets.Dropdown(
+                options=data_vars,
+                description="Data:",
+                value=data_vars[0] if data_vars else None,
+                layout=widgets.Layout(width='200px')
+            )
+            
+            # Create q dimension dropdown
+            self.dropdown["q_dim"] = widgets.Dropdown(
+                options=[],
+                description="Q dim:",
+                layout=widgets.Layout(width='200px')
+            )
+            
+            # Create data index slider
+            self.text_input["data_index"] = widgets.FloatSlider(
+                value=0,
+                min=0,
+                max=1,
+                step=0.1,
+                description="Index:",
+                continuous_update=True,  # Add this to update while sliding
+                readout_format='.0f',    # Show as integer
+                layout=widgets.Layout(width='500px')
+            )
+            
+            # Update controls when data variable changes
+            def update_data_controls(change):
+                da = self.data[change["new"]]
+                
+                # Update q dimension options
+                q_dims = [dim for dim in da.dims if 'q' in dim.lower()]
+                self.dropdown["q_dim"].options = q_dims
+                if q_dims:
+                    self.dropdown["q_dim"].value = q_dims[0]
+                
+                # Update index slider based on non-q dimension
+                non_q_dims = [dim for dim in da.dims if 'q' not in dim.lower()]
+                if non_q_dims:
+                    index_dim = non_q_dims[0]
+                    index_size = da.sizes[index_dim]
+                    self.text_input["data_index"].max = index_size - 1
+                    self.text_input["data_index"].step = 1
+                    self.text_input["data_index"].value = 0  # Reset to first index
+                
+                # Update plots
+                for model_id in self.figures:
+                    self.update_plot(model_id, [], [])
+            
+            # Update plot when any control changes
+            def update_data_display(*args):
+                for model_id in self.figures:
+                    self.update_plot(model_id, [], [])
+            
+            # Connect all data control observers
+            self.dropdown["data_var"].observe(update_data_controls, names="value")
+            self.dropdown["q_dim"].observe(update_data_display, names="value")
+            self.text_input["data_index"].observe(update_data_display, names="value")
+            self.button["refresh_data"] = widgets.Button(
+                            description="Refresh Data",
+                            button_style="info",
+                            icon='refresh',
+                            layout=widgets.Layout(width='120px', margin='5px 0px 0px 10px')
+                        )
+            
+            # Initialize controls with first data variable
+            if data_vars:
+                update_data_controls({"new": data_vars[0]})
+            
+            # Create data controls container
+            data_controls = widgets.VBox([
+                widgets.HTML("<b>Select Data:</b>"),
+                widgets.HBox([
+                    widgets.VBox([
+                        self.dropdown["data_var"], 
+                        self.dropdown["q_dim"],
+                        self.text_input["data_index"],
+                    ]),
+                ], layout=widgets.Layout(margin='5px 0px 15px 10px'))
+            ], layout=widgets.Layout(margin='10px 0px', padding='10px',
+                                   border='1px solid #eee'))
+
+            # Add observer for refresh button
+            def refresh_data(b):
+                for model_id in self.figures:
+                    self.update_plot(model_id, [], [])
+            
+            self.button["refresh_data"].on_click(refresh_data)
         
         # Create the model selection dropdown with search
         self.dropdown["model_type"] = widgets.Select(
@@ -666,18 +889,28 @@ class AutoSASWidget_View:
             layout=widgets.Layout(width='180px')
         )
         
+        # Create model selection container
+        model_selection = widgets.VBox([
+            widgets.HTML("<b>Select Model:</b>"),
+            self.dropdown["model_type"]
+        ], layout=widgets.Layout(margin='10px 0px', padding='10px',
+                               border='1px solid #eee'))
+        
+        # Create buttons container
+        buttons_container = widgets.VBox([
+            self.button["add_model"],
+            self.button["remove_model"],
+            self.button["export"]
+        ], layout=widgets.Layout(margin='20px 0px 0px 20px'))
+        
         # Create the top control panel with better spacing
-        top_controls = widgets.HBox([
-            widgets.VBox([
-                widgets.HTML("<b>Select Model:</b>"),
-                self.dropdown["model_type"]
-            ]),
-            widgets.VBox([
-                self.button["add_model"],
-                self.button["remove_model"],
-                self.button["export"]
-            ], layout=widgets.Layout(margin='20px 0px 0px 20px'))
-        ], layout=widgets.Layout(margin='10px 0px 20px 0px', justify_content='flex-start'))
+        controls = [model_selection, buttons_container]
+        if data_controls is not None:
+            controls.insert(0, data_controls)
+        top_controls = widgets.HBox(
+            controls,
+            layout=widgets.Layout(margin='10px 0px 20px 0px', justify_content='flex-start')
+        )
         
         # Create the tabs container for models with styling
         self.tabs = widgets.Tab(layout=widgets.Layout(width='100%', min_height='600px'))
@@ -693,17 +926,16 @@ class AutoSASWidget_View:
         """Add a new tab for a model."""
         # Create plot figure with explicit notebook initialization
         fig = go.FigureWidget(layout={
-            "height": 600,  # Increased height
-            "width": 800,   # Increased width
             "title": f"{model_name} Model",
-            "xaxis_title": "q (Å⁻¹)",
-            "yaxis_title": "Intensity (cm⁻¹)",
             "template": "plotly_white",
             "margin": {"l": 60, "r": 20, "t": 60, "b": 60},
-            "showlegend": True
+            "showlegend": False,
+            "height": 600,  # Increased height
+            "width": 800,   # Increased width
         })
-        fig.update_xaxes(type="log")
-        fig.update_yaxes(type="log")
+        fig.update_xaxes(type="log",title="q (Å⁻¹)")
+        fig.update_yaxes(type="log",title="Intensity (cm⁻¹)")
+        fig.update_layout(height=600)
         
         # Add initial trace with better styling
         fig.add_scatter(
@@ -715,6 +947,14 @@ class AutoSASWidget_View:
             hovertemplate="q: %{x:.3e}<br>I: %{y:.3e}<extra></extra>"
         )
         
+        # Add trace for experimental data if available
+        if self.data is not None:
+            fig.add_scatter(
+                x=[], y=[], mode="markers", 
+                marker=dict(color="black", size=6),
+                name="Data",
+                hovertemplate="q: %{x:.3e}<br>I: %{y:.3e}<extra></extra>")
+        
         # Store the figure
         self.figures[model_id] = fig
         
@@ -723,6 +963,36 @@ class AutoSASWidget_View:
             "<div style='background-color: #f8f9fa; padding: 10px; border-bottom: 2px solid #dee2e6;'>"
             "<h3 style='margin: 0;'>Model Parameters</h3>"
             "</div>"
+        )
+        
+        # Create filter checkboxes
+        filter_title = widgets.HTML("<b>Show Parameters:</b>")
+        polydispersity_checkbox = widgets.Checkbox(
+            value=False,
+            description="Polydispersity",
+            indent=False,
+            layout=widgets.Layout(width='150px', margin='5px 0px 0px 10px')
+        )
+        magnetic_checkbox = widgets.Checkbox(
+            value=False,
+            description="Magnetic",
+            indent=False,
+            layout=widgets.Layout(width='150px', margin='5px 0px 0px 10px')
+        )
+        
+        # Create filter box
+        filter_box = widgets.VBox([
+            filter_title,
+            widgets.HBox([polydispersity_checkbox, magnetic_checkbox],
+                layout=widgets.Layout(margin='5px 0px 15px 10px'))
+        ],
+            layout=widgets.Layout(
+                margin='10px 0px',
+                border='1px solid #eee',
+                padding='0px 0px 10px 0px',
+                min_height='30px',
+                flex='none'
+            )
         )
         
         # Create q range controls with better organization
@@ -744,12 +1014,20 @@ class AutoSASWidget_View:
         q_range_box = widgets.VBox([
             q_range_title,
             widgets.HBox([q_min_input, q_max_input], 
-                layout=widgets.Layout(margin='5px 0px 15px 10px'))
-        ])
+                layout=widgets.Layout(margin='5px 0px 15px 10px')),
+        ],
+            layout=widgets.Layout(
+                margin='10px 0px',
+                border='1px solid #eee',
+                padding='0px 0px 10px 0px',
+                min_height='60px',
+                flex='none'
+            )
+        )
         
         # Create parameters container with better scroll and styling
         params_container = widgets.VBox(
-            [params_title, q_range_box],
+            [params_title, filter_box, q_range_box],
             layout=widgets.Layout(
                 width='400px',          # Increased width
                 height='600px',         # Match plot height
@@ -769,7 +1047,8 @@ class AutoSASWidget_View:
             [fig, params_container],
             layout=widgets.Layout(
                 justify_content='flex-start',
-                padding='20px'
+                padding='20px',
+                height='600px',
             )
         )
         
@@ -787,6 +1066,43 @@ class AutoSASWidget_View:
         # Store q range controls
         self.parameter_controls[model_id]["q_min"] = q_min_input
         self.parameter_controls[model_id]["q_max"] = q_max_input
+        
+        # Store filter checkboxes
+        self.parameter_checkboxes[model_id]["polydispersity_filter"] = polydispersity_checkbox
+        self.parameter_checkboxes[model_id]["magnetic_filter"] = magnetic_checkbox
+        
+        # Add observers for filter checkboxes
+        def update_parameter_visibility(change):
+            show_polydispersity = polydispersity_checkbox.value
+            show_magnetic = magnetic_checkbox.value
+            
+            # Get all parameter groups (skip title, filter box, and q range box)
+            param_groups = list(params_container.children)[3:]
+            
+            for param_group in param_groups:
+                if isinstance(param_group, widgets.VBox):
+                    # Get parameter name from title
+                    title_html = param_group.children[0].value
+                    m = re.search(r'<b>(.*?)</b>', title_html)
+                    if m:
+                        param_name = m.group(1).strip()
+                        
+                        # Check if parameter should be visible
+                        is_pd_param = '_pd' in param_name
+                        is_magnetic_param = (param_name.startswith('up_') or 
+                                           '_M0' in param_name or 
+                                           '_mphi' in param_name or 
+                                           '_mtheta' in param_name)
+                        
+                        # Update visibility
+                        if (is_pd_param and not show_polydispersity) or \
+                           (is_magnetic_param and not show_magnetic):
+                            param_group.layout.display = 'none'
+                        else:
+                            param_group.layout.display = None
+        
+        polydispersity_checkbox.observe(update_parameter_visibility, names='value')
+        magnetic_checkbox.observe(update_parameter_visibility, names='value')
     
     def remove_model_tab(self, tab_index: int) -> None:
         """Remove a model tab.
@@ -823,7 +1139,7 @@ class AutoSASWidget_View:
         self, 
         model_id: str, 
         param_name: str, 
-        value: float,
+        value: Union[float, str],
         bounds: Optional[Tuple[float, float]] = None
     ) -> None:
         """Add a control for a parameter."""
@@ -833,45 +1149,97 @@ class AutoSASWidget_View:
         # Get the parameters container (second item in the HBox)
         params_container = self.tabs.children[tab_index].children[1]
         
-        # Create parameter section title
-        param_title = widgets.HTML(
-            f"<div style='margin-top: 10px; padding: 5px; background-color: #f8f9fa;'>"
-            f"<b>{param_name}</b>"
-            f"</div>"
-        )
+        # Check if parameter should be initially visible
+        is_pd_param = '_pd' in param_name
+        is_magnetic_param = (param_name.startswith('up_') or 
+                           '_M0' in param_name or 
+                           '_mphi' in param_name or 
+                           '_mtheta' in param_name)
         
-        # Create a text input for the parameter with better styling
-        text_input = widgets.FloatText(
-            value=value,
-            description="Value:",
-            style={'description_width': 'initial'},
-            layout=widgets.Layout(width='180px', margin='5px 0px 0px 10px')
-        )
+        show_polydispersity = self.parameter_checkboxes[model_id]["polydispersity_filter"].value
+        show_magnetic = self.parameter_checkboxes[model_id]["magnetic_filter"].value
         
-        # Create a checkbox for enabling/disabling slider mode
-        checkbox = widgets.Checkbox(
+        # Determine initial display state
+        initial_display = 'none' if ((is_pd_param and not show_polydispersity) or 
+                                   (is_magnetic_param and not show_magnetic)) else None
+        
+        # Create the appropriate input widget based on parameter type
+        if param_name.endswith('_pd_type'):
+            # Create a dropdown for distribution type
+            input_widget = widgets.Dropdown(
+                value=value,
+                options=bounds if bounds else ["gaussian", "rectangular", "schulz"],
+                description="Type:",
+                style={'description_width': 'initial'},
+                layout=widgets.Layout(width='180px', margin='5px 0px 0px 10px')
+            )
+        elif param_name.endswith('_pd_n'):
+            # Create an integer input for number of points
+            input_widget = widgets.IntText(
+                value=int(value),
+                description="Npts:",
+                style={'description_width': 'initial'},
+                layout=widgets.Layout(width='180px', margin='5px 0px 0px 10px')
+            )
+        elif param_name.endswith('_pd_nsigma'):
+            # Create a float input for number of sigmas
+            input_widget = widgets.FloatText(
+                value=float(value),
+                description="Nsigmas:",
+                style={'description_width': 'initial'},
+                layout=widgets.Layout(width='180px', margin='5px 0px 0px 10px')
+            )
+        elif param_name.endswith('_pd'):
+            # Create a float input for polydispersity width
+            input_widget = widgets.FloatText(
+                value=float(value),
+                description="Width:",
+                style={'description_width': 'initial'},
+                layout=widgets.Layout(width='180px', margin='5px 0px 0px 10px')
+            )
+        else:
+            # Create a standard float input for regular parameters
+            input_widget = widgets.FloatText(
+                value=float(value),
+                description="Value:",
+                style={'description_width': 'initial'},
+                layout=widgets.Layout(width='180px', margin='5px 0px 0px 10px')
+            )
+        
+        # Create a checkbox for AutoSAS (include in model_inputs)
+        autosas_checkbox = widgets.Checkbox(
             value=False,
-            description="Use Slider",
+            description="AutoSAS",
             indent=False,
-            layout=widgets.Layout(width='100px', margin='5px 0px 0px 10px')
+            layout=widgets.Layout(width='90px', margin='5px 0px 0px 10px')
         )
         
-        # Create value label to show parameter value
-        value_label = widgets.Label(
-            value=f"Current: {value:.4g}",
-            layout=widgets.Layout(width='120px', margin='5px 0px 0px 10px')
+        # Create a checkbox for bounds/slider
+        bounds_checkbox = widgets.Checkbox(
+            value=False,
+            description="Bounds",
+            indent=False,
+            layout=widgets.Layout(width='80px', margin='5px 0px 0px 10px')
         )
+        
+        
+        # Create a row for the parameter
+        param_row = widgets.HBox([input_widget, autosas_checkbox, bounds_checkbox])
+        
+        # Create a title for the parameter
+        param_title = widgets.HTML(f"<b>{param_name}</b>")
         
         # Create a parameter group with fixed minimum height to prevent shrinkage
         param_group = widgets.VBox([
             param_title,
-            widgets.HBox([text_input, checkbox, value_label])
+            param_row
         ], layout=widgets.Layout(
             margin='10px 0px',
             border='1px solid #eee',
             padding='0px 0px 10px 0px',
             min_height='60px',
-            flex='none'
+            flex='none',
+            display=initial_display
         ))
         
         # Add to parameters container
@@ -879,9 +1247,12 @@ class AutoSASWidget_View:
         current_params.append(param_group)
         params_container.children = tuple(current_params)
         
-        # Store references to controls
-        self.parameter_controls[model_id][param_name] = text_input
-        self.parameter_checkboxes[model_id][param_name] = checkbox
+        # Store references to the controls
+        self.parameter_controls[model_id][param_name] = input_widget
+        self.parameter_checkboxes[model_id][param_name] = {
+            "autosas": autosas_checkbox,
+            "bounds": bounds_checkbox
+        }
     
     def get_parameter_control(self, model_id: str, param_name: str) -> widgets.Widget:
         """Get the control for a parameter.
@@ -903,151 +1274,161 @@ class AutoSASWidget_View:
         return None
     
     def get_parameter_checkbox(self, model_id: str, param_name: str) -> widgets.Checkbox:
-        """Get the checkbox for a parameter.
-        
-        Parameters
-        ----------
-        model_id : str
-            ID of the model
-        param_name : str
-            Name of the parameter
-            
-        Returns
-        -------
-        widgets.Checkbox
-            The checkbox widget
-        """
+        """Get the checkbox for a parameter."""
         if model_id in self.parameter_checkboxes and param_name in self.parameter_checkboxes[model_id]:
-            return self.parameter_checkboxes[model_id][param_name]
+            # Default to returning the AutoSAS checkbox
+            return self.parameter_checkboxes[model_id][param_name]["autosas"]
         return None
     
-    def replace_with_slider(
-        self, 
-        model_id: str, 
-        param_name: str, 
-        value: float, 
-        bounds: Tuple[float, float]
-    ) -> None:
-        """Replace a text input with a slider.
-        
-        Parameters
-        ----------
-        model_id : str
-            ID of the model
-        param_name : str
-            Name of the parameter
-        value : float
-            Current value of the parameter
-        bounds : Tuple[float, float]
-            Bounds for the slider (min, max)
-        """
-        # Get the tab index
+    def get_bounds_checkbox(self, model_id: str, param_name: str) -> widgets.Checkbox:
+        """Get the bounds checkbox for a parameter."""
+        if model_id in self.parameter_checkboxes and param_name in self.parameter_checkboxes[model_id]:
+            return self.parameter_checkboxes[model_id][param_name]["bounds"]
+        return None
+    
+    def replace_with_slider(self, model_id: str, param_name: str, value: float, bounds: Tuple[float, float]) -> None:
+        # Get the tab index and parameters container
         tab_index = self.tab_ids.index(model_id)
-        
-        # Get the parameters container (second item in the HBox)
         params_container = self.tabs.children[tab_index].children[1]
-        
-        # Find the current row for this parameter
-        for i, child in enumerate(params_container.children):
-            if isinstance(child, widgets.HBox) and child.children[0].description == param_name:
-                # Create a slider
-                slider = widgets.FloatLogSlider(
-                    value=value,
-                    base=10,
-                    min=np.log10(bounds[0]) if bounds[0] > 0 else -3,
-                    max=np.log10(bounds[1]) if bounds[1] > 0 else 2,
-                    description=param_name,
-                    style={'description_width': 'initial'},
-                    continuous_update=True,
-                    layout=widgets.Layout(width='180px')
-                ) if value > 0 and bounds[0] > 0 else widgets.FloatSlider(
-                    value=value,
-                    min=bounds[0],
-                    max=bounds[1],
-                    step=(bounds[1]-bounds[0])/100,
-                    description=param_name,
-                    style={'description_width': 'initial'},
-                    continuous_update=True,
-                    layout=widgets.Layout(width='180px')
-                )
-                
-                # Get the existing checkbox
-                checkbox = child.children[1]
-                
-                # Get or create the value label
-                value_label = child.children[2] if len(child.children) > 2 else widgets.Label()
-                value_label.value = f"{value:.4g}"
-                
-                # Create new row
-                new_row = widgets.HBox([slider, checkbox, value_label])
-                
-                # Update the parameters container
-                current_params = list(params_container.children)
-                current_params[i] = new_row
-                params_container.children = tuple(current_params)
-                
-                # Update reference
-                self.parameter_controls[model_id][param_name] = slider
-                
-                # Add observer to update label when slider changes
-                def update_label(change):
-                    value_label.value = f"{change['new']:.4g}"
-                
-                slider.observe(update_label, names='value')
-                break
+
+        # Iterate over parameter groups and extract parameter name from HTML title
+        for i, param_group in enumerate(params_container.children):
+            if isinstance(param_group, widgets.VBox):
+                title_html = param_group.children[0].value
+                m = re.search(r'<b>(.*?)</b>', title_html)
+                if m and param_name.lower() in m.group(1).strip().lower():
+                    # Ensure that the parameter group has only the title and controls row
+                    if len(param_group.children) > 2:
+                        param_group.children = param_group.children[:2]
+                    controls_row = param_group.children[1]
+                    if len(param_group.children) == 2:
+                        if value > 0 and bounds[0] > 0:
+                            slider_widget = widgets.FloatLogSlider(
+                                value=value,
+                                base=10,
+                                min=np.log10(bounds[0]),
+                                max=np.log10(bounds[1]),
+                                description='',
+                                style={'description_width': 'initial'},
+                                continuous_update=True,
+                                layout=widgets.Layout(width='200px')
+                            )
+                        else:
+                            slider_widget = widgets.FloatSlider(
+                                value=value,
+                                min=bounds[0],
+                                max=bounds[1],
+                                step=(bounds[1]-bounds[0])/100,
+                                description='',
+                                style={'description_width': 'initial'},
+                                continuous_update=True,
+                                layout=widgets.Layout(width='200px')
+                            )
+
+                        slider_min = widgets.FloatText(
+                            value=bounds[0],
+                            description='Min:',
+                            layout=widgets.Layout(width='200px')
+                        )
+                        slider_max = widgets.FloatText(
+                            value=bounds[1],
+                            description='Max:',
+                            layout=widgets.Layout(width='200px')
+                        )
+
+                        slider_row = widgets.VBox([
+                            slider_widget, slider_min, slider_max
+                        ], layout=widgets.Layout(margin='5px 0px'))
+
+                        new_children = list(param_group.children) + [slider_row]
+                        param_group.children = tuple(new_children)
+
+                        self.parameter_controls[model_id][param_name + '_slider'] = slider_widget
+
+                        def update_label(change):
+                            controls_row.children[0].value = change['new']
+                        slider_widget.observe(update_label, names='value')
+
+                        def update_slider_min(change):
+                            if slider_widget.__class__.__name__ == 'FloatSlider':
+                                slider_widget.min = change['new']
+                            else:
+                                slider_widget.min = np.log10(change['new']) if change['new'] > 0 else -3
+                        slider_min.observe(update_slider_min, names='value')
+
+                        def update_slider_max(change):
+                            if slider_widget.__class__.__name__ == 'FloatSlider':
+                                slider_widget.max = change['new']
+                            else:
+                                slider_widget.max = np.log10(change['new']) if change['new'] > 0 else 2
+                        slider_max.observe(update_slider_max, names='value')
+                    break
     
     def replace_with_text(self, model_id: str, param_name: str, value: float) -> None:
-        """Replace a slider with a text input.
-        
-        Parameters
-        ----------
-        model_id : str
-            ID of the model
-        param_name : str
-            Name of the parameter
-        value : float
-            Current value of the parameter
-        """
-        # Get the tab index
         tab_index = self.tab_ids.index(model_id)
-        
-        # Get the parameters container (second item in the HBox)
         params_container = self.tabs.children[tab_index].children[1]
-        
-        # Find the current row for this parameter
-        for i, child in enumerate(params_container.children):
-            if isinstance(child, widgets.HBox) and child.children[0].description == param_name:
-                # Create a text input
-                text_input = widgets.FloatText(
-                    value=value,
-                    description=param_name,
-                    style={'description_width': 'initial'}
-                )
-                
-                # Get the existing checkbox
-                checkbox = child.children[1]
-                
-                # Get or create the value label
-                value_label = child.children[2] if len(child.children) > 2 else widgets.Label()
-                value_label.value = f"{value:.4g}"
-                
-                # Create new row
-                new_row = widgets.HBox([text_input, checkbox, value_label])
-                
-                # Update the parameters container
-                current_params = list(params_container.children)
-                current_params[i] = new_row
-                params_container.children = tuple(current_params)
-                
-                # Update reference
-                self.parameter_controls[model_id][param_name] = text_input
-                
-                # Add observer to update label when text input changes
-                def update_label(change):
-                    value_label.value = f"{change['new']:.4g}"
-                
-                text_input.observe(update_label, names='value')
-                break
+
+        for i, param_group in enumerate(params_container.children):
+            if isinstance(param_group, widgets.VBox):
+                title_html = param_group.children[0].value
+                m = re.search(r'<b>(.*?)</b>', title_html)
+                if m and param_name.lower() in m.group(1).strip().lower():
+                    # Get the current checkboxes to preserve their state
+                    current_controls = param_group.children[1]
+                    autosas_checkbox = None
+                    bounds_checkbox = None
+                    
+                    # Find the checkboxes in the current controls
+                    for child in current_controls.children:
+                        if isinstance(child, widgets.Checkbox):
+                            if child.description == "AutoSAS":
+                                autosas_checkbox = child
+                            elif child.description == "Bounds":
+                                bounds_checkbox = child
+                    
+                    # If we couldn't find the checkboxes, create new ones
+                    if not autosas_checkbox:
+                        autosas_checkbox = widgets.Checkbox(
+                            value=False,
+                            description="AutoSAS",
+                            indent=False,
+                            layout=widgets.Layout(width='90px', margin='5px 0px 0px 10px')
+                        )
+                    
+                    if not bounds_checkbox:
+                        bounds_checkbox = widgets.Checkbox(
+                            value=False,
+                            description="Bounds",
+                            indent=False,
+                            layout=widgets.Layout(width='80px', margin='5px 0px 0px 10px')
+                        )
+                    
+                    # Create a new text input
+                    text_input = widgets.FloatText(
+                        value=value,
+                        description="Value:",
+                        style={'description_width': 'initial'},
+                        layout=widgets.Layout(width='180px', margin='5px 0px 0px 10px')
+                    )
+                    
+                    # Create a new controls row with all elements
+                    new_controls_row = widgets.HBox([text_input, autosas_checkbox, bounds_checkbox])
+                    
+                    # Remove any slider row if it exists
+                    param_group.children = (param_group.children[0], new_controls_row)
+                    
+                    # Update the control references
+                    self.parameter_controls[model_id][param_name] = text_input
+                    self.parameter_checkboxes[model_id][param_name] = {
+                        "autosas": autosas_checkbox,
+                        "bounds": bounds_checkbox
+                    }
+                    
+                    # Add observer for the text input
+                    def update_label(change):
+                        value_label.value = f"{change['new']:.4g}"
+                    text_input.observe(update_label, names='value')
+                    break
     
     def update_plot(self, model_id: str, q: np.ndarray, intensity: np.ndarray) -> None:
         """Update the plot for a model.
@@ -1067,26 +1448,37 @@ class AutoSASWidget_View:
                 if len(q) > 0 and len(intensity) > 0:  # Only update if we have data
                     fig.data[0].x = q
                     fig.data[0].y = intensity
-                    
-                    # Ensure axes stay in log mode
-                    fig.layout.xaxis.type = 'log'
-                    fig.layout.yaxis.type = 'log'
-                    
-                    # # Update ranges if we have valid data
-                    # if np.any(q > 0) and np.any(intensity > 0):
-                    #     x_min = np.min(q[q > 0])
-                    #     x_max = np.max(q)
-                    #     y_min = np.min(intensity[intensity > 0])
-                    #     y_max = np.max(intensity)
-                    #     
-                    #     ## Add some padding in log space
-                    #     #fig.layout.xaxis.range = [np.log10(x_min) - 0.1, np.log10(x_max) + 0.1]
-                    #     #fig.layout.yaxis.range = [np.log10(y_min) - 0.1, np.log10(y_max) + 0.1]
                 
-                # Ensure plot maintains log-log scale and desired size
-                # fig.layout.xaxis.type = 'log'
-                # fig.layout.yaxis.type = 'log'
-                fig.layout.height = 600  # match the model parameters box height
+                # Update experimental data if available
+                if self.data is not None and len(fig.data) > 1:
+                    data_var = self.dropdown["data_var"].value
+                    q_dim = self.dropdown["q_dim"].value
+                    if data_var and q_dim:
+                        da = self.data[data_var]
+                        
+                        # Get q values from the selected q dimension
+                        q_data = da[q_dim].values if q_dim in da.dims else None
+                        
+                        # Get intensity data
+                        if len(da.dims) == 1:
+                            # 1D data
+                            i_data = da.values
+                        else:
+                            # 2D data with index
+                            non_q_dims = [dim for dim in da.dims if dim != q_dim]
+                            if non_q_dims:
+                                index_dim = non_q_dims[0]
+                                index = int(self.text_input["data_index"].value)
+                                i_data = da.isel({index_dim: index}).values
+                            else:
+                                i_data = None
+
+                        if q_data is not None and i_data is not None:
+                            fig.data[1].x = q_data
+                            fig.data[1].y = i_data
+                        else:
+                            fig.data[1].x = []
+                            fig.data[1].y = []
     
     def clear_tabs(self) -> None:
         """Clear all tabs."""
