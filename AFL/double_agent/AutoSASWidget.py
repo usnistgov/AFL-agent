@@ -287,6 +287,19 @@ class AutoSASWidget:
         # Get model inputs and store in widget attribute
         self.model_inputs = self.get_model_inputs()
         
+        # Show notification
+        self.view.notification.value = 'model inputs written to widget.model_inputs'
+        self.view.notification.layout.display = 'block'
+        
+        # Schedule notification to disappear after 5 seconds
+        import asyncio
+        from IPython.display import display
+        
+        async def hide_notification():
+            await asyncio.sleep(5)
+            self.view.notification.layout.display = 'none'
+        
+        asyncio.create_task(hide_notification())
     
     def load_model_inputs(self, model_inputs: List[Dict[str, Any]]) -> None:
         """Load model inputs from an existing configuration.
@@ -772,7 +785,6 @@ class AutoSASWidget_View:
             # Get data variables that could be intensity data (1D or 2D arrays)
             data_vars = [var for var, da in self.data.data_vars.items() 
                         if len(da.dims) in [1, 2]]
-            
             # Create data variable dropdown
             self.dropdown["data_var"] = widgets.Dropdown(
                 options=data_vars,
@@ -896,6 +908,13 @@ class AutoSASWidget_View:
             layout=widgets.Layout(width='180px')
         )
         
+        # Create notification widget (initially hidden)
+        self.notification = widgets.HTML(
+            value='',
+            layout=widgets.Layout(display='none', margin='5px 0px 0px 0px', 
+                                color='green', font_style='italic')
+        )
+        
         # Create model selection container
         model_selection = widgets.VBox([
             widgets.HTML("<b>Select Model:</b>"),
@@ -907,7 +926,10 @@ class AutoSASWidget_View:
         buttons_container = widgets.VBox([
             self.button["add_model"],
             self.button["remove_model"],
-            self.button["export"]
+            widgets.VBox([
+                self.button["export"],
+                self.notification
+            ])
         ], layout=widgets.Layout(margin='20px 0px 0px 20px'))
         
         # Create the top control panel with better spacing
@@ -1317,10 +1339,10 @@ class AutoSASWidget_View:
                                 base=10,
                                 min=np.log10(bounds[0]),
                                 max=np.log10(bounds[1]),
-                                description='',
-                                style={'description_width': 'initial'},
+                                description='Value',
+                                #style={'description_width': 'initial'},
                                 continuous_update=True,
-                                layout=widgets.Layout(width='200px')
+                                layout=widgets.Layout(width='300px')
                             )
                         else:
                             slider_widget = widgets.FloatSlider(
@@ -1328,10 +1350,10 @@ class AutoSASWidget_View:
                                 min=bounds[0],
                                 max=bounds[1],
                                 step=(bounds[1]-bounds[0])/100,
-                                description='',
-                                style={'description_width': 'initial'},
+                                description='Value',
+                                #style={'description_width': 'initial'},
                                 continuous_update=True,
-                                layout=widgets.Layout(width='200px')
+                                layout=widgets.Layout(width='300px')
                             )
 
                         slider_min = widgets.FloatText(
