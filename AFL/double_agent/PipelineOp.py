@@ -2,6 +2,9 @@ import copy
 import warnings
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, List
+import inspect
+import json
+import importlib
 
 import matplotlib.pyplot as plt
 import xarray as xr
@@ -39,19 +42,18 @@ class PipelineOp(ABC):
                 'No input/output information set for PipelineOp...this is likely an error',
                 stacklevel=2
             )
-
-        if name is None:
-            self.name = 'PipelineOp'
-        else:
-            self.name = name
-
+        
+        self.name = name or 'PipelineOp'
         self.input_variable = input_variable
         self.output_variable = output_variable
         self.input_prefix = input_prefix
         self.output_prefix = output_prefix
-
         self.output: Dict[str, xr.DataArray] = {}
 
+        # variables to exclude when constructing attrs dict for xarray
+        self._banned_from_attrs = ['output', '_banned_from_attrs']
+
+        ## PipelineContext
         try:
             # try to add this object to current pipeline on context stack
             PipelineContext.get_context().append(self)
@@ -59,8 +61,98 @@ class PipelineOp(ABC):
             # silently continue for those working outside a context manager
             pass
 
-        # variables to exclude when constructing attrs dict for xarray
-        self._banned_from_attrs = ['output', '_banned_from_attrs']
+        ## Gathering Arguments of Most-derived Child Class
+
+        # Retrieve the full stack.
+        stack = inspect.stack()
+        valid_frames = []
+        # Iterate through all frames in the stack.
+        for frame_info in stack:
+            # Look for __init__ functions where 'self' is our instance.
+            if frame_info.function == '__init__' and frame_info.frame.f_locals.get('self') is self:
+                valid_frames.append(frame_info)
+        if valid_frames:
+            # Choose the last __init__ call in the inheritance chain.
+            final_frame = valid_frames[-1].frame
+            args_info = inspect.getargvalues(final_frame)
+        else:
+            # Fallback: use the immediate caller if nothing was found.
+            final_frame = inspect.currentframe().f_back
+            args_info = inspect.getargvalues(final_frame)
+        
+        # Build _stored_args by checking JSON serializability of each constructor argument.
+        stored_args = {}
+        for arg in args_info.args:
+            if arg != "self":
+                value = args_info.locals[arg]
+                try:
+                    json.dumps(value)
+                except (TypeError, OverflowError) as e:
+                    raise TypeError(
+                        f"Constructor argument '{arg}' with value {value!r} of type {type(value).__name__} "
+                        f"is not JSON serializable: {e}"
+                    )
+                stored_args[arg] = value
+        self._stored_args = stored_args
+     
+    def __getattribute__(self, name):
+        # Avoid recursion when accessing _stored_args.
+        if name == '_stored_args':
+            return object.__getattribute__(self, name)
+        
+        stored_args = object.__getattribute__(self, "_stored_args")
+        if name in stored_args:
+            return stored_args[name]
+        return object.__getattribute__(self, name)
+    
+    def __setattr__(self, name, value):
+        if name == "_stored_args":
+            return object.__setattr__(self, name, value)
+        
+        try:
+            stored_args = object.__getattribute__(self, "_stored_args")
+        except AttributeError:
+            stored_args = None
+        
+        if stored_args is not None and name in stored_args:
+            try:
+                json.dumps(value)
+            except (TypeError, OverflowError) as e:
+                raise TypeError(
+                    f"New value for attribute '{name}' with value {value!r} of type {type(value).__name__} "
+                    f"is not JSON serializable: {e}"
+                )
+            stored_args[name] = value
+        else:
+            object.__setattr__(self, name, value)
+    
+    def to_json(self):
+        """
+        Serializes the fully qualified class name and the constructor arguments
+        stored in _stored_args into a JSON string.
+        """
+        cls = self.__class__
+        module = cls.__module__
+        qualname = cls.__qualname__
+        data = {
+            "class": f"{module}.{qualname}",
+            "args": self._stored_args
+        }
+        return data
+
+    @classmethod
+    def from_json(cls, json_data):
+        """
+        Deserializes the JSON string back to an object.
+        Dynamically imports the module, gets the class, and instantiates it
+        using the stored constructor arguments.
+        """
+        fqcn = json_data["class"]  # e.g. "module.ClassName"
+        args = json_data["args"]
+        mod_name, class_name = fqcn.rsplit(".", 1)
+        module = importlib.import_module(mod_name)
+        klass = getattr(module, class_name)
+        return klass(**args)
 
     @abstractmethod
     def calculate(self, dataset: xr.Dataset) -> Self:
