@@ -181,6 +181,8 @@ class Pipeline(PipelineContext):
         with open(filename,'w') as f:
             json.dump(pipeline_dict,f,indent=1)
 
+        print(f'Pipeline successfully written to {filename}.')
+
     @staticmethod
     def read_json(filename: str):
         """Read pipeline from json file on disk
