@@ -62,17 +62,12 @@ class Pipeline(PipelineContext):
         Edge labels for the pipeline graph visualization
     """
 
-    def __init__(self, name: Optional[str] = None, ops: Optional[List] = None) -> None:
+    def __init__(self, name: Optional[str] = None, ops: Optional[List] = None, description: Optional[str] = None) -> None:
         self.result = None
-        if ops is None:
-            self.ops = []
-        else:
-            self.ops = ops
+        self.ops = ops or []
+        self.description = str(description)
+        self.name = name or "Pipeline"
 
-        if name is None:
-            self.name = "Pipeline"
-        else:
-            self.name = name
 
         # placeholder for networkx graph
         self.graph = None
@@ -160,26 +155,31 @@ class Pipeline(PipelineContext):
     def copy(self) -> Self:
         return copy.deepcopy(self)
     
-    def write_json(self,filename:str,overwrite=False): 
+    def write_json(self, filename: str, overwrite=False, description: Optional[str] = None): 
         """Write pipeline to disk as a JSON
 
         Parameters
         ----------
         filename: str
             Filename or filepath to be written
+        overwrite: bool, default=False
+            Whether to overwrite an existing file
+        description: str, optional
+            A descriptive text about the pipeline's purpose and functionality
         """
 
         if not overwrite and pathlib.Path(filename).exists():
             raise FileExistsError()
 
         pipeline_dict = {
-            'name':self.name,
+            'name': self.name,
             'date': datetime.datetime.now().strftime('%m/%d/%y %H:%M:%S-%f'),
-            'ops':[op.to_json() for op in self]
+            'description': str(description) if description is not None else self.description,
+            'ops': [op.to_json() for op in self]
         }
 
-        with open(filename,'w') as f:
-            json.dump(pipeline_dict,f,indent=1)
+        with open(filename, 'w') as f:
+            json.dump(pipeline_dict, f, indent=1)
 
         print(f'Pipeline successfully written to {filename}.')
 
@@ -199,7 +199,8 @@ class Pipeline(PipelineContext):
 
         pipeline = Pipeline(
             name=pipeline_dict['name'],
-            ops=[PipelineOp.from_json(op) for op in pipeline_dict['ops']]
+            ops=[PipelineOp.from_json(op) for op in pipeline_dict['ops']],
+            description=pipeline_dict['description']
         )
 
         return pipeline
