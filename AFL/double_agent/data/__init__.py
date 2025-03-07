@@ -6,13 +6,12 @@ This module provides access to example datasets that can be used with AFL.double
 
 import os
 import pathlib
-import importlib.resources
 import warnings
 
 import xarray as xr
 
 # Get the path to the data directory
-def get_data_dir():
+def get_data_dir() -> pathlib.Path:
     """
     Get the path to the data directory.
     
@@ -23,14 +22,14 @@ def get_data_dir():
     """
     # The data directory is now located in AFL/double_agent/data
     module_dir = pathlib.Path(__file__).parent
-    data_dir = module_dir#.parent / "data"
+    data_dir = module_dir
     
     if not data_dir.exists():
         warnings.warn(f"Data directory not found at {data_dir}")
     
     return data_dir
 
-def list_datasets():
+def list_datasets() -> list[str]:
     """
     List all available datasets.
     
@@ -46,7 +45,7 @@ def list_datasets():
     
     return [f.stem for f in data_dir.glob("*.nc")]
 
-def load_dataset(name):
+def load_dataset(name: str) -> xr.Dataset:
     """
     Load a dataset by name.
     
@@ -78,7 +77,7 @@ def load_dataset(name):
     return xr.open_dataset(file_path)
 
 # Define specific dataset loaders
-def example_dataset1():
+def example_dataset1() -> xr.Dataset:
     """
     Load the example dataset.
     

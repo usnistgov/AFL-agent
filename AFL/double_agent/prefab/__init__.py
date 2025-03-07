@@ -11,8 +11,6 @@ import warnings
 import json
 from typing import List, Dict, Optional, Union
 
-import xarray as xr
-
 from AFL.double_agent.Pipeline import Pipeline
 
 # Get the path to the prefab directory
@@ -133,7 +131,7 @@ def load_prefab(name: str) -> Pipeline:
     
     return Pipeline.read_json(str(file_path))
 
-def combine_prefabs(prefab_names: List[str], new_name: Optional[str] = None) -> Pipeline:
+def combine_prefabs(prefab_names: List[str], new_name: str | None = None) -> Pipeline:
     """
     Combine multiple prefabricated pipelines into a single pipeline.
     
@@ -141,7 +139,7 @@ def combine_prefabs(prefab_names: List[str], new_name: Optional[str] = None) -> 
     ----------
     prefab_names : List[str]
         List of prefabricated pipeline names to combine.
-    new_name : Optional[str], default=None
+    new_name : str | None, default=None
         Name for the combined pipeline. If None, a name will be generated from the component pipelines.
         
     Returns
@@ -179,7 +177,7 @@ def combine_prefabs(prefab_names: List[str], new_name: Optional[str] = None) -> 
     
     return combined_pipeline
 
-def save_prefab(pipeline: Pipeline, name: Optional[str] = None, overwrite: bool = False, description: Optional[str] = None) -> str:
+def save_prefab(pipeline: Pipeline, name: str | None = None, overwrite: bool = False, description: str | None = None) -> str:
     """
     Save a pipeline as a prefabricated pipeline.
     
@@ -187,11 +185,11 @@ def save_prefab(pipeline: Pipeline, name: Optional[str] = None, overwrite: bool 
     ----------
     pipeline : Pipeline
         The pipeline to save.
-    name : Optional[str], default=None
+    name : str | None, default=None
         Name to save the pipeline as. If None, uses the pipeline's name.
     overwrite : bool, default=False
         Whether to overwrite an existing prefabricated pipeline with the same name.
-    description : Optional[str], default=None
+    description : str | None, default=None
         A descriptive text about the pipeline's purpose and functionality.
         If None and pipeline has a description attribute, that will be used.
         

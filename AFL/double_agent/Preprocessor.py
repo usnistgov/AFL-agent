@@ -324,14 +324,14 @@ class Standardize(Preprocessor):
         The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
     dim : str
         The dimension used for calculating the data minimum
-    component_dim : Optional[str], default="component"
+    component_dim : str | None, default="component"
         The dimension for component-wise operations
-    scale_variable : Optional[str], default=None
+    scale_variable : str | None, default=None
         If specified, the min/max of this data variable in the supplied `xarray.Dataset` will be used to scale the
         data rather than min/max of the `input_variable` or the supplied `min_val` or `max_val`
-    min_val : Optional[Number], default=None
+    min_val : Number | None, default=None
         Value used to scale the data minimum
-    max_val : Optional[Number], default=None
+    max_val : Number | None, default=None
         Value used to scale the data maximum
     name : str, default="Standardize"
         The name to use when added to a Pipeline
@@ -342,10 +342,10 @@ class Standardize(Preprocessor):
         input_variable: str,
         output_variable: str,
         dim: str,
-        component_dim: Optional[str] = "component",
-        scale_variable: Optional[str] = None,
-        min_val: Optional[Number] = None,
-        max_val: Optional[Number] = None,
+        component_dim: str | None = "component",
+        scale_variable: str | None = None,
+        min_val: Number | None = None,
+        max_val: Number | None = None,
         name: str = "Standardize",
     ) -> None:
         super().__init__(
@@ -401,14 +401,14 @@ class Destandardize(Preprocessor):
         The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
     dim : str
         The dimension used for calculating the data minimum
-    component_dim : Optional[str], default="component"
+    component_dim : str | None, default="component"
         The dimension for component-wise operations
-    scale_variable : Optional[str], default=None
+    scale_variable : str | None, default=None
         If specified, the min/max of this data variable in the supplied `xarray.Dataset` will be used to scale the
         data rather than min/max of the `input_variable` or the supplied `min_val` or `max_val`
-    min_val : Optional[Number], default=None
+    min_val : Number | None, default=None
         Value used to scale the data minimum
-    max_val : Optional[Number], default=None
+    max_val : Number | None, default=None
         Value used to scale the data maximum
     name : str, default="Destandardize"
         The name to use when added to a Pipeline
@@ -419,10 +419,10 @@ class Destandardize(Preprocessor):
         input_variable: str,
         output_variable: str,
         dim: str,
-        component_dim: Optional[str] = "component",
-        scale_variable: Optional[str] = None,
-        min_val: Optional[Number] = None,
-        max_val: Optional[Number] = None,
+        component_dim: str | None = "component",
+        scale_variable: str | None = None,
+        min_val: Number | None = None,
+        max_val: Number | None = None,
         name: str = "Destandardize",
     ) -> None:
 

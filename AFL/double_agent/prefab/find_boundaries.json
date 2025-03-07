@@ -1,0 +1,129 @@
+{
+ "name": "find_boundaries",
+ "date": "03/06/25 20:30:14-992001",
+ "description": "A simlarity-clustering-classification pipeline for finding boundaries in measurement data",
+ "ops": [
+  {
+   "class": "AFL.double_agent.Preprocessor.Standardize",
+   "args": {
+    "input_variable": "composition",
+    "output_variable": "normalized_composition",
+    "dim": "sample",
+    "component_dim": "component",
+    "scale_variable": null,
+    "min_val": {
+     "A": 0.0,
+     "B": 0.0
+    },
+    "max_val": {
+     "A": 10.0,
+     "B": 25.0
+    },
+    "name": "Standardize"
+   }
+  },
+  {
+   "class": "AFL.double_agent.Preprocessor.Standardize",
+   "args": {
+    "input_variable": "composition_grid",
+    "output_variable": "normalized_composition_grid",
+    "dim": "grid",
+    "component_dim": "component",
+    "scale_variable": null,
+    "min_val": {
+     "A": 0.0,
+     "B": 0.0
+    },
+    "max_val": {
+     "A": 10.0,
+     "B": 25.0
+    },
+    "name": "Standardize"
+   }
+  },
+  {
+   "class": "AFL.double_agent.Preprocessor.SavgolFilter",
+   "args": {
+    "input_variable": "measurement",
+    "output_variable": "derivative",
+    "dim": "x",
+    "xlo": null,
+    "xhi": null,
+    "xlo_isel": null,
+    "xhi_isel": null,
+    "pedestal": null,
+    "npts": 250,
+    "derivative": 1,
+    "window_length": 31,
+    "polyorder": 2,
+    "apply_log_scale": true,
+    "name": "SavgolFilter"
+   }
+  },
+  {
+   "class": "AFL.double_agent.PairMetric.Similarity",
+   "args": {
+    "input_variable": "derivative",
+    "output_variable": "similarity",
+    "sample_dim": "sample",
+    "params": {
+     "metric": "laplacian",
+     "gamma": 0.0001
+    },
+    "constrain_same": [],
+    "constrain_different": [],
+    "name": "SimilarityMetric"
+   }
+  },
+  {
+   "class": "AFL.double_agent.Labeler.SpectralClustering",
+   "args": {
+    "input_variable": "similarity",
+    "output_variable": "labels",
+    "dim": "sample",
+    "params": {
+     "n_phases": 2
+    },
+    "name": "SpectralClustering",
+    "use_silhouette": false
+   }
+  },
+  {
+   "class": "AFL.double_agent.Extrapolator.GaussianProcessClassifier",
+   "args": {
+    "feature_input_variable": "normalized_composition",
+    "predictor_input_variable": "labels",
+    "output_prefix": "extrap",
+    "grid_variable": "normalized_composition_grid",
+    "grid_dim": "grid",
+    "sample_dim": "sample",
+    "kernel": "Matern",
+    "kernel_kwargs": {
+     "length_scale": 1.0,
+     "nu": 1.5
+    },
+    "optimizer": "fmin_l_bfgs_b",
+    "name": "GaussianProcessClassifier"
+   }
+  },
+  {
+   "class": "AFL.double_agent.AcquisitionFunction.MaxValueAF",
+   "args": {
+    "input_variables": [
+     "extrap_entropy"
+    ],
+    "grid_variable": "composition_grid",
+    "grid_dim": "grid",
+    "combine_coeffs": null,
+    "output_prefix": null,
+    "output_variable": "next_sample",
+    "decision_rtol": 0.05,
+    "excluded_comps_variables": null,
+    "excluded_comps_dim": null,
+    "exclusion_radius": 0.001,
+    "count": 1,
+    "name": "MaxValueAF"
+   }
+  }
+ ]
+}

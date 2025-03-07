@@ -1,0 +1,123 @@
+{
+ "name": "preprocess",
+ "date": "03/06/25 20:55:30-351053",
+ "description": "A pipeline that generates a Cartesian grid, normalizes data, and calculates derivatives using Savgol filter",
+ "ops": [
+  {
+   "class": "AFL.double_agent.Generator.CartesianGrid",
+   "args": {
+    "output_variable": "composition_grid",
+    "grid_spec": {
+     "A": {
+      "min": 0.0,
+      "max": 10.0,
+      "steps": 50
+     },
+     "B": {
+      "min": 0.0,
+      "max": 25.0,
+      "steps": 50
+     }
+    },
+    "sample_dim": "grid",
+    "component_dim": "component",
+    "name": "CartesianGridGenerator"
+   }
+  },
+  {
+   "class": "AFL.double_agent.Preprocessor.Standardize",
+   "args": {
+    "input_variable": "composition_grid",
+    "output_variable": "normalized_composition_grid",
+    "dim": "grid",
+    "component_dim": "component",
+    "scale_variable": null,
+    "min_val": {
+     "A": 0.0,
+     "B": 0.0
+    },
+    "max_val": {
+     "A": 10.0,
+     "B": 25.0
+    },
+    "name": "Standardize"
+   }
+  },
+  {
+   "class": "AFL.double_agent.Preprocessor.Standardize",
+   "args": {
+    "input_variable": "composition",
+    "output_variable": "normalized_composition",
+    "dim": "sample",
+    "component_dim": "component",
+    "scale_variable": null,
+    "min_val": {
+     "A": 0.0,
+     "B": 0.0
+    },
+    "max_val": {
+     "A": 10.0,
+     "B": 25.0
+    },
+    "name": "Standardize"
+   }
+  },
+  {
+   "class": "AFL.double_agent.Preprocessor.SavgolFilter",
+   "args": {
+    "input_variable": "measurement",
+    "output_variable": "measurement_derivative0",
+    "dim": "q",
+    "xlo": null,
+    "xhi": null,
+    "xlo_isel": null,
+    "xhi_isel": null,
+    "pedestal": null,
+    "npts": 250,
+    "derivative": 0,
+    "window_length": 31,
+    "polyorder": 2,
+    "apply_log_scale": true,
+    "name": "SavgolFilter"
+   }
+  },
+  {
+   "class": "AFL.double_agent.Preprocessor.SavgolFilter",
+   "args": {
+    "input_variable": "measurement",
+    "output_variable": "measurement_derivative1",
+    "dim": "q",
+    "xlo": null,
+    "xhi": null,
+    "xlo_isel": null,
+    "xhi_isel": null,
+    "pedestal": null,
+    "npts": 250,
+    "derivative": 1,
+    "window_length": 31,
+    "polyorder": 2,
+    "apply_log_scale": true,
+    "name": "SavgolFilter"
+   }
+  },
+  {
+   "class": "AFL.double_agent.Preprocessor.SavgolFilter",
+   "args": {
+    "input_variable": "measurement",
+    "output_variable": "measurement_derivative2",
+    "dim": "q",
+    "xlo": null,
+    "xhi": null,
+    "xlo_isel": null,
+    "xhi_isel": null,
+    "pedestal": null,
+    "npts": 250,
+    "derivative": 2,
+    "window_length": 31,
+    "polyorder": 2,
+    "apply_log_scale": true,
+    "name": "SavgolFilter"
+   }
+  }
+ ]
+}
