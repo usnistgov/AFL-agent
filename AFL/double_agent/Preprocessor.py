@@ -742,6 +742,9 @@ class SympyTransform(Preprocessor):
         name: str = "SympyTransform",
     ) -> None:
 
+        # must convert to strings for JSON serialization
+        transforms = {k:str(v) for k,v in transforms.items()}
+
         super().__init__(
             name=name, input_variable=input_variable, output_variable=output_variable
         )
@@ -765,6 +768,7 @@ class SympyTransform(Preprocessor):
         # apply transform
         new_comps = xr.Dataset()
         for name, transform in self.transforms.items():
+            transform = sympy.sympify(transform)
             symbols = list(transform.free_symbols)
             lam = sympy.lambdify(symbols, transform)
             new_comps[name] = (
