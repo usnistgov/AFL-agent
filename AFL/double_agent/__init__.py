@@ -7,6 +7,8 @@ from .Preprocessor import *
 from .Generator import *
 from .plotting import *
 from .Boundary import *
+from .prefab import *
+from .data import *
 
 import os
 import subprocess

@@ -19,3 +19,4 @@ objects.inv
 _build/
 .doctrees/
 *.mo
+AFL-agent.code-workspace

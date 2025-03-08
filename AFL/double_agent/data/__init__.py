@@ -6,16 +6,16 @@ This module provides access to example datasets that can be used with AFL.double
 
 import os
 import pathlib
-import importlib.resources
 import warnings
 
 import xarray as xr
 
+
 # Get the path to the data directory
-def get_data_dir():
+def get_data_dir() -> pathlib.Path:
     """
     Get the path to the data directory.
-    
+
     Returns
     -------
     pathlib.Path
@@ -23,17 +23,18 @@ def get_data_dir():
     """
     # The data directory is now located in AFL/double_agent/data
     module_dir = pathlib.Path(__file__).parent
-    data_dir = module_dir#.parent / "data"
-    
+    data_dir = module_dir
+
     if not data_dir.exists():
         warnings.warn(f"Data directory not found at {data_dir}")
-    
+
     return data_dir
 
-def list_datasets():
+
+def list_datasets() -> list[str]:
     """
     List all available datasets.
-    
+
     Returns
     -------
     list
@@ -43,23 +44,24 @@ def list_datasets():
     if not data_dir.exists():
         warnings.warn(f"Data directory not found at {data_dir}")
         return []
-    
+
     return [f.stem for f in data_dir.glob("*.nc")]
 
-def load_dataset(name):
+
+def load_dataset(name: str) -> xr.Dataset:
     """
     Load a dataset by name.
-    
+
     Parameters
     ----------
     name : str
         Name of the dataset to load.
-        
+
     Returns
     -------
     xarray.Dataset
         The loaded dataset.
-        
+
     Raises
     ------
     FileNotFoundError
@@ -67,21 +69,22 @@ def load_dataset(name):
     """
     data_dir = get_data_dir()
     file_path = data_dir / f"{name}.nc"
-    
+
     if not file_path.exists():
         raise FileNotFoundError(
             f"Dataset '{name}' not found at {file_path}. "
             f"Data directory: {data_dir}. "
             f"Available datasets: {list_datasets()}"
         )
-    
+
     return xr.open_dataset(file_path)
 
+
 # Define specific dataset loaders
-def example_dataset1():
+def example_dataset1() -> xr.Dataset:
     """
     Load the example dataset.
-    
+
     Returns
     -------
     xarray.Dataset
@@ -89,5 +92,6 @@ def example_dataset1():
     """
     return load_dataset("example_dataset")
 
+
 # Add all datasets as module-level variables
-__all__ = ["load_dataset", "list_datasets", "example_dataset1"] 
+__all__ = ["load_dataset", "list_datasets", "example_dataset1"]
