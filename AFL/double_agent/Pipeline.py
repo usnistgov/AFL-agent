@@ -37,19 +37,19 @@ from AFL.double_agent.util import listify
 class Pipeline(PipelineContext):
     """
     Container class for defining and executing computational workflows.
-    
+
     The Pipeline class serves as a framework for organizing and running sequences of
     operations (PipelineOps) on data. Each operation in the pipeline takes input data,
     performs a specific transformation, and produces output data that can be used by
     subsequent operations.
-    
+
     Parameters
     ----------
     name : Optional[str], default=None
         Name of the pipeline. If None, defaults to "Pipeline".
     ops : Optional[List], default=None
         List of PipelineOp objects to initialize the pipeline with.
-        
+
     Attributes
     ----------
     result : Any
@@ -62,12 +62,16 @@ class Pipeline(PipelineContext):
         Edge labels for the pipeline graph visualization
     """
 
-    def __init__(self, name: Optional[str] = None, ops: Optional[List] = None, description: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        ops: Optional[List] = None,
+        description: Optional[str] = None,
+    ) -> None:
         self.result = None
         self.ops = ops or []
         self.description = str(description)
         self.name = name or "Pipeline"
-
 
         # placeholder for networkx graph
         self.graph = None
@@ -118,12 +122,11 @@ class Pipeline(PipelineContext):
         """String representation of approximate code to generate this pipeline
 
         Run this method to produce a string of Python code that should
-        recreate this Pipeline. 
+        recreate this Pipeline.
 
         """
 
-
-        output_string = f"with Pipeline(name = \"{self.name}\") as p:\n"
+        output_string = f'with Pipeline(name = "{self.name}") as p:\n'
 
         for op in self:
             args = op._stored_args
@@ -135,7 +138,24 @@ class Pipeline(PipelineContext):
                     output_string += f"        {k}={v},\n"
             output_string += f"    )\n\n"
 
-        print(output_string)
+        try:
+            shell = get_ipython().__class__.__name__
+            if shell == "ZMQInteractiveShell":
+                # Create IPython magic for creating executable code
+                ip = get_ipython()
+
+                # First display the code with syntax highlighting for visibility
+                from IPython.display import display, Code
+
+                # display(Code(output_string, language="python"))
+
+                # Define a temporary magic to create a new cell with the code
+                ip.set_next_input(output_string)
+                print("Pipeline code has been prepared in a new cell below.")
+            else:
+                print(output_string)
+        except NameError:
+            print(output_string)
 
     def append(self, op: PipelineOp) -> Self:
         """Mirrors the behavior of python lists"""
@@ -154,8 +174,10 @@ class Pipeline(PipelineContext):
 
     def copy(self) -> Self:
         return copy.deepcopy(self)
-    
-    def write_json(self, filename: str, overwrite=False, description: Optional[str] = None): 
+
+    def write_json(
+        self, filename: str, overwrite=False, description: Optional[str] = None
+    ):
         """Write pipeline to disk as a JSON
 
         Parameters
@@ -172,16 +194,18 @@ class Pipeline(PipelineContext):
             raise FileExistsError()
 
         pipeline_dict = {
-            'name': self.name,
-            'date': datetime.datetime.now().strftime('%m/%d/%y %H:%M:%S-%f'),
-            'description': str(description) if description is not None else self.description,
-            'ops': [op.to_json() for op in self]
+            "name": self.name,
+            "date": datetime.datetime.now().strftime("%m/%d/%y %H:%M:%S-%f"),
+            "description": (
+                str(description) if description is not None else self.description
+            ),
+            "ops": [op.to_json() for op in self],
         }
 
-        with open(filename, 'w') as f:
+        with open(filename, "w") as f:
             json.dump(pipeline_dict, f, indent=1)
 
-        print(f'Pipeline successfully written to {filename}.')
+        print(f"Pipeline successfully written to {filename}.")
 
     @staticmethod
     def read_json(filename: str):
@@ -198,13 +222,12 @@ class Pipeline(PipelineContext):
             pipeline_dict = json.load(f)
 
         pipeline = Pipeline(
-            name=pipeline_dict['name'],
-            ops=[PipelineOp.from_json(op) for op in pipeline_dict['ops']],
-            description=pipeline_dict['description']
+            name=pipeline_dict["name"],
+            ops=[PipelineOp.from_json(op) for op in pipeline_dict["ops"]],
+            description=pipeline_dict["description"],
         )
 
         return pipeline
-
 
     def write_pkl(self, filename: str):
         """Write pipeline to disk as a pkl
