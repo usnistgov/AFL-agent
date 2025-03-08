@@ -285,84 +285,177 @@ class Pipeline(PipelineContext):
                     self.graph.add_edge(input_variable, output_variable, name=op.name)
                     self.graph_edge_labels[input_variable, output_variable] = op.name
 
-    def draw(self, figsize=(8, 8), edge_labels=True):
-        """Draw the pipeline as a graph"""
-        self.make_graph()
+    def draw_plotly(self, data_as_edges: bool = False):
+        """Draw an interactive visualization of the pipeline graph using plotly.
 
-        fig = plt.figure(figsize=figsize)
-        pos = nx.nx_agraph.pygraphviz_layout(self.graph, prog="dot")
-        nx.draw(self.graph, with_labels=True, pos=pos, node_size=1000)
-        if edge_labels:
-            nx.draw_networkx_edge_labels(self.graph, pos, self.graph_edge_labels)
-        return fig
+        Parameters:
+            data_as_edges (bool): If True, shows data variables as edges and transforms as nodes.
+                                If False (default), shows data variables as nodes and transforms as edges.
 
-    def draw_plotly(self):
+        Returns:
+            plotly.graph_objects.Figure: Interactive plotly figure
+        """
         import plotly.graph_objects as go
 
-        self.make_graph()
-        pos = nx.nx_agraph.pygraphviz_layout(self.graph, prog="dot")
+        if not data_as_edges:
+            # Original behavior - data as nodes, transforms as edge labels
+            self.make_graph()
+            G = self.graph.copy()
+        else:
+            # New behavior - transforms as nodes, data as edge labels
+            G = nx.DiGraph()
+            # Create nodes for each unique transform
+            transform_nodes = set()
+            for op in self:
+                if op.name not in transform_nodes:
+                    G.add_node(op.name)
+                    transform_nodes.add(op.name)
 
+                # Add edges for each input-output pair
+                for input_var in listify(op.input_variable):
+                    if input_var is not None:
+                        # Find the transform that produces this input
+                        producer = None
+                        for prev_op in self:
+                            if input_var in listify(prev_op.output_variable):
+                                producer = prev_op.name
+                                break
+
+                        if producer:
+                            G.add_edge(producer, op.name, name=input_var)
+                        else:
+                            # This is an input variable with no producer
+                            input_node = f"INPUT: {input_var}"
+                            G.add_node(input_node)
+                            G.add_edge(input_node, op.name, name=input_var)
+
+                # Add edges for outputs that aren't consumed
+                for output_var in listify(op.output_variable):
+                    if output_var is not None:
+                        # Check if this output is consumed
+                        is_consumed = False
+                        for next_op in self:
+                            if output_var in listify(next_op.input_variable):
+                                is_consumed = True
+                                break
+
+                        if not is_consumed:
+                            output_node = f"OUTPUT: {output_var}"
+                            G.add_node(output_node)
+                            G.add_edge(op.name, output_node, name=output_var)
+
+        pos = nx.nx_agraph.pygraphviz_layout(G, prog="dot")
+
+        # Draw edges
         edge_x = []
         edge_y = []
-        for edge in self.graph.edges():
+        edge_text = []
+        for edge in G.edges(data=True):
             x0, y0 = pos[edge[0]]
             x1, y1 = pos[edge[1]]
-            edge_x.append(x0)
-            edge_x.append(x1)
-            edge_x.append(None)
-            edge_y.append(y0)
-            edge_y.append(y1)
-            edge_y.append(None)
+            edge_x.extend([x0, x1, None])
+            edge_y.extend([y0, y1, None])
+            if data_as_edges:
+                edge_text.extend(
+                    [edge[2].get("name", ""), edge[2].get("name", ""), None]
+                )
 
         edge_trace = go.Scatter(
             x=edge_x,
             y=edge_y,
-            line=dict(width=0.5, color="#888"),
-            hoverinfo="none",
+            line=dict(width=1, color="#666666"),
+            hoverinfo="text" if data_as_edges else "none",
+            text=edge_text if data_as_edges else None,
             mode="lines",
         )
 
+        # Draw nodes
         node_x = []
         node_y = []
-        for node in self.graph.nodes():
+        for node in G.nodes():
             x, y = pos[node]
             node_x.append(x)
             node_y.append(y)
 
+        # Prepare node colors and text based on node type
+        if not data_as_edges:
+            # Original behavior - color nodes based on their role in data flow
+            root_nodes = set(n for n, d in G.in_degree() if d == 0)
+            leaf_nodes = set(n for n, d in G.out_degree() if d == 0)
+
+            node_colors = []
+            node_text = []
+            for node in G.nodes():
+                if node in root_nodes:
+                    node_colors.append("#c6dcff")
+                elif node in leaf_nodes:
+                    node_colors.append("#f0f5ff")
+                else:
+                    node_colors.append("#e1edff")
+
+                # Create hover text with operation information
+                VarIn = list(n[0] for n in G.in_edges(node))
+                VarOut = list(n[0] for n in G.out_edges(node))
+                OpIn = [G.edges[i, node].get("name", "") for i in VarIn]
+
+                node_text.append(
+                    f"Node: {node}<br>"
+                    f"OpIn: {', '.join(str(op) for op in OpIn)}<br>"
+                    f"VarIn: {', '.join(str(v) for v in VarIn)}<br>"
+                    f"VarOut: {', '.join(str(v) for v in VarOut)}"
+                )
+        else:
+            # New behavior - color nodes based on their type (input, transform, output)
+            node_colors = []
+            node_text = []
+            for node in G.nodes():
+                if str(node).startswith("INPUT:"):
+                    node_colors.append("#c6dcff")
+                elif str(node).startswith("OUTPUT:"):
+                    node_colors.append("#f0f5ff")
+                else:
+                    node_colors.append("#e1edff")
+
+                # Create hover text with transform information
+                in_edges = list(G.in_edges(node, data=True))
+                out_edges = list(G.out_edges(node, data=True))
+
+                node_text.append(
+                    f"Transform: {node}<br>"
+                    f"Inputs: {', '.join(e[2].get('name', '') for e in in_edges)}<br>"
+                    f"Outputs: {', '.join(e[2].get('name', '') for e in out_edges)}"
+                )
+
         node_trace = go.Scatter(
             x=node_x,
             y=node_y,
-            mode="markers",
+            mode="markers+text",
             hoverinfo="text",
-            marker=dict(reversescale=True, color=[], size=20, line_width=2),
+            text=list(G.nodes()),
+            textposition="bottom center",
+            marker=dict(
+                color=node_colors,
+                size=30 if data_as_edges else 20,
+                line=dict(width=2, color="#666666"),
+            ),
+            hovertext=node_text,
         )
 
-        node_text = []
-        regex = re.compile("[\[\]']")
-        for node in self.graph.nodes():
-            VarIn = np.unique(list(n[0] for n in self.graph.in_edges(node)))
-            VarOut = np.unique(list(n[0] for n in self.graph.out_edges(node)))
-            OpIn = np.unique([self.graph_edge_labels[i, node] for i in VarIn])
+        # Create the figure
+        fig = go.Figure(data=[edge_trace, node_trace])
 
-            OpIn = regex.sub("", str(OpIn)).replace(" ", ", ")
-            VarIn = regex.sub("", str(VarIn)).replace(" ", ", ")
-            VarOut = regex.sub("", str(VarOut)).replace(" ", ", ")
-            node_text.append(
-                f"{'Node: ':9s}{node}<br>{'OpIn: ':9s}{OpIn}<br>{'VarIn: ':9s}{VarIn}<br>{'VarOut: ':9s}{VarOut}"
-            )
-
-        node_trace.text = node_text
-
-        fig = go.Figure([node_trace, edge_trace])
+        # Update layout
         fig.update_layout(
+            showlegend=False,
+            hovermode="closest",
+            margin=dict(b=20, l=5, r=5, t=40),
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            plot_bgcolor="white",
             height=750,
             width=750,
-            showlegend=False,
-            template="simple_white",
-            xaxis={"visible": False},
-            yaxis={"visible": False},
-            margin=dict(l=20, r=20, t=20, b=20),
         )
+
         return fig
 
     def input_variables(self) -> List[str]:
@@ -397,3 +490,224 @@ class Pipeline(PipelineContext):
 
         self.result = dataset1
         return dataset1
+
+    def draw(
+        self,
+        orientation: str = "TB",
+        show_labels: bool = True,
+        show_edge_labels: bool = False,
+        data_as_edges: bool = False,
+        figsize=(12, 8),
+    ):
+        """Draw a new visualization of the pipeline graph using dot layout.
+
+        Parameters:
+            orientation (str): Layout orientation. 'TB' for top-to-bottom (default) or 'LR' for left-to-right.
+            show_labels (bool): Whether to display node labels. Defaults to True.
+            show_edge_labels (bool): Whether to display edge labels (operation names). Defaults to False.
+            data_as_edges (bool): If True, shows data variables as edges and transforms as nodes.
+                                If False (default), shows data variables as nodes and transforms as edges.
+            figsize (tuple): Figure size for the matplotlib figure.
+
+        Returns:
+            matplotlib.figure.Figure: The drawn figure.
+        """
+        import matplotlib.pyplot as plt
+        import networkx as nx
+        import numpy as np
+
+        if not data_as_edges:
+            # Original behavior - data as nodes, transforms as edge labels
+            self.make_graph()
+            G = self.graph.copy()
+        else:
+            # New behavior - transforms as nodes, data as edge labels
+            G = nx.DiGraph()
+            # Create nodes for each unique transform
+            transform_nodes = set()
+            for op in self:
+                if op.name not in transform_nodes:
+                    G.add_node(op.name)
+                    transform_nodes.add(op.name)
+
+                # Add edges for each input-output pair
+                for input_var in listify(op.input_variable):
+                    if input_var is not None:
+                        # Find the transform that produces this input
+                        producer = None
+                        for prev_op in self:
+                            if input_var in listify(prev_op.output_variable):
+                                producer = prev_op.name
+                                break
+
+                        if producer:
+                            G.add_edge(producer, op.name, name=input_var)
+                        else:
+                            # This is an input variable with no producer
+                            input_node = f"INPUT: {input_var}"
+                            G.add_node(input_node)
+                            G.add_edge(input_node, op.name, name=input_var)
+
+                # Add edges for outputs that aren't consumed
+                for output_var in listify(op.output_variable):
+                    if output_var is not None:
+                        # Check if this output is consumed
+                        is_consumed = False
+                        for next_op in self:
+                            if output_var in listify(next_op.input_variable):
+                                is_consumed = True
+                                break
+
+                        if not is_consumed:
+                            output_node = f"OUTPUT: {output_var}"
+                            G.add_node(output_node)
+                            G.add_edge(op.name, output_node, name=output_var)
+
+        # Set the graph direction
+        prog = "dot"
+        if orientation.upper() == "TB":
+            graph_orientation = "dot"  # Default is TB
+        else:
+            graph_orientation = "dot -Grankdir=LR"  # Force left-to-right
+
+        # Get the dot layout
+        try:
+            pos = nx.nx_agraph.graphviz_layout(G, prog=graph_orientation)
+        except ImportError:
+            raise ImportError("This layout requires installing pygraphviz or pydot.")
+
+        # Create the plot with adjusted figsize if edge labels are shown
+        if show_edge_labels:
+            figsize = (figsize[0] * 1.2, figsize[1] * 1.2)
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_subplot(111)
+
+        # Draw edges
+        nx.draw_networkx_edges(
+            G,
+            pos,
+            edge_color="#666666",
+            width=1.0,
+            alpha=0.8,
+            arrows=True,
+            arrowsize=15,
+            ax=ax,
+            node_size=2000,  # This affects arrow positioning
+        )
+
+        # Draw edge labels if requested or if showing data as edges
+        if show_edge_labels or data_as_edges:
+            edge_labels = nx.get_edge_attributes(G, "name")
+            nx.draw_networkx_edge_labels(
+                G,
+                pos,
+                edge_labels=edge_labels,
+                font_size=8,
+                font_color="#666666",
+                alpha=0.7,
+                label_pos=0.5,  # Centered on the edge
+                bbox=dict(facecolor="white", edgecolor="none", alpha=0.7, pad=0.5),
+                ax=ax,
+            )
+
+        if not data_as_edges:
+            # Original behavior - color nodes based on their role in the data flow
+            root_nodes = [n for n, d in G.in_degree() if d == 0]
+            leaf_nodes = [n for n, d in G.out_degree() if d == 0]
+            middle_nodes = list(set(G.nodes()) - set(root_nodes) - set(leaf_nodes))
+
+            if root_nodes:
+                nx.draw_networkx_nodes(
+                    G,
+                    pos,
+                    nodelist=root_nodes,
+                    node_color="#c6dcff",
+                    node_size=2000,
+                    edgecolors="#666666",
+                    linewidths=2,
+                    ax=ax,
+                )
+            if middle_nodes:
+                nx.draw_networkx_nodes(
+                    G,
+                    pos,
+                    nodelist=middle_nodes,
+                    node_color="#e1edff",
+                    node_size=2000,
+                    edgecolors="#666666",
+                    linewidths=1.5,
+                    ax=ax,
+                )
+            if leaf_nodes:
+                nx.draw_networkx_nodes(
+                    G,
+                    pos,
+                    nodelist=leaf_nodes,
+                    node_color="#f0f5ff",
+                    node_size=2000,
+                    edgecolors="#666666",
+                    linewidths=1.5,
+                    ax=ax,
+                )
+        else:
+            # New behavior - color nodes based on their type (input, transform, output)
+            input_nodes = [n for n in G.nodes() if str(n).startswith("INPUT:")]
+            output_nodes = [n for n in G.nodes() if str(n).startswith("OUTPUT:")]
+            transform_nodes = list(
+                set(G.nodes()) - set(input_nodes) - set(output_nodes)
+            )
+
+            if input_nodes:
+                nx.draw_networkx_nodes(
+                    G,
+                    pos,
+                    nodelist=input_nodes,
+                    node_color="#c6dcff",
+                    node_size=2000,
+                    edgecolors="#666666",
+                    linewidths=2,
+                    ax=ax,
+                )
+            if transform_nodes:
+                nx.draw_networkx_nodes(
+                    G,
+                    pos,
+                    nodelist=transform_nodes,
+                    node_color="#e1edff",
+                    node_size=2500,
+                    edgecolors="#666666",
+                    linewidths=1.5,
+                    ax=ax,
+                )
+            if output_nodes:
+                nx.draw_networkx_nodes(
+                    G,
+                    pos,
+                    nodelist=output_nodes,
+                    node_color="#f0f5ff",
+                    node_size=2000,
+                    edgecolors="#666666",
+                    linewidths=1.5,
+                    ax=ax,
+                )
+
+        if show_labels:
+            if data_as_edges:
+                # Adjust label positions slightly for better readability
+                label_pos = {k: (v[0], v[1] - 0.01) for k, v in pos.items()}
+            else:
+                label_pos = pos
+            nx.draw_networkx_labels(
+                G,
+                label_pos,
+                font_size=10,
+                font_color="#333333",
+                font_weight="bold",
+                ax=ax,
+            )
+
+        # Remove axis and set tight layout
+        ax.axis("off")
+        plt.tight_layout()
+
+        return fig
