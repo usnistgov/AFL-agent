@@ -4,7 +4,7 @@ Extrapolators take discrete sample data and extrapolate the data onto a provided
 This file segments all extapolators that require tensorflow.
 """
 
-from typing import List, Optional
+from typing import List
 from typing_extensions import Self
 
 import numpy as np
@@ -114,7 +114,8 @@ class TFGaussianProcessClassifier(TFExtrapolator):
         grid_dim: str,
         sample_dim: str,
         optimize: bool = True,
-        kernel: Optional[gpflow.kernels.Kernel] = None,
+        kernel: str = 'Matern32',
+        kernel_kwargs: dict = {'lengthscales':0.1, 'variance':0.1},
         name: str = "TFGaussianProcessClassifier",
     ) -> None:
         """
@@ -141,9 +142,12 @@ class TFGaussianProcessClassifier(TFExtrapolator):
             The `xarray` dimension over the discrete 'samples' in the `feature_input_variable`. This is typically
             a variant of `sample` e.g., `saxs_sample`.
 
-        kernel: Optional[object]
-            A optional sklearn.gaussian_process.kernel to use the classifier. If not provided, will default to
-            `Matern`.
+        kernel: str | None
+            The name of the sklearn.gaussian_process.kernel to use the classifier. If not provided, will default to
+            `Matern32`.
+        
+        kernel_kwargs: dict | None
+            Additional keyword arguments to pass to the sklearn.gaussian_process.kernel
 
         name: str
             The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
@@ -161,12 +165,8 @@ class TFGaussianProcessClassifier(TFExtrapolator):
             optimize=optimize,
         )
 
-        if kernel is None:
-            self.kernel: gpflow.kernels.Kernel = gpflow.kernels.Matern32(
-                variance=0.1, lengthscales=0.1
-            )
-        else:
-            self.kernel = kernel
+        self.kernel = kernel
+        self.kernel_kwargs = kernel_kwargs
 
         self.output_prefix = output_prefix
 
@@ -191,9 +191,10 @@ class TFGaussianProcessClassifier(TFExtrapolator):
 
             invlink = gpflow.likelihoods.RobustMax(n_classes)
             likelihood = gpflow.likelihoods.MultiClass(n_classes, invlink=invlink)
+            kernel = getattr(gpflow.kernels, self.kernel)(**self.kernel_kwargs)
             model = gpflow.models.VGP(
                 data=data,
-                kernel=self.kernel,
+                kernel=kernel,
                 likelihood=likelihood,
                 num_latent_gps=n_classes,
             )
