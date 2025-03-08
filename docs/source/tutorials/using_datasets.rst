@@ -1,10 +1,10 @@
 Using Example Datasets
-===================
+======================
 
 AFL-agent comes with example datasets that you can use to learn and experiment with the library. These datasets are accessible through the ``AFL.double_agent.datasets`` module.
 
 Loading Example Datasets
------------------------
+------------------------
 
 You can load the example datasets using the following code:
 
@@ -21,14 +21,14 @@ You can load the example datasets using the following code:
     print(f"Dataset coordinates: {list(ds.coords)}")
 
 Available Datasets
------------------
+-------------------
 
 Currently, the following datasets are available:
 
 - ``example_dataset1``: A synthetic dataset with compositions, measurements, and ground truth labels.
 
 Listing Available Datasets
--------------------------
+--------------------------
 
 You can list all available datasets using the ``list_datasets`` function:
 
@@ -40,7 +40,7 @@ You can list all available datasets using the ``list_datasets`` function:
     print(list_datasets())
 
 Loading a Dataset by Name
-------------------------
+--------------------------
 
 You can also load a dataset by name using the ``load_dataset`` function:
 
@@ -52,12 +52,12 @@ You can also load a dataset by name using the ``load_dataset`` function:
     ds = load_dataset("example_dataset")
 
 Dataset Location
----------------
+-----------------
 
 The example datasets are stored in the ``AFL/double_agent/data`` directory within the package. The datasets module automatically locates and loads these files when you import and use the dataset functions.
 
 Example: Using the Example Dataset with a Pipeline
--------------------------------------------------
+----------------------------------------------------
 
 Here's an example of how to use the example dataset with a pipeline:
 
