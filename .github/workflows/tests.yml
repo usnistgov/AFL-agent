@@ -33,10 +33,12 @@ jobs:
         
     - name: Run tests
       run: |
-        pytest tests/ --cov=AFL.double_agent --cov-report=xml
+        pytest tests/ --cov=AFL.double_agent --cov-report=xml --cov-report=term
         
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: false 
+    - name: Create Coverage Summary
+      if: matrix.python-version == '3.11'
+      run: |
+        COVERAGE=$(python -c "import xml.etree.ElementTree as ET; print(round(float(ET.parse('coverage.xml').getroot().get('line-rate')) * 100))")
+        echo "::notice title=Code Coverage::Total coverage is $COVERAGE%"
+        echo "## Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
+        echo "Total coverage: **$COVERAGE%**" >> $GITHUB_STEP_SUMMARY 
