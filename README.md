@@ -1,6 +1,16 @@
-# AFL-agent: Autonomous Active Learning Agent for Material Science
+<p align="center">
+  <img src="https://raw.githubusercontent.com/usnistgov/AFL-agent/main/docs/source/_static/logo_text_large_light.svg" alt="AFL-Agent Logo" width="600">
+</p>
+
+# AFL-Agent: Framework for Autonomous Material Science
 
 [![Documentation](https://img.shields.io/badge/docs-pages.nist.gov-blue)](https://pages.nist.gov/AFL-agent/en/latest/index.html) 
+[![Tests](https://github.com/usnistgov/AFL-agent/actions/workflows/tests.yml/badge.svg)](https://github.com/usnistgov/AFL-agent/actions/workflows/tests.yml)
+[![Coverage](https://img.shields.io/badge/coverage-view%20report-brightgreen)](https://github.com/usnistgov/AFL-agent/actions/workflows/tests.yml)
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/usnistgov/AFL-agent/main/docs/source/_static/pipeline_horizontal_light.svg" alt="AFL-Agent Pipeline" width="600">
+</p>
 
 AFL-agent is a Python library that implements the autonomous active learning agent described in the manuscript *"Autonomous Small-Angle Scattering for Accelerated Soft Material Formulation Optimization"*. The library is designed to autonomously guide experimental measurement campaigns to efficiently map phase boundaries in soft material formulations using advanced machine learning techniques.
 
