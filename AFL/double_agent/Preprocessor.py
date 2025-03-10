@@ -44,9 +44,7 @@ class Preprocessor(PipelineOp):
         output_variable: str = None,
         name: str = "PreprocessorBase",
     ) -> None:
-        super().__init__(
-            name=name, input_variable=input_variable, output_variable=output_variable
-        )
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
@@ -128,9 +126,7 @@ class SavgolFilter(Preprocessor):
         apply_log_scale: bool = True,
         name: str = "SavgolFilter",
     ) -> None:
-        super().__init__(
-            name=name, input_variable=input_variable, output_variable=output_variable
-        )
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
 
         self.dim = dim
         self.npts = npts
@@ -165,7 +161,7 @@ class SavgolFilter(Preprocessor):
                     stacklevel=2,
                 )
 
-        data1 = data1.transpose(self.dim,...)
+        data1 = data1.transpose(self.dim, ...)
 
         data1 = data1.sel({self.dim: slice(self.xlo, self.xhi)})
         data1 = data1.isel({self.dim: slice(self.xlo_isel, self.xhi_isel)})
@@ -177,7 +173,7 @@ class SavgolFilter(Preprocessor):
             data1[self.dim] = np.log10(data1[self.dim])
             data1 = data1.rename({self.dim: dim})
         else:
-            dim = "sg_"+self.dim
+            dim = "sg_" + self.dim
             data1[dim] = data1[self.dim]
 
         # need to remove duplicate values
@@ -187,16 +183,14 @@ class SavgolFilter(Preprocessor):
         if self.pedestal is not None:
             data1 += self.pedestal
             data1 = data1.where(~np.isnan(data1)).fillna(self.pedestal)
-        
+
         # interpolate to constant lin or log(dq) grid
-        x_new = np.linspace(data1[dim].min(), data1[dim].max(), self.npts)
+        x_new = np.linspace(data1[dim].min().values[()], data1[dim].max().values[()], self.npts)
         dx = float(x_new[1] - x_new[0])
         data1 = data1.interp({dim: x_new})
 
         # filter out any q that have NaN
         data1 = data1.dropna(dim, how="any")
-
-
 
         # take derivative
         data1_filtered = savgol_filter(
@@ -208,10 +202,8 @@ class SavgolFilter(Preprocessor):
             deriv=self.derivative,
         )
 
-        self.output[self.output_variable] = data1.copy(data=data1_filtered).transpose(...,dim)
-        self.output[self.output_variable].attrs[
-            "description"
-        ] = f"Savitsky-Golay filtered data"
+        self.output[self.output_variable] = data1.copy(data=data1_filtered).transpose(..., dim)
+        self.output[self.output_variable].attrs["description"] = f"Savitsky-Golay filtered data"
 
         return self
 
@@ -241,9 +233,7 @@ class SubtractMin(Preprocessor):
         name: str
             The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
         """
-        super().__init__(
-            name=name, input_variable=input_variable, output_variable=output_variable
-        )
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
 
         self.dim = dim
 
@@ -257,6 +247,7 @@ class SubtractMin(Preprocessor):
         ] = f"Subtracted minimum value along dimension '{self.dim}'"
 
         return self
+
 
 class Subtract(Preprocessor):
     """Baseline input variable by subtracting a value"""
@@ -285,9 +276,7 @@ class Subtract(Preprocessor):
         name: str
             The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
         """
-        super().__init__(
-            name=name, input_variable=input_variable, output_variable=output_variable
-        )
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
 
         self.dim = dim
         self.value = value
@@ -296,15 +285,15 @@ class Subtract(Preprocessor):
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
         data1 = self._get_variable(dataset)
-        
-        if isinstance(self.value,str) and self.coord_value:
+
+        if isinstance(self.value, str) and self.coord_value:
             value = dataset[self.value].item()
-            subtract_value = data1.sel({self.dim:value},method='nearest')
+            subtract_value = data1.sel({self.dim: value}, method="nearest")
         elif self.coord_value:
-            subtract_value = data1.sel({self.dim:self.value},method='nearest')
+            subtract_value = data1.sel({self.dim: self.value}, method="nearest")
         else:
             subtract_value = self.value
-            
+
         self.output[self.output_variable] = data1 - subtract_value
         self.output[self.output_variable].attrs[
             "description"
@@ -348,9 +337,7 @@ class Standardize(Preprocessor):
         max_val: Optional[Number] = None,
         name: str = "Standardize",
     ) -> None:
-        super().__init__(
-            name=name, input_variable=input_variable, output_variable=output_variable
-        )
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
 
         self.dim = dim
         self.component_dim = component_dim
@@ -367,7 +354,7 @@ class Standardize(Preprocessor):
                 max_val = data1.max(self.dim)
             else:
                 max_val = dataset[self.scale_variable].max(self.dim)
-        elif isinstance(self.max_val,dict):
+        elif isinstance(self.max_val, dict):
             max_val = xr.Dataset(self.max_val).to_array(self.component_dim)
         else:
             max_val = self.max_val
@@ -426,9 +413,7 @@ class Destandardize(Preprocessor):
         name: str = "Destandardize",
     ) -> None:
 
-        super().__init__(
-            name=name, input_variable=input_variable, output_variable=output_variable
-        )
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
 
         self.dim = dim
         self.component_dim = component_dim
@@ -445,7 +430,7 @@ class Destandardize(Preprocessor):
                 max_val = data1.max(self.dim)
             else:
                 max_val = dataset[self.scale_variable].max(self.dim)
-        elif isinstance(self.max_val,dict):
+        elif isinstance(self.max_val, dict):
             max_val = xr.Dataset(self.max_val).to_array(self.component_dim)
         else:
             max_val = self.max_val
@@ -471,27 +456,25 @@ class Destandardize(Preprocessor):
 class Zscale(Preprocessor):
     """Z-scale the data to have mean 0 and standard deviation scaling
 
-        Parameters
-        ----------
-        input_variable : str
-            The name of the `xarray.Dataset` data variable to extract from the input dataset
+    Parameters
+    ----------
+    input_variable : str
+        The name of the `xarray.Dataset` data variable to extract from the input dataset
 
-        output_variable : str
-            The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+    output_variable : str
+        The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
 
-        dim: str
-             The dimension to use when calculating the data minimum
+    dim: str
+         The dimension to use when calculating the data minimum
 
-        name: str
-            The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
-        """
+    name: str
+        The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
+    """
 
     def __init__(
         self, input_variable: str, output_variable: str, dim: str, name: str = "Zscale"
     ) -> None:
-        super().__init__(
-            name=name, input_variable=input_variable, output_variable=output_variable
-        )
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
 
         self.mean = None
         self.std = None
@@ -534,9 +517,7 @@ class ZscaleError(Preprocessor):
         dim: str,
         name: str = "Zscale_error",
     ) -> None:
-        super().__init__(
-            name=name, input_variable=input_variables, output_variable=output_variable
-        )
+        super().__init__(name=name, input_variable=input_variables, output_variable=output_variable)
 
         self.dim = dim
 
@@ -583,9 +564,7 @@ class BarycentricToTernaryXY(Preprocessor):
         sample_dim: str,
         name: str = "BarycentricToTernaryXY",
     ) -> None:
-        super().__init__(
-            name=name, input_variable=input_variable, output_variable=output_variable
-        )
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
 
         x_min = 0.5 - 1.0 / np.sqrt(3)
         x_max = 0.5 + 1.0 / np.sqrt(3)
@@ -600,9 +579,7 @@ class BarycentricToTernaryXY(Preprocessor):
         bary = bary / np.sum(bary, axis=1)[:, np.newaxis]
         xy = np.dot(bary, self.corners)
 
-        self.output[self.output_variable] = xr.DataArray(
-            xy, dims=[self.sample_dim, "xy"]
-        )
+        self.output[self.output_variable] = xr.DataArray(xy, dims=[self.sample_dim, "xy"])
         self.output[self.output_variable].attrs["description"] = (
             "barycentric coordinates from xy variable " f"'{self.input_variable}'"
         )
@@ -612,8 +589,8 @@ class BarycentricToTernaryXY(Preprocessor):
 class TernaryXYToBarycentric(Preprocessor):
     """Transform to ternary coordinates from xy coordinates
 
-    Note 
-    ---- 
+    Note
+    ----
     Adapted from BaryCentric transform mpltern:
     https://github.com/yuzie007/mpltern/blob/master/mpltern/ternary/transforms.py
 
@@ -651,9 +628,7 @@ class TernaryXYToBarycentric(Preprocessor):
         name: str
             The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
         """
-        super().__init__(
-            name=name, input_variable=input_variable, output_variable=output_variable
-        )
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
 
         x_min = 0.5 - 1.0 / np.sqrt(3)
         x_max = 0.5 + 1.0 / np.sqrt(3)
@@ -668,9 +643,7 @@ class TernaryXYToBarycentric(Preprocessor):
         xys = np.column_stack((xy, np.ones(xy.shape[0])))
         v = np.column_stack((self.corners, np.ones(3)))
         bary = np.dot(xys, np.linalg.inv(v))
-        self.output[self.output_variable] = xr.DataArray(
-            bary, dims=[self.sample_dim, "component"]
-        )
+        self.output[self.output_variable] = xr.DataArray(bary, dims=[self.sample_dim, "component"])
         self.output[self.output_variable].attrs["description"] = (
             "XY coordinates from barycentric variable " f"'{self.input_variable}'"
         )
@@ -742,9 +715,7 @@ class SympyTransform(Preprocessor):
         name: str = "SympyTransform",
     ) -> None:
 
-        super().__init__(
-            name=name, input_variable=input_variable, output_variable=output_variable
-        )
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
         self.sample_dim = sample_dim
         self.component_dim = component_dim
         self.transforms = transforms
@@ -752,15 +723,10 @@ class SympyTransform(Preprocessor):
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
-        data = dataset[self.input_variable].transpose(
-            self.sample_dim, self.component_dim
-        )
+        data = dataset[self.input_variable].transpose(self.sample_dim, self.component_dim)
 
         # need to construct a dict of arrays
-        comps = {
-            k: v.squeeze().values
-            for k, v in data.groupby(self.component_dim, squeeze=False)
-        }
+        comps = {k: v.squeeze().values for k, v in data.groupby(self.component_dim, squeeze=False)}
 
         # apply transform
         new_comps = xr.Dataset()
@@ -772,9 +738,7 @@ class SympyTransform(Preprocessor):
                 listify(lam(**{k.name: comps[k.name] for k in symbols})),
             )
 
-        new_comps = new_comps.to_array(self.transform_dim).transpose(
-            ..., self.transform_dim
-        )
+        new_comps = new_comps.to_array(self.transform_dim).transpose(..., self.transform_dim)
 
         self.output[self.output_variable] = new_comps
         self.output[self.output_variable].attrs[
@@ -788,15 +752,15 @@ class Extrema(Preprocessor):
     """Find the extrema of a data variable"""
 
     def __init__(
-            self,
-            input_variable: str,
-            output_variable: str,
-            dim: str,
-            return_coords: bool = False,
-            operator='max',
-            slice: Optional[List] = None,
-            slice_dim: Optional[str] = None,
-            name: str = "Extrema",
+        self,
+        input_variable: str,
+        output_variable: str,
+        dim: str,
+        return_coords: bool = False,
+        operator="max",
+        slice: Optional[List] = None,
+        slice_dim: Optional[str] = None,
+        name: str = "Extrema",
     ) -> None:
         """
         Parameters
@@ -813,9 +777,7 @@ class Extrema(Preprocessor):
         name: str
             The name to use when added to a Pipeline. This name is used when calling Pipeline.search(
         """
-        super().__init__(
-            name=name, input_variable=input_variable, output_variable=output_variable
-        )
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
 
         self.dim = dim
         self.operator = operator
@@ -831,8 +793,8 @@ class Extrema(Preprocessor):
             data = data.sel({self.slice_dim: slice(*self.slice)})
 
         if self.return_coords:
-            if 'arg' not in self.operator:
-                operator = 'arg' + self.operator
+            if "arg" not in self.operator:
+                operator = "arg" + self.operator
             else:
                 operator = self.operator
             idx = getattr(data, operator)(dim=self.dim)
@@ -845,6 +807,7 @@ class Extrema(Preprocessor):
         ] = f"Extrema of {self.input_variable} with operator {self.operator} and return_coords {self.return_coords}"
 
         return self
+
 
 class VarsToArray(Preprocessor):
     """Convert multiple variables into a single array
@@ -866,33 +829,39 @@ class VarsToArray(Preprocessor):
     """
 
     def __init__(
-        self, 
-        input_variables: List, 
-        output_variable: str, 
+        self,
+        input_variables: List,
+        output_variable: str,
         variable_dim: str,
         squeeze: bool = False,
         variable_mapping: Dict = None,
-        name: str = 'VarsToArray'):
+        name: str = "VarsToArray",
+    ):
 
         super().__init__(name=name, input_variable=input_variables, output_variable=output_variable)
-        print(self.input_variable,self.output_variable)
+        print(self.input_variable, self.output_variable)
 
         if variable_mapping is None:
             self.variable_mapping = {}
         else:
             self.variable_mapping = variable_mapping
-        
+
         self.variable_dim = variable_dim
         self.squeeze = squeeze
 
     def calculate(self, dataset):
-        output = dataset[self.input_variable].rename_vars(self.variable_mapping).to_array(self.variable_dim)      
+        output = (
+            dataset[self.input_variable]
+            .rename_vars(self.variable_mapping)
+            .to_array(self.variable_dim)
+        )
         if self.squeeze:
             output = output.squeeze()
         print(self.output_variable)
         print(output)
         self.output[self.output_variable] = output
         return self
+
 
 class ArrayToVars(Preprocessor):
     """Convert an array into multiple variables
@@ -914,29 +883,30 @@ class ArrayToVars(Preprocessor):
     """
 
     def __init__(
-        self, 
-        input_variable: str, 
-        output_variables: list, 
+        self,
+        input_variable: str,
+        output_variables: list,
         split_dim: list,
-        postfix: str = '',
+        postfix: str = "",
         squeeze: bool = False,
-        name: str = 'DatasetToVars'):
+        name: str = "DatasetToVars",
+    ):
 
         super().__init__(name=name, input_variable=input_variable, output_variable=output_variables)
-        print(self.input_variable,self.output_variable)
-        
+        print(self.input_variable, self.output_variable)
+
         self.split_dim = split_dim
         self.squeeze = squeeze
         self.output_variables = output_variables
-        self.postfix= postfix
+        self.postfix = postfix
+
     def calculate(self, dataset):
-        input_arr = dataset[self.input_variable]   
+        input_arr = dataset[self.input_variable]
         if self.squeeze:
             output = output.squeeze()
         for var in self.output_variables:
             print(var)
-    
-            self.output[var+self.postfix] = input_arr.sel({self.split_dim:var})
-            
-        return self
 
+            self.output[var + self.postfix] = input_arr.sel({self.split_dim: var})
+
+        return self
