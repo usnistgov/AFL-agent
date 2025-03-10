@@ -1,13 +1,20 @@
-*egg-info*
-data/*
-*pyc
+# Dev
+dev/
+AFL/double_agent/_version.py
+venv/
 .DS_Store
 
-AFL/double_agent/_version.py
-dev/
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
 
-venv/
-.venv/
+# Cursor
+.cursor/
+.cursor-cache/
 
 # Sphinx documentation
 docs/build/
@@ -19,3 +26,22 @@ objects.inv
 _build/
 .doctrees/
 *.mo
+
+# Pytest
+.pytest_cache/
+.coverage*
+coverage.xml
+htmlcov/
+
+# Tox
+.tox/
+.toxenv/
+
+# Hypothesis
+.hypothesis/
+
+# Cache files
+__pycache__/
+.cache/
+*pyc
+*egg-info*
