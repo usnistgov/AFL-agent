@@ -27,21 +27,23 @@ class PipelineOp(ABC):
         Prefix for output variables when using pattern matching
     """
 
-    def __init__(self,
-                 name: Optional[str] | List[str] = None,
-                 input_variable: Optional[str] | List[str] = None,
-                 output_variable: Optional[str] | List[str] = None,
-                 input_prefix: Optional[str] | List[str] = None,
-                 output_prefix: Optional[str] | List[str] = None):
+    def __init__(
+        self,
+        name: Optional[str] | List[str] = None,
+        input_variable: Optional[str] | List[str] = None,
+        output_variable: Optional[str] | List[str] = None,
+        input_prefix: Optional[str] | List[str] = None,
+        output_prefix: Optional[str] | List[str] = None,
+    ):
 
         if all(x is None for x in [input_variable, output_variable, input_prefix, output_prefix]):
             warnings.warn(
-                'No input/output information set for PipelineOp...this is likely an error',
-                stacklevel=2
+                "No input/output information set for PipelineOp...this is likely an error",
+                stacklevel=2,
             )
 
         if name is None:
-            self.name = 'PipelineOp'
+            self.name = "PipelineOp"
         else:
             self.name = name
 
@@ -60,14 +62,14 @@ class PipelineOp(ABC):
             pass
 
         # variables to exclude when constructing attrs dict for xarray
-        self._banned_from_attrs = ['output', '_banned_from_attrs']
+        self._banned_from_attrs = ["output", "_banned_from_attrs"]
 
     @abstractmethod
     def calculate(self, dataset: xr.Dataset) -> Self:
         pass
 
     def __repr__(self) -> str:
-        return f'<PipelineOp:{self.name}>'
+        return f"<PipelineOp:{self.name}>"
 
     def copy(self) -> Self:
         return copy.deepcopy(self)
@@ -75,7 +77,7 @@ class PipelineOp(ABC):
     def _prefix_output(self, variable_name: str) -> str:
         prefixed_variable = copy.deepcopy(variable_name)
         if self.output_prefix is not None:
-            prefixed_variable = f'{self.output_prefix}_{prefixed_variable}'
+            prefixed_variable = f"{self.output_prefix}_{prefixed_variable}"
         return prefixed_variable
 
     def _get_attrs(self) -> Dict:
@@ -86,7 +88,7 @@ class PipelineOp(ABC):
             except KeyError:
                 pass
 
-        #sanitize
+        # sanitize
         for key in output_dict.keys():
             output_dict[key] = str(output_dict[key])
             # if output_dict[key] is None:
@@ -98,16 +100,20 @@ class PipelineOp(ABC):
 
     def _get_variable(self, dataset: xr.Dataset) -> xr.DataArray:
         if self.input_variable is None and self.input_prefix is None:
-            raise ValueError((
-                """Can't get variable for {self.name} without input_variable """
-                """or input_prefix specified in constructor """
-            ))
+            raise ValueError(
+                (
+                    """Can't get variable for {self.name} without input_variable """
+                    """or input_prefix specified in constructor """
+                )
+            )
 
         if self.input_variable is not None and self.input_prefix is not None:
-            raise ValueError((
-                """Both input_variable and input_prefix were specified in constructor. """
-                """Only one should be specified to avoid ambiguous operation"""
-            ))
+            raise ValueError(
+                (
+                    """Both input_variable and input_prefix were specified in constructor. """
+                    """Only one should be specified to avoid ambiguous operation"""
+                )
+            )
 
         if self.input_variable is not None:
             output = dataset[self.input_variable].copy()
@@ -137,10 +143,12 @@ class PipelineOp(ABC):
                 value.attrs.update(self._get_attrs())
                 dataset1[name] = value
             else:
-                raise ValueError((
-                    f"""Items in output dictionary of PipelineOp {self.name} must be xr.Dataset or xr.DataArray """
-                    f"""Found variable named {name} of type {type(value)}."""
-                ))
+                raise ValueError(
+                    (
+                        f"""Items in output dictionary of PipelineOp {self.name} must be xr.Dataset or xr.DataArray """
+                        f"""Found variable named {name} of type {type(value)}."""
+                    )
+                )
         return dataset1
 
     def add_to_tiled(self, tiled_data):
@@ -150,20 +158,24 @@ class PipelineOp(ABC):
         # for name, dataarray in self.output.items():
         #     tiled_data.add_array(name, value.values)
 
-    def plot(self,**mpl_kwargs) -> plt.Figure:
+    def plot(self, sample_dim: str = "sample", **mpl_kwargs) -> plt.Figure:
+        """Plots the output of the PipelineOp.
+
+        This method attempts to guess how to plot the data produced by the operation.
+        """
         n = len(self.output)
-        if n>0:
-            fig, axes = plt.subplots(n,1,figsize=(8,n*4))
-            if n>1:
+        if n > 0:
+            fig, axes = plt.subplots(n, 1, figsize=(6, n * 3))
+            if n > 1:
                 axes = list(axes.flatten())
             else:
                 axes = [axes]
 
-            for i,(name,data) in enumerate(self.output.items()):
-                if 'sample' in data.dims:
-                    data = data.plot(hue='sample',ax=axes[i],**mpl_kwargs)
+            for i, (name, data) in enumerate(self.output.items()):
+                if data.ndim > 1 and (sample_dim in data.dims):
+                    data.plot(hue=sample_dim, ax=axes[i], **mpl_kwargs)
                 else:
-                    data.plot(ax=axes[i],**mpl_kwargs)
+                    data.plot(ax=axes[i], **mpl_kwargs)
                 axes[i].set(title=name)
             return fig
         else:
