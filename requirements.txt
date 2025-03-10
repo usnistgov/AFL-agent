@@ -246,3 +246,10 @@ zstandard==0.23.0
 pygraphviz==1.14
 nbsphinx==0.9.6
 mpltern==1.0.4
+coverage==7.6.12 
+execnet==2.1.1 
+hypothesis==6.127.9 
+pytest-cov==6.0.0 
+pytest-mock==3.14.0 
+pytest-xdist==3.6.1 
+sortedcontainers==2.4.0
