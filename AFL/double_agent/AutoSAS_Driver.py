@@ -19,8 +19,8 @@ class AutoSAS_Driver(Driver):
     defaults["q_min"] = 1e-2
     defaults["q_max"] = 1e-1
     defaults["resolution"] = None
-    defaults["model_inputs"] = SASFitter.default_model_inputs
-    defaults["fit_method"] = SASFitter.default_fit_method
+    defaults["model_inputs"] = SASFitter.DEFAULT_MODEL_INPUTS
+    defaults["fit_method"] = SASFitter.DEFAULT_FIT_METHOD
 
     def __init__(self):
         Driver.__init__(self, name="SAS_model_fitter", defaults=self.gather_defaults())

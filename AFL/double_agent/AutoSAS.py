@@ -21,6 +21,7 @@ import sasmodels.data  # type: ignore
 
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
+from AFL.automation.APIServer.Client import Client
 
 @dataclass
 class FitParameter:
