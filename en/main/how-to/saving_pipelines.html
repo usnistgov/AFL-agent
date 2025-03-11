@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>How-To Guides &#8212; AFL-agent  documentation</title>
+    <title>Reading and Writing Pipelines &#8212; AFL-agent  documentation</title>
   
   
   
@@ -33,6 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/ntd2d.css?v=525a25f0" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -46,12 +47,14 @@
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'how-to/index';</script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'how-to/saving_pipelines';</script>
     <link rel="icon" href="../_static/logo_light.svg"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Build an xarray.Dataset from Scratch" href="building_xarray_datasets.html" />
-    <link rel="prev" title="Using Prefabricated Pipelines" href="../tutorials/using_prefab.html" />
+    <link rel="next" title="Explanations" href="../explanations/index.html" />
+    <link rel="prev" title="Appending Data to xarray.Datasets" href="appending.html" />
   
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -158,7 +161,7 @@
 
 
 <li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#">
+  <a class="nav-link nav-internal" href="index.html">
     How-To Guides
   </a>
 </li>
@@ -281,7 +284,7 @@
 
 
 <li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#">
+  <a class="nav-link nav-internal" href="index.html">
     How-To Guides
   </a>
 </li>
@@ -343,11 +346,11 @@
 <nav class="bd-docs-nav bd-links"
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="building_xarray_datasets.html">Build an xarray.Dataset from Scratch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="create_pipelineop.html">Creating a New Pipeline Operation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="appending.html">Appending Data to xarray.Datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="saving_pipelines.html">Reading and Writing Pipelines</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Reading and Writing Pipelines</a></li>
 
 </ul>
 </div>
@@ -389,7 +392,10 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">How-To Guides</span></li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">How-To Guides</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Reading and Writing Pipelines</span></li>
   </ul>
 </nav>
 </div>
@@ -406,18 +412,185 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="how-to-guides">
-<h1>How-To Guides<a class="headerlink" href="#how-to-guides" title="Permalink to this heading">#</a></h1>
-<p>Guides for specific tasks</p>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="building_xarray_datasets.html">Build an xarray.Dataset from Scratch</a></li>
-<li class="toctree-l1"><a class="reference internal" href="create_pipelineop.html">Creating a New Pipeline Operation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="appending.html">Appending Data to xarray.Datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="saving_pipelines.html">Reading and Writing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="saving_pipelines.html#Conclusion">Conclusion</a></li>
-</ul>
+  <p><a class="reference external" href="https://colab.research.google.com/github/usnistgov/AFL-agent/blob/main/docs/source/how-to/saving_pipelines.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
+<section id="Reading-and-Writing-Pipelines">
+<h1>Reading and Writing Pipelines<a class="headerlink" href="#Reading-and-Writing-Pipelines" title="Permalink to this heading">#</a></h1>
+<p>Its</p>
+<section id="Google-Colab-Setup">
+<h2>Google Colab Setup<a class="headerlink" href="#Google-Colab-Setup" title="Permalink to this heading">#</a></h2>
+<p>Only uncomment and run the next cell if you are running this notebook in Google Colab or if don’t already have the AFL-agent package installed.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
 </div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># !pip install git+https://github.com/usnistgov/AFL-agent.git</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Writing-A-Pipeline">
+<h2>Writing A Pipeline<a class="headerlink" href="#Writing-A-Pipeline" title="Permalink to this heading">#</a></h2>
+<p>To begin, let’s load the necessary libraries and define a short pipeline</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="s1">&#39;MyPipeline&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">my_important_pipeline</span><span class="p">:</span>
+
+        <span class="n">SavgolFilter</span><span class="p">(</span>
+            <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
+            <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;derivative&#39;</span><span class="p">,</span>
+            <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
+            <span class="n">derivative</span><span class="o">=</span><span class="mi">1</span>
+            <span class="p">)</span>
+
+        <span class="n">Similarity</span><span class="p">(</span>
+            <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;derivative&#39;</span><span class="p">,</span>
+            <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;similarity&#39;</span><span class="p">,</span>
+            <span class="n">sample_dim</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;metric&#39;</span><span class="p">:</span> <span class="s1">&#39;laplacian&#39;</span><span class="p">,</span><span class="s1">&#39;gamma&#39;</span><span class="p">:</span><span class="mf">1e-4</span><span class="p">}</span>
+            <span class="p">)</span>
+
+        <span class="n">SpectralClustering</span><span class="p">(</span>
+            <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;similarity&#39;</span><span class="p">,</span>
+            <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;labels&#39;</span><span class="p">,</span>
+            <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;n_phases&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+            <span class="p">)</span>
+
+<span class="n">my_important_pipeline</span><span class="o">.</span><span class="n">print</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+PipelineOp                               input_variable ---&gt; output_variable
+----------                               -----------------------------------
+0  ) &lt;SavgolFilter&gt;                      measurement ---&gt; derivative
+1  ) &lt;SimilarityMetric&gt;                  derivative ---&gt; similarity
+2  ) &lt;SpectralClustering&gt;                similarity ---&gt; labels
+
+Input Variables
+---------------
+0) measurement
+
+Output Variables
+----------------
+0) labels
+</pre></div></div>
+</div>
+<p>Now, we can write the pipeline by simply calling the <code class="docutils literal notranslate"><span class="pre">.write_json()</span></code> method</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">my_important_pipeline</span><span class="o">.</span><span class="n">write_json</span><span class="p">(</span><span class="s1">&#39;pipeline.json&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Pipeline successfully written to pipeline.json.
+</pre></div></div>
+</div>
+<p>Excellent! Let’s take a look at the json file that was written. We can inspect it using the json module</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;pipeline.json&#39;</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">display</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;name&#39;: &#39;MyPipeline&#39;,
+ &#39;date&#39;: &#39;03/04/25 19:59:19-576491&#39;,
+ &#39;ops&#39;: [{&#39;class&#39;: &#39;AFL.double_agent.Preprocessor.SavgolFilter&#39;,
+   &#39;args&#39;: {&#39;input_variable&#39;: &#39;measurement&#39;,
+    &#39;output_variable&#39;: &#39;derivative&#39;,
+    &#39;dim&#39;: &#39;x&#39;,
+    &#39;xlo&#39;: None,
+    &#39;xhi&#39;: None,
+    &#39;xlo_isel&#39;: None,
+    &#39;xhi_isel&#39;: None,
+    &#39;pedestal&#39;: None,
+    &#39;npts&#39;: 250,
+    &#39;derivative&#39;: 1,
+    &#39;window_length&#39;: 31,
+    &#39;polyorder&#39;: 2,
+    &#39;apply_log_scale&#39;: True,
+    &#39;name&#39;: &#39;SavgolFilter&#39;}},
+  {&#39;class&#39;: &#39;AFL.double_agent.PairMetric.Similarity&#39;,
+   &#39;args&#39;: {&#39;input_variable&#39;: &#39;derivative&#39;,
+    &#39;output_variable&#39;: &#39;similarity&#39;,
+    &#39;sample_dim&#39;: &#39;sample&#39;,
+    &#39;params&#39;: {&#39;metric&#39;: &#39;laplacian&#39;, &#39;gamma&#39;: 0.0001},
+    &#39;constrain_same&#39;: [],
+    &#39;constrain_different&#39;: [],
+    &#39;name&#39;: &#39;SimilarityMetric&#39;}},
+  {&#39;class&#39;: &#39;AFL.double_agent.Labeler.SpectralClustering&#39;,
+   &#39;args&#39;: {&#39;input_variable&#39;: &#39;similarity&#39;,
+    &#39;output_variable&#39;: &#39;labels&#39;,
+    &#39;dim&#39;: &#39;sample&#39;,
+    &#39;params&#39;: {&#39;n_phases&#39;: 2},
+    &#39;name&#39;: &#39;SpectralClustering&#39;,
+    &#39;use_silhouette&#39;: False}}]}
+</pre></div></div>
+</div>
+<p>With this, we can see that all of the <code class="docutils literal notranslate"><span class="pre">PipelineOps</span></code> are stored in the <code class="docutils literal notranslate"><span class="pre">ops</span></code> keyword with the keyword arguments we specified above. Also included are any default arguments that we didn’t explicitly specify.</p>
+</section>
+<section id="Reading-a-Pipeline">
+<h2>Reading a Pipeline<a class="headerlink" href="#Reading-a-Pipeline" title="Permalink to this heading">#</a></h2>
+<p>So the next and final step is to load the pipeline from disk.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">loaded_pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="o">.</span><span class="n">read_json</span><span class="p">(</span><span class="s1">&#39;pipeline.json&#39;</span><span class="p">)</span>
+<span class="n">loaded_pipeline</span><span class="o">.</span><span class="n">print</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+PipelineOp                               input_variable ---&gt; output_variable
+----------                               -----------------------------------
+0  ) &lt;SavgolFilter&gt;                      measurement ---&gt; derivative
+1  ) &lt;SimilarityMetric&gt;                  derivative ---&gt; similarity
+2  ) &lt;SpectralClustering&gt;                similarity ---&gt; labels
+
+Input Variables
+---------------
+0) measurement
+
+Output Variables
+----------------
+0) labels
+</pre></div></div>
+</div>
+<p>Success!</p>
+</section>
+</section>
+<section id="Conclusion">
+<h1>Conclusion<a class="headerlink" href="#Conclusion" title="Permalink to this heading">#</a></h1>
 </section>
 
 
@@ -431,20 +604,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../tutorials/using_prefab.html"
+       href="appending.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Using Prefabricated Pipelines</p>
+        <p class="prev-next-title">Appending Data to xarray.Datasets</p>
       </div>
     </a>
     <a class="right-next"
-       href="building_xarray_datasets.html"
+       href="../explanations/index.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Build an xarray.Dataset from Scratch</p>
+        <p class="prev-next-title">Explanations</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -460,10 +633,29 @@
 
 
   <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Reading and Writing Pipelines</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Google-Colab-Setup">Google Colab Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Writing-A-Pipeline">Writing A Pipeline</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Reading-a-Pipeline">Reading a Pipeline</a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#Conclusion">Conclusion</a></li>
+</ul>
+
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="../_sources/how-to/index.rst.txt"
+      <li><a href="../_sources/how-to/saving_pipelines.ipynb.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div></div>
