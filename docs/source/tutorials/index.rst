@@ -12,3 +12,4 @@ Step-by-step guides for beginners to use AFL-agent
    autosas_fitting
    interactive
    using_datasets
+   using_prefab
