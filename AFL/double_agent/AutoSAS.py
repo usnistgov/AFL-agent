@@ -2,22 +2,21 @@ import copy
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, Any, Optional, List, Tuple, ClassVar
+from typing import Any, ClassVar
 from typing_extensions import Self
 
 import numpy as np
 import xarray as xr
-import pandas as pd
 
-import bumps  # type: ignore
-import bumps.fitproblem  # type: ignore
-import bumps.fitters  # type: ignore
-import bumps.names  # type: ignore
-import bumps.bounds  # type: ignore
-import sasmodels  # type: ignore
-import sasmodels.bumps_model  # type: ignore
-import sasmodels.core  # type: ignore
-import sasmodels.data  # type: ignore
+import bumps  # pyright: ignore
+import bumps.fitproblem  # pyright: ignore
+import bumps.fitters  # pyright: ignore
+import bumps.names  # pyright: ignore
+import bumps.bounds  # pyright: ignore
+import sasmodels  # pyright: ignore
+import sasmodels.bumps_model  # pyright: ignore
+import sasmodels.core  # pyright: ignore
+import sasmodels.data  # pyright: ignore[ruleName]
 
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
@@ -27,9 +26,9 @@ from AFL.automation.APIServer.Client import Client
 class FitParameter:
     """Represents a parameter to be fitted in a SAS model."""
     value: float
-    bounds: Optional[Tuple[float, float]] = None
+    bounds: tuple[float, float] | None = None
     fixed: bool = False
-    error: Optional[float] = None
+    error: float | None = None
 
 
 class SASModel:
@@ -46,7 +45,7 @@ class SASModel:
         Name of the sasmodel to use (e.g., "sphere", "cylinder", "power_law")
     data : sasmodels.data.Data1D
         The experimental data to fit
-    parameters : Dict[str, FitParameter]
+    parameters : dict[str, FitParameter]
         Dictionary of parameters for the model with their initial values and constraints
     """
 
@@ -55,7 +54,7 @@ class SASModel:
         name: str,
         data: sasmodels.data.Data1D,
         sasmodel: str,
-        parameters: Dict[str, Dict[str, Any]],
+        parameters: dict[str, dict[str, Any]],
     ) -> None:
         """Initialize a SAS model for fitting.
         
@@ -67,15 +66,15 @@ class SASModel:
             The experimental data to fit
         sasmodel : str
             Name of the sasmodel to use (e.g., "sphere", "cylinder", "power_law")
-        parameters : Dict[str, Dict[str, Any]]
+        parameters : dict[str, dict[str, Any]]
             Dictionary of parameters for the model with their initial values and constraints.
             Each parameter should have a "value" key and optionally a "bounds" key.
         """
         self.name = name
         self.data = data
-        self.sasmodel = sasmodel
-        self.kernel = sasmodels.core.load_model(sasmodel)
-        self.init_params = copy.deepcopy(parameters)
+        self.sasmodel: str = sasmodel
+        self.kernel = sasmodels.core.load_model(model_name=sasmodel) #pyright: ignore
+        self.init_params = copy.deepcopy(x=parameters)
         
         # Results storage
         self.results = None
@@ -111,16 +110,16 @@ class SASModel:
         """Create a deep copy of this model instance."""
         return copy.deepcopy(self)
 
-    def residuals(self) -> np.ndarray:
+    def residuals(self) -> np.ndarray[Any, np.dtype[Any]]:
         """Get the residuals between the model and the data."""
         return self.problem.residuals()
 
-    def __call__(self, params: Optional[Dict[str, float]] = None) -> np.ndarray:
+    def __call__(self, params: dict[str, float] | None = None) -> np.ndarray[Any, np.dtype[Any]]:
         """Calculate the model intensity with the current or specified parameters.
         
         Parameters
         ----------
-        params : Optional[Dict[str, float]]
+        params : dict[str, float] | None
             Dictionary of parameter names and values to use for the calculation.
             If None, uses the current parameter values.
             
@@ -136,12 +135,12 @@ class SASModel:
             
         return self.experiment.theory()
 
-    def fit(self, fit_method: Optional[Dict[str, Any]] = None) -> Any:
+    def fit(self, fit_method: dict[str, Any] | None = None) -> Any:
         """Fit the model to the data.
         
         Parameters
         ----------
-        fit_method : Optional[Dict[str, Any]]
+        fit_method : dict[str, Any] | None
             Dictionary of fitting parameters to pass to bumps.fitters.fit.
             If None, uses default Levenberg-Marquardt parameters.
             
@@ -183,13 +182,13 @@ class SASModel:
         
         return self.results
 
-    def get_fit_params(self) -> Dict[str, Dict[str, Any]]:
+    def get_fit_params(self) -> dict[str, dict[str, Any]]:
         """Get the fitted parameters with their values and uncertainties.
         
         Returns
         -------
-        Dict[str, Dict[str, Any]]
-            Dictionary of parameter names and their fitted values and uncertainties
+        dict[str, dict[str, Any]]
+            dict of parameter names and their fitted values and uncertainties
         """
         if self.results is None:
             raise ValueError("Model has not been fitted yet. Call fit() first.")
@@ -223,12 +222,12 @@ class SASModel:
             
         return self.problem.chisq()
     
-    def get_fit_summary(self) -> Dict[str, Any]:
+    def get_fit_summary(self) -> dict[str, Any]:
         """Get a summary of the fit results.
         
         Returns
         -------
-        Dict[str, Any]
+        dict[str, Any]
             Dictionary containing the fit results summary
         """
         if self.results is None:
@@ -251,20 +250,20 @@ class SASFitter:
     
     Attributes
     ----------
-    model_inputs : List[Dict[str, Any]]
+    model_inputs : List[dict[str, Any]]
         List of model configurations to fit
-    fit_method : Dict[str, Any]
+    fit_method : dict[str, Any]
         Configuration for the fitting algorithm
     q_min : float
         Minimum q value to include in fitting
     q_max : float
         Maximum q value to include in fitting
-    resolution : Optional[Any]
+    resolution : Any | None
         Resolution function for the data
     """
     
     # Class constants
-    DEFAULT_FIT_METHOD: ClassVar[Dict[str, Any]] = {
+    DEFAULT_FIT_METHOD: ClassVar[dict[str, Any]] = {
         "method": "lm",
         "steps": 1000,
         "ftol": 1.5e-6,
@@ -272,7 +271,7 @@ class SASFitter:
         "verbose": False,
     }
     
-    DEFAULT_MODEL_INPUTS: ClassVar[List[Dict[str, Any]]] = [
+    DEFAULT_MODEL_INPUTS: ClassVar[list[dict[str, Any]]] = [
         {
             "name": "power_law_1",
             "sasmodel": "power_law",
@@ -288,25 +287,25 @@ class SASFitter:
     
     def __init__(
         self, 
-        model_inputs: Optional[List[Dict[str, Any]]] = None, 
-        fit_method: Optional[Dict[str, Any]] = None,
-        q_min: Optional[float] = None,
-        q_max: Optional[float] = None,
-        resolution: Optional[Any] = None,
+        model_inputs: list[dict[str, Any]] | None = None, 
+        fit_method: dict[str, Any] | None = None,
+        q_min: float | None = None,
+        q_max: float | None = None,
+        resolution: Any | None = None,
     ):
         """Initialize the SAS fitter.
         
         Parameters
         ----------
-        model_inputs : Optional[List[Dict[str, Any]]]
+        model_inputs : list[dict[str, Any]] | None
             List of model configurations to fit. If None, uses DEFAULT_MODEL_INPUTS.
-        fit_method : Optional[Dict[str, Any]]
+        fit_method : dict[str, Any] | None
             Configuration for the fitting algorithm. If None, uses DEFAULT_FIT_METHOD.
         q_min : float
             Minimum q value to include in fitting
         q_max : float
             Maximum q value to include in fitting
-        resolution : Optional[Any]
+        resolution : Any | None
             Resolution function for the data
         """
         self.model_inputs = model_inputs or self.DEFAULT_MODEL_INPUTS
@@ -316,10 +315,10 @@ class SASFitter:
         self.resolution = resolution
         
         # Storage for data and results
-        self.sasdata: List[sasmodels.data.Data1D] = []
-        self.fitted_models: List[List[SASModel]] = []
-        self.fit_results: List[List[Dict[str, Any]]] = []
-        self.report: Dict[str, Any] = {}
+        self.sasdata: list[sasmodels.data.Data1D] = []
+        self.fitted_models: list[list[SASModel]] = []
+        self.fit_results: list[list[dict[str, Any]]] = []
+        self.report: dict[str, Any] = {}
     
     def set_sasdata(
         self,
@@ -328,7 +327,7 @@ class SASFitter:
         q_variable: str = "q",
         sas_variable: str = "I",
         sas_err_variable: str = "dI",
-        sas_resolution_variable: Optional[str] = None,
+        sas_resolution_variable: str | None = None,
     ) -> None:
         """Set the SAS data to be fitted from an xarray Dataset.
         
@@ -344,7 +343,7 @@ class SASFitter:
             The variable name for scattering intensity
         sas_err_variable : str
             The variable name for scattering intensity uncertainty
-        sas_resolution_variable : Optional[str]
+        sas_resolution_variable : str | None
             The variable name for resolution function, if available
         """
         self.sasdata = []
@@ -363,7 +362,7 @@ class SASFitter:
             # Create Data1D object and add to list
             self.sasdata.append(sasmodels.data.Data1D(x=x, y=y, dy=dy, dx=dx))
     
-    def _create_models(self, data: sasmodels.data.Data1D) -> List[SASModel]:
+    def _create_models(self, data: sasmodels.data.Data1D) -> list[SASModel]:
         """Create SAS models for the given data based on model_inputs.
         
         Parameters
@@ -402,15 +401,15 @@ class SASFitter:
     def fit_models(
         self, 
         parallel: bool = False, 
-        fit_method: Optional[Dict[str, Any]] = None
-    ) -> Tuple[str, xr.Dataset]:
+        fit_method: dict[str, Any] | None = None
+    ) -> tuple[str, xr.Dataset]:
         """Fit all models to all datasets.
         
         Parameters
         ----------
         parallel : bool
             Whether to use parallel processing (not implemented)
-        fit_method : Optional[Dict[str, Any]]
+        fit_method : dict[str, Any] | None
             Configuration for the fitting algorithm. If None, uses the instance's fit_method.
             
         Returns
@@ -450,12 +449,12 @@ class SASFitter:
         
         return fit_uuid, output_dataset
     
-    def _build_report(self) -> Dict[str, Any]:
+    def _build_report(self) -> dict[str, Any]:
         """Build a comprehensive report of the fitting results.
         
         Returns
         -------
-        Dict[str, Any]
+        dict[str, Any]
             Dictionary containing the fitting report
         """
         report = {
@@ -538,12 +537,12 @@ class SASFitter:
         
         return np.array(all_probabilities)
     
-    def _create_output_dataset(self, report: Dict[str, Any], fit_uuid: str) -> xr.Dataset:
+    def _create_output_dataset(self, report: dict[str, Any], fit_uuid: str) -> xr.Dataset:
         """Create an xarray Dataset containing all fit results.
         
         Parameters
         ----------
-        report : Dict[str, Any]
+        report : dict[str, Any]
             The fitting report
         fit_uuid : str
             Unique ID for the fit calculation
@@ -688,17 +687,17 @@ class AutoSAS(PipelineOp):
         Prefix to add to output variable names
     q_dim : str
         The dimension name for q values in the dataset
-    sas_resolution_variable : Optional[Any]
+    sas_resolution_variable : float | None
         Resolution function for the data, if available
     sample_dim : str
         The dimension containing each sample
     model_dim : str
         The dimension name for different models
-    model_inputs : Optional[List[Dict[str, Any]]]
+    model_inputs : List[dict[str, Any]] | None
         List of model configurations to fit
-    fit_method : Optional[Dict[str, Any]]
+    fit_method : dict[str, Any] | None
         Configuration for the fitting algorithm
-    server_id : Optional[str]
+    server_id : str | None
         Server ID in the format "host:port" for remote execution, or None for local execution
     q_min : float
         Minimum q value to use if not provided in the model_input variable
@@ -712,14 +711,14 @@ class AutoSAS(PipelineOp):
         sas_err_variable: str,
         q_variable: str,
         output_prefix: str,
-        sas_resolution_variable: Optional[Any] = None,
+        sas_resolution_variable: Any | None = None,
         sample_dim: str = 'sample',
         model_dim: str = 'models',
-        model_inputs: Optional[List[Dict[str, Any]]] = None,
-        fit_method: Optional[Dict[str, Any]] = None,
-        server_id: Optional[str] = None,  # Set to None to run locally
-        q_min: Optional[float] = None,
-        q_max: Optional[float] = None,
+        model_inputs: list[dict[str, Any]] | None = None,
+        fit_method: dict[str, Any] | None = None,
+        server_id: str | None = None,  # Set to None to run locally
+        q_min: float | None = None,
+        q_max: float | None = None,
         name: str = "AutoSAS",
     ):
         output_variables = ["all_chisq"]
@@ -959,11 +958,11 @@ class ModelSelectParsimony(PipelineOp):
         The dimension containing each sample
     cutoff_threshold : float
         The chi-squared threshold for acceptable fits (default: 1.0)
-    model_complexity : Optional[Dict[str, int]]
+    model_complexity : dict[str, int] | None
         Dictionary mapping model names to their complexity (number of parameters)
-    model_inputs : Optional[List[Dict[str, Any]]]
+    model_inputs : list[dict[str, Any]] | None
         List of model configurations, used to determine complexity if model_complexity is None
-    server_id : Optional[str]
+    server_id : str | None
         Server ID in the format "host:port" for remote execution, or None for local execution
     output_prefix : str
         Prefix to add to output variable names
@@ -1103,9 +1102,9 @@ class ModelSelectAIC(PipelineOp):
         The variable name for model names in the dataset
     sample_dim : str
         The dimension containing each sample
-    model_inputs : Optional[List[Dict[str, Any]]]
+    model_inputs : list[dict[str, Any]] | None
         List of model configurations to determine complexity
-    server_id : Optional[str]
+    server_id : str | None
         Server ID in the format "host:port" for remote execution, or None for local execution
     """
     def __init__(
@@ -1221,9 +1220,9 @@ class ModelSelectBIC(PipelineOp):
         The variable name containing model names
     sample_dim : str
         The dimension containing each sample
-    model_inputs : Optional[List[Dict[str, Any]]]
+    model_inputs : list[dict[str, Any]] | None
         List of model configurations to determine parameter counts
-    server_id : Optional[str]
+    server_id : str | None
         Server ID in the format "host:port" for remote execution, or None for local execution
     output_prefix : str
         Prefix to add to output variable names
