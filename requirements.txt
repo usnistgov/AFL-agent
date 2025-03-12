@@ -245,4 +245,5 @@ zipp==3.21.0
 zstandard==0.23.0
 pygraphviz==1.14
 nbsphinx==0.9.6
+bumps==0.9.3
 mpltern==1.0.4
