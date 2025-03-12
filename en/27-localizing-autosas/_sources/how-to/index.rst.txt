@@ -10,3 +10,5 @@ Guides for specific tasks
    create_pipelineop
    appending
    autosas_modal_selection
+   saving_pipelines
+

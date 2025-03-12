@@ -47,7 +47,7 @@
     <script src="../../../_static/copybutton.js?v=f281be69"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'reference/api/double_agent/Pipeline';</script>
-    <link rel="icon" href="../../../_static/logo.svg"/>
+    <link rel="icon" href="../../../_static/logo_light.svg"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="AFL.double_agent.PipelineOp module" href="PipelineOp.html" />
@@ -127,8 +127,8 @@
       
     
     
-    <img src="../../../_static/logo_text_long.svg" class="logo__image only-light" alt="AFL-agent  documentation - Home"/>
-    <img src="../../../_static/logo_text_long.svg" class="logo__image only-dark pst-js-only" alt="AFL-agent  documentation - Home"/>
+    <img src="../../../_static/logo_text_large_light.svg" class="logo__image only-light" alt="AFL-agent  documentation - Home"/>
+    <img src="../../../_static/logo_text_large_dark.svg" class="logo__image only-dark pst-js-only" alt="AFL-agent  documentation - Home"/>
   
   
 </a></div>
@@ -450,7 +450,7 @@ that perform specific operations on data.</p>
 </div></blockquote>
 <dl class="py class">
 <dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Pipeline.</span></span><span class="sig-name descname"><span class="pre">Pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ops</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Pipeline.</span></span><span class="sig-name descname"><span class="pre">Pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ops</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="PipelineContext.html#AFL.double_agent.PipelineContext.PipelineContext" title="AFL.double_agent.PipelineContext.PipelineContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineContext</span></code></a></p>
 <p>Container class for defining and executing computational workflows.</p>
 <p>The Pipeline class serves as a framework for organizing and running sequences of
@@ -582,22 +582,34 @@ be distinguishable by having Generator in the name, but this isn’t enforced at
 <dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline.print_code">
 <span class="sig-name descname"><span class="pre">print_code</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline.print_code" title="Permalink to this definition">#</a></dt>
 <dd><p>String representation of approximate code to generate this pipeline</p>
-<p>Run this method to produce a string of Python code that should <strong>approximate</strong>
-this Pipeline. If all constructor parameters are not stored as class attributes,
-this method will fail and the code result will need to be edited.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This method is approximate. The code generated by this method may not produce
-an identical Pipeline to this method. Use with caution.</p>
-</div>
+<p>Run this method to produce a string of Python code that should
+recreate this Pipeline.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline.read">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline.read" title="Permalink to this definition">#</a></dt>
-<dd><p>Read pipeline from pickle file on disk</p>
+<dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline.read_json">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">read_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline.read_json" title="Permalink to this definition">#</a></dt>
+<dd><p>Read pipeline from json file on disk</p>
 <section id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">from</span> <span class="pre">AFL.double_agent.Pipeline</span> <span class="pre">import</span> <span class="pre">Pipeline</span>
+<span class="pre">pipeline1</span> <span class="pre">=</span> <span class="pre">Pipeline.read_json('pickled_pipeline.pkl')</span>
+<span class="pre">``</span></code></p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline.read_pkl">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">read_pkl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline.read_pkl" title="Permalink to this definition">#</a></dt>
+<dd><p>Read pipeline from pickle file on disk</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Please use the  <cite>read_json</cite>  and <cite>write_json</cite> methods. The pickle methods
+are insecure and prone to errors.</p>
+</div>
+<section id="id1">
+<h2>Usage<a class="headerlink" href="#id1" title="Permalink to this heading">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">`python</span>
 <span class="pre">from</span> <span class="pre">AFL.double_agent.Pipeline</span> <span class="pre">import</span> <span class="pre">Pipeline</span>
 <span class="pre">pipeline1</span> <span class="pre">=</span> <span class="pre">Pipeline.read('pickled_pipeline.pkl')</span>
@@ -611,9 +623,29 @@ an identical Pipeline to this method. Use with caution.</p>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline.write">
-<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline.write" title="Permalink to this definition">#</a></dt>
+<dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline.write_json">
+<span class="sig-name descname"><span class="pre">write_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline.write_json" title="Permalink to this definition">#</a></dt>
+<dd><p>Write pipeline to disk as a JSON</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – Filename or filepath to be written</p></li>
+<li><p><strong>overwrite</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to overwrite an existing file</p></li>
+<li><p><strong>description</strong> (<em>str</em><em>, </em><em>optional</em>) – A descriptive text about the pipeline’s purpose and functionality</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline.write_pkl">
+<span class="sig-name descname"><span class="pre">write_pkl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline.write_pkl" title="Permalink to this definition">#</a></dt>
 <dd><p>Write pipeline to disk as a pkl</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Please use the read_json and write_json methods. The pickle methods
+are insecure and prone to errors.</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – Filename or filepath to be written</p>
@@ -689,9 +721,11 @@ an identical Pipeline to this method. Use with caution.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.output_variables"><code class="docutils literal notranslate"><span class="pre">Pipeline.output_variables()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.print"><code class="docutils literal notranslate"><span class="pre">Pipeline.print()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.print_code"><code class="docutils literal notranslate"><span class="pre">Pipeline.print_code()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.read"><code class="docutils literal notranslate"><span class="pre">Pipeline.read()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.read_json"><code class="docutils literal notranslate"><span class="pre">Pipeline.read_json()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.read_pkl"><code class="docutils literal notranslate"><span class="pre">Pipeline.read_pkl()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.search"><code class="docutils literal notranslate"><span class="pre">Pipeline.search()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.write"><code class="docutils literal notranslate"><span class="pre">Pipeline.write()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.write_json"><code class="docutils literal notranslate"><span class="pre">Pipeline.write_json()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.write_pkl"><code class="docutils literal notranslate"><span class="pre">Pipeline.write_pkl()</span></code></a></li>
 </ul>
 </li>
 </ul>
