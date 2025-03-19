@@ -1329,3 +1329,84 @@ class ModelSelectBIC(PipelineOp):
         return self
 
 
+
+class ModelSelectMostProbable(PipelineOp):
+    """ModelSelectMostProbable is a pipeline operation for selecting the most probable model.
+    
+    This class selects the model with the highest probability for each sample by 
+    argmaxing over the 'probabilities' data variable.
+    
+    Attributes
+    ----------
+    model_names_var : str
+        The variable name for model names in the dataset
+    sample_dim : str
+        The dimension containing each sample
+    model_inputs : list[dict[str, Any]] | None
+        List of model configurations (optional)
+    server_id : str | None
+        Server ID in the format "host:port" for remote execution, or None for local execution
+    output_prefix : str
+        Prefix to add to output variable names
+    """
+    
+    def __init__(
+        self,
+        model_names_var,
+        sample_dim,
+        output_prefix='MostProbable',
+        name="ModelSelection_MostProbable",
+        **kwargs
+    ):
+        output_variables = ["labels", "label_names"]
+        super().__init__(
+            name=name,
+            input_variable=[model_names_var],
+            output_variable=[
+                output_prefix + "_" + o for o in listify(output_variables)
+            ],
+            output_prefix=output_prefix,
+        )
+        
+        self.sample_dim = sample_dim
+        self.model_names_var = model_names_var
+
+
+    def calculate(self, dataset):
+        """Method for selecting the model with the highest probability for each sample
+        
+        Raises
+        ------
+        ValueError
+            If 'probabilities' variable is not present in the dataset
+        """
+        
+        self.dataset = dataset.copy(deep=True)
+        
+        # Check if 'probabilities' variable exists in the dataset
+        if 'probabilities' not in self.dataset:
+            raise ValueError(
+                f"The 'probabilities' variable is required for {self.__class__.__name__}. "
+                "Please ensure the dataset contains a 'probabilities' variable with model probabilities."
+            )
+        
+        # Determine the most probable model by argmaxing over probabilities
+        probabilities = self.dataset['probabilities']
+        
+        # Find the index of the maximum probability for each sample
+        most_probable_indices = probabilities.argmax(dim=self.model_names_var)
+        print(most_probable_indices) 
+        # Get the corresponding model names 
+        model_names = self.dataset[self.model_names_var]
+        most_probable_labels = model_names.isel(**{self.model_names_var: most_probable_indices})
+        
+        self.output[self._prefix_output("labels")] = xr.DataArray(
+            data=most_probable_indices.values,
+            dims=[self.sample_dim]
+        )
+        
+        self.output[self._prefix_output("label_names")] = xr.DataArray(
+            data=most_probable_labels.values,
+            dims=[self.sample_dim]
+        )
+        return self
