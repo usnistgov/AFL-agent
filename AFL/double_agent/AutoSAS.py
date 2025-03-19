@@ -1016,10 +1016,7 @@ class ModelSelectParsimony(PipelineOp):
         """Method for selecting the model based on parsimony given a user defined ChiSq threshold """
         
         self.dataset = dataset.copy(deep=True)
-
-        bestChiSq_labels = self.dataset[self.all_chisq_var].argmin(self.model_names_var)
-        bestChiSq_label_names = np.array([self.dataset[self.model_names_var][i].values for i in bestChiSq_labels.values])
-        
+       
         ### default behavior is that complexity is determined by number of free parameters. 
         ### this is an issue if the number of parameters is the same between models. You bank on them having wildly different ChiSq vals
         ### could use a neighbor approach or some more intelligent selection methods
@@ -1053,21 +1050,13 @@ class ModelSelectParsimony(PipelineOp):
         
         # Sort models by priority
         priority_order = [m for _,m in sorted(zip(self.model_priority,models))]
-        # print(models)
-        # print(priority_order)
         
         # Sort chi-squared and params accordingly
         sorted_chisq = self.dataset[self.all_chisq_var].sortby(self.model_names_var)
-        # print(sorted_chisq)
-        
-        # sorted_params = model_params[self.model_priority]
-        # sorted_models = np.array(models)[self.model_priority]
         
         # Find best model per sample based on chi-squared
         best_indices = sorted_chisq.argmin(dim=self.model_names_var)
         best_chisq = sorted_chisq.min(dim=self.model_names_var)
-        # print(best_indices)
-        # print(best_chisq)
         
         # Iterate over samples to apply parsimony rule
         selected_indices = []
@@ -1078,8 +1067,6 @@ class ModelSelectParsimony(PipelineOp):
             # Find all models within cutoff
             within_cutoff = np.where(chisq_values - min_chisq <= self.cutoff)[0]
 
-            
-            
             # Choose the simplest model among them
             simplest_idx = within_cutoff[np.argmin([self.model_priority[i] for i in within_cutoff])]
             
@@ -1176,9 +1163,6 @@ class ModelSelectAIC(PipelineOp):
         
         self.dataset = dataset.copy(deep=True)
 
-        bestChiSq_labels = self.dataset[self.all_chisq_var].argmin(self.model_names_var).values
-        bestChiSq_label_names = np.array([self.dataset[self.model_names_var][i].values for i in bestChiSq_labels])
-        
         # Determine model complexity either from server or local model_inputs
         if self.server_id is not None:
             # Get complexity from server
@@ -1191,18 +1175,18 @@ class ModelSelectAIC(PipelineOp):
         else:
             raise ValueError("Either server_id or model_inputs must be provided to calculate model complexity")
             
-        # Calculate number of parameters for each model
-        n = []
+        # Calculate number of parameters for each model, d
+        d = []
         for model in model_inputs:
             n_params = 0
             for p in model['fit_params']:
                 if model['fit_params'][p]['bounds'] != None:
                     n_params += 1
-            n.append(n_params)
-        n = np.array(n)
+            d.append(n_params)
+        d = np.array(d)
         
-        ### chisq + 2*ln(d) = AIC    
-        AIC = np.array([2*np.log(i) + 2*n for i in self.dataset[self.all_chisq_var].values])
+        ### AIC = 2*d + chisq 
+        AIC = np.array([2*i + 2*d for i in self.dataset[self.all_chisq_var].values])
 
         AIC_labels = np.argmin(AIC, axis=1)
         AIC_label_names = np.array([self.dataset[self.model_names_var][i].values for i in AIC_labels])
