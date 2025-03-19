@@ -956,12 +956,12 @@ class ModelSelectParsimony(PipelineOp):
         The variable name for model names in the dataset
     sample_dim : str
         The dimension containing each sample
-    cutoff_threshold : float
+    cutoff : float
         The chi-squared threshold for acceptable fits (default: 1.0)
-    model_complexity : dict[str, int] | None
+    model_priority : dict[str, int] | None
         Dictionary mapping model names to their complexity (number of parameters)
     model_inputs : list[dict[str, Any]] | None
-        List of model configurations, used to determine complexity if model_complexity is None
+        List of model configurations, used to determine complexity if model_priority is None
     server_id : str | None
         Server ID in the format "host:port" for remote execution, or None for local execution
     output_prefix : str
@@ -972,8 +972,8 @@ class ModelSelectParsimony(PipelineOp):
         all_chisq_var,
         model_names_var,
         sample_dim,
-        cutoff_threshold=1.0,
-        model_complexity=None,
+        cutoff=1.0,
+        model_priority=None,
         model_inputs=None,  # Added to support local complexity calculation
         server_id=None,     # Made optional to support local operation
         output_prefix='Parsimony',
@@ -993,8 +993,8 @@ class ModelSelectParsimony(PipelineOp):
         
         self.sample_dim = sample_dim
         self.model_names_var = model_names_var
-        self.cutoff_threshold = cutoff_threshold 
-        self.model_complexity = model_complexity
+        self.cutoff = cutoff 
+        self.model_priority = model_priority
         self.model_inputs = model_inputs
         self.all_chisq_var = all_chisq_var
         self.server_id = server_id
@@ -1023,60 +1023,83 @@ class ModelSelectParsimony(PipelineOp):
         ### default behavior is that complexity is determined by number of free parameters. 
         ### this is an issue if the number of parameters is the same between models. You bank on them having wildly different ChiSq vals
         ### could use a neighbor approach or some more intelligent selection methods
-        if self.model_complexity is None:
-            print('aggregating complexity')
+        
             
-            # Determine model complexity either from server or local model_inputs
-            if self.server_id is not None:
-                # Get complexity from server
-                self.construct_clients()
-                aSAS_config = self.AutoSAS_client.get_config('all', interactive=True)['return_val']
-                model_inputs = aSAS_config['model_inputs']
-            elif self.model_inputs is not None:
-                # Use local model_inputs
-                model_inputs = self.model_inputs
-            else:
-                raise ValueError("Either server_id or model_inputs must be provided to calculate model complexity")
-                
-            # Calculate complexity based on number of free parameters
-            order = []
-            for model in model_inputs:
-                n_params = 0
-                for p in model['fit_params']:
-                    if model['fit_params'][p]['bounds'] != None:
-                        n_params += 1
-                order.append(n_params)
-            print(order)
-            print(np.argsort(order))
-            self.model_complexity = np.argsort(order).tolist()
+        # Determine model complexity either from server or local model_inputs
+        if self.server_id is not None:
+            # Get complexity from server
+            self.construct_clients()
+            aSAS_config = self.AutoSAS_client.get_config('all', interactive=True)['return_val']
+            model_inputs = aSAS_config['model_inputs']
+        elif self.model_inputs is not None:
+            # Use local model_inputs
+            model_inputs = self.model_inputs
+        else:
+            raise ValueError("Either server_id or model_inputs must be provided to calculate model complexity")
+            
+        # Calculate complexity based on number of free parameters
+        model_params = []
+        for model in model_inputs:
+            n_params = 0
+            for p in model['fit_params']:
+                if model['fit_params'][p]['bounds'] != None:
+                    n_params += 1
+            model_params.append(n_params)
+            
+        if self.model_priority is None:
+            self.model_priority = np.argsort(model_params).tolist()
+            
+        models = self.dataset[self.model_names_var].values #extract models
+        
+        # Sort models by priority
+        priority_order = [m for _,m in sorted(zip(self.model_priority,models))]
+        # print(models)
+        # print(priority_order)
+        
+        # Sort chi-squared and params accordingly
+        sorted_chisq = self.dataset[self.all_chisq_var].sortby(self.model_names_var)
+        # print(sorted_chisq)
+        
+        # sorted_params = model_params[self.model_priority]
+        # sorted_models = np.array(models)[self.model_priority]
+        
+        # Find best model per sample based on chi-squared
+        best_indices = sorted_chisq.argmin(dim=self.model_names_var)
+        best_chisq = sorted_chisq.min(dim=self.model_names_var)
+        # print(best_indices)
+        # print(best_chisq)
+        
+        # Iterate over samples to apply parsimony rule
+        selected_indices = []
+        for i in range(self.dataset.sizes[self.sample_dim]):
+            chisq_values = sorted_chisq.isel(sample=i).values
+            min_chisq = best_chisq.isel(sample=i).item()
 
-        # As written in dev full of jank...
-        replacement_labels = bestChiSq_labels.copy(deep=True)
-        all_chisq = self.dataset[self.all_chisq_var]
-        sorted_chisq = all_chisq.sortby(self.model_names_var, ascending=False).values
+            # Find all models within cutoff
+            within_cutoff = np.where(chisq_values - min_chisq <= self.cutoff)[0]
 
-        min_diff_chisq = np.array([row[1] - row[0] for row in sorted_chisq])
-        next_best_idx = np.array([np.argpartition(row,1)[1] for row in all_chisq])
+            
+            
+            # Choose the simplest model among them
+            simplest_idx = within_cutoff[np.argmin([self.model_priority[i] for i in within_cutoff])]
+            
+            # print(chisq_values)
+            # print(chisq_values - min_chisq)
+            # print(within_cutoff)
+            # print(self.model_priority)
+            # print(simplest_idx,'\n')
+            selected_indices.append(simplest_idx)
+        
+        selected_indices = np.array(selected_indices)
 
-        for idx in range(len(replacement_labels)):
-            chisq_set = all_chisq.min(dim=self.model_names_var).values
-
-            if (min_diff_chisq[idx] <= self.cutoff_threshold):
-                best_model_index = replacement_labels[idx]
-                next_best_index = next_best_idx[idx]
-                bm_rank = self.model_complexity.index(best_model_index)
-                nbm_rank = self.model_complexity.index(next_best_index)
-                
-                if (bm_rank > nbm_rank):
-                    replacement_labels[idx] = next_best_index
-
+        
         self.output[self._prefix_output("labels")] = xr.DataArray(
-            data=replacement_labels,
+            data=selected_indices,
             dims=[self.sample_dim]
         )
         
         self.output[self._prefix_output("label_names")] = xr.DataArray(
-            data=[self.dataset[self.model_names_var].values[i] for i in replacement_labels],
+            data=[priority_order[i] for i in selected_indices],
             dims=[self.sample_dim]
         )
         return self
