@@ -31,7 +31,8 @@ class AutoSASWidget:
         q_range: Optional[np.ndarray] = None,
         default_models: Optional[List[Dict[str, Any]]] = None,
         data: Optional[xr.Dataset] = None,
-        model_inputs: Optional[List[Dict[str, Any]]] = None
+        model_inputs: Optional[List[Dict[str, Any]]] = None,
+        custom_model_paths: Optional[List[str]] = None,
     ):
         """Initialize the AutoSASWidget.
         
@@ -54,7 +55,7 @@ class AutoSASWidget:
             self.q_range = q_range
             
         # Create the model and view
-        self.model = AutoSASWidget_Model(q_range=self.q_range, default_models=default_models)
+        self.model = AutoSASWidget_Model(q_range=self.q_range, default_models=default_models, custom_model_paths=custom_model_paths)
         self.view = AutoSASWidget_View(available_models=self.model.available_sasmodels, data=data)
         
         # Connect model and view
@@ -63,6 +64,11 @@ class AutoSASWidget:
         # Load model inputs if provided
         if model_inputs:
             self.load_model_inputs(model_inputs)
+    
+    def update_available_models(self):
+        """Update the available models."""
+        
+        self.view.available_models = self.model.available_sasmodels
     
     def _setup_callbacks(self):
         """Connect UI events to model methods."""
@@ -382,7 +388,8 @@ class AutoSASWidget_Model:
     def __init__(
         self,
         q_range: np.ndarray,
-        default_models: Optional[List[Dict[str, Any]]] = None
+        default_models: Optional[List[Dict[str, Any]]] = None,
+        custom_model_paths: Optional[List[str]] = None,
     ):
         """Initialize the model component.
         
@@ -392,9 +399,12 @@ class AutoSASWidget_Model:
             Array of q values to use for model visualization
         default_models : Optional[List[Dict[str, Any]]]
             List of model configurations to initialize with
+        custom_model_paths : Optional[List[str]]
+            List of paths to custom sasmodels
         """
         self.q_range = q_range
         self.models = {}
+        self.custom_model_paths = custom_model_paths
         self.available_sasmodels = self._get_available_sasmodels()
         
         # Initialize with default models if provided
@@ -411,7 +421,12 @@ class AutoSASWidget_Model:
             List of available model names
         """
         try:
-            return sorted(sasmodels.core.list_models())
+            # Try to get the list of available models from sasmodels and try to pull from the custom model paths too
+            models = sasmodels.core.list_models()
+            if self.custom_model_paths:  # Add custom model paths if provided    
+                models.extend(self.custom_model_paths)
+            return sorted(models)
+
         except Exception as e:
             print(f"Error getting model list: {e}")
             # Fallback to a known list of common models
