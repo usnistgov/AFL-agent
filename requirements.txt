@@ -24,7 +24,7 @@ babel==2.17.0
 beautifulsoup4==4.13.3
 black==25.1.0
 bleach==6.2.0
-blosc2==3.1.1
+blosc2
 Bottleneck==1.4.2
 cachetools==5.5.2
 canonicaljson==2.0.0
@@ -36,10 +36,10 @@ click==8.1.8
 cloudpickle==3.1.1
 cmake==3.31.4
 comm==0.2.2
-contourpy==1.3.1
+contourpy
 cryptography==44.0.1
 cycler==0.12.1
-dask==2025.2.0
+dask
 debugpy==1.8.12
 decorator==5.1.1
 defusedxml==0.7.1
