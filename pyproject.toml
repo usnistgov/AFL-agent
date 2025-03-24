@@ -42,13 +42,15 @@ dependencies = [
     "scikit-image",
     "scikit-learn",
     "bottleneck",
-    "sasmodels",
     "shapely",
     "sympy",
     "tiled[all]",
+    "sasmodels",
     "sasdata",
+    "bumps",
     "pygraphviz",
     "mpltern",
+    "anywidget",
 ]
 
 [project.optional-dependencies]
