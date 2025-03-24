@@ -47,7 +47,7 @@
     <script src="../../../_static/copybutton.js?v=f281be69"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'reference/api/double_agent/Preprocessor';</script>
-    <link rel="icon" href="../../../_static/logo.svg"/>
+    <link rel="icon" href="../../../_static/logo_light.svg"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="AFL.double_agent.TensorFlowExtrapolator module" href="TensorFlowExtrapolator.html" />
@@ -127,8 +127,8 @@
       
     
     
-    <img src="../../../_static/logo_text_long.svg" class="logo__image only-light" alt="AFL-agent  documentation - Home"/>
-    <img src="../../../_static/logo_text_long.svg" class="logo__image only-dark pst-js-only" alt="AFL-agent  documentation - Home"/>
+    <img src="../../../_static/logo_text_large_light.svg" class="logo__image only-light" alt="AFL-agent  documentation - Home"/>
+    <img src="../../../_static/logo_text_large_dark.svg" class="logo__image only-dark pst-js-only" alt="AFL-agent  documentation - Home"/>
   
   
 </a></div>
@@ -504,11 +504,11 @@ Preprocessors handle tasks such as:
 <li><p><strong>input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to extract from the input dataset</p></li>
 <li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite> by this <cite>PipelineOp</cite></p></li>
 <li><p><strong>dim</strong> (<em>str</em>) – The dimension used for calculating the data minimum</p></li>
-<li><p><strong>component_dim</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=&quot;component&quot;</em>) – The dimension for component-wise operations</p></li>
-<li><p><strong>scale_variable</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – If specified, the min/max of this data variable in the supplied <cite>xarray.Dataset</cite> will be used to scale the
+<li><p><strong>component_dim</strong> (<em>str</em><em> | </em><em>None</em><em>, </em><em>default=&quot;component&quot;</em>) – The dimension for component-wise operations</p></li>
+<li><p><strong>scale_variable</strong> (<em>str</em><em> | </em><em>None</em><em>, </em><em>default=None</em>) – If specified, the min/max of this data variable in the supplied <cite>xarray.Dataset</cite> will be used to scale the
 data rather than min/max of the <cite>input_variable</cite> or the supplied <cite>min_val</cite> or <cite>max_val</cite></p></li>
-<li><p><strong>min_val</strong> (<em>Optional</em><em>[</em><em>Number</em><em>]</em><em>, </em><em>default=None</em>) – Value used to scale the data minimum</p></li>
-<li><p><strong>max_val</strong> (<em>Optional</em><em>[</em><em>Number</em><em>]</em><em>, </em><em>default=None</em>) – Value used to scale the data maximum</p></li>
+<li><p><strong>min_val</strong> (<em>Number</em><em> | </em><em>None</em><em>, </em><em>default=None</em>) – Value used to scale the data minimum</p></li>
+<li><p><strong>max_val</strong> (<em>Number</em><em> | </em><em>None</em><em>, </em><em>default=None</em>) – Value used to scale the data maximum</p></li>
 <li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;Destandardize&quot;</em>) – The name to use when added to a Pipeline</p></li>
 </ul>
 </dd>
@@ -618,11 +618,11 @@ parameters specified in the constructor.</p>
 <li><p><strong>input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to extract from the input dataset</p></li>
 <li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite> by this <cite>PipelineOp</cite></p></li>
 <li><p><strong>dim</strong> (<em>str</em>) – The dimension used for calculating the data minimum</p></li>
-<li><p><strong>component_dim</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=&quot;component&quot;</em>) – The dimension for component-wise operations</p></li>
-<li><p><strong>scale_variable</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – If specified, the min/max of this data variable in the supplied <cite>xarray.Dataset</cite> will be used to scale the
+<li><p><strong>component_dim</strong> (<em>str</em><em> | </em><em>None</em><em>, </em><em>default=&quot;component&quot;</em>) – The dimension for component-wise operations</p></li>
+<li><p><strong>scale_variable</strong> (<em>str</em><em> | </em><em>None</em><em>, </em><em>default=None</em>) – If specified, the min/max of this data variable in the supplied <cite>xarray.Dataset</cite> will be used to scale the
 data rather than min/max of the <cite>input_variable</cite> or the supplied <cite>min_val</cite> or <cite>max_val</cite></p></li>
-<li><p><strong>min_val</strong> (<em>Optional</em><em>[</em><em>Number</em><em>]</em><em>, </em><em>default=None</em>) – Value used to scale the data minimum</p></li>
-<li><p><strong>max_val</strong> (<em>Optional</em><em>[</em><em>Number</em><em>]</em><em>, </em><em>default=None</em>) – Value used to scale the data maximum</p></li>
+<li><p><strong>min_val</strong> (<em>Number</em><em> | </em><em>None</em><em>, </em><em>default=None</em>) – Value used to scale the data minimum</p></li>
+<li><p><strong>max_val</strong> (<em>Number</em><em> | </em><em>None</em><em>, </em><em>default=None</em>) – Value used to scale the data maximum</p></li>
 <li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;Standardize&quot;</em>) – The name to use when added to a Pipeline</p></li>
 </ul>
 </dd>
