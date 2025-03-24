@@ -48,6 +48,7 @@ class PipelineOp(ABC):
                 stacklevel=2,
             )
 
+
         self.name = name or "PipelineOp"
         self.input_variable = input_variable
         self.output_variable = output_variable
@@ -66,8 +67,8 @@ class PipelineOp(ABC):
             # silently continue for those working outside a context manager
             pass
 
-        ## Gathering Arguments of Most-derived Child Class
 
+        ## Gathering Arguments of Most-derived Child Class
         # Retrieve the full stack.
         stack = inspect.stack()
         valid_frames = []
@@ -257,18 +258,24 @@ class PipelineOp(ABC):
         # for name, dataarray in self.output.items():
         #     tiled_data.add_array(name, value.values)
 
-    def plot(self, **mpl_kwargs) -> plt.Figure:
+    def plot(self, sample_dim: str = "sample", **mpl_kwargs) -> plt.Figure:
+        """Plots the output of the PipelineOp.
+
+        This method attempts to guess how to plot the data produced by the operation.
+        """
         n = len(self.output)
         if n > 0:
-            fig, axes = plt.subplots(n, 1, figsize=(8, n * 4))
+            fig, axes = plt.subplots(n, 1, figsize=(6, n * 3))
+
             if n > 1:
                 axes = list(axes.flatten())
             else:
                 axes = [axes]
 
             for i, (name, data) in enumerate(self.output.items()):
-                if "sample" in data.dims:
-                    data = data.plot(hue="sample", ax=axes[i], **mpl_kwargs)
+                if data.ndim > 1 and (sample_dim in data.dims):
+                    data.plot(hue=sample_dim, ax=axes[i], **mpl_kwargs)
+
                 else:
                     data.plot(ax=axes[i], **mpl_kwargs)
                 axes[i].set(title=name)
