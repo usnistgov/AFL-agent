@@ -1321,4 +1321,40 @@ class ModelSelectBIC(PipelineOp):
 
         return self
 
+class EstimateSASError(PipelineOp):
+    """Estimate the error in measured intensity from a 1D SAS curve"""
+    def __init__(self, input_variable, output_variable, method='percent',percent_error=0.05,name='EstimateSASError'):
+        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
+        self.method = method
+        self.percent_error = percent_error
 
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
+        data1 = self._get_variable(dataset)
+        
+        if self.method=='percent':
+            error = data1.pipe(lambda x: x*self.percent_error)
+        elif self.method=='sqrt':
+            error = data1.pipe(np.sqrt)
+        else:
+            raise ValueError('Estimation method must be one of: percent, sqrt')
+            
+        self.output[self.output_variable] = error
+        self.output[self.output_variable].attrs[
+            "description"
+        ] = f"Calculated SAS error using method '{self.method}'"
+
+        return self
+
+
+
+
+
+
+
+
+
+
+
+    
+        
