@@ -31,11 +31,18 @@ class DoubleAgentDriver(Driver):
         self.app = None
         self.name = name
 
-        self.status_str = "Fresh server!"
-
         self.input: Optional[xr.Dataset] = None
         self.pipeline: Optional[Pipeline] = None
         self.results: Dict[str, xr.Dataset] = dict()
+
+    def status(self):
+        status = []
+        if self.input:
+            status.append(f'Input Dims: {self.input.sizes}')
+        if self.pipeline:
+            status.append(f'Pipeline loaded with {len(self.pipeline.ops)} operations')
+        return status
+        
 
     def initialize_input(self, db_uuid: str) -> None:
         """
