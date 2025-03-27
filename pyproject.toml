@@ -47,9 +47,10 @@ dependencies = [
     "sasmodels",
     "sasdata",
     "bumps",
-    "pygraphviz",
     "mpltern",
     "anywidget",
+    "zeroconf",
+    "pyepics"
 ]
 
 [project.optional-dependencies]
@@ -59,6 +60,10 @@ jupyter = [
     "ipywidgets",
     "ipympl",
     "nodejs",
+]
+
+graph = [
+    "pygraphviz"
 ]
 
 tensorflow = [
