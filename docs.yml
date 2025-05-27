@@ -253,7 +253,9 @@ dependencies:
     - zipp==3.21.0
     - zstandard==0.23.0
     - nbsphinx==0.9.6
+    - kaleido==0.2.1
     - bumps==0.9.3
     - mpltern==1.0.4
     - anywidget==0.9.15
     - psygnal==0.12.0
+

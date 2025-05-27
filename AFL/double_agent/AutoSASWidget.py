@@ -6,6 +6,7 @@ import copy
 import uuid
 import json
 import sasmodels.data
+import sasmodels.direct_model
 import sasmodels.core
 import ipywidgets as widgets
 from IPython.display import display, JSON
@@ -31,7 +32,8 @@ class AutoSASWidget:
         q_range: Optional[np.ndarray] = None,
         default_models: Optional[List[Dict[str, Any]]] = None,
         data: Optional[xr.Dataset] = None,
-        model_inputs: Optional[List[Dict[str, Any]]] = None
+        model_inputs: Optional[List[Dict[str, Any]]] = None,
+        custom_models = None,
     ):
         """Initialize the AutoSASWidget.
         
@@ -54,7 +56,7 @@ class AutoSASWidget:
             self.q_range = q_range
             
         # Create the model and view
-        self.model = AutoSASWidget_Model(q_range=self.q_range, default_models=default_models)
+        self.model = AutoSASWidget_Model(q_range=self.q_range, default_models=default_models,custom_models=custom_models)
         self.view = AutoSASWidget_View(available_models=self.model.available_sasmodels, data=data)
         
         # Connect model and view
@@ -382,7 +384,8 @@ class AutoSASWidget_Model:
     def __init__(
         self,
         q_range: np.ndarray,
-        default_models: Optional[List[Dict[str, Any]]] = None
+        default_models: Optional[List[Dict[str, Any]]] = None,
+        custom_models = None
     ):
         """Initialize the model component.
         
@@ -395,7 +398,9 @@ class AutoSASWidget_Model:
         """
         self.q_range = q_range
         self.models = {}
-        self.available_sasmodels = self._get_available_sasmodels()
+
+        self.custom_models = custom_models or []
+        self.available_sasmodels = custom_models + self._get_available_sasmodels() 
         
         # Initialize with default models if provided
         if default_models:
@@ -1677,10 +1682,10 @@ class AutoSASWidget_View:
                         "bounds": bounds_checkbox
                     }
                     
-                    # Add observer for the text input
-                    def update_label(change):
-                        value_label.value = f"{change['new']:.4g}"
-                    text_input.observe(update_label, names='value')
+                    # # Add observer for the text input
+                    # def update_label(change):
+                    #     text_input.value = f"{change['new']:.4g}"
+                    # text_input.observe(update_label, names='value')
                     break
     
     def update_plot(self, model_id: str, q: np.ndarray, intensity: np.ndarray) -> None:

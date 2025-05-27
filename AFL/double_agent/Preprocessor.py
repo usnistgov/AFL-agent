@@ -189,8 +189,9 @@ class SavgolFilter(Preprocessor):
             data1 = data1.where(~np.isnan(data1)).fillna(self.pedestal)
         
         # interpolate to constant lin or log(dq) grid
-        x_new = np.linspace(data1[dim].min(), data1[dim].max(), self.npts)
+        x_new = np.linspace(data1[dim].min().item(), data1[dim].max().item(), self.npts)
         dx = float(x_new[1] - x_new[0])
+        data1 = data1.bfill(dim).ffill(dim).interpolate_na(dim)
         data1 = data1.interp({dim: x_new})
 
         # filter out any q that have NaN
