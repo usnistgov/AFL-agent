@@ -492,6 +492,12 @@ class AmplitudePhaseDistance(PairMetric):
     In simple terms, Amplitude measures changes to shape on the y-axis
     of a 1D function and Phase measures changes to the shape on x-axis.
 
+    Vaddi, K., Chiang, H. T., & Pozzo, L. D. "Autonomous retrosynthesis of gold 
+    nanoparticles via spectral shape matching." Digital Discovery, vol. 1, no. 4 
+    (2022): 502-510. Royal Society of Chemistry.
+    
+    Original paper URL: https://pubs.rsc.org/en/content/articlehtml/2022/dd/d2dd00025c
+
     Parameters
     ----------
     input_variable : str
