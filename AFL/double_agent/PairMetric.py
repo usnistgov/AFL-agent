@@ -24,7 +24,7 @@ from typing_extensions import Self
 
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify 
-import warnings, pdb 
+import warnings 
 from scipy.interpolate import UnivariateSpline
 
 try:
@@ -509,8 +509,8 @@ class AmplitudePhaseDistance(PairMetric):
     params : Dict
         Parameters for the distance function.
         See https://github.com/kiranvad/funcshape/funcshape/functions.py#L157
-        alpha : float
-            An additional parameter that weighs amplitude and phase contrirubutions.       
+        alpha : float, default=0.5
+            An additional parameter that weighs amplitude and phase contrirubutions.
     name : str, default="SimilarityMetric"
         The name to use when added to a Pipeline
     """    
