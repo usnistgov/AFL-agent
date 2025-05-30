@@ -20,7 +20,11 @@ import sasmodels.data  # pyright: ignore[ruleName]
 
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
-from AFL.automation.APIServer.Client import Client
+
+try:
+    from AFL.automation.APIServer.Client import Client
+except ImportError:
+    warnings.warn('Could not import AFL-automation. Will not be able to run in client-server mode.',stacklevel=2)
 
 @dataclass
 class FitParameter:
