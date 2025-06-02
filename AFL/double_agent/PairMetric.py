@@ -32,7 +32,7 @@ try:
     import torch
 except ImportError:
     warnings.warn("To use amplitude-distance as a similarity measure, install the"
-                  "package from here: https://github.com/kiranvad/Amplitude-Phase-Distance/tree/main"
+                "package from here: https://github.com/kiranvad/Amplitude-Phase-Distance/tree/main"
             )
 
 class PairMetric(PipelineOp):
@@ -500,8 +500,10 @@ class AmplitudePhaseDistance(PairMetric):
 
     Parameters
     ----------
-    input_variable : str
-        The name of the data variable to extract from the input dataset
+    domain_variable : str
+        The name of the x-data variable to extract from the input dataset    
+    codomain_variable : str
+        The name of the y-data variable to extract from the input dataset
     output_variable : str
         The name of the variable to be inserted into the dataset
     sample_dim : str
@@ -511,12 +513,13 @@ class AmplitudePhaseDistance(PairMetric):
         See https://github.com/kiranvad/funcshape/funcshape/functions.py#L157
         alpha : float, default=0.5
             An additional parameter that weighs amplitude and phase contrirubutions.
-    name : str, default="SimilarityMetric"
+    name : str, default="AmplitudePhaseDistance"
         The name to use when added to a Pipeline
     """    
     def __init__(
         self,
-        input_variable: str,
+        domain_variable : str,
+        codomain_variable: str,
         output_variable: str,
         sample_dim: str,
         params: Optional[Dict[str, Any]] = None,
@@ -524,23 +527,23 @@ class AmplitudePhaseDistance(PairMetric):
     ) -> None:
         super().__init__(
             name=name,
-            input_variable=input_variable,
+            input_variable=codomain_variable,
             output_variable=output_variable,
             sample_dim=sample_dim,
             params=params
         )
+        self.domain_variable = domain_variable
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
+        codomain = self._get_variable(dataset).to_numpy()
+        domain = dataset[self.domain_variable].copy().to_numpy()
 
         # use log10 transformation to amplify functional signals (e.g.: peaks)
-        metric = lambda y1, y2 : self._get_pairiwise_ap(np.log10(dataset.q.to_numpy()), 
-                                                        np.log10(np.abs(y1)), 
-                                                        np.log10(np.abs(y2))
-                                                    )
+        metric = lambda y1, y2 : self._get_pairiwise_ap(domain, y1, y2)
 
         # similarity matrix of length sample x sample
-        pair_dists = scipy.spatial.distance.pdist(dataset.sas.to_numpy(), metric=metric)
+        pair_dists = scipy.spatial.distance.pdist(codomain, metric=metric)
         self.W = scipy.spatial.distance.squareform(pair_dists)
 
         dims = [self.sample_dim + "_i", self.sample_dim + "_j"]
@@ -558,7 +561,7 @@ class AmplitudePhaseDistance(PairMetric):
                 "n_restarts":50,
                 "lr":1e-1,
                 "n_domain":len(t)
-                }
+            }
         optim_kwargs.update(self.params)
         alpha = optim_kwargs.get("alpha", 0.5)
 
@@ -572,6 +575,6 @@ class AmplitudePhaseDistance(PairMetric):
                                      torch.from_numpy(ys_ref),
                                      torch.from_numpy(ys_query), 
                                      **optim_kwargs
-                                    )
+                                )
         return alpha*amplitude + (1-alpha)*phase
 
