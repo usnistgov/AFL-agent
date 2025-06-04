@@ -518,8 +518,7 @@ class AmplitudePhaseDistance(PairMetric):
     """    
     def __init__(
         self,
-        domain_variable : str,
-        codomain_variable: str,
+        input_variable : str,
         output_variable: str,
         sample_dim: str,
         params: Optional[Dict[str, Any]] = None,
@@ -527,17 +526,17 @@ class AmplitudePhaseDistance(PairMetric):
     ) -> None:
         super().__init__(
             name=name,
-            input_variable=codomain_variable,
+            input_variable=input_variable,
             output_variable=output_variable,
             sample_dim=sample_dim,
             params=params
         )
-        self.domain_variable = domain_variable
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
-        codomain = self._get_variable(dataset).to_numpy()
-        domain = dataset[self.domain_variable].copy().to_numpy()
+        data = self._get_variable(dataset)
+        domain = data[self.sample_dim].values
+        codomain = data.values
 
         # use log10 transformation to amplify functional signals (e.g.: peaks)
         metric = lambda y1, y2 : self._get_pairiwise_ap(domain, y1, y2)
