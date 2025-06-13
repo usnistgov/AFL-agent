@@ -10,13 +10,17 @@ from AFL.double_agent.PairMetric import PairMetric
 from scipy.interpolate import UnivariateSpline
 
 try:
-    from apdist.torch import TorchAmplitudePhaseDistance as apdist 
+    from apdist.torch import TorchAmplitudePhaseDistance as torch_apdist 
+    from apdist.distances import AmplitudePhaseDistance as numpy_apdist
     import torch
-except ImportError:
+except ImportError as e:
     raise RuntimeError((
-    "To use amplitude-distance as a similarity measure, please install: "
-    "pip install git+https://github.com/kiranvad/Amplitude-Phase-Distance"
-    ))
+        "ImportError encountered: {}\n"
+        "To use amplitude-distance as a similarity measure, please install:\n"
+        "pip install git+https://github.com/kiranvad/Amplitude-Phase-Distance"
+    ).format(str(e)))
+
+import pdb
 
 class AmplitudePhaseDistance(PairMetric):
     """Computes pairwise amplitude phase distance between samples
@@ -43,11 +47,23 @@ class AmplitudePhaseDistance(PairMetric):
         The name of the variable to be inserted into the dataset
     sample_dim : str
         The dimension containing different samples
+    method : str, default="discrete"
+        Currently amplitude-phase distance can be computed in two different approaches:
+            discrete--uses a dynamic programming to discretely align two functions
+            continuous--uses a gradient descent approach for function alignment.
+
+        The continuous method is much slower than the discrete and should be used when 
+        the features are much subtle such as the SAXS curves.
     params : Dict
         Parameters for the distance function.
-        See https://github.com/kiranvad/funcshape/funcshape/functions.py#L157
         alpha : float, default=0.5
             An additional parameter that weighs amplitude and phase contrirubutions.
+        Other parameters need to match the method selected.
+        For discrete method, use:
+            https://github.com/kiranvad/Amplitude-Phase-Distance/apdist/geometry.py#L104
+        For continuous method, use parameters from:
+            See https://github.com/kiranvad/funcshape/funcshape/functions.py#L157
+
     name : str, default="AmplitudePhaseDistance"
         The name to use when added to a Pipeline
     """    
@@ -56,6 +72,7 @@ class AmplitudePhaseDistance(PairMetric):
         input_variable : str,
         output_variable: str,
         sample_dim: str,
+        method: str = "discrete",
         params: Optional[Dict[str, Any]] = None,
         name="AmplitudePhaseDistance",
     ) -> None:
@@ -66,18 +83,40 @@ class AmplitudePhaseDistance(PairMetric):
             sample_dim=sample_dim,
             params=params
         )
-
+        self.method = method
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
         data = self._get_variable(dataset)
 
-        domain_variable = [d for d in data.dims if d != self.sample_dim][0]
-        domain = data.coords[domain_variable].values
+        domain = data.coords[self.sample_dim].values
         codomain = data.values
 
-        # use log10 transformation to amplify functional signals (e.g.: peaks)
-        metric = lambda y1, y2 : self._get_pairiwise_ap(domain, y1, y2)
+        if self.method=="discrete":
+            optim_kwargs = {"lam" : 0.0,
+                            "grid_dim":7
+                        }
+        elif self.method== "continuous":
+            optim_kwargs = {"n_iters":100, 
+                    "n_basis":20, 
+                    "n_layers":15,
+                    "domain_type":"linear",
+                    "basis_type":"palais",
+                    "n_restarts":50,
+                    "lr":1e-1,
+                    "n_domain": domain.shape[0]
+                }
+        else:
+            raise RuntimeError("Method %s for computing amplitude-phase distance is not recognized"%self.method)
+        optim_kwargs.update(self.params)
+
+        # define a sub-function that can be passed to scipy pdist
+        metric = lambda y1, y2 : self._get_pairiwise_ap(self.method, 
+                                                        domain, 
+                                                        y1, 
+                                                        y2, 
+                                                        **optim_kwargs
+                                                    )
 
         # similarity matrix of length sample x sample
         pair_dists = scipy.spatial.distance.pdist(codomain, metric=metric)
@@ -89,28 +128,17 @@ class AmplitudePhaseDistance(PairMetric):
 
         return self 
     
-    def _get_pairiwise_ap(self, t, f_ref, f_query):
-        optim_kwargs = {"n_iters":100, 
-                "n_basis":20, 
-                "n_layers":15,
-                "domain_type":"linear",
-                "basis_type":"palais",
-                "n_restarts":50,
-                "lr":1e-1,
-                "n_domain":len(t)
-            }
-        optim_kwargs.update(self.params)
-        alpha = optim_kwargs.get("alpha", 0.5)
+    def _get_pairiwise_ap(self, method, t, f_ref, f_query, **kwargs):
 
-        xs = np.linspace(min(t), max(t), len(t))
-        spl = UnivariateSpline(t, f_ref)
-        ys_ref = spl(xs)
-        spl = UnivariateSpline(t, f_query)
-        ys_query = spl(xs)        
-
-        amplitude, phase, _ = apdist(torch.from_numpy(xs),
-                                     torch.from_numpy(ys_ref),
-                                     torch.from_numpy(ys_query), 
-                                     **optim_kwargs
-                                )
+        alpha = kwargs.get("alpha", 0.5)
+        if method=="continuous":
+            amplitude, phase, _ = torch_apdist(torch.from_numpy(t),
+                                        torch.from_numpy(f_ref),
+                                        torch.from_numpy(f_query), 
+                                        **kwargs
+                                    )
+        else:
+            amplitude, phase = numpy_apdist(t, f_ref, f_query, **kwargs)
+        
+                        
         return alpha*amplitude + (1-alpha)*phase

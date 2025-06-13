@@ -24,7 +24,6 @@ from typing_extensions import Self
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
 
-
 class Preprocessor(PipelineOp):
     """Base class stub for all preprocessors
 
@@ -52,7 +51,7 @@ class Preprocessor(PipelineOp):
         """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
         return NotImplementedError(".calculate must be implemented in subclasses")  # type: ignore
 
-class SAXSLogLogTransform(Preprocessor):
+class LogLogTransform(Preprocessor):
     """Pre-processing class to transform SAXS data into log-log scale.
 
     Parameters
@@ -79,22 +78,32 @@ class SAXSLogLogTransform(Preprocessor):
         self.dim = dim
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
-        data1 = self._get_variable(dataset)
+        """Apply this `PipelineOp` to the supplied `xarray.Dataset`."""
+        data = self._get_variable(dataset)
 
-        # add log_{dim}
-        dim = "log_" + self.dim
-        data1 = data1.where(data1>0.0, drop=True)
-        data1 = data1.pipe(np.log10)
-        data1[self.dim] = np.log10(data1[self.dim])
-        data1 = data1.rename({self.dim: dim})
+        domain_variable = "log_" + self.dim
+        domain_values = np.log10(data[self.dim].values)
+        codomain_values = np.log10(np.abs(data.values))
+    
+        coords = {}
+        for d in data.dims:
+            if d!=self.dim:
+                coords[d] = data.coords[d]
+            else:
+                coords[domain_variable] = domain_values
+        
+        dims = tuple(d if d != self.dim else domain_variable for d in data.dims)
 
-        self.output[self.output_variable] = data1
-        self.output[self.output_variable].attrs[
-            "description"
-        ] = f"SAS data log-log transformed"
+        # Create the output variable with correct dims and coords
+        self.output[self.output_variable] = xr.DataArray(
+            codomain_values,
+            dims=dims,
+            coords=coords,
+            attrs={"description": "Co-domain log transformed"}
+        )
 
         return self
+
     
 class SavgolFilter(Preprocessor):
     """Smooth and take derivatives of input data via a Savitsky-Golay filter
