@@ -20,8 +20,6 @@ except ImportError as e:
         "pip install git+https://github.com/kiranvad/Amplitude-Phase-Distance"
     ).format(str(e)))
 
-import pdb
-
 class AmplitudePhaseDistance(PairMetric):
     """Computes pairwise amplitude phase distance between samples
     
@@ -59,7 +57,7 @@ class AmplitudePhaseDistance(PairMetric):
         alpha : float, default=0.5
             An additional parameter that weighs amplitude and phase contrirubutions.
         Other parameters need to match the method selected.
-        For discrete method, use:
+        For discrete method, use parameters from:
             https://github.com/kiranvad/Amplitude-Phase-Distance/apdist/geometry.py#L104
         For continuous method, use parameters from:
             See https://github.com/kiranvad/funcshape/funcshape/functions.py#L157
