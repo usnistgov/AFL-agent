@@ -1,5 +1,9 @@
 name: "Publish Documentation to NIST Pages"
 
+concurrency:
+   group: ${{ github.workflow }}
+   cancel-in-progress: false
+
 on: [push, pull_request, delete]
 
 jobs:
