@@ -9,5 +9,8 @@ Step-by-step guides for beginners to use AFL-agent
    installation
    quickstart
    building_pipelines
-   using_datasets
+   visualization
+   autosas_fitting
    interactive
+   using_datasets
+   using_prefab

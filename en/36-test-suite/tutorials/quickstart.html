@@ -350,8 +350,11 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Setup</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="building_pipelines.html">Building Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="using_datasets.html">Using Example Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Plotting Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="autosas_fitting.html">Basic Fitting with AutoSAS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="interactive.html">Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_datasets.html">Using Example Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_prefab.html">Using Prefabricated Pipelines</a></li>
 </ul>
 </div>
 </nav></div>
@@ -437,7 +440,7 @@
 <section id="Define-Pipeline">
 <h2>Define Pipeline<a class="headerlink" href="#Define-Pipeline" title="Permalink to this heading">#</a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
@@ -448,21 +451,24 @@
             <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
             <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;derivative&#39;</span><span class="p">,</span>
             <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
-            <span class="n">derivative</span><span class="o">=</span><span class="mi">1</span>
+            <span class="n">derivative</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;TakeDerivative&#39;</span>
             <span class="p">)</span>
 
         <span class="n">Similarity</span><span class="p">(</span>
             <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;derivative&#39;</span><span class="p">,</span>
             <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;similarity&#39;</span><span class="p">,</span>
             <span class="n">sample_dim</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span>
-            <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;metric&#39;</span><span class="p">:</span> <span class="s1">&#39;laplacian&#39;</span><span class="p">,</span><span class="s1">&#39;gamma&#39;</span><span class="p">:</span><span class="mf">1e-4</span><span class="p">}</span>
+            <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;metric&#39;</span><span class="p">:</span> <span class="s1">&#39;laplacian&#39;</span><span class="p">,</span><span class="s1">&#39;gamma&#39;</span><span class="p">:</span><span class="mf">1e-4</span><span class="p">},</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;ComputeSimilarity&#39;</span>
             <span class="p">)</span>
 
         <span class="n">SpectralClustering</span><span class="p">(</span>
             <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;similarity&#39;</span><span class="p">,</span>
             <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;labels&#39;</span><span class="p">,</span>
             <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span>
-            <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;n_phases&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+            <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;n_phases&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;SpectralClustering&#39;</span>
             <span class="p">)</span>
 </pre></div>
 </div>
@@ -478,7 +484,7 @@
 <h2>Load Input Data<a class="headerlink" href="#Load-Input-Data" title="Permalink to this heading">#</a></h2>
 <p>To test this pipeline, we need some data to analyze. We’ll use a synthetic dataset containing measurements from a two-phase system. Each measurement represents a signal collected from a sample with different compositions of components A and B. For details on how this dataset was created, see the <a class="reference internal" href="../how-to/building_xarray_datasets.html"><span class="doc">Building xarray Datasets</span></a> tutorial.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">example_dataset1</span>
@@ -490,7 +496,7 @@
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -874,7 +880,7 @@ Data variables:
     composition          (sample, component) float64 2kB ...
     ground_truth_labels  (sample) int64 800B ...
     measurement          (sample, x) float64 120kB ...
-    composition_grid     (grid, component) float64 40kB ...</pre><div class='xr-wrap' style='display:none'><div class='xr-header'><div class='xr-obj-type'>xarray.Dataset</div></div><ul class='xr-sections'><li class='xr-section-item'><input id='section-d23b9d69-51fa-4a3d-9011-da8e1596514c' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-d23b9d69-51fa-4a3d-9011-da8e1596514c' class='xr-section-summary'  title='Expand/collapse section'>Dimensions:</label><div class='xr-section-inline-details'><ul class='xr-dim-list'><li><span>sample</span>: 100</li><li><span class='xr-has-index'>component</span>: 2</li><li><span class='xr-has-index'>x</span>: 150</li><li><span>grid</span>: 2500</li></ul></div><div class='xr-section-details'></div></li><li class='xr-section-item'><input id='section-285bd44b-ba82-4e9c-bef0-1166085438f5' class='xr-section-summary-in' type='checkbox'  checked><label for='section-285bd44b-ba82-4e9c-bef0-1166085438f5' class='xr-section-summary' >Coordinates: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>component</span></div><div class='xr-var-dims'>(component)</div><div class='xr-var-dtype'>&lt;U1</div><div class='xr-var-preview xr-preview'>&#x27;A&#x27; &#x27;B&#x27;</div><input id='attrs-51d90a9c-f8b8-49c0-88f7-a32121c5e37f' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-51d90a9c-f8b8-49c0-88f7-a32121c5e37f' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-2940203d-9f48-4649-856e-8776a5507550' class='xr-var-data-in' type='checkbox'><label for='data-2940203d-9f48-4649-856e-8776a5507550' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([&#x27;A&#x27;, &#x27;B&#x27;], dtype=&#x27;&lt;U1&#x27;)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>x</span></div><div class='xr-var-dims'>(x)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>0.001 0.001047 ... 0.9547 1.0</div><input id='attrs-315242fc-fdbb-4c2c-bdda-5097dfebf06c' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-315242fc-fdbb-4c2c-bdda-5097dfebf06c' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-88276063-5f31-4c41-ae22-11c80081211d' class='xr-var-data-in' type='checkbox'><label for='data-88276063-5f31-4c41-ae22-11c80081211d' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([0.001   , 0.001047, 0.001097, 0.001149, 0.001204, 0.001261, 0.001321,
+    composition_grid     (grid, component) float64 40kB ...</pre><div class='xr-wrap' style='display:none'><div class='xr-header'><div class='xr-obj-type'>xarray.Dataset</div></div><ul class='xr-sections'><li class='xr-section-item'><input id='section-3d0ccf86-e535-4a73-8f32-e25d14d49864' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-3d0ccf86-e535-4a73-8f32-e25d14d49864' class='xr-section-summary'  title='Expand/collapse section'>Dimensions:</label><div class='xr-section-inline-details'><ul class='xr-dim-list'><li><span>sample</span>: 100</li><li><span class='xr-has-index'>component</span>: 2</li><li><span class='xr-has-index'>x</span>: 150</li><li><span>grid</span>: 2500</li></ul></div><div class='xr-section-details'></div></li><li class='xr-section-item'><input id='section-93c546b1-343c-4acd-989c-1ba06150fd0e' class='xr-section-summary-in' type='checkbox'  checked><label for='section-93c546b1-343c-4acd-989c-1ba06150fd0e' class='xr-section-summary' >Coordinates: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>component</span></div><div class='xr-var-dims'>(component)</div><div class='xr-var-dtype'>&lt;U1</div><div class='xr-var-preview xr-preview'>&#x27;A&#x27; &#x27;B&#x27;</div><input id='attrs-5be8e6f1-1d20-40b8-a1f2-96459739c830' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-5be8e6f1-1d20-40b8-a1f2-96459739c830' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-1de07aa6-2d8f-4830-9b6b-6328075cb8f4' class='xr-var-data-in' type='checkbox'><label for='data-1de07aa6-2d8f-4830-9b6b-6328075cb8f4' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([&#x27;A&#x27;, &#x27;B&#x27;], dtype=&#x27;&lt;U1&#x27;)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>x</span></div><div class='xr-var-dims'>(x)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>0.001 0.001047 ... 0.9547 1.0</div><input id='attrs-a23359de-0f1b-48d1-a0ea-1ae1ae7af2ef' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-a23359de-0f1b-48d1-a0ea-1ae1ae7af2ef' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-89b8e75f-7ff6-4f97-8c1a-f9c423a2d27a' class='xr-var-data-in' type='checkbox'><label for='data-89b8e75f-7ff6-4f97-8c1a-f9c423a2d27a' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([0.001   , 0.001047, 0.001097, 0.001149, 0.001204, 0.001261, 0.001321,
        0.001383, 0.001449, 0.001518, 0.00159 , 0.001665, 0.001744, 0.001827,
        0.001914, 0.002005, 0.0021  , 0.002199, 0.002304, 0.002413, 0.002527,
        0.002647, 0.002773, 0.002905, 0.003042, 0.003187, 0.003338, 0.003496,
@@ -895,7 +901,7 @@ Data variables:
        0.344281, 0.360618, 0.37773 , 0.395654, 0.414429, 0.434094, 0.454693,
        0.476269, 0.498869, 0.522542, 0.547337, 0.57331 , 0.600514, 0.62901 ,
        0.658858, 0.690122, 0.72287 , 0.757172, 0.793102, 0.830736, 0.870156,
-       0.911447, 0.954697, 1.      ])</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-b2a6dcba-daa9-4f5d-a778-3d427d6d0052' class='xr-section-summary-in' type='checkbox'  checked><label for='section-b2a6dcba-daa9-4f5d-a778-3d427d6d0052' class='xr-section-summary' >Data variables: <span>(4)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span>composition</span></div><div class='xr-var-dims'>(sample, component)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-1af9ffc7-3b2c-4644-9ea8-44cb422e91f8' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-1af9ffc7-3b2c-4644-9ea8-44cb422e91f8' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-917dff70-8141-41e4-aae3-612cb4e9942e' class='xr-var-data-in' type='checkbox'><label for='data-917dff70-8141-41e4-aae3-612cb4e9942e' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[200 values with dtype=float64]</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>ground_truth_labels</span></div><div class='xr-var-dims'>(sample)</div><div class='xr-var-dtype'>int64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-e06a08d8-7f4a-4e9d-810f-184be4c59935' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-e06a08d8-7f4a-4e9d-810f-184be4c59935' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-c3f9f76f-de29-40ea-bc39-d2ada724d24b' class='xr-var-data-in' type='checkbox'><label for='data-c3f9f76f-de29-40ea-bc39-d2ada724d24b' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[100 values with dtype=int64]</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>measurement</span></div><div class='xr-var-dims'>(sample, x)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-6c6eab2b-1f55-41be-b5ad-db0389ddd031' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-6c6eab2b-1f55-41be-b5ad-db0389ddd031' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-18d56762-1f34-4abd-aeb5-92d2ba5af3c1' class='xr-var-data-in' type='checkbox'><label for='data-18d56762-1f34-4abd-aeb5-92d2ba5af3c1' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[15000 values with dtype=float64]</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>composition_grid</span></div><div class='xr-var-dims'>(grid, component)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-1cdb4019-2865-4842-98ea-65f9e314e2b3' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-1cdb4019-2865-4842-98ea-65f9e314e2b3' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-a7b1d303-4ef4-4703-a344-8273bbea66f8' class='xr-var-data-in' type='checkbox'><label for='data-a7b1d303-4ef4-4703-a344-8273bbea66f8' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[5000 values with dtype=float64]</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-26e90960-2b57-4adf-836d-1ca9f3a03973' class='xr-section-summary-in' type='checkbox'  ><label for='section-26e90960-2b57-4adf-836d-1ca9f3a03973' class='xr-section-summary' >Indexes: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-index-name'><div>component</div></div><div class='xr-index-preview'>PandasIndex</div><input type='checkbox' disabled/><label></label><input id='index-157dea1f-1352-46de-bbf7-ffa9de922586' class='xr-index-data-in' type='checkbox'/><label for='index-157dea1f-1352-46de-bbf7-ffa9de922586' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(Index([&#x27;A&#x27;, &#x27;B&#x27;], dtype=&#x27;object&#x27;, name=&#x27;component&#x27;))</pre></div></li><li class='xr-var-item'><div class='xr-index-name'><div>x</div></div><div class='xr-index-preview'>PandasIndex</div><input type='checkbox' disabled/><label></label><input id='index-83601c5d-179c-44d6-a890-cee2a497d8f9' class='xr-index-data-in' type='checkbox'/><label for='index-83601c5d-179c-44d6-a890-cee2a497d8f9' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(Index([                0.001, 0.0010474522360006332, 0.0010971561867027272,
+       0.911447, 0.954697, 1.      ])</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-b727710c-b5f2-4b4e-b90b-904e89b676dd' class='xr-section-summary-in' type='checkbox'  checked><label for='section-b727710c-b5f2-4b4e-b90b-904e89b676dd' class='xr-section-summary' >Data variables: <span>(4)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span>composition</span></div><div class='xr-var-dims'>(sample, component)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-a32d0ac4-1e2f-42e2-a744-85349c169afa' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-a32d0ac4-1e2f-42e2-a744-85349c169afa' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-6f676d2e-a54a-4f2c-bd24-34d946d87188' class='xr-var-data-in' type='checkbox'><label for='data-6f676d2e-a54a-4f2c-bd24-34d946d87188' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[200 values with dtype=float64]</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>ground_truth_labels</span></div><div class='xr-var-dims'>(sample)</div><div class='xr-var-dtype'>int64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-c06000c0-fc9d-4b4c-bf99-fd8c335fe72d' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-c06000c0-fc9d-4b4c-bf99-fd8c335fe72d' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-6de8f008-5a46-4fd7-80ad-d34a63a6bd1d' class='xr-var-data-in' type='checkbox'><label for='data-6de8f008-5a46-4fd7-80ad-d34a63a6bd1d' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[100 values with dtype=int64]</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>measurement</span></div><div class='xr-var-dims'>(sample, x)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-af80e902-3357-45f8-999a-dfa11fc3c899' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-af80e902-3357-45f8-999a-dfa11fc3c899' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-59a24916-52aa-44e4-892c-5f1f260b8488' class='xr-var-data-in' type='checkbox'><label for='data-59a24916-52aa-44e4-892c-5f1f260b8488' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[15000 values with dtype=float64]</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>composition_grid</span></div><div class='xr-var-dims'>(grid, component)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-9588fa0e-acbd-45c8-ae62-080564226369' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-9588fa0e-acbd-45c8-ae62-080564226369' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-c1b1443c-c914-479e-b7d8-184cd88c0a83' class='xr-var-data-in' type='checkbox'><label for='data-c1b1443c-c914-479e-b7d8-184cd88c0a83' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[5000 values with dtype=float64]</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-a6acce29-ad9f-48bc-855f-6fb3412a81d5' class='xr-section-summary-in' type='checkbox'  ><label for='section-a6acce29-ad9f-48bc-855f-6fb3412a81d5' class='xr-section-summary' >Indexes: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-index-name'><div>component</div></div><div class='xr-index-preview'>PandasIndex</div><input type='checkbox' disabled/><label></label><input id='index-ff3228bb-34b9-4101-b7c3-af17cb59eb71' class='xr-index-data-in' type='checkbox'/><label for='index-ff3228bb-34b9-4101-b7c3-af17cb59eb71' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(Index([&#x27;A&#x27;, &#x27;B&#x27;], dtype=&#x27;object&#x27;, name=&#x27;component&#x27;))</pre></div></li><li class='xr-var-item'><div class='xr-index-name'><div>x</div></div><div class='xr-index-preview'>PandasIndex</div><input type='checkbox' disabled/><label></label><input id='index-83870ee2-03f3-4cbb-8d56-3aeff1c35ab1' class='xr-index-data-in' type='checkbox'/><label for='index-83870ee2-03f3-4cbb-8d56-3aeff1c35ab1' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(Index([                0.001, 0.0010474522360006332, 0.0010971561867027272,
        0.0011492187010036998, 0.0012037516980200685, 0.0012608724076806808,
         0.001320703622736631, 0.0013833739627296209,  0.001449018150486198,
        0.0015177773017322714,
@@ -904,11 +910,11 @@ Data variables:
             0.75717214883374,    0.7931016603333051,    0.8307361074919352,
           0.8701563933188907,    0.9114472598521185,    0.9546974703287516,
                          1.0],
-      dtype=&#x27;float64&#x27;, name=&#x27;x&#x27;, length=150))</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-01a43b50-e6a9-4d1c-8a35-2d8956c7a988' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-01a43b50-e6a9-4d1c-8a35-2d8956c7a988' class='xr-section-summary'  title='Expand/collapse section'>Attributes: <span>(0)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><dl class='xr-attrs'></dl></div></li></ul></div></div></div>
+      dtype=&#x27;float64&#x27;, name=&#x27;x&#x27;, length=150))</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-f5b8b4bb-ba7e-4a35-98ce-59a89a1a5e43' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-f5b8b4bb-ba7e-4a35-98ce-59a89a1a5e43' class='xr-section-summary'  title='Expand/collapse section'>Attributes: <span>(0)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><dl class='xr-attrs'></dl></div></li></ul></div></div></div>
 </div>
 <p>We can plot the <code class="docutils literal notranslate"><span class="pre">measurements</span></code> data variable to see the two classes of measurements that we’re going to try to separate</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span><span class="n">xscale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span><span class="n">yscale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span><span class="n">add_legend</span><span class="o">=</span><span class="kc">False</span><span class="p">);</span>
@@ -927,7 +933,7 @@ Data variables:
 <h2>Execute the Pipeline<a class="headerlink" href="#Execute-the-Pipeline" title="Permalink to this heading">#</a></h2>
 <p>Now we’ll execute our clustering pipeline on the dataset. The pipeline will process the measurements, calculate derivatives, compute similarity between samples, and finally assign each measurement to one of the two phases.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds_result</span> <span class="o">=</span> <span class="n">clustering_pipeline</span><span class="o">.</span><span class="n">calculate</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
@@ -939,10 +945,10 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "010de2ec0613472ea7b35311b2febc30", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "d3f2e437574640babd6da6b944eba11f", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -1316,17 +1322,22 @@ dl.xr-attrs {
   stroke: currentColor;
   fill: currentColor;
 }
-</style><pre class='xr-text-repr-fallback'>&lt;xarray.Dataset&gt; Size: 184kB
-Dimensions:      (sample: 50, x: 150, log_x: 250, sample_i: 50, sample_j: 50)
+</style><pre class='xr-text-repr-fallback'>&lt;xarray.Dataset&gt; Size: 446kB
+Dimensions:              (sample: 100, component: 2, x: 150, grid: 2500,
+                          log_x: 250, sample_i: 100, sample_j: 100)
 Coordinates:
-  * x            (x) float64 1kB 0.001 0.001047 0.001097 ... 0.9114 0.9547 1.0
-  * log_x        (log_x) float64 2kB -3.0 -2.988 -2.976 ... -0.0241 -0.01205 0.0
-Dimensions without coordinates: sample, sample_i, sample_j
+  * component            (component) &lt;U1 8B &#x27;A&#x27; &#x27;B&#x27;
+  * x                    (x) float64 1kB 0.001 0.001047 0.001097 ... 0.9547 1.0
+  * log_x                (log_x) float64 2kB -3.0 -2.988 -2.976 ... -0.01205 0.0
+Dimensions without coordinates: sample, grid, sample_i, sample_j
 Data variables:
-    measurement  (sample, x) float64 60kB 1.667e+06 1.417e+06 ... 1.736 2.463
-    derivative   (sample, log_x) float64 100kB -3.262 -3.317 ... -0.2221 -0.2423
-    similarity   (sample_i, sample_j) float64 20kB 1.0 0.9496 ... 0.9958 1.0
-    labels       (sample) int64 400B 0 1 1 1 1 1 0 0 0 1 ... 0 0 0 1 1 0 1 1 1 1</pre><div class='xr-wrap' style='display:none'><div class='xr-header'><div class='xr-obj-type'>xarray.Dataset</div></div><ul class='xr-sections'><li class='xr-section-item'><input id='section-87b4dc28-e904-46f6-8fa1-e03527defffd' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-87b4dc28-e904-46f6-8fa1-e03527defffd' class='xr-section-summary'  title='Expand/collapse section'>Dimensions:</label><div class='xr-section-inline-details'><ul class='xr-dim-list'><li><span>sample</span>: 50</li><li><span class='xr-has-index'>x</span>: 150</li><li><span class='xr-has-index'>log_x</span>: 250</li><li><span>sample_i</span>: 50</li><li><span>sample_j</span>: 50</li></ul></div><div class='xr-section-details'></div></li><li class='xr-section-item'><input id='section-286b2e57-3a21-4467-86af-1b1b46ebaf0c' class='xr-section-summary-in' type='checkbox'  checked><label for='section-286b2e57-3a21-4467-86af-1b1b46ebaf0c' class='xr-section-summary' >Coordinates: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>x</span></div><div class='xr-var-dims'>(x)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>0.001 0.001047 ... 0.9547 1.0</div><input id='attrs-390f4dac-6d9c-4c11-9349-b5d10e20a558' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-390f4dac-6d9c-4c11-9349-b5d10e20a558' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-7fb4451d-e02e-4ba7-8b55-d674ed069b91' class='xr-var-data-in' type='checkbox'><label for='data-7fb4451d-e02e-4ba7-8b55-d674ed069b91' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([0.001   , 0.001047, 0.001097, 0.001149, 0.001204, 0.001261, 0.001321,
+    composition          (sample, component) float64 2kB ...
+    ground_truth_labels  (sample) int64 800B ...
+    measurement          (sample, x) float64 120kB ...
+    composition_grid     (grid, component) float64 40kB ...
+    derivative           (sample, log_x) float64 200kB -3.828 -3.85 ... -0.04054
+    similarity           (sample_i, sample_j) float64 80kB 1.0 0.9962 ... 1.0
+    labels               (sample) int64 800B 0 0 0 0 0 1 0 0 ... 0 1 0 0 1 0 0 0</pre><div class='xr-wrap' style='display:none'><div class='xr-header'><div class='xr-obj-type'>xarray.Dataset</div></div><ul class='xr-sections'><li class='xr-section-item'><input id='section-c1bf6088-daa4-4453-b49c-cfaba4e46ea6' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-c1bf6088-daa4-4453-b49c-cfaba4e46ea6' class='xr-section-summary'  title='Expand/collapse section'>Dimensions:</label><div class='xr-section-inline-details'><ul class='xr-dim-list'><li><span>sample</span>: 100</li><li><span class='xr-has-index'>component</span>: 2</li><li><span class='xr-has-index'>x</span>: 150</li><li><span>grid</span>: 2500</li><li><span class='xr-has-index'>log_x</span>: 250</li><li><span>sample_i</span>: 100</li><li><span>sample_j</span>: 100</li></ul></div><div class='xr-section-details'></div></li><li class='xr-section-item'><input id='section-a1aabda8-1096-4ec6-9463-201859c6f253' class='xr-section-summary-in' type='checkbox'  checked><label for='section-a1aabda8-1096-4ec6-9463-201859c6f253' class='xr-section-summary' >Coordinates: <span>(3)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>component</span></div><div class='xr-var-dims'>(component)</div><div class='xr-var-dtype'>&lt;U1</div><div class='xr-var-preview xr-preview'>&#x27;A&#x27; &#x27;B&#x27;</div><input id='attrs-79e22232-9024-428f-b0c2-5736ae1fbc84' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-79e22232-9024-428f-b0c2-5736ae1fbc84' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-af0eb77a-d0f4-4a1e-a4f4-b5b9ad135c7b' class='xr-var-data-in' type='checkbox'><label for='data-af0eb77a-d0f4-4a1e-a4f4-b5b9ad135c7b' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([&#x27;A&#x27;, &#x27;B&#x27;], dtype=&#x27;&lt;U1&#x27;)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>x</span></div><div class='xr-var-dims'>(x)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>0.001 0.001047 ... 0.9547 1.0</div><input id='attrs-04ea0447-0ce9-460e-8890-75fcdbb5599a' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-04ea0447-0ce9-460e-8890-75fcdbb5599a' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-76958fd1-31af-4fa6-916b-006bc0648da6' class='xr-var-data-in' type='checkbox'><label for='data-76958fd1-31af-4fa6-916b-006bc0648da6' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([0.001   , 0.001047, 0.001097, 0.001149, 0.001204, 0.001261, 0.001321,
        0.001383, 0.001449, 0.001518, 0.00159 , 0.001665, 0.001744, 0.001827,
        0.001914, 0.002005, 0.0021  , 0.002199, 0.002304, 0.002413, 0.002527,
        0.002647, 0.002773, 0.002905, 0.003042, 0.003187, 0.003338, 0.003496,
@@ -1347,45 +1358,35 @@ Data variables:
        0.344281, 0.360618, 0.37773 , 0.395654, 0.414429, 0.434094, 0.454693,
        0.476269, 0.498869, 0.522542, 0.547337, 0.57331 , 0.600514, 0.62901 ,
        0.658858, 0.690122, 0.72287 , 0.757172, 0.793102, 0.830736, 0.870156,
-       0.911447, 0.954697, 1.      ])</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>log_x</span></div><div class='xr-var-dims'>(log_x)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>-3.0 -2.988 -2.976 ... -0.01205 0.0</div><input id='attrs-6b238741-f13b-4ca2-a3aa-fe6d0d855740' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-6b238741-f13b-4ca2-a3aa-fe6d0d855740' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-5c4ddf63-92d4-497f-b43f-b93a73985075' class='xr-var-data-in' type='checkbox'><label for='data-5c4ddf63-92d4-497f-b43f-b93a73985075' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([-3.      , -2.987952, -2.975904, ..., -0.024096, -0.012048,  0.      ])</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-ff9040a3-b18b-45e8-af52-130b4bae7574' class='xr-section-summary-in' type='checkbox'  checked><label for='section-ff9040a3-b18b-45e8-af52-130b4bae7574' class='xr-section-summary' >Data variables: <span>(4)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span>measurement</span></div><div class='xr-var-dims'>(sample, x)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>1.667e+06 1.417e+06 ... 1.736 2.463</div><input id='attrs-18c8eabf-797c-4f09-af44-0696adf844e3' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-18c8eabf-797c-4f09-af44-0696adf844e3' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-4297d0cc-8aa0-4692-bb0f-45953a018773' class='xr-var-data-in' type='checkbox'><label for='data-4297d0cc-8aa0-4692-bb0f-45953a018773' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([[1.66681032e+06, 1.41657155e+06, 1.48046864e+06, ...,
-        1.82545944e+00, 2.08726041e+00, 2.07532316e+00],
-       [2.04704674e+00, 2.05620273e+00, 1.64341595e+00, ...,
-        1.77233056e+00, 2.19350969e+00, 1.71313157e+00],
-       [2.16372403e+00, 2.17089054e+00, 2.21690634e+00, ...,
-        1.99746317e+00, 2.21361648e+00, 1.89651039e+00],
+       0.911447, 0.954697, 1.      ])</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>log_x</span></div><div class='xr-var-dims'>(log_x)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>-3.0 -2.988 -2.976 ... -0.01205 0.0</div><input id='attrs-7391da74-ef88-4c62-83dc-09e07969ee89' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-7391da74-ef88-4c62-83dc-09e07969ee89' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-e91bcfb9-cef0-46fd-88ee-39796bb86af7' class='xr-var-data-in' type='checkbox'><label for='data-e91bcfb9-cef0-46fd-88ee-39796bb86af7' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([-3.      , -2.987952, -2.975904, ..., -0.024096, -0.012048,  0.      ])</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-5bf92752-e4d9-444c-8f02-da9f0b66fc48' class='xr-section-summary-in' type='checkbox'  checked><label for='section-5bf92752-e4d9-444c-8f02-da9f0b66fc48' class='xr-section-summary' >Data variables: <span>(7)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span>composition</span></div><div class='xr-var-dims'>(sample, component)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-75a53f06-e7cc-4d5e-97c3-6043b4cb2402' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-75a53f06-e7cc-4d5e-97c3-6043b4cb2402' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-b0e59a9c-1ff4-4e52-8b38-4a80831239a7' class='xr-var-data-in' type='checkbox'><label for='data-b0e59a9c-1ff4-4e52-8b38-4a80831239a7' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[200 values with dtype=float64]</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>ground_truth_labels</span></div><div class='xr-var-dims'>(sample)</div><div class='xr-var-dtype'>int64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-4680b5a8-f03c-475c-8897-b7947f2e2722' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-4680b5a8-f03c-475c-8897-b7947f2e2722' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-069f2eac-9e08-4d7e-906e-e6008a9101ee' class='xr-var-data-in' type='checkbox'><label for='data-069f2eac-9e08-4d7e-906e-e6008a9101ee' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[100 values with dtype=int64]</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>measurement</span></div><div class='xr-var-dims'>(sample, x)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-4ff752cf-f414-46f0-aef8-f1926f145f14' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-4ff752cf-f414-46f0-aef8-f1926f145f14' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-16bc0684-4ffe-4c12-b750-071af5eb9339' class='xr-var-data-in' type='checkbox'><label for='data-16bc0684-4ffe-4c12-b750-071af5eb9339' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[15000 values with dtype=float64]</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>composition_grid</span></div><div class='xr-var-dims'>(grid, component)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>...</div><input id='attrs-8a4c8cca-c92a-4370-b70b-a289b2fab15f' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-8a4c8cca-c92a-4370-b70b-a289b2fab15f' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-75e9a327-cc2c-412c-988d-d5b51921ad3d' class='xr-var-data-in' type='checkbox'><label for='data-75e9a327-cc2c-412c-988d-d5b51921ad3d' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>[5000 values with dtype=float64]</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>derivative</span></div><div class='xr-var-dims'>(sample, log_x)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>-3.828 -3.85 ... -0.03641 -0.04054</div><input id='attrs-6ed4eb88-3f14-41c0-bf56-49451c084827' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-6ed4eb88-3f14-41c0-bf56-49451c084827' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-1ee60611-70be-4882-acee-1e251e029eea' class='xr-var-data-in' type='checkbox'><label for='data-1ee60611-70be-4882-acee-1e251e029eea' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>description :</span></dt><dd>Savitsky-Golay filtered data</dd><dt><span>name :</span></dt><dd>TakeDerivative</dd><dt><span>input_variable :</span></dt><dd>measurement</dd><dt><span>output_variable :</span></dt><dd>derivative</dd><dt><span>input_prefix :</span></dt><dd>None</dd><dt><span>output_prefix :</span></dt><dd>None</dd><dt><span>dim :</span></dt><dd>x</dd><dt><span>npts :</span></dt><dd>250</dd><dt><span>xlo :</span></dt><dd>None</dd><dt><span>xhi :</span></dt><dd>None</dd><dt><span>xlo_isel :</span></dt><dd>None</dd><dt><span>xhi_isel :</span></dt><dd>None</dd><dt><span>pedestal :</span></dt><dd>None</dd><dt><span>derivative :</span></dt><dd>1</dd><dt><span>apply_log_scale :</span></dt><dd>True</dd><dt><span>polyorder :</span></dt><dd>2</dd><dt><span>window_length :</span></dt><dd>31</dd></dl></div><div class='xr-var-data'><pre>array([[-3.82815189, -3.85030191, -3.87245192, ..., -0.21187028,
+        -0.20701209, -0.2021539 ],
+       [-3.33576502, -3.38107428, -3.42638353, ...,  0.2858237 ,
+         0.3021667 ,  0.31850969],
+       [-3.86592377, -3.8781227 , -3.89032162, ...,  0.72903554,
+         0.77791869,  0.82680185],
        ...,
-       [1.97066376e+00, 2.04335416e+00, 2.35637489e+00, ...,
-        2.27901656e+00, 1.92548698e+00, 2.10348609e+00],
-       [2.24268521e+00, 1.87774264e+00, 2.52947982e+00, ...,
-        2.14632797e+00, 2.42341491e+00, 1.83736469e+00],
-       [2.16278887e+00, 1.62603408e+00, 2.06192476e+00, ...,
-        1.84670516e+00, 1.73592981e+00, 2.46273598e+00]])</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>derivative</span></div><div class='xr-var-dims'>(sample, log_x)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>-3.262 -3.317 ... -0.2221 -0.2423</div><input id='attrs-ebe84868-4ec3-4726-a8b0-985136050429' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-ebe84868-4ec3-4726-a8b0-985136050429' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-f2d381fd-a441-4042-b093-7d84d743fd17' class='xr-var-data-in' type='checkbox'><label for='data-f2d381fd-a441-4042-b093-7d84d743fd17' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>description :</span></dt><dd>Savitsky-Golay filtered data</dd><dt><span>name :</span></dt><dd>SavgolFilter</dd><dt><span>input_variable :</span></dt><dd>measurement</dd><dt><span>output_variable :</span></dt><dd>derivative</dd><dt><span>input_prefix :</span></dt><dd>None</dd><dt><span>output_prefix :</span></dt><dd>None</dd><dt><span>dim :</span></dt><dd>x</dd><dt><span>npts :</span></dt><dd>250</dd><dt><span>xlo :</span></dt><dd>None</dd><dt><span>xhi :</span></dt><dd>None</dd><dt><span>xlo_isel :</span></dt><dd>None</dd><dt><span>xhi_isel :</span></dt><dd>None</dd><dt><span>pedestal :</span></dt><dd>None</dd><dt><span>derivative :</span></dt><dd>1</dd><dt><span>apply_log_scale :</span></dt><dd>True</dd><dt><span>polyorder :</span></dt><dd>2</dd><dt><span>window_length :</span></dt><dd>31</dd></dl></div><div class='xr-var-data'><pre>array([[-3.26237381, -3.31739876, -3.37242371, ...,  0.39407098,
-         0.43000691,  0.46594284],
-       [ 0.17010102,  0.16139183,  0.15268264, ..., -0.79188182,
-        -0.84429393, -0.89670605],
-       [-0.81536196, -0.76446481, -0.71356765, ...,  0.28131717,
-         0.31055531,  0.33979344],
+       [-4.21825364, -4.19214886, -4.16604407, ...,  0.07484659,
+         0.08131892,  0.08779125],
+       [-3.25063037, -3.30318201, -3.35573365, ..., -0.16449625,
+        -0.17500039, -0.18550452],
+       [-4.38490681, -4.3402124 , -4.29551799, ..., -0.03226873,
+        -0.03640584, -0.04054294]])</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>similarity</span></div><div class='xr-var-dims'>(sample_i, sample_j)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>1.0 0.9962 0.996 ... 0.9957 1.0</div><input id='attrs-41eefb8e-318b-4b75-b5cf-e523bcd78e82' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-41eefb8e-318b-4b75-b5cf-e523bcd78e82' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-1dfad40a-9cfd-4145-82b9-8943549a213d' class='xr-var-data-in' type='checkbox'><label for='data-1dfad40a-9cfd-4145-82b9-8943549a213d' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>metric :</span></dt><dd>laplacian</dd><dt><span>gamma :</span></dt><dd>0.0001</dd><dt><span>name :</span></dt><dd>ComputeSimilarity</dd><dt><span>input_variable :</span></dt><dd>derivative</dd><dt><span>output_variable :</span></dt><dd>similarity</dd><dt><span>input_prefix :</span></dt><dd>None</dd><dt><span>output_prefix :</span></dt><dd>None</dd><dt><span>sample_dim :</span></dt><dd>sample</dd><dt><span>constrain_same :</span></dt><dd>[]</dd><dt><span>constrain_different :</span></dt><dd>[]</dd></dl></div><div class='xr-var-data'><pre>array([[1.        , 0.99624506, 0.99600927, ..., 0.99598619, 0.9962717 ,
+        0.99670415],
+       [0.99624506, 1.        , 0.99698371, ..., 0.99639591, 0.99680169,
+        0.99630977],
+       [0.99600927, 0.99698371, 1.        , ..., 0.9963402 , 0.9966431 ,
+        0.99593763],
        ...,
-       [ 0.0843537 ,  0.075217  ,  0.06608031, ..., -0.02111355,
-        -0.03059186, -0.04007016],
-       [-0.59787666, -0.56217375, -0.52647083, ...,  0.45569821,
-         0.5034612 ,  0.55122419],
-       [-0.00936809, -0.00878607, -0.00820405, ..., -0.20180244,
-        -0.22205709, -0.24231174]])</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>similarity</span></div><div class='xr-var-dims'>(sample_i, sample_j)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>1.0 0.9496 0.9512 ... 0.9958 1.0</div><input id='attrs-9c88f374-04a9-419d-9686-5619e5819376' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-9c88f374-04a9-419d-9686-5619e5819376' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-497afdaf-a8fd-4a1d-8758-9875ad590ca1' class='xr-var-data-in' type='checkbox'><label for='data-497afdaf-a8fd-4a1d-8758-9875ad590ca1' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>metric :</span></dt><dd>laplacian</dd><dt><span>gamma :</span></dt><dd>0.0001</dd><dt><span>name :</span></dt><dd>SimilarityMetric</dd><dt><span>input_variable :</span></dt><dd>derivative</dd><dt><span>output_variable :</span></dt><dd>similarity</dd><dt><span>input_prefix :</span></dt><dd>None</dd><dt><span>output_prefix :</span></dt><dd>None</dd><dt><span>sample_dim :</span></dt><dd>sample</dd><dt><span>constrain_same :</span></dt><dd>[]</dd><dt><span>constrain_different :</span></dt><dd>[]</dd></dl></div><div class='xr-var-data'><pre>array([[1.        , 0.94955571, 0.95123375, ..., 0.95039207, 0.95189277,
-        0.94995344],
-       [0.94955571, 1.        , 0.99489543, ..., 0.99547878, 0.99509997,
-        0.99635144],
-       [0.95123375, 0.99489543, 1.        , ..., 0.99496338, 0.99743651,
-        0.99585264],
-       ...,
-       [0.95039207, 0.99547878, 0.99496338, ..., 1.        , 0.99589615,
-        0.99701581],
-       [0.95189277, 0.99509997, 0.99743651, ..., 0.99589615, 1.        ,
-        0.99575875],
-       [0.94995344, 0.99635144, 0.99585264, ..., 0.99701581, 0.99575875,
-        1.        ]])</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>labels</span></div><div class='xr-var-dims'>(sample)</div><div class='xr-var-dtype'>int64</div><div class='xr-var-preview xr-preview'>0 1 1 1 1 1 0 0 ... 0 1 1 0 1 1 1 1</div><input id='attrs-4e595c60-6d11-405a-a67a-8759adb53595' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-4e595c60-6d11-405a-a67a-8759adb53595' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-41aaa580-de63-43b3-aebe-883842e07c17' class='xr-var-data-in' type='checkbox'><label for='data-41aaa580-de63-43b3-aebe-883842e07c17' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>n_phases :</span></dt><dd>2</dd><dt><span>name :</span></dt><dd>SpectralClustering</dd><dt><span>input_variable :</span></dt><dd>similarity</dd><dt><span>output_variable :</span></dt><dd>labels</dd><dt><span>input_prefix :</span></dt><dd>None</dd><dt><span>output_prefix :</span></dt><dd>None</dd><dt><span>dim :</span></dt><dd>sample</dd><dt><span>use_silhouette :</span></dt><dd>False</dd></dl></div><div class='xr-var-data'><pre>array([0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1,
-       1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1,
-       1, 0, 1, 1, 1, 1])</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-6f2b5b99-c105-44ea-a05e-2a227d75b52e' class='xr-section-summary-in' type='checkbox'  ><label for='section-6f2b5b99-c105-44ea-a05e-2a227d75b52e' class='xr-section-summary' >Indexes: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-index-name'><div>x</div></div><div class='xr-index-preview'>PandasIndex</div><input type='checkbox' disabled/><label></label><input id='index-7eb38331-f111-40f8-8cb8-0be8f0933b97' class='xr-index-data-in' type='checkbox'/><label for='index-7eb38331-f111-40f8-8cb8-0be8f0933b97' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(Index([                0.001, 0.0010474522360006332, 0.0010971561867027272,
+       [0.99598619, 0.99639591, 0.9963402 , ..., 1.        , 0.99655421,
+        0.99684241],
+       [0.9962717 , 0.99680169, 0.9966431 , ..., 0.99655421, 1.        ,
+        0.99567975],
+       [0.99670415, 0.99630977, 0.99593763, ..., 0.99684241, 0.99567975,
+        1.        ]])</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>labels</span></div><div class='xr-var-dims'>(sample)</div><div class='xr-var-dtype'>int64</div><div class='xr-var-preview xr-preview'>0 0 0 0 0 1 0 0 ... 0 1 0 0 1 0 0 0</div><input id='attrs-73b382ee-14b9-4094-8fb3-7fb890734182' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-73b382ee-14b9-4094-8fb3-7fb890734182' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-aedc6b4a-3f10-4e7d-8fe5-a76bebffa44b' class='xr-var-data-in' type='checkbox'><label for='data-aedc6b4a-3f10-4e7d-8fe5-a76bebffa44b' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>n_phases :</span></dt><dd>2</dd><dt><span>name :</span></dt><dd>SpectralClustering</dd><dt><span>input_variable :</span></dt><dd>similarity</dd><dt><span>output_variable :</span></dt><dd>labels</dd><dt><span>input_prefix :</span></dt><dd>None</dd><dt><span>output_prefix :</span></dt><dd>None</dd><dt><span>dim :</span></dt><dd>sample</dd><dt><span>use_silhouette :</span></dt><dd>False</dd></dl></div><div class='xr-var-data'><pre>array([0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0,
+       0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0,
+       0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0])</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-4f1e6a86-1563-4bd1-9a48-d5ee66f58ef3' class='xr-section-summary-in' type='checkbox'  ><label for='section-4f1e6a86-1563-4bd1-9a48-d5ee66f58ef3' class='xr-section-summary' >Indexes: <span>(3)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-index-name'><div>component</div></div><div class='xr-index-preview'>PandasIndex</div><input type='checkbox' disabled/><label></label><input id='index-5079f729-9710-474d-a52e-d4e3adbeb04e' class='xr-index-data-in' type='checkbox'/><label for='index-5079f729-9710-474d-a52e-d4e3adbeb04e' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(Index([&#x27;A&#x27;, &#x27;B&#x27;], dtype=&#x27;object&#x27;, name=&#x27;component&#x27;))</pre></div></li><li class='xr-var-item'><div class='xr-index-name'><div>x</div></div><div class='xr-index-preview'>PandasIndex</div><input type='checkbox' disabled/><label></label><input id='index-5d1d7606-8152-4b05-9221-cccb77db05f4' class='xr-index-data-in' type='checkbox'/><label for='index-5d1d7606-8152-4b05-9221-cccb77db05f4' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(Index([                0.001, 0.0010474522360006332, 0.0010971561867027272,
        0.0011492187010036998, 0.0012037516980200685, 0.0012608724076806808,
         0.001320703622736631, 0.0013833739627296209,  0.001449018150486198,
        0.0015177773017322714,
@@ -1394,7 +1395,7 @@ Data variables:
             0.75717214883374,    0.7931016603333051,    0.8307361074919352,
           0.8701563933188907,    0.9114472598521185,    0.9546974703287516,
                          1.0],
-      dtype=&#x27;float64&#x27;, name=&#x27;x&#x27;, length=150))</pre></div></li><li class='xr-var-item'><div class='xr-index-name'><div>log_x</div></div><div class='xr-index-preview'>PandasIndex</div><input type='checkbox' disabled/><label></label><input id='index-13fddf7a-a9a9-4ae9-92d9-a89ac70888b6' class='xr-index-data-in' type='checkbox'/><label for='index-13fddf7a-a9a9-4ae9-92d9-a89ac70888b6' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(Index([                 -3.0,   -2.9879518072289155,   -2.9759036144578315,
+      dtype=&#x27;float64&#x27;, name=&#x27;x&#x27;, length=150))</pre></div></li><li class='xr-var-item'><div class='xr-index-name'><div>log_x</div></div><div class='xr-index-preview'>PandasIndex</div><input type='checkbox' disabled/><label></label><input id='index-e5810b6d-96d4-4a76-81ec-bbd8098ab2b9' class='xr-index-data-in' type='checkbox'/><label for='index-e5810b6d-96d4-4a76-81ec-bbd8098ab2b9' title='Show/Hide index repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-index-data'><pre>PandasIndex(Index([                 -3.0,   -2.9879518072289155,   -2.9759036144578315,
           -2.963855421686747,   -2.9518072289156625,   -2.9397590361445785,
           -2.927710843373494,   -2.9156626506024095,   -2.9036144578313254,
           -2.891566265060241,
@@ -1403,12 +1404,15 @@ Data variables:
         -0.07228915662650603,  -0.06024096385542155,  -0.04819277108433706,
         -0.03614457831325302,  -0.02409638554216853, -0.012048192771084043,
                          0.0],
-      dtype=&#x27;float64&#x27;, name=&#x27;log_x&#x27;, length=250))</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-2edb591e-435b-4fec-ad20-c3802f6d373a' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-2edb591e-435b-4fec-ad20-c3802f6d373a' class='xr-section-summary'  title='Expand/collapse section'>Attributes: <span>(0)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><dl class='xr-attrs'></dl></div></li></ul></div></div></div>
+      dtype=&#x27;float64&#x27;, name=&#x27;log_x&#x27;, length=250))</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-f5f8b61a-1d4b-41f2-887d-9d9390eb7213' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-f5f8b61a-1d4b-41f2-887d-9d9390eb7213' class='xr-section-summary'  title='Expand/collapse section'>Attributes: <span>(0)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><dl class='xr-attrs'></dl></div></li></ul></div></div></div>
 </div>
 <p>In the resultant <code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>, we see a Data variable called <code class="docutils literal notranslate"><span class="pre">labels</span></code>. This is the pipelines attempt o group the data into two classes: Phase 0 or Phase1.</p>
+</section>
+<section id="Plot-the-Results">
+<h2>Plot the Results<a class="headerlink" href="#Plot-the-Results" title="Permalink to this heading">#</a></h2>
 <p>Let’s plot the data in two subplots to visualize the data that the pipeline puts in each of the classes.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
@@ -1417,17 +1421,78 @@ Data variables:
     <span class="n">axes</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Phase </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
 <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_quickstart_16_0.png" src="../_images/tutorials_quickstart_16_0.png" />
+<img alt="../_images/tutorials_quickstart_17_0.png" src="../_images/tutorials_quickstart_17_0.png" />
 </div>
 </div>
-<p>We can see that the pipeline does an excellent job at separating the data!</p>
+<p>We can see that the pipeline does an excellent job at separating the data! Note that we’ve made use of the <code class="docutils literal notranslate"><span class="pre">groupby</span></code> method of the xarray Dataset. This is a powerful tool in working with complex data.</p>
+<p>We can also plot the results of the individual steps using each PipelineOps <code class="docutils literal notranslate"><span class="pre">plot()</span></code> method. These methods attempt to ‘guess’ how to plot the data produced by the operation.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">clustering_pipeline</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;TakeDerivative&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">add_legend</span><span class="o">=</span><span class="kc">False</span><span class="p">);</span> <span class="c1"># equivalent to: clustering_pipeline[0].plot();</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">clustering_pipeline</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;ComputeSimilarity&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span> <span class="c1"># equivalent to: clustering_pipeline[1].plot();</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">clustering_pipeline</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;SpectralClustering&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">add_legend</span><span class="o">=</span><span class="kc">False</span><span class="p">);</span> <span class="c1"># equivalent to: clustering_pipeline[2].plot();</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Figure size 800x550 with 0 Axes&gt;
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_quickstart_19_1.png" src="../_images/tutorials_quickstart_19_1.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Figure size 800x550 with 0 Axes&gt;
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_quickstart_19_3.png" src="../_images/tutorials_quickstart_19_3.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Figure size 800x550 with 0 Axes&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_quickstart_19_5.png" src="../_images/tutorials_quickstart_19_5.png" />
+</div>
+</div>
 </section>
 <section id="Conclusion">
 <h2>Conclusion<a class="headerlink" href="#Conclusion" title="Permalink to this heading">#</a></h2>
@@ -1436,6 +1501,7 @@ Data variables:
 <li><p>Started with a dataset containing multiple measurements with two distinct patterns</p></li>
 <li><p>Applied the clustering pipeline to analyze and classify the data</p></li>
 <li><p>Successfully separated the measurements into two distinct phases</p></li>
+<li><p>Plotted the final results and some of the individual PipelineOp results</p></li>
 </ol>
 <p>The pipeline was able to automatically detect and group similar measurements, making it a powerful tool for analyzing phase transitions and other classification tasks in scientific data.</p>
 </section>
@@ -1492,6 +1558,7 @@ Data variables:
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Define-Pipeline">Define Pipeline</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Load-Input-Data">Load Input Data</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Execute-the-Pipeline">Execute the Pipeline</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Plot-the-Results">Plot the Results</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Conclusion">Conclusion</a></li>
 </ul>
   </nav></div>
