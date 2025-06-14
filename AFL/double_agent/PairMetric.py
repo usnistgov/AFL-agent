@@ -23,7 +23,9 @@ from sklearn.metrics import pairwise  # type: ignore
 from typing_extensions import Self
 
 from AFL.double_agent.PipelineOp import PipelineOp
-from AFL.double_agent.util import listify
+from AFL.double_agent.util import listify 
+import warnings 
+from scipy.interpolate import UnivariateSpline
 
 
 class PairMetric(PipelineOp):
