@@ -220,7 +220,7 @@ tiled==0.1.0b19
 tinycc==1.1
 tinycss2==1.4.0
 toolz==1.0.0
-tornado==6.4.2
+tornado==6.5.1
 tqdm==4.67.1
 traitlets==5.14.3
 typer==0.15.1
