@@ -18,10 +18,10 @@ class MockPipelineOp(PipelineOp):
 
     def __init__(
         self,
-        name: str | None = None,
         input_variable: str | None = None,
         output_variable: str | None = None,
         fail_on_calculate: bool = False,
+        name: str = "MockPipelineOp",
     ):
         """
         Initialize the MockPipelineOp.

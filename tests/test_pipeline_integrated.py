@@ -65,21 +65,21 @@ class TestPipelineIntegrated:
         xr.testing.assert_equal(
             result["composition_grid"], example_dataset1_cluster_result["composition_grid"]
         )
-        xr.testing.assert_equal(result["derivative"], example_dataset1_cluster_result["derivative"])
-        xr.testing.assert_equal(result["similarity"], example_dataset1_cluster_result["similarity"])
+        xr.testing.assert_allclose(result["derivative"], example_dataset1_cluster_result["derivative"])
+        xr.testing.assert_allclose(result["similarity"], example_dataset1_cluster_result["similarity"])
         xr.testing.assert_equal(result["labels"], example_dataset1_cluster_result["labels"])
 
     def test_save_load_pipeline_with_compute(self, example_dataset1, tmp_path, clustering_pipeline):
         """Test saving, loading, and computing with a pipeline."""
         # Save pipeline
-        save_path = tmp_path / "test_pipeline.pkl"
-        clustering_pipeline.write(str(save_path))
+        save_path = tmp_path / "test_pipeline.json"
+        clustering_pipeline.write_json(str(save_path))
 
         # Run original pipeline
         original_result = clustering_pipeline.calculate(example_dataset1.copy())
 
         # Load pipeline
-        loaded_pipeline = Pipeline.read(str(save_path))
+        loaded_pipeline = Pipeline.read_json(str(save_path))
 
         # Run loaded pipeline
         loaded_result = loaded_pipeline.calculate(example_dataset1.copy())

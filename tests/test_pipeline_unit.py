@@ -44,8 +44,8 @@ class TestPipelineUnit:
     def test_pipeline_context_manager(self):
         """Test creating a Pipeline using the context manager."""
         with Pipeline("TestPipeline") as pipeline:
-            op1 = MockPipelineOp("Op1", "x", "y")
-            op2 = MockPipelineOp("Op2", "y", "z")
+            op1 = MockPipelineOp(name="Op1", input_variable="x", output_variable="y")
+            op2 = MockPipelineOp(name="Op2", input_variable="y", output_variable="z")
 
         assert pipeline.name == "TestPipeline"
         assert len(pipeline.ops) == 2
@@ -79,8 +79,8 @@ class TestPipelineUnit:
     def test_pipeline_iter(self):
         """Test iterating over Pipeline operations."""
         with Pipeline("TestPipeline") as pipeline:
-            op1 = MockPipelineOp("Op1", "x", "y")
-            op2 = MockPipelineOp("Op2", "y", "z")
+            op1 = MockPipelineOp(name="Op1", input_variable="x", output_variable="y")
+            op2 = MockPipelineOp(name="Op2", input_variable="y", output_variable="z")
 
         ops = list(pipeline)
 
@@ -91,8 +91,8 @@ class TestPipelineUnit:
     def test_pipeline_getitem(self):
         """Test accessing Pipeline operations by index."""
         with Pipeline("TestPipeline") as pipeline:
-            op1 = MockPipelineOp("Op1", "x", "y")
-            op2 = MockPipelineOp("Op2", "y", "z")
+            op1 = MockPipelineOp(name="Op1", input_variable="x", output_variable="y")
+            op2 = MockPipelineOp(name="Op2", input_variable="y", output_variable="z")
 
         assert pipeline[0].name == "Op1"
         assert pipeline[1].name == "Op2"
@@ -100,9 +100,9 @@ class TestPipelineUnit:
     def test_pipeline_search(self):
         """Test searching for operations by name."""
         with Pipeline("TestPipeline") as pipeline:
-            op1 = MockPipelineOp("Op1", "x", "y")
-            op2 = MockPipelineOp("Op2", "y", "z")
-            op3 = MockPipelineOp("SpecialOp", "z", "w")
+            op1 = MockPipelineOp(name="Op1", input_variable="x", output_variable="y")
+            op2 = MockPipelineOp(name="Op2", input_variable="y", output_variable="z")
+            op3 = MockPipelineOp(name="SpecialOp", input_variable="z", output_variable="w")
 
         assert pipeline.search("Op1").name == "Op1"
         assert pipeline.search("Op2").name == "Op2"
@@ -112,8 +112,8 @@ class TestPipelineUnit:
     def test_pipeline_search_contains(self):
         """Test searching for operations with contains mode."""
         with Pipeline("TestPipeline") as pipeline:
-            op1 = MockPipelineOp("ProcessingOp", "x", "y")
-            op2 = MockPipelineOp("FilteringOp", "y", "z")
+            op1 = MockPipelineOp(name="ProcessingOp", input_variable="x", output_variable="y")
+            op2 = MockPipelineOp(name="FilteringOp", input_variable="y", output_variable="z")
 
         assert pipeline.search("Processing", contains=True).name == "ProcessingOp"
         assert pipeline.search("Filter", contains=True).name == "FilteringOp"
@@ -127,16 +127,16 @@ class TestPipelineUnit:
         assert repr(pipeline) == "<Pipeline TestPipeline N=0>"
 
         with Pipeline("TestPipeline") as pipeline:
-            op1 = MockPipelineOp("Op1", "x", "y")
-            op2 = MockPipelineOp("Op2", "y", "z")
+            op1 = MockPipelineOp(name="Op1", input_variable="x", output_variable="y")
+            op2 = MockPipelineOp(name="Op2", input_variable="y", output_variable="z")
 
         assert repr(pipeline) == "<Pipeline TestPipeline N=2>"
 
     def test_pipeline_copy(self):
         """Test copying a Pipeline."""
         with Pipeline("TestPipeline") as pipeline:
-            op1 = MockPipelineOp("Op1", "x", "y")
-            op2 = MockPipelineOp("Op2", "y", "z")
+            op1 = MockPipelineOp(name="Op1", input_variable="x", output_variable="y")
+            op2 = MockPipelineOp(name="Op2", input_variable="y", output_variable="z")
 
         pipeline_copy = pipeline.copy()
 
@@ -154,7 +154,7 @@ class TestPipelineUnit:
         """Test calculating a pipeline with a single operation."""
         # Create pipeline with one operation
         with Pipeline("TestPipeline") as pipeline:
-            MockPreprocessor("ProcessOp", input_variable="measurement", output_variable="processed")
+            MockPreprocessor(name="ProcessOp", input_variable="measurement", output_variable="processed")
 
         # Calculate
         result = pipeline.calculate(example_dataset1)
@@ -174,7 +174,7 @@ class TestPipelineUnit:
             MockPreprocessor("ProcessOp", input_variable="measurement", output_variable="processed")
 
             # Second operation: copy processed to output
-            MockPipelineOp("CopyOp", input_variable="processed", output_variable="output")
+            MockPipelineOp(name="CopyOp", input_variable="processed", output_variable="output")
 
         # Calculate
         result = pipeline.calculate(example_dataset1)
@@ -193,7 +193,7 @@ class TestPipelineUnit:
         # Create pipeline with an operation that will fail
         with Pipeline("TestPipeline") as pipeline:
             MockPipelineOp(
-                "FailingOp",
+                name="FailingOp",
                 input_variable="measurement",
                 output_variable="output",
                 fail_on_calculate=True,
@@ -206,9 +206,9 @@ class TestPipelineUnit:
     def test_input_output_variables(self):
         """Test getting input and output variables from a pipeline."""
         with Pipeline("TestPipeline") as pipeline:
-            MockPipelineOp("Op1", "x", "y")
-            MockPipelineOp("Op2", "y", "z")
-            MockPipelineOp("Op3", "a", "b")
+            MockPipelineOp(name="Op1", input_variable="x", output_variable="y")
+            MockPipelineOp(name="Op2", input_variable="y", output_variable="z")
+            MockPipelineOp(name="Op3", input_variable="a", output_variable="b")
 
         # Make the graph first
         pipeline.make_graph()
@@ -221,22 +221,45 @@ class TestPipelineUnit:
         outputs = pipeline.output_variables()
         assert sorted(outputs) == ["b", "z"]
 
-    def test_serialization(self, tmp_path):
+    def test_serialization_json(self, tmp_path):
         """Test saving and loading a pipeline."""
         # Create a pipeline to save
         with Pipeline("TestPipeline") as pipeline:
-            MockPipelineOp("Op1", "x", "y")
-            MockPipelineOp("Op2", "y", "z")
+            MockPipelineOp(name="Op1", input_variable="x", output_variable="y")
+            MockPipelineOp(name="Op2", input_variable="y", output_variable="z")
 
         # Save the pipeline
         filename = tmp_path / "test_pipeline.pkl"
-        pipeline.write(str(filename))
+        pipeline.write_json(str(filename))
 
         # Check that the file exists
         assert os.path.exists(filename)
 
         # Load the pipeline
-        loaded_pipeline = Pipeline.read(str(filename))
+        loaded_pipeline = Pipeline.read_json(str(filename))
+
+        # Check that it's the same
+        assert loaded_pipeline.name == pipeline.name
+        assert len(loaded_pipeline.ops) == len(pipeline.ops)
+        assert loaded_pipeline.ops[0].name == pipeline.ops[0].name
+        assert loaded_pipeline.ops[1].name == pipeline.ops[1].name
+
+    def test_serialization_pkl(self, tmp_path):
+        """Test saving and loading a pipeline."""
+        # Create a pipeline to save
+        with Pipeline("TestPipeline") as pipeline:
+            MockPipelineOp(name="Op1", input_variable="x", output_variable="y")
+            MockPipelineOp(name="Op2", input_variable="y", output_variable="z")
+
+        # Save the pipeline
+        filename = tmp_path / "test_pipeline.pkl"
+        pipeline.write_pkl(str(filename))
+
+        # Check that the file exists
+        assert os.path.exists(filename)
+
+        # Load the pipeline
+        loaded_pipeline = Pipeline.read_pkl(str(filename))
 
         # Check that it's the same
         assert loaded_pipeline.name == pipeline.name
@@ -248,8 +271,8 @@ class TestPipelineUnit:
         """Test creating a graph representation of the pipeline."""
         # Create a pipeline with a linear flow
         with Pipeline("TestPipeline") as pipeline:
-            MockPipelineOp("Op1", "x", "y")
-            MockPipelineOp("Op2", "y", "z")
+            MockPipelineOp(name="Op1", input_variable="x", output_variable="y")
+            MockPipelineOp(name="Op2", input_variable="y", output_variable="z")
 
         # Make the graph
         pipeline.make_graph()
@@ -268,8 +291,8 @@ class TestPipelineUnit:
         """Test drawing the pipeline graph."""
         # Create a simple pipeline
         with Pipeline("TestPipeline") as pipeline:
-            MockPipelineOp("Op1", "x", "y")
-            MockPipelineOp("Op2", "y", "z")
+            MockPipelineOp(name="Op1", input_variable="x", output_variable="y")
+            MockPipelineOp(name="Op2", input_variable="y", output_variable="z")
 
         # Mock the necessary components for drawing
         with (

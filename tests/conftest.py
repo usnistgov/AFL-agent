@@ -15,7 +15,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from AFL.double_agent import Pipeline, PipelineOp
 from AFL.double_agent.data import load_dataset
 
-
 @pytest.fixture(scope="session")
 def example_dataset1():
     """
@@ -23,6 +22,17 @@ def example_dataset1():
     """
     try:
         return load_dataset("example_dataset")
+    except FileNotFoundError:
+        pytest.skip("Example dataset not found, skipping test")
+
+
+@pytest.fixture(scope="session")
+def example_dataset2():
+    """
+    Load the example dataset from AFL.double_agent.data.
+    """
+    try:
+        return load_dataset("synthetic_sans")
     except FileNotFoundError:
         pytest.skip("Example dataset not found, skipping test")
 
@@ -36,7 +46,7 @@ def example_dataset1_cluster_result():
         xr.Dataset: The loaded cluster result dataset
     """
     try:
-        file_path = Path(__file__).parent / "data" / "example1_cluster_result.nc"
+        file_path = Path(__file__).parent / "data" / "example1_clustering_result.nc"
         return xr.open_dataset(file_path)
     except FileNotFoundError:
         pytest.skip("Example cluster result dataset not found, skipping test")
