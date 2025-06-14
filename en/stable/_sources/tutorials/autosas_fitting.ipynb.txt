@@ -5,7 +5,7 @@
    "id": "2fad641c",
    "metadata": {},
    "source": [
-    "[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/usnistgov/AFL-agent/blob/main/docs/source/tutorials/autosas_tutorial.ipynb)\n",
+    "[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/usnistgov/AFL-agent/blob/main/docs/source/tutorials/autosas_fitting.ipynb)\n",
     "\n",
     "# Basic Fitting with AutoSAS\n",
     "\n",
