@@ -176,7 +176,7 @@ pytz==2025.1
 PyYAML==6.0.2
 pyzmq==26.2.1
 referencing==0.36.2
-requests==2.32.3
+requests==2.32.4
 rfc3339-validator==0.1.4
 rfc3986-validator==0.1.1
 rich==13.9.4
@@ -243,13 +243,9 @@ xarray==2025.1.2
 zarr==2.18.4
 zipp==3.21.0
 zstandard==0.23.0
-pygraphviz==1.14
 nbsphinx==0.9.6
+bumps==0.9.3
 mpltern==1.0.4
-coverage==7.6.12 
-execnet==2.1.1 
-hypothesis==6.127.9 
-pytest-cov==6.0.0 
-pytest-mock==3.14.0 
-pytest-xdist==3.6.1 
-sortedcontainers==2.4.0
+kaleido==0.2.1
+anywidget==0.9.15
+psygnal==0.12.0

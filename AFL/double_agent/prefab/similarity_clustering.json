@@ -1,0 +1,35 @@
+{
+ "name": "similarity_clustering",
+ "date": "03/06/25 20:38:57-760847",
+ "description": "A simlarity-clustering pipeline for clustering measurements into groups",
+ "ops": [
+  {
+   "class": "AFL.double_agent.PairMetric.Similarity",
+   "args": {
+    "input_variable": "measurement",
+    "output_variable": "similarity",
+    "sample_dim": "sample",
+    "params": {
+     "metric": "laplacian",
+     "gamma": 0.0001
+    },
+    "constrain_same": [],
+    "constrain_different": [],
+    "name": "SimilarityMetric"
+   }
+  },
+  {
+   "class": "AFL.double_agent.Labeler.SpectralClustering",
+   "args": {
+    "input_variable": "similarity",
+    "output_variable": "labels",
+    "dim": "sample",
+    "params": {
+     "n_phases": 2
+    },
+    "name": "SpectralClustering",
+    "use_silhouette": false
+   }
+  }
+ ]
+}

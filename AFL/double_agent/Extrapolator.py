@@ -13,7 +13,7 @@ Key features:
 - Support for different sample and grid dimensions
 """
 
-from typing import List, Optional
+from typing import List
 
 import numpy as np
 import sklearn.gaussian_process  # type: ignore
@@ -260,9 +260,12 @@ class GaussianProcessClassifier(Extrapolator):
         The `xarray` dimension over the discrete 'samples' in the `feature_input_variable`. This is typically
         a variant of `sample` e.g., `saxs_sample`.
 
-    kernel: Optional[object]
-        A optional sklearn.gaussian_process.kernel to use the classifier. If not provided, will default to
+    kernel: str
+        The name of the sklearn.gaussian_process.kernel to use the classifier. If not provided, will default to
         `Matern`.
+    
+    kernel_kwargs: dict
+        Additional keyword arguments to pass to the sklearn.gaussian_process.kernel
 
     optimizer: str
         The name of the optimizer to use in optimizer the gaussian process parameters
@@ -279,7 +282,8 @@ class GaussianProcessClassifier(Extrapolator):
         grid_variable: str,
         grid_dim: str,
         sample_dim: str,
-        kernel: Optional[object] = None,
+        kernel: str = 'Matern',
+        kernel_kwargs: dict = {'length_scale':1.0, 'nu':1.5},
         optimizer: str = "fmin_l_bfgs_b",
         name: str = "GaussianProcessClassifier",
     ) -> None:
@@ -294,19 +298,11 @@ class GaussianProcessClassifier(Extrapolator):
             grid_dim=grid_dim,
             sample_dim=sample_dim,
         )
-
-        if kernel is None:
-            self.kernel = sklearn.gaussian_process.kernels.Matern(
-                length_scale=1.0, nu=1.5
-            )
-        else:
-            self.kernel = kernel
-
+        self.kernel = kernel
+        self.kernel_kwargs = kernel_kwargs
         self.output_prefix = output_prefix
-        if optimizer is not None:
-            self.optimizer = optimizer
-        else:
-            self.optimizer = None
+        self.optimizer = optimizer 
+
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this GP classifier to the supplied dataset.
@@ -341,8 +337,10 @@ class GaussianProcessClassifier(Extrapolator):
             )
 
         else:
+            kernel  = getattr(sklearn.gaussian_process.kernels, self.kernel)(**self.kernel_kwargs)
+
             clf = sklearn.gaussian_process.GaussianProcessClassifier(
-                kernel=self.kernel, optimizer=self.optimizer
+                kernel=kernel, optimizer=self.optimizer
             ).fit(X.values, y.values)
 
             # entropy approach to classification probabilities
@@ -395,14 +393,14 @@ class GaussianProcessRegressor(Extrapolator):
         The `xarray` dimension over the discrete 'samples' in the `feature_input_variable`. This is typically
         a variant of `sample` e.g., `saxs_sample`.
 
-    predictor_uncertainty_variable: Optional[str]
+    predictor_uncertainty_variable: str | None
         Variable containing uncertainty estimates for the predictor values
 
     optimizer: str
         The name of the optimizer to use in optimizer the gaussian process parameters
 
-    kernel: Optional[object]
-        A optional sklearn.gaussian_process.kernel to use the regressor. If not provided, will default to
+    kernel: str | None
+        The name of the sklearn.gaussian_process.kernel to use the regressor. If not provided, will default to
         `Matern`.
 
     name: str
@@ -422,7 +420,8 @@ class GaussianProcessRegressor(Extrapolator):
         sample_dim,
         predictor_uncertainty_variable=None,
         optimizer="fmin_l_bfgs_b",
-        kernel=None,
+        kernel: str = 'Matern',
+        kernel_kwargs: dict = {'length_scale':1.0, 'nu':1.5},
         name="GaussianProcessRegressor",
         fix_nans=True,
     ) -> None:
@@ -440,19 +439,10 @@ class GaussianProcessRegressor(Extrapolator):
         self.predictor_uncertainty_variable = predictor_uncertainty_variable
         if predictor_uncertainty_variable is not None:
             self.input_variable.append(predictor_uncertainty_variable)
-
-        if kernel is None:
-            self.kernel = sklearn.gaussian_process.kernels.Matern(
-                #length_scale=[0.1], length_scale_bounds=(1e-3, 1e0), nu=1.5
-                length_scale = [0.1], length_scale_bounds = (0.2, 1e0), nu = 1.5
-            )
-        else:
-            self.kernel = kernel
-
-        if optimizer is not None:
-            self.optimizer = optimizer
-        else:
-            self.optimizer = "fmin_l_bfgs_b"
+        
+        self.kernel = kernel
+        self.kernel_kwargs = kernel_kwargs
+        self.optimizer = optimizer 
 
         self.predictor_uncertainty_variable = predictor_uncertainty_variable
         self._banned_from_attrs.append("predictor_uncertainty_variable")
@@ -491,15 +481,17 @@ class GaussianProcessRegressor(Extrapolator):
             dy = dataset[self.predictor_uncertainty_variable].transpose(
                 self.sample_dim, ...
             )
+            kernel  = getattr(sklearn.gaussian_process.kernels, self.kernel)(**self.kernel_kwargs)
             reg = sklearn.gaussian_process.GaussianProcessRegressor(
-                kernel=self.kernel, alpha=dy.values, optimizer=self.optimizer
+                kernel=kernel, alpha=dy.values, optimizer=self.optimizer
             ).fit(X.values, y.values)
 
             reg_type = "heteroscedastic"
 
         else:
+            kernel  = getattr(sklearn.gaussian_process.kernels, self.kernel)(**self.kernel_kwargs)
             reg = sklearn.gaussian_process.GaussianProcessRegressor(
-                kernel=self.kernel, optimizer=self.optimizer
+                kernel=kernel, optimizer=self.optimizer
             ).fit(X.values, y.values)
             reg_type = "homoscedastic"
 

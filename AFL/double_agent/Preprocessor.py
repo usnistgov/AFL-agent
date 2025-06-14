@@ -185,8 +185,9 @@ class SavgolFilter(Preprocessor):
             data1 = data1.where(~np.isnan(data1)).fillna(self.pedestal)
 
         # interpolate to constant lin or log(dq) grid
-        x_new = np.linspace(data1[dim].min().values[()], data1[dim].max().values[()], self.npts)
+        x_new = np.linspace(data1[dim].min().item(), data1[dim].max().item(), self.npts)
         dx = float(x_new[1] - x_new[0])
+        data1 = data1.bfill(dim).ffill(dim).interpolate_na(dim)
         data1 = data1.interp({dim: x_new})
 
         # filter out any q that have NaN
@@ -313,14 +314,14 @@ class Standardize(Preprocessor):
         The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
     dim : str
         The dimension used for calculating the data minimum
-    component_dim : Optional[str], default="component"
+    component_dim : str | None, default="component"
         The dimension for component-wise operations
-    scale_variable : Optional[str], default=None
+    scale_variable : str | None, default=None
         If specified, the min/max of this data variable in the supplied `xarray.Dataset` will be used to scale the
         data rather than min/max of the `input_variable` or the supplied `min_val` or `max_val`
-    min_val : Optional[Number], default=None
+    min_val : Number | None, default=None
         Value used to scale the data minimum
-    max_val : Optional[Number], default=None
+    max_val : Number | None, default=None
         Value used to scale the data maximum
     name : str, default="Standardize"
         The name to use when added to a Pipeline
@@ -331,10 +332,10 @@ class Standardize(Preprocessor):
         input_variable: str,
         output_variable: str,
         dim: str,
-        component_dim: Optional[str] = "component",
-        scale_variable: Optional[str] = None,
-        min_val: Optional[Number] = None,
-        max_val: Optional[Number] = None,
+        component_dim: str | None = "component",
+        scale_variable: str | None = None,
+        min_val: Number | None = None,
+        max_val: Number | None = None,
         name: str = "Standardize",
     ) -> None:
         super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
@@ -388,14 +389,14 @@ class Destandardize(Preprocessor):
         The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
     dim : str
         The dimension used for calculating the data minimum
-    component_dim : Optional[str], default="component"
+    component_dim : str | None, default="component"
         The dimension for component-wise operations
-    scale_variable : Optional[str], default=None
+    scale_variable : str | None, default=None
         If specified, the min/max of this data variable in the supplied `xarray.Dataset` will be used to scale the
         data rather than min/max of the `input_variable` or the supplied `min_val` or `max_val`
-    min_val : Optional[Number], default=None
+    min_val : Number | None, default=None
         Value used to scale the data minimum
-    max_val : Optional[Number], default=None
+    max_val : Number | None, default=None
         Value used to scale the data maximum
     name : str, default="Destandardize"
         The name to use when added to a Pipeline
@@ -406,10 +407,10 @@ class Destandardize(Preprocessor):
         input_variable: str,
         output_variable: str,
         dim: str,
-        component_dim: Optional[str] = "component",
-        scale_variable: Optional[str] = None,
-        min_val: Optional[Number] = None,
-        max_val: Optional[Number] = None,
+        component_dim: str | None = "component",
+        scale_variable: str | None = None,
+        min_val: Number | None = None,
+        max_val: Number | None = None,
         name: str = "Destandardize",
     ) -> None:
 
@@ -715,7 +716,12 @@ class SympyTransform(Preprocessor):
         name: str = "SympyTransform",
     ) -> None:
 
-        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
+        # must convert to strings for JSON serialization
+        transforms = {k:str(v) for k,v in transforms.items()}
+
+        super().__init__(
+            name=name, input_variable=input_variable, output_variable=output_variable
+        )
         self.sample_dim = sample_dim
         self.component_dim = component_dim
         self.transforms = transforms
@@ -731,6 +737,7 @@ class SympyTransform(Preprocessor):
         # apply transform
         new_comps = xr.Dataset()
         for name, transform in self.transforms.items():
+            transform = sympy.sympify(transform)
             symbols = list(transform.free_symbols)
             lam = sympy.lambdify(symbols, transform)
             new_comps[name] = (
