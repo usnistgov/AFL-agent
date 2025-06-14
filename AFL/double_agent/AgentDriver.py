@@ -1,12 +1,299 @@
 import pathlib
 import uuid
-from typing import Optional, Dict, Any
+import json
+import inspect
+import importlib
+import pkgutil
+from typing import Optional, Dict, Any, List
 
 import xarray as xr
 
 from AFL.automation.APIServer.Driver import Driver  # type: ignore
 from AFL.automation.shared.utilities import mpl_plot_to_bytes,xarray_to_bytes
 from AFL.double_agent.Pipeline import Pipeline
+from AFL.double_agent.PipelineOp import PipelineOp
+
+
+_PIPELINE_BUILDER_HTML = """<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='UTF-8'>
+  <title>Pipeline Builder</title>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/jsPlumb/2.15.6/js/jsplumb.min.js'></script>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+    #sidebar { width: 260px; height: 100vh; overflow-y: auto; border-right: 1px solid #ccc; float:left; padding:10px; box-sizing:border-box; }
+    #canvas { position:relative; margin-left:260px; height:100vh; background:#f7f7f7; }
+    .op-template { border:1px solid #ccc; padding:5px; margin-bottom:5px; cursor:grab; }
+    .node { position:absolute; padding:10px; background:#fff; border:1px solid #333; }
+    .param { display:block; margin-bottom:4px; }
+    .connector { width:10px; height:10px; background:#000; border-radius:50%; display:inline-block; }
+  </style>
+</head>
+<body>
+  <div id='sidebar'>
+    <h3>Pipeline Ops</h3>
+    <div id='op-list'></div>
+    <h3>Prefabs</h3>
+    <select id='prefab-select'></select>
+    <button id='load-prefab'>Load Prefab</button>
+    <button id='submit'>Submit Pipeline</button>
+  </div>
+  <div id='canvas'></div>
+  <script>
+    const instance = jsPlumb.getInstance({Container: 'canvas'});
+    const opList = document.getElementById('op-list');
+    const canvas = document.getElementById('canvas');
+    const prefabSelect = document.getElementById('prefab-select');
+    let counter = 0;
+
+    async function loadOps() {
+      const res = await fetch('/pipeline_ops');
+      const ops = await res.json();
+      ops.forEach(op => {
+        const div = document.createElement('div');
+        div.className = 'op-template';
+        div.textContent = op.name;
+        div.draggable = true;
+        div.dataset.fqcn = op.fqcn;
+        div.dataset.params = JSON.stringify(op.parameters);
+        div.addEventListener('dragstart', e => {
+          e.dataTransfer.setData('text/plain', div.dataset.fqcn);
+        });
+        opList.appendChild(div);
+      });
+    }
+
+    async function loadPrefabs() {
+      const res = await fetch('/prefab_names');
+      if (!res.ok) return;
+      const names = await res.json();
+      names.forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n;
+        opt.textContent = n;
+        prefabSelect.appendChild(opt);
+      });
+    }
+
+    function clearCanvas() {
+      instance.deleteEveryConnection();
+      instance.deleteEveryEndpoint();
+      canvas.innerHTML = '';
+      counter = 0;
+    }
+
+    function loadPipeline(ops) {
+      clearCanvas();
+      let x = 20;
+      let y = 20;
+      const nodes = [];
+      ops.forEach(op => {
+        const node = addNode(op.class, op.args || {}, x, y);
+        if (op.args) {
+          node.querySelectorAll('input[data-param]').forEach(inp => {
+            if (op.args[inp.dataset.param] !== undefined) {
+              inp.value = op.args[inp.dataset.param];
+            }
+          });
+          if (op.args.output_variable) {
+            node.querySelector('input[data-output]').value = op.args.output_variable;
+          }
+        }
+        nodes.push({node: node, op: op});
+        y += 120;
+      });
+
+      nodes.forEach((n, idx) => {
+        if (idx === 0) return;
+        let source = null;
+        if (n.op.args && n.op.args.input_variable) {
+          const inVar = n.op.args.input_variable;
+          source = nodes.find(m => m.op.args && m.op.args.output_variable === inVar);
+        }
+        if (!source && idx > 0) source = nodes[idx-1];
+        if (source) {
+          instance.connect({
+            source: source.node.querySelector('[data-role="out"]'),
+            target: n.node.querySelector('[data-role="in"]')
+          });
+        }
+      });
+    }
+
+    async function loadCurrentPipeline() {
+      const res = await fetch('/current_pipeline');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length) {
+          loadPipeline(data);
+        }
+      }
+    }
+
+    canvas.addEventListener('dragover', e => e.preventDefault());
+    canvas.addEventListener('drop', e => {
+      e.preventDefault();
+      const fqcn = e.dataTransfer.getData('text/plain');
+      const params = JSON.parse(document.querySelector(`[data-fqcn="${fqcn}"]`).dataset.params);
+      addNode(fqcn, params, e.offsetX, e.offsetY);
+    });
+
+    function addNode(fqcn, params, x, y) {
+      const node = document.createElement('div');
+      node.className = 'node';
+      node.id = 'node' + (counter++);
+      node.style.left = x + 'px';
+      node.style.top = y + 'px';
+      node.dataset.fqcn = fqcn;
+
+      const title = document.createElement('div');
+      title.textContent = fqcn.split('.').pop();
+      node.appendChild(title);
+
+      Object.entries(params).forEach(([key, val]) => {
+        const div = document.createElement('div');
+        div.className = 'param';
+        const label = document.createElement('label');
+        label.textContent = key + ':';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.dataset.param = key;
+        if (val !== null) input.value = val;
+        div.appendChild(label);
+        div.appendChild(input);
+        node.appendChild(div);
+      });
+
+      const outDiv = document.createElement('div');
+      outDiv.className = 'param';
+      outDiv.innerHTML = 'output_variable:<input data-output type="text">';
+      node.appendChild(outDiv);
+
+      const outAnchor = document.createElement('div');
+      outAnchor.className = 'connector';
+      outAnchor.dataset.role = 'out';
+      outAnchor.style.position = 'absolute';
+      outAnchor.style.right = '-5px';
+      outAnchor.style.top = '50%';
+      node.appendChild(outAnchor);
+
+      const inAnchor = document.createElement('div');
+      inAnchor.className = 'connector';
+      inAnchor.dataset.role = 'in';
+      inAnchor.style.position = 'absolute';
+      inAnchor.style.left = '-5px';
+      inAnchor.style.top = '50%';
+      node.appendChild(inAnchor);
+
+      canvas.appendChild(node);
+      instance.draggable(node);
+      instance.makeSource(outAnchor, {anchor:'Continuous', filter:outAnchor});
+      instance.makeTarget(inAnchor, {anchor:'Continuous', allowLoopback:false});
+      return node;
+    }
+
+    function buildOps() {
+      const nodes = Array.from(document.querySelectorAll('.node'));
+      const ops = [];
+      nodes.forEach(node => {
+        const args = {};
+        node.querySelectorAll('input[data-param]').forEach(inp => {
+          if (inp.value) args[inp.dataset.param] = inp.value;
+        });
+        const out = node.querySelector('input[data-output]').value;
+        if (out) args['output_variable'] = out;
+        const conns = instance.getConnections({target: node});
+        if (conns.length) {
+          const src = conns[0].source.parentElement;
+          const srcOut = src.querySelector('input[data-output]').value;
+          if (srcOut) args['input_variable'] = srcOut;
+        }
+        ops.push({class: node.dataset.fqcn, args: args});
+      });
+      return ops;
+    }
+
+    document.getElementById('submit').onclick = async () => {
+      const ops = buildOps();
+      const res = await fetch('/enqueue', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({task_name: 'initialize_pipeline', pipeline: ops})
+      });
+      if (res.ok) alert('Pipeline submitted');
+      else alert('Submission failed');
+    };
+
+    document.getElementById('load-prefab').onclick = async () => {
+      const name = prefabSelect.value;
+      if (!name) return;
+      const res = await fetch(`/load_prefab?name=${encodeURIComponent(name)}`);
+      if (res.ok) {
+        const data = await res.json();
+        loadPipeline(data);
+      }
+    };
+
+    loadOps();
+    loadPrefabs();
+    loadCurrentPipeline();
+  </script>
+</body>
+</html>
+"""
+
+
+def _collect_pipeline_ops() -> List[Dict[str, Any]]:
+    """Gather metadata for all available :class:`PipelineOp` subclasses."""
+    ops: List[Dict[str, Any]] = []
+    package = importlib.import_module("AFL.double_agent")
+    for modinfo in pkgutil.iter_modules(package.__path__):
+        module = importlib.import_module(f"{package.__name__}.{modinfo.name}")
+        for name, obj in inspect.getmembers(module, inspect.isclass):
+            if issubclass(obj, PipelineOp) and obj is not PipelineOp:
+                sig = inspect.signature(obj.__init__)
+                params = {
+                    k: (v.default if v.default is not inspect._empty else None)
+                    for k, v in sig.parameters.items()
+                    if k != "self"
+                }
+                ops.append(
+                    {
+                        "name": name,
+                        "module": module.__name__,
+                        "fqcn": f"{module.__name__}.{name}",
+                        "parameters": params,
+                    }
+                )
+    ops.sort(key=lambda o: o["name"])
+    return ops
+
+
+def get_pipeline_ops() -> List[Dict[str, Any]]:
+    """Return metadata describing available pipeline operations."""
+    return _collect_pipeline_ops()
+
+
+def build_pipeline_from_ops(ops: List[Dict[str, Any]], name: str = "Pipeline") -> Dict[str, Any]:
+    """Create a pipeline from a list of operation JSON dictionaries."""
+    pipeline_ops = [PipelineOp.from_json(op) for op in ops]
+    pipeline = Pipeline(name=name, ops=pipeline_ops)
+    return {"pipeline": [op.to_json() for op in pipeline]}
+
+
+def build_pipeline_from_json(ops_json: str, name: str = "Pipeline") -> Dict[str, Any]:
+    """Helper that accepts a JSON string of operations."""
+    try:
+        ops = json.loads(ops_json)
+    except json.JSONDecodeError:
+        ops = []
+    return build_pipeline_from_ops(ops, name)
+
+
+def get_pipeline_builder_html() -> str:
+    """Return the HTML for the pipeline builder UI."""
+    return _PIPELINE_BUILDER_HTML
 
 
 class DoubleAgentDriver(Driver):
@@ -150,7 +437,42 @@ class DoubleAgentDriver(Driver):
                 return None
         else:
             return None
-        
+
+    @Driver.unqueued(render_hint='raw_html')
+    def pipeline_builder(self, **kwargs):
+        """Serve the pipeline builder HTML interface."""
+        return get_pipeline_builder_html()
+
+    @Driver.unqueued()
+    def pipeline_ops(self, **kwargs):
+        """Return metadata for available PipelineOps."""
+        return get_pipeline_ops()
+
+    @Driver.unqueued()
+    def current_pipeline(self, **kwargs):
+        """Return the currently loaded pipeline as JSON."""
+        if self.pipeline is None:
+            return []
+        return [op.to_json() for op in self.pipeline]
+
+    @Driver.unqueued()
+    def prefab_names(self, **kwargs):
+        """List available prefabricated pipelines."""
+        from AFL.double_agent.prefab import list_prefabs
+        return list_prefabs(display_table=False)
+
+    @Driver.unqueued()
+    def load_prefab(self, name: str, **kwargs):
+        """Load a prefabricated pipeline and return its JSON."""
+        from AFL.double_agent.prefab import load_prefab
+        pipeline = load_prefab(name)
+        return [op.to_json() for op in pipeline]
+
+    @Driver.unqueued()
+    def build_pipeline(self, ops: str = "[]", name: str = "Pipeline", **kwargs):
+        """Construct a pipeline from JSON and return the serialized form."""
+        return build_pipeline_from_json(ops, name)
+
     def reset_results(self):
         self.results = dict()
 
