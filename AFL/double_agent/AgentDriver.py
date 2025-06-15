@@ -438,7 +438,7 @@ class DoubleAgentDriver(Driver):
         else:
             return None
 
-    @Driver.unqueued(render_hint='raw_html')
+    @Driver.unqueued(render_hint='html')
     def pipeline_builder(self, **kwargs):
         """Serve the pipeline builder HTML interface."""
         return get_pipeline_builder_html()
