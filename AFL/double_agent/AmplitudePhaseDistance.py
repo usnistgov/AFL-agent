@@ -1,13 +1,10 @@
 from typing import Optional,  Dict, Any
-import warnings 
-
-import numpy as np
 import scipy.spatial  # type: ignore
 import xarray as xr
 from typing_extensions import Self
 
 from AFL.double_agent.PairMetric import PairMetric
-from scipy.interpolate import UnivariateSpline
+import pdb 
 
 try:
     from apdist.torch import TorchAmplitudePhaseDistance as torch_apdist 
@@ -87,7 +84,8 @@ class AmplitudePhaseDistance(PairMetric):
         """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
         data = self._get_variable(dataset)
 
-        domain = data.coords[self.sample_dim].values
+        domain_variable = [d for d in data.dims if d != self.sample_dim][0]
+        domain = data.coords[domain_variable].values
         codomain = data.values
 
         if self.method=="discrete":
@@ -95,14 +93,15 @@ class AmplitudePhaseDistance(PairMetric):
                             "grid_dim":7
                         }
         elif self.method== "continuous":
-            optim_kwargs = {"n_iters":100, 
+            optim_kwargs = {"n_iters":50, 
                     "n_basis":20, 
                     "n_layers":15,
                     "domain_type":"linear",
                     "basis_type":"palais",
-                    "n_restarts":50,
+                    "n_restarts":16,
                     "lr":1e-1,
-                    "n_domain": domain.shape[0]
+                    "n_domain": domain.shape[0],
+                    "versbose": False,
                 }
         else:
             raise RuntimeError("Method %s for computing amplitude-phase distance is not recognized"%self.method)
