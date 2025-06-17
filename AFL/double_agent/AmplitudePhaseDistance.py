@@ -4,7 +4,6 @@ import xarray as xr
 from typing_extensions import Self
 
 from AFL.double_agent.PairMetric import PairMetric
-import pdb 
 
 try:
     from apdist.torch import TorchAmplitudePhaseDistance as torch_apdist 
