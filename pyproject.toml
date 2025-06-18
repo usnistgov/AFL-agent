@@ -132,6 +132,7 @@ all = [
     "pydata-sphinx-theme",
     "sphinx-copybutton",
     "sphinx-autosummary-accessors",
+    "nbsphinx",
 ]
 
 [tool.hatch.build]
