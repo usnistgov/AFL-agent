@@ -1,0 +1,10 @@
+name: afl_agent_docs
+channels:
+  - conda-forge 
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pandoc
+  - pip:
+    - .[all]

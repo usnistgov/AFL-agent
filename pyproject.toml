@@ -109,6 +109,7 @@ all = [
     "ipywidgets",
     "ipympl",
     "nodejs",
+    "pygraphviz",
     "tensorflow>=2.7",
     "gpflow",
     "torch",
