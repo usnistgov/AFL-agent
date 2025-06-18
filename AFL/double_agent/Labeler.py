@@ -24,11 +24,12 @@ import sklearn.mixture
 from sklearn.metrics import silhouette_samples
 
 from AFL.double_agent.PipelineOp import PipelineOp
+from typing_extensions import Self
 
 
 class Labeler(PipelineOp):
     """Base class for phase labeling operations.
-    
+
     This abstract base class provides common functionality for labeling phases
     in materials data. It supports various clustering approaches and includes
     methods for label manipulation and silhouette analysis.
@@ -54,7 +55,15 @@ class Labeler(PipelineOp):
         The name to use when added to a Pipeline
     """
 
-    def __init__(self, input_variable, output_variable, dim='sample', use_silhouette=False, params=None, name='PhaseLabeler'):
+    def __init__(
+        self,
+        input_variable,
+        output_variable,
+        dim="sample",
+        use_silhouette=False,
+        params=None,
+        name="PhaseLabeler",
+    ):
         super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
 
         self.labels = None
@@ -65,7 +74,7 @@ class Labeler(PipelineOp):
         else:
             self.params = params
 
-        self._banned_from_attrs.extend(['labels','clf','silh_dict','params'])
+        self._banned_from_attrs.extend(["labels", "clf", "silh_dict", "params"])
         self.use_silhouette = use_silhouette
 
     def __getitem__(self, index):
@@ -78,19 +87,20 @@ class Labeler(PipelineOp):
 
     def remap_labels_by_count(self):
         """Remap phase labels to be ordered by frequency.
-        
+
         Reorders labels so that the most common phase is labeled 0,
         second most common is 1, etc.
         """
         label_map = {}
         for new_label, (old_label, _) in enumerate(
-                sorted(Counter(self.labels).items(), key=lambda x: x[1], reverse=True)):
+            sorted(Counter(self.labels).items(), key=lambda x: x[1], reverse=True)
+        ):
             label_map[old_label] = new_label
         self.labels = list(map(label_map.get, self.labels))
 
     def silhouette(self, W):
         """Perform silhouette analysis to determine optimal number of phases.
-        
+
         Uses silhouette scores to automatically determine the best number of
         phases by trying different numbers of clusters and analyzing the
         clustering quality.
@@ -118,17 +128,13 @@ class Labeler(PipelineOp):
             if len(np.unique(self.labels)) == 1:
                 silh_scores = np.zeros(len(X))
             else:
-                silh_scores = silhouette_samples(
-                    1.0 - X,
-                    self,
-                    metric='precomputed'
-                )
-            silh_dict['all_scores'].append(silh_scores)
-            silh_dict['avg_scores'].append(silh_scores.mean())
-            silh_dict['n_phases'].append(n_phases)
-            silh_dict['labels'].append(self.labels.copy())
+                silh_scores = silhouette_samples(1.0 - X, self, metric="precomputed")
+            silh_dict["all_scores"].append(silh_scores)
+            silh_dict["avg_scores"].append(silh_scores.mean())
+            silh_dict["n_phases"].append(n_phases)
+            silh_dict["labels"].append(self.labels.copy())
 
-        silh_avg = np.array(silh_dict['avg_scores'])
+        silh_avg = np.array(silh_dict["avg_scores"])
         found = False
         for cutoff in np.arange(0.85, 0.05, -0.05):
             idx = np.where(silh_avg > cutoff)[0]
@@ -141,14 +147,14 @@ class Labeler(PipelineOp):
             self.n_phases = 1
             self.labels = np.zeros(X.shape[0])
         else:
-            self.n_phases = silh_dict['n_phases'][idx]
-            self.labels = silh_dict['labels'][idx]
+            self.n_phases = silh_dict["n_phases"][idx]
+            self.labels = silh_dict["labels"][idx]
         self.silh_dict = silh_dict
 
 
 class SpectralClustering(Labeler):
     """Spectral clustering for phase identification.
-    
+
     Uses spectral clustering to identify phases based on a similarity matrix.
     Particularly effective for non-spherical clusters and when working with
     similarity rather than distance metrics.
@@ -174,13 +180,27 @@ class SpectralClustering(Labeler):
         Whether to use silhouette analysis to determine optimal number of phases
     """
 
-    def __init__(self, input_variable, output_variable, dim, params=None, name='SpectralClustering', use_silhouette=False):
-        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable, dim=dim,
-                         params=params, use_silhouette=use_silhouette)
+    def __init__(
+        self,
+        input_variable,
+        output_variable,
+        dim,
+        params=None,
+        name="SpectralClustering",
+        use_silhouette=False,
+    ):
+        super().__init__(
+            name=name,
+            input_variable=input_variable,
+            output_variable=output_variable,
+            dim=dim,
+            params=params,
+            use_silhouette=use_silhouette,
+        )
 
     def _construct_labeler(self, **params):
         """Construct the spectral clustering model.
-        
+
         Parameters
         ----------
         **params : dict
@@ -189,16 +209,16 @@ class SpectralClustering(Labeler):
         self.params.update(params)
 
         self.clf = sklearn.cluster.SpectralClustering(
-            self.params['n_phases'],
-            affinity='precomputed',
+            self.params["n_phases"],
+            affinity="precomputed",
             assign_labels="discretize",
             random_state=0,
-            n_init=1000
+            n_init=1000,
         )
 
     def calculate(self, dataset):
         """Apply spectral clustering to the dataset.
-        
+
         Parameters
         ----------
         dataset : xr.Dataset
@@ -221,7 +241,7 @@ class SpectralClustering(Labeler):
 
     def _label(self, metric):
         """Perform the actual clustering.
-        
+
         Parameters
         ----------
         metric : array-like
@@ -233,7 +253,7 @@ class SpectralClustering(Labeler):
 
 class GaussianMixtureModel(Labeler):
     """Gaussian Mixture Model for phase identification.
-    
+
     Uses a Gaussian Mixture Model to identify phases based on their distribution
     in feature space. Particularly useful when phases are expected to have
     Gaussian distributions.
@@ -256,24 +276,31 @@ class GaussianMixtureModel(Labeler):
         The name to use when added to a Pipeline
     """
 
-    def __init__(self, input_variable, output_variable, dim, params=None, name='GaussianMixtureModel'):
-        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable, dim=dim,
-                         params=params)
+    def __init__(
+        self, input_variable, output_variable, dim, params=None, name="GaussianMixtureModel"
+    ):
+        super().__init__(
+            name=name,
+            input_variable=input_variable,
+            output_variable=output_variable,
+            dim=dim,
+            params=params,
+        )
 
     def _construct_labeler(self, **params):
         """Construct the GMM model.
-        
+
         Parameters
         ----------
         **params : dict
             Additional parameters to update the GMM configuration
         """
         self.params.update(params)
-        self.clf = sklearn.mixture.GaussianMixture(self.params['n_phases'])
+        self.clf = sklearn.mixture.GaussianMixture(self.params["n_phases"])
 
     def calculate(self, dataset):
         """Apply GMM clustering to the dataset.
-        
+
         Parameters
         ----------
         dataset : xr.Dataset
@@ -292,7 +319,7 @@ class GaussianMixtureModel(Labeler):
 
     def _label(self, metric):
         """Perform the actual clustering.
-        
+
         Parameters
         ----------
         metric : array-like
@@ -304,7 +331,7 @@ class GaussianMixtureModel(Labeler):
 
 class AffinityPropagation(Labeler):
     """Affinity Propagation for phase identification.
-    
+
     Uses Affinity Propagation clustering to identify phases. This method
     automatically determines the number of phases based on the data structure
     and similarity matrix.
@@ -331,22 +358,29 @@ class AffinityPropagation(Labeler):
         The name to use when added to a Pipeline
     """
 
-    def __init__(self, input_variable, output_variable, dim, params=None, name='AffinityPropagation'):
-        super().__init__(name=name, input_variable=input_variable, output_variable=output_variable, dim=dim,
-                         params=params)
+    def __init__(
+        self, input_variable, output_variable, dim, params=None, name="AffinityPropagation"
+    ):
+        super().__init__(
+            name=name,
+            input_variable=input_variable,
+            output_variable=output_variable,
+            dim=dim,
+            params=params,
+        )
 
         default_params = {}
-        default_params['damping'] = 0.75
-        default_params['max_iter'] = 5000
-        default_params['convergence_iter'] = 250
-        default_params['affinity'] = 'precomputed'
-        for k,v in default_params.items():
+        default_params["damping"] = 0.75
+        default_params["max_iter"] = 5000
+        default_params["convergence_iter"] = 250
+        default_params["affinity"] = "precomputed"
+        for k, v in default_params.items():
             if k not in self.params:
                 self.params[k] = v
 
     def calculate(self, dataset):
         """Apply Affinity Propagation clustering to the dataset.
-        
+
         Parameters
         ----------
         dataset : xr.Dataset
@@ -358,13 +392,78 @@ class AffinityPropagation(Labeler):
             The AffinityPropagation instance with computed labels
         """
         data1 = self._get_variable(dataset)
-        
+
         self.clf = sklearn.cluster.AffinityPropagation(**self.params)
         self.clf.fit(data1.values)
-        
+
         self.labels = self.clf.labels_
         self.output[self.output_variable] = xr.DataArray(self.labels, dims=[self.dim])
         self.output[self.output_variable].attrs.update(self.params)
-        self.output[self.output_variable].attrs['n_phases'] = len(np.unique(self.labels))
+        self.output[self.output_variable].attrs["n_phases"] = len(np.unique(self.labels))
         return self
-        
+
+
+class ClusterMembershipProbability(PipelineOp):
+    """Compute soft cluster membership probabilities from similarity and labels.
+
+    Parameters
+    ----------
+    similarity_variable : str
+        Name of the variable containing the pairwise similarity matrix.
+    labels_variable : str
+        Name of the variable containing hard cluster labels.
+    output_variable : str
+        Variable name to store the membership probabilities.
+    sample_dim : str
+        Dimension name for the samples.
+    v : float, default=1.0
+        Parameter that adjusts the strength of the partitioning with the similarities.
+    exclude_self : bool, default=False
+        If True, exclude a sample's self-similarity when computing its membership
+        to its own cluster.
+    name : str, default "ClusterMembershipProbability"
+        The name used when added to a Pipeline.
+    """
+
+    def __init__(
+        self,
+        similarity_variable: str,
+        labels_variable: str,
+        output_variable: str = "probabilities",
+        sample_dim: str = "sample",
+        v: float = 1.0,
+        exclude_self: bool = False,
+        name: str = "ClusterMembershipProbability",
+    ) -> None:
+        super().__init__(name=name, input_variable=None, output_variable=output_variable)
+        self.similarity_variable = similarity_variable
+        self.labels_variable = labels_variable
+        self.sample_dim = sample_dim
+        self.v = v
+        self.exclude_self = exclude_self
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        sims = dataset[self.similarity_variable].values
+        labels = dataset[self.labels_variable].values
+
+        clusters = np.unique(labels)
+        one_hot = labels.reshape(-1, 1) == clusters.reshape(1, -1)
+
+        stack = np.ones_like(sims[:, :, np.newaxis]) @ one_hot[:, np.newaxis, :]
+
+        if self.exclude_self:
+            I = np.eye(labels.shape[0])
+            I_s = I[:, :, np.newaxis] @ one_hot[:, np.newaxis, :]
+            stack = stack - I_s
+
+        sims_stack = sims[:, :, np.newaxis] @ np.ones((1, 1, len(clusters)))
+        block_sim = stack * sims_stack
+        cluster_counts = np.sum(stack, axis=0)
+        cluster_sim_sums = np.sum(block_sim, axis=0)
+        ave_cluster_sim = cluster_sim_sums / cluster_counts
+        sum_cluster_sim = np.sum(ave_cluster_sim**self.v, axis=1).reshape(-1, 1)
+        probabilities = ave_cluster_sim**self.v / sum_cluster_sim
+
+        dims = [self.sample_dim, "cluster"]
+        self.output[self.output_variable] = xr.DataArray(probabilities, dims=dims)
+        return self
