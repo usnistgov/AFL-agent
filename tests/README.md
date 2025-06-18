@@ -5,7 +5,7 @@ This directory contains tests for the AFL.double_agent module. The test suite is
 ## Structure
 
 - **`test_\*`**: Unit and integration tests for individual components, and interacting components
-- **`uitls.py`**: Mock classes and helper methods for tests
+- **`utils.py`**: Mock classes and helper methods for tests
 
 ## Running Tests
 
