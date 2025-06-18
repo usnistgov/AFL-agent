@@ -100,6 +100,7 @@ dev = [
     "sphinx-copybutton",
     "pydata-sphinx-theme",
     "sphinx-autosummary-accessors",
+    "nbsphinx",
 ]
 
 all = [
