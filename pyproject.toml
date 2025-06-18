@@ -109,7 +109,7 @@ all = [
     "ipywidgets",
     "ipympl",
     "nodejs",
-    "pygraphviz",
+    # "pygraphviz", #leave out, breaks documentation build
     "tensorflow>=2.7",
     "gpflow",
     "torch",
