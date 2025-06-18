@@ -10,9 +10,6 @@ jobs:
       - uses: usnistgov/Docs4NIST@0.7
         with:
           docs-folder: docs/
-          formats: |-
-            epub
-            pdf
           pip-requirements: "requirements-docs.txt"
           # pip-requirements: "requirements_sphinx820.txt"
           # conda-environment: "docs.yml"
