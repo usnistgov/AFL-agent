@@ -910,7 +910,7 @@ class ArrayToVars(Preprocessor):
     def calculate(self, dataset):
         input_arr = dataset[self.input_variable]
         if self.squeeze:
-            output = output.squeeze()
+            input_arr = input_arr.squeeze()
         for var in self.output_variables:
             print(var)
 
