@@ -30,7 +30,7 @@
   <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 <link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../../_static/ntd2d.css?v=525a25f0" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
   
@@ -436,8 +436,41 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="afl-agent-watchdog-module">
-<h1>AFL.agent.WatchDog module<a class="headerlink" href="#afl-agent-watchdog-module" title="Permalink to this heading">#</a></h1>
+  <section id="module-AFL.agent.WatchDog">
+<span id="afl-agent-watchdog-module"></span><h1>AFL.agent.WatchDog module<a class="headerlink" href="#module-AFL.agent.WatchDog" title="Permalink to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="AFL.agent.WatchDog.FileChangeHandler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.agent.WatchDog.</span></span><span class="sig-name descname"><span class="pre">FileChangeHandler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cooldown</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.agent.WatchDog.FileChangeHandler" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PatternMatchingEventHandler</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.agent.WatchDog.FileChangeHandler.on_modified">
+<span class="sig-name descname"><span class="pre">on_modified</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.agent.WatchDog.FileChangeHandler.on_modified" title="Permalink to this definition">#</a></dt>
+<dd><p>Called when a file or directory is modified.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DirModifiedEvent</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">FileModifiedEvent</span></code>) – Event representing file/directory modification.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="AFL.agent.WatchDog.WatchDog">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.agent.WatchDog.</span></span><span class="sig-name descname"><span class="pre">WatchDog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cooldown</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.agent.WatchDog.WatchDog" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.agent.WatchDog.WatchDog.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AFL.agent.WatchDog.WatchDog.start" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.agent.WatchDog.WatchDog.stop">
+<span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AFL.agent.WatchDog.WatchDog.stop" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
 
 
@@ -478,6 +511,26 @@
                 <dialog id="pst-secondary-sidebar-modal"></dialog>
                 <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.agent.WatchDog.FileChangeHandler"><code class="docutils literal notranslate"><span class="pre">FileChangeHandler</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.agent.WatchDog.FileChangeHandler.on_modified"><code class="docutils literal notranslate"><span class="pre">FileChangeHandler.on_modified()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.agent.WatchDog.WatchDog"><code class="docutils literal notranslate"><span class="pre">WatchDog</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.agent.WatchDog.WatchDog.start"><code class="docutils literal notranslate"><span class="pre">WatchDog.start()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.agent.WatchDog.WatchDog.stop"><code class="docutils literal notranslate"><span class="pre">WatchDog.stop()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
 
   <div class="sidebar-secondary-item">
   <div role="note" aria-label="source link">

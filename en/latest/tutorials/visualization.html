@@ -30,7 +30,7 @@
   <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../_static/ntd2d.css?v=525a25f0" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
@@ -449,18 +449,18 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
 
 <span class="c1"># Import the plotting module</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot</span><span class="p">,</span> <span class="n">plot_scatter_mpl</span><span class="p">,</span> <span class="n">plot_surface_mpl</span><span class="p">,</span> <span class="n">plot_sas_mpl</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_scatter_plotly</span><span class="p">,</span> <span class="n">plot_surface_plotly</span><span class="p">,</span> <span class="n">plot_sas_plotly</span>
+<span class="kn">from</span> <span class="nn">AFL.double_agent.plotting</span> <span class="kn">import</span> <span class="n">plot</span><span class="p">,</span> <span class="n">plot_scatter_mpl</span><span class="p">,</span> <span class="n">plot_surface_mpl</span><span class="p">,</span> <span class="n">plot_sas_mpl</span>
+<span class="kn">from</span> <span class="nn">AFL.double_agent.plotting</span> <span class="kn">import</span> <span class="n">plot_scatter_plotly</span><span class="p">,</span> <span class="n">plot_surface_plotly</span><span class="p">,</span> <span class="n">plot_sas_plotly</span>
 
 <span class="c1"># Load the example dataset</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">example_dataset1</span>
+<span class="kn">from</span> <span class="nn">AFL.double_agent.data</span> <span class="kn">import</span> <span class="n">example_dataset1</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.io</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pio</span>
+<span class="kn">import</span> <span class="nn">plotly.io</span> <span class="k">as</span> <span class="nn">pio</span>
 <span class="n">pio</span><span class="o">.</span><span class="n">renderers</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="s2">&quot;iframe_connected&quot;</span>
 <span class="c1"># pio.renderers.default = &quot;plotly_mimetype&quot;</span>
 

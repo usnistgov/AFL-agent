@@ -30,7 +30,7 @@
   <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../_static/ntd2d.css?v=525a25f0" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
   
@@ -418,7 +418,7 @@
 <section id="loading-example-datasets">
 <h2>Loading Example Datasets<a class="headerlink" href="#loading-example-datasets" title="Permalink to this heading">#</a></h2>
 <p>You can load the example datasets using the following code:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">example_dataset1</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">AFL.double_agent.datasets</span> <span class="kn">import</span> <span class="n">example_dataset1</span>
 
 <span class="c1"># Load the example dataset</span>
 <span class="n">ds</span> <span class="o">=</span> <span class="n">example_dataset1</span><span class="p">()</span>
@@ -440,7 +440,7 @@
 <section id="listing-available-datasets">
 <h2>Listing Available Datasets<a class="headerlink" href="#listing-available-datasets" title="Permalink to this heading">#</a></h2>
 <p>You can list all available datasets using the <code class="docutils literal notranslate"><span class="pre">list_datasets</span></code> function:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">list_datasets</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">AFL.double_agent.datasets</span> <span class="kn">import</span> <span class="n">list_datasets</span>
 
 <span class="c1"># List all available datasets</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">())</span>
@@ -450,7 +450,7 @@
 <section id="loading-a-dataset-by-name">
 <h2>Loading a Dataset by Name<a class="headerlink" href="#loading-a-dataset-by-name" title="Permalink to this heading">#</a></h2>
 <p>You can also load a dataset by name using the <code class="docutils literal notranslate"><span class="pre">load_dataset</span></code> function:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dataset</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">AFL.double_agent.datasets</span> <span class="kn">import</span> <span class="n">load_dataset</span>
 
 <span class="c1"># Load a dataset by name</span>
 <span class="n">ds</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="s2">&quot;example_dataset&quot;</span><span class="p">)</span>
@@ -464,8 +464,8 @@
 <section id="example-using-the-example-dataset-with-a-pipeline">
 <h2>Example: Using the Example Dataset with a Pipeline<a class="headerlink" href="#example-using-the-example-dataset-with-a-pipeline" title="Permalink to this heading">#</a></h2>
 <p>Here’s an example of how to use the example dataset with a pipeline:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span><span class="p">,</span> <span class="n">SavgolFilter</span><span class="p">,</span> <span class="n">Similarity</span><span class="p">,</span> <span class="n">SpectralClustering</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">example_dataset1</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">AFL.double_agent</span> <span class="kn">import</span> <span class="n">Pipeline</span><span class="p">,</span> <span class="n">SavgolFilter</span><span class="p">,</span> <span class="n">Similarity</span><span class="p">,</span> <span class="n">SpectralClustering</span>
+<span class="kn">from</span> <span class="nn">AFL.double_agent.datasets</span> <span class="kn">import</span> <span class="n">example_dataset1</span>
 
 <span class="c1"># Load the example dataset</span>
 <span class="n">ds</span> <span class="o">=</span> <span class="n">example_dataset1</span><span class="p">()</span>

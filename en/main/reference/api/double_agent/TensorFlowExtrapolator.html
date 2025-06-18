@@ -30,7 +30,7 @@
   <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 <link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../../_static/ntd2d.css?v=525a25f0" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
   
@@ -432,8 +432,64 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="afl-double-agent-tensorflowextrapolator-module">
-<h1>AFL.double_agent.TensorFlowExtrapolator module<a class="headerlink" href="#afl-double-agent-tensorflowextrapolator-module" title="Permalink to this heading">#</a></h1>
+  <section id="module-AFL.double_agent.TensorFlowExtrapolator">
+<span id="afl-double-agent-tensorflowextrapolator-module"></span><h1>AFL.double_agent.TensorFlowExtrapolator module<a class="headerlink" href="#module-AFL.double_agent.TensorFlowExtrapolator" title="Permalink to this heading">#</a></h1>
+<p>Extrapolators take discrete sample data and extrapolate the data onto a provided grid.</p>
+<p>This file segments all extapolators that require tensorflow.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.TensorFlowExtrapolator.</span></span><span class="sig-name descname"><span class="pre">TFExtrapolator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">feature_input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor_input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Extrapolator'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp" title="AFL.double_agent.PipelineOp.PipelineOp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineOp</span></code></a></p>
+<p>Base class for all tensorflow based extrapolators</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feature_input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as the input to the model that will be extrapolating
+the discrete data. This is typically a sample composition variable.</p></li>
+<li><p><strong>predictor_input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as the output of the model that will be extrapolating
+the discrete data. This is typically a class label or property variable.</p></li>
+<li><p><strong>output_variables</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – The list of variables that will be output by this class.</p></li>
+<li><p><strong>output_prefix</strong> (<em>str</em>) – The string prefix to apply to each output variable before inserting into the output <cite>xarray.Dataset</cite></p></li>
+<li><p><strong>grid_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to use as an evaluation grid.</p></li>
+<li><p><strong>grid_dim</strong> (<em>str</em>) – The xarray dimension over each grid_point. Grid equivalent to sample.</p></li>
+<li><p><strong>sample_dim</strong> (<em>str</em>) – The <cite>xarray</cite> dimension over the discrete ‘samples’ in the <cite>feature_input_variable</cite>. This is typically
+a variant of <cite>sample</cite> e.g., <cite>saxs_sample</cite>.</p></li>
+<li><p><strong>optimize</strong> (<em>bool</em>) – Whether to optimize the model parameters</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;Extrapolator&quot;</em>) – The name to use when added to a Pipeline</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator.calculate">
+<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator.calculate" title="Permalink to this definition">#</a></dt>
+<dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.Dataset</cite></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator.encode">
+<span class="sig-name descname"><span class="pre">encode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator.encode" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator.invert_encoded">
+<span class="sig-name descname"><span class="pre">invert_encoded</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator.invert_encoded" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="AFL.double_agent.TensorFlowExtrapolator.TFGaussianProcessClassifier">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.TensorFlowExtrapolator.</span></span><span class="sig-name descname"><span class="pre">TFGaussianProcessClassifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">feature_input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor_input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Matern32'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{'lengthscales':</span> <span class="pre">0.1,</span> <span class="pre">'variance':</span> <span class="pre">0.1}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'TFGaussianProcessClassifier'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.TensorFlowExtrapolator.TFGaussianProcessClassifier" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator" title="AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator"><code class="xref py py-class docutils literal notranslate"><span class="pre">TFExtrapolator</span></code></a></p>
+<p>Use a Gaussian process classifier to extrapolate class labels at discrete compositions onto a composition grid</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.TensorFlowExtrapolator.TFGaussianProcessClassifier.calculate">
+<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.TensorFlowExtrapolator.TFGaussianProcessClassifier.calculate" title="Permalink to this definition">#</a></dt>
+<dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.Dataset</cite></p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
@@ -474,6 +530,27 @@
                 <dialog id="pst-secondary-sidebar-modal"></dialog>
                 <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator"><code class="docutils literal notranslate"><span class="pre">TFExtrapolator</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator.calculate"><code class="docutils literal notranslate"><span class="pre">TFExtrapolator.calculate()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator.encode"><code class="docutils literal notranslate"><span class="pre">TFExtrapolator.encode()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator.invert_encoded"><code class="docutils literal notranslate"><span class="pre">TFExtrapolator.invert_encoded()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.TensorFlowExtrapolator.TFGaussianProcessClassifier"><code class="docutils literal notranslate"><span class="pre">TFGaussianProcessClassifier</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.TensorFlowExtrapolator.TFGaussianProcessClassifier.calculate"><code class="docutils literal notranslate"><span class="pre">TFGaussianProcessClassifier.calculate()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
 
   <div class="sidebar-secondary-item">
   <div role="note" aria-label="source link">
