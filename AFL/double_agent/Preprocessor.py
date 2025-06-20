@@ -24,7 +24,6 @@ from typing_extensions import Self
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
 
-
 class Preprocessor(PipelineOp):
     """Base class stub for all preprocessors
 
@@ -50,7 +49,60 @@ class Preprocessor(PipelineOp):
         """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
         return NotImplementedError(".calculate must be implemented in subclasses")  # type: ignore
 
+class LogLogTransform(Preprocessor):
+    """Pre-processing class to transform SAXS data into log-log scale.
 
+    Parameters
+    ----------
+    input_variable : str
+        The name of the `xarray.Dataset` data variable to extract from the input dataset
+    output_variable : str
+        The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+    dim: str
+        The dimension in the `xarray.Dataset` to apply this transform over
+    name : str
+        The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
+    """    
+    def __init__(
+        self,
+        input_variable: str = None,
+        output_variable: str = None,
+        dim: str = "q",
+        name: str = "PreprocessorBase",
+    ) -> None:
+        super().__init__(
+            name=name, input_variable=input_variable, output_variable=output_variable
+        )
+        self.dim = dim
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        """Apply this `PipelineOp` to the supplied `xarray.Dataset`."""
+        data = self._get_variable(dataset)
+
+        domain_variable = "log_" + self.dim
+        domain_values = np.log10(data[self.dim].values)
+        codomain_values = np.log10(np.abs(data.values))
+    
+        coords = {}
+        for d in data.dims:
+            if d!=self.dim:
+                coords[d] = data.coords[d]
+            else:
+                coords[domain_variable] = domain_values
+        
+        dims = tuple(d if d != self.dim else domain_variable for d in data.dims)
+
+        # Create the output variable with correct dims and coords
+        self.output[self.output_variable] = xr.DataArray(
+            codomain_values,
+            dims=dims,
+            coords=coords,
+            attrs={"description": "Co-domain log transformed"}
+        )
+
+        return self
+
+    
 class SavgolFilter(Preprocessor):
     """Smooth and take derivatives of input data via a Savitsky-Golay filter
 

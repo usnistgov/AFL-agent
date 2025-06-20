@@ -8,6 +8,9 @@ source = "vcs"
 [tool.hatch.build.hooks.vcs]
 version-file = "AFL/double_agent/_version.py"
 
+[tool.hatch.metadata]
+allow-direct-references=true
+
 [project]
 name = "AFL-agent"
 dynamic = ["version"]
@@ -75,6 +78,10 @@ tensorflow = [
 pytorch = [
     "torch",
     "torchvision",
+]
+
+apdist = [
+    "apdist @ git+https://github.com/kiranvad/Amplitude-Phase-Distance"
 ]
 
 automation = [
