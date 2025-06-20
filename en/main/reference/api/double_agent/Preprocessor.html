@@ -535,6 +535,29 @@ data rather than min/max of the <cite>input_variable</cite> or the supplied <cit
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="AFL.double_agent.Preprocessor.LogLogTransform">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Preprocessor.</span></span><span class="sig-name descname"><span class="pre">LogLogTransform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'q'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'PreprocessorBase'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Preprocessor.LogLogTransform" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Preprocessor.Preprocessor" title="AFL.double_agent.Preprocessor.Preprocessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Preprocessor</span></code></a></p>
+<p>Pre-processing class to transform SAXS data into log-log scale.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the <cite>xarray.Dataset</cite> data variable to extract from the input dataset</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – The name of the variable to be inserted into the <cite>xarray.Dataset</cite> by this <cite>PipelineOp</cite></p></li>
+<li><p><strong>dim</strong> (<em>str</em>) – The dimension in the <cite>xarray.Dataset</cite> to apply this transform over</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name to use when added to a Pipeline. This name is used when calling Pipeline.search()</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.Preprocessor.LogLogTransform.calculate">
+<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Preprocessor.LogLogTransform.calculate" title="Permalink to this definition">#</a></dt>
+<dd><p>Apply this <cite>PipelineOp</cite> to the supplied <cite>xarray.Dataset</cite>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="AFL.double_agent.Preprocessor.Preprocessor">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Preprocessor.</span></span><span class="sig-name descname"><span class="pre">Preprocessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'PreprocessorBase'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Preprocessor.Preprocessor" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp" title="AFL.double_agent.PipelineOp.PipelineOp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineOp</span></code></a></p>
@@ -886,6 +909,10 @@ transform_dim=’trans_component’</p>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Preprocessor.Extrema"><code class="docutils literal notranslate"><span class="pre">Extrema</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Preprocessor.Extrema.calculate"><code class="docutils literal notranslate"><span class="pre">Extrema.calculate()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Preprocessor.LogLogTransform"><code class="docutils literal notranslate"><span class="pre">LogLogTransform</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Preprocessor.LogLogTransform.calculate"><code class="docutils literal notranslate"><span class="pre">LogLogTransform.calculate()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Preprocessor.Preprocessor"><code class="docutils literal notranslate"><span class="pre">Preprocessor</span></code></a><ul class="nav section-nav flex-column">
