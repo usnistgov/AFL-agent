@@ -75,6 +75,7 @@ tensorflow = [
 pytorch = [
     "torch",
     "torchvision",
+    "gpytorch"
 ]
 
 automation = [
