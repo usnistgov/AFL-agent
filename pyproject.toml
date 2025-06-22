@@ -136,6 +136,9 @@ all = [
 [tool.hatch.build]
 packages = ["AFL"]
 include-package-data = true
+include = [
+    "AFL/double_agent/prefab/*.json",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["AFL"]

@@ -147,7 +147,11 @@ class PipelineOp(ABC):
         cls = self.__class__
         module = cls.__module__
         qualname = cls.__qualname__
-        data = {"class": f"{module}.{qualname}", "args": self._stored_args}
+        data = {
+            "class": f"{module}.{qualname}",
+            "args": self._stored_args,
+            "docstring": inspect.getdoc(cls) or "",
+        }
         return data
 
     @classmethod

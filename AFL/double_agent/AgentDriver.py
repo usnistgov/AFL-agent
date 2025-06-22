@@ -55,6 +55,7 @@ def _collect_pipeline_ops() -> List[Dict[str, Any]]:
                         "parameters": params,
                         "input_params": input_params,
                         "output_params": output_params,
+                        "docstring": inspect.getdoc(obj) or "",
                     }
                 )
     ops.sort(key=lambda o: o["name"])
@@ -316,6 +317,46 @@ class DoubleAgentDriver(Driver):
             'ops': [op.to_json() for op in pipeline],
             'connections': connections
         }
+
+    @Driver.unqueued()
+    def save_prefab(self, name: str, pipeline: str = "[]", overwrite: bool = True, **kwargs):
+        """Save a pipeline (sent from the UI) as a prefab JSON file.
+
+        Parameters
+        ----------
+        name : str
+            Desired filename (without .json) for the prefab.
+        pipeline : str
+            JSON-encoded list of operation dictionaries from the UI.
+        overwrite : bool, default=True
+            Whether to overwrite an existing prefab of the same name.
+        """
+        import json as _json
+        from AFL.double_agent.PipelineOp import PipelineOp
+        from AFL.double_agent.Pipeline import Pipeline as _Pipeline
+        from AFL.double_agent.prefab import save_prefab as _save_prefab
+
+        try:
+            ops_def = _json.loads(pipeline) if isinstance(pipeline, str) else pipeline
+        except Exception:
+            return {
+                'status': 'error',
+                'message': 'Invalid pipeline JSON.'
+            }
+
+        try:
+            pipeline_ops = [PipelineOp.from_json(op) for op in ops_def]
+            pipeline_obj = _Pipeline(name=name, ops=pipeline_ops)
+            path = _save_prefab(pipeline_obj, name=name, overwrite=overwrite)
+            return {
+                'status': 'success',
+                'path': path
+            }
+        except Exception as exc:
+            return {
+                'status': 'error',
+                'message': str(exc)
+            }
 
     @Driver.unqueued()
     def build_pipeline(self, ops: str = "[]", name: str = "Pipeline", **kwargs):
