@@ -13,235 +13,8 @@ from AFL.automation.shared.utilities import mpl_plot_to_bytes,xarray_to_bytes
 from AFL.double_agent.Pipeline import Pipeline
 from AFL.double_agent.PipelineOp import PipelineOp
 
-
-_PIPELINE_BUILDER_HTML = """<!DOCTYPE html>
-<html>
-<head>
-  <meta charset='UTF-8'>
-  <title>Pipeline Builder</title>
-  <script src='https://cdnjs.cloudflare.com/ajax/libs/jsPlumb/2.15.6/js/jsplumb.min.js'></script>
-  <style>
-    body { margin: 0; font-family: Arial, sans-serif; }
-    #sidebar { width: 260px; height: 100vh; overflow-y: auto; border-right: 1px solid #ccc; float:left; padding:10px; box-sizing:border-box; }
-    #canvas { position:relative; margin-left:260px; height:100vh; background:#f7f7f7; }
-    .op-template { border:1px solid #ccc; padding:5px; margin-bottom:5px; cursor:grab; }
-    .node { position:absolute; padding:10px; background:#fff; border:1px solid #333; }
-    .param { display:block; margin-bottom:4px; }
-    .connector { width:10px; height:10px; background:#000; border-radius:50%; display:inline-block; }
-  </style>
-</head>
-<body>
-  <div id='sidebar'>
-    <h3>Pipeline Ops</h3>
-    <div id='op-list'></div>
-    <h3>Prefabs</h3>
-    <select id='prefab-select'></select>
-    <button id='load-prefab'>Load Prefab</button>
-    <button id='submit'>Submit Pipeline</button>
-  </div>
-  <div id='canvas'></div>
-  <script>
-    const instance = jsPlumb.getInstance({Container: 'canvas'});
-    const opList = document.getElementById('op-list');
-    const canvas = document.getElementById('canvas');
-    const prefabSelect = document.getElementById('prefab-select');
-    let counter = 0;
-
-    async function loadOps() {
-      const res = await fetch('/pipeline_ops');
-      const ops = await res.json();
-      ops.forEach(op => {
-        const div = document.createElement('div');
-        div.className = 'op-template';
-        div.textContent = op.name;
-        div.draggable = true;
-        div.dataset.fqcn = op.fqcn;
-        div.dataset.params = JSON.stringify(op.parameters);
-        div.addEventListener('dragstart', e => {
-          e.dataTransfer.setData('text/plain', div.dataset.fqcn);
-        });
-        opList.appendChild(div);
-      });
-    }
-
-    async function loadPrefabs() {
-      const res = await fetch('/prefab_names');
-      if (!res.ok) return;
-      const names = await res.json();
-      names.forEach(n => {
-        const opt = document.createElement('option');
-        opt.value = n;
-        opt.textContent = n;
-        prefabSelect.appendChild(opt);
-      });
-    }
-
-    function clearCanvas() {
-      instance.deleteEveryConnection();
-      instance.deleteEveryEndpoint();
-      canvas.innerHTML = '';
-      counter = 0;
-    }
-
-    function loadPipeline(ops) {
-      clearCanvas();
-      let x = 20;
-      let y = 20;
-      const nodes = [];
-      ops.forEach(op => {
-        const node = addNode(op.class, op.args || {}, x, y);
-        if (op.args) {
-          node.querySelectorAll('input[data-param]').forEach(inp => {
-            if (op.args[inp.dataset.param] !== undefined) {
-              inp.value = op.args[inp.dataset.param];
-            }
-          });
-          if (op.args.output_variable) {
-            node.querySelector('input[data-output]').value = op.args.output_variable;
-          }
-        }
-        nodes.push({node: node, op: op});
-        y += 120;
-      });
-
-      nodes.forEach((n, idx) => {
-        if (idx === 0) return;
-        let source = null;
-        if (n.op.args && n.op.args.input_variable) {
-          const inVar = n.op.args.input_variable;
-          source = nodes.find(m => m.op.args && m.op.args.output_variable === inVar);
-        }
-        if (!source && idx > 0) source = nodes[idx-1];
-        if (source) {
-          instance.connect({
-            source: source.node.querySelector('[data-role="out"]'),
-            target: n.node.querySelector('[data-role="in"]')
-          });
-        }
-      });
-    }
-
-    async function loadCurrentPipeline() {
-      const res = await fetch('/current_pipeline');
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length) {
-          loadPipeline(data);
-        }
-      }
-    }
-
-    canvas.addEventListener('dragover', e => e.preventDefault());
-    canvas.addEventListener('drop', e => {
-      e.preventDefault();
-      const fqcn = e.dataTransfer.getData('text/plain');
-      const params = JSON.parse(document.querySelector(`[data-fqcn="${fqcn}"]`).dataset.params);
-      addNode(fqcn, params, e.offsetX, e.offsetY);
-    });
-
-    function addNode(fqcn, params, x, y) {
-      const node = document.createElement('div');
-      node.className = 'node';
-      node.id = 'node' + (counter++);
-      node.style.left = x + 'px';
-      node.style.top = y + 'px';
-      node.dataset.fqcn = fqcn;
-
-      const title = document.createElement('div');
-      title.textContent = fqcn.split('.').pop();
-      node.appendChild(title);
-
-      Object.entries(params).forEach(([key, val]) => {
-        const div = document.createElement('div');
-        div.className = 'param';
-        const label = document.createElement('label');
-        label.textContent = key + ':';
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.dataset.param = key;
-        if (val !== null) input.value = val;
-        div.appendChild(label);
-        div.appendChild(input);
-        node.appendChild(div);
-      });
-
-      const outDiv = document.createElement('div');
-      outDiv.className = 'param';
-      outDiv.innerHTML = 'output_variable:<input data-output type="text">';
-      node.appendChild(outDiv);
-
-      const outAnchor = document.createElement('div');
-      outAnchor.className = 'connector';
-      outAnchor.dataset.role = 'out';
-      outAnchor.style.position = 'absolute';
-      outAnchor.style.right = '-5px';
-      outAnchor.style.top = '50%';
-      node.appendChild(outAnchor);
-
-      const inAnchor = document.createElement('div');
-      inAnchor.className = 'connector';
-      inAnchor.dataset.role = 'in';
-      inAnchor.style.position = 'absolute';
-      inAnchor.style.left = '-5px';
-      inAnchor.style.top = '50%';
-      node.appendChild(inAnchor);
-
-      canvas.appendChild(node);
-      instance.draggable(node);
-      instance.makeSource(outAnchor, {anchor:'Continuous', filter:outAnchor});
-      instance.makeTarget(inAnchor, {anchor:'Continuous', allowLoopback:false});
-      return node;
-    }
-
-    function buildOps() {
-      const nodes = Array.from(document.querySelectorAll('.node'));
-      const ops = [];
-      nodes.forEach(node => {
-        const args = {};
-        node.querySelectorAll('input[data-param]').forEach(inp => {
-          if (inp.value) args[inp.dataset.param] = inp.value;
-        });
-        const out = node.querySelector('input[data-output]').value;
-        if (out) args['output_variable'] = out;
-        const conns = instance.getConnections({target: node});
-        if (conns.length) {
-          const src = conns[0].source.parentElement;
-          const srcOut = src.querySelector('input[data-output]').value;
-          if (srcOut) args['input_variable'] = srcOut;
-        }
-        ops.push({class: node.dataset.fqcn, args: args});
-      });
-      return ops;
-    }
-
-    document.getElementById('submit').onclick = async () => {
-      const ops = buildOps();
-      const res = await fetch('/enqueue', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({task_name: 'initialize_pipeline', pipeline: ops})
-      });
-      if (res.ok) alert('Pipeline submitted');
-      else alert('Submission failed');
-    };
-
-    document.getElementById('load-prefab').onclick = async () => {
-      const name = prefabSelect.value;
-      if (!name) return;
-      const res = await fetch(`/load_prefab?name=${encodeURIComponent(name)}`);
-      if (res.ok) {
-        const data = await res.json();
-        loadPipeline(data);
-      }
-    };
-
-    loadOps();
-    loadPrefabs();
-    loadCurrentPipeline();
-  </script>
-</body>
-</html>
-"""
+from importlib.resources import files
+from jinja2 import Template
 
 
 def _collect_pipeline_ops() -> List[Dict[str, Any]]:
@@ -258,12 +31,30 @@ def _collect_pipeline_ops() -> List[Dict[str, Any]]:
                     for k, v in sig.parameters.items()
                     if k != "self"
                 }
+                
+                # Detect input/output variable parameters
+                input_params = []
+                output_params = []
+                
+                for param_name in params.keys():
+                    # Parameters that represent input variables
+                    if (param_name.endswith('_variable') and 'input' in param_name) or \
+                       param_name == 'input_variable' or param_name == 'input_variables':
+                        input_params.append(param_name)
+                    # Parameters that represent output variables or prefixes
+                    elif (param_name.endswith('_variable') and 'output' in param_name) or \
+                         param_name == 'output_variable' or param_name == 'output_variables' or \
+                         param_name == 'output_prefix':
+                        output_params.append(param_name)
+
                 ops.append(
                     {
                         "name": name,
                         "module": module.__name__,
                         "fqcn": f"{module.__name__}.{name}",
                         "parameters": params,
+                        "input_params": input_params,
+                        "output_params": output_params,
                     }
                 )
     ops.sort(key=lambda o: o["name"])
@@ -293,7 +84,10 @@ def build_pipeline_from_json(ops_json: str, name: str = "Pipeline") -> Dict[str,
 
 def get_pipeline_builder_html() -> str:
     """Return the HTML for the pipeline builder UI."""
-    return _PIPELINE_BUILDER_HTML
+    template_path = files('AFL.double_agent.driver_templates').joinpath('pipeline_builder.html')
+    template = Template(template_path.read_text())
+    html = template.render()
+    return html
 
 
 class DoubleAgentDriver(Driver):
@@ -355,19 +149,25 @@ class DoubleAgentDriver(Driver):
         """
         self.input = self.retrieve_obj(db_uuid)
 
-    def initialize_pipeline(self, db_uuid: str) -> None:
+    def initialize_pipeline(self, db_uuid: str = None, pipeline: List[Dict[str, Any]] = None, name: str = "Pipeline") -> None:
         """
         Set the `double_agent.Pipeline` to outline
 
         Parameters
         ----------
-        db_uuid: str
+        db_uuid: str, optional
             Dropbox UUID to retrieve the `double_agent.Pipeline` from. The Dataset should be deposited using
-            `Client.deposit_obj` in interactive mode in order to obtain the uuid of the deposited item. See example
-            below
+            `Client.deposit_obj` in interactive mode in order to obtain the uuid of the deposited item. 
+            Either this or `pipeline` must be provided.
+        pipeline: List[Dict[str, Any]], optional
+            List of pipeline operations in JSON format to construct the pipeline from.
+            Either this or `db_uuid` must be provided.
+        name: str, default="Pipeline"
+            Name for the pipeline when constructing from operations list.
 
         Example
         -------
+        Using dropbox:
         ```python
         from AFL.automation.APIServer.Client import Client
         from AFL.double_agent import *
@@ -377,8 +177,26 @@ class DoubleAgentDriver(Driver):
         db_uuid = client.deposit_obj(obj=Pipeline(),interactive=True)['return_val']
         client.enqueue(task_name='initialize_pipeline',db_uuid=db_uuid)
         ```
+        
+        Using operations list:
+        ```python
+        ops = [{'class': 'AFL.double_agent.SomeOp', 'args': {...}}]
+        client.enqueue(task_name='initialize_pipeline', pipeline=ops)
+        ```
         """
-        self.pipeline = self.retrieve_obj(db_uuid)
+        if db_uuid is not None and pipeline is not None:
+            raise ValueError("Cannot specify both db_uuid and pipeline. Use one or the other.")
+        
+        if db_uuid is None and pipeline is None:
+            raise ValueError("Must specify either db_uuid or pipeline.")
+        
+        if db_uuid is not None:
+            # Load pipeline from dropbox
+            self.pipeline = self.retrieve_obj(db_uuid)
+        else:
+            # Construct pipeline from operations list
+            pipeline_ops = [PipelineOp.from_json(op) for op in pipeline]
+            self.pipeline = Pipeline(name=name, ops=pipeline_ops)
 
     def append(self, db_uuid: str, concat_dim: str) -> None:
         """
@@ -452,7 +270,7 @@ class DoubleAgentDriver(Driver):
     def current_pipeline(self, **kwargs):
         """Return the currently loaded pipeline as JSON."""
         if self.pipeline is None:
-            return []
+            return None
         return [op.to_json() for op in self.pipeline]
 
     @Driver.unqueued()
@@ -463,15 +281,99 @@ class DoubleAgentDriver(Driver):
 
     @Driver.unqueued()
     def load_prefab(self, name: str, **kwargs):
-        """Load a prefabricated pipeline and return its JSON."""
+        """Load a prefabricated pipeline and return its JSON with connectivity information."""
         from AFL.double_agent.prefab import load_prefab
+        from AFL.double_agent.util import listify
+        
         pipeline = load_prefab(name)
-        return [op.to_json() for op in pipeline]
+        
+        # Create connections between operations based on variable matching
+        connections = []
+        
+        # Create a mapping of output variables to lists of operation indices (one-to-many)
+        output_var_to_op_indices = {}
+        for i, op in enumerate(pipeline.ops):
+            for output_var in listify(op.output_variable):
+                if output_var is not None:
+                    if output_var not in output_var_to_op_indices:
+                        output_var_to_op_indices[output_var] = []
+                    output_var_to_op_indices[output_var].append(i)
+        
+        # Find connections where input variables match output variables
+        for target_index, target_op in enumerate(pipeline.ops):
+            for input_var in listify(target_op.input_variable):
+                if input_var is not None and input_var in output_var_to_op_indices:
+                    # Connect to ALL operations that produce this output variable
+                    for source_index in output_var_to_op_indices[input_var]:
+                        if source_index != target_index:  # Avoid self-loops
+                            connections.append({
+                                'source_index': source_index,
+                                'target_index': target_index,
+                                'variable': input_var
+                            })
+        
+        return {
+            'ops': [op.to_json() for op in pipeline],
+            'connections': connections
+        }
 
     @Driver.unqueued()
     def build_pipeline(self, ops: str = "[]", name: str = "Pipeline", **kwargs):
         """Construct a pipeline from JSON and return the serialized form."""
         return build_pipeline_from_json(ops, name)
+
+    @Driver.unqueued()
+    def analyze_pipeline(self, ops: str = "[]", **kwargs):
+        """Analyze pipeline operations and return connectivity information."""
+        from AFL.double_agent.PipelineOp import PipelineOp
+        from AFL.double_agent.util import listify
+        import json
+        
+        # Parse the operations from JSON string
+        try:
+            ops_list = json.loads(ops)
+        except (json.JSONDecodeError, TypeError):
+            return {'connections': []}
+        
+        # Create PipelineOp instances from the operation definitions
+        pipeline_ops = []
+        for op_def in ops_list:
+            try:
+                op = PipelineOp.from_json(op_def)
+                pipeline_ops.append(op)
+            except Exception as e:
+                # If we can't instantiate an op, skip it for connectivity analysis
+                continue
+        
+        if not pipeline_ops:
+            return {'connections': []}
+        
+        # Create connections between operations based on variable matching
+        connections = []
+        
+        # Create a mapping of output variables to lists of operation indices (one-to-many)
+        output_var_to_op_indices = {}
+        for i, op in enumerate(pipeline_ops):
+            for output_var in listify(op.output_variable):
+                if output_var is not None:
+                    if output_var not in output_var_to_op_indices:
+                        output_var_to_op_indices[output_var] = []
+                    output_var_to_op_indices[output_var].append(i)
+        
+        # Find connections where input variables match output variables
+        for target_index, target_op in enumerate(pipeline_ops):
+            for input_var in listify(target_op.input_variable):
+                if input_var is not None and input_var in output_var_to_op_indices:
+                    # Connect to ALL operations that produce this output variable
+                    for source_index in output_var_to_op_indices[input_var]:
+                        if source_index != target_index:  # Avoid self-loops
+                            connections.append({
+                                'source_index': source_index,
+                                'target_index': target_index,
+                                'variable': input_var
+                            })
+        
+        return {'connections': connections}
 
     def reset_results(self):
         self.results = dict()
