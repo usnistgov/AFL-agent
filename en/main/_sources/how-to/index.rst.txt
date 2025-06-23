@@ -11,4 +11,5 @@ Guides for specific tasks
    appending
    autosas_modal_selection
    saving_pipelines
+   pipeline_builder
 
