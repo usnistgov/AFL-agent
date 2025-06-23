@@ -3,13 +3,18 @@
 <head>
   <meta charset='UTF-8'>
   <title>Pipeline Builder</title>
-  <script src='https://cdnjs.cloudflare.com/ajax/libs/jsPlumb/2.15.6/js/jsplumb.min.js'></script>
+  <script src='https://d3js.org/d3.v7.min.js'></script>
   <style>
     body { margin: 0; font-family: Arial, sans-serif; display: flex; height: 100vh; }
     #sidebar { width: 260px; height: 100vh; overflow-y: auto; border-right: 1px solid #ccc; padding: 10px; box-sizing: border-box; }
     #canvas-container { flex: 1; position: relative; }
     #canvas { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #f7f7f7; overflow: hidden; cursor: grab; }
     #canvas.dragging { cursor: grabbing; }
+    #connection-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+    .connection-path { fill: none; stroke: #333; stroke-width: 2px; pointer-events: auto; cursor: pointer; }
+    .connection-path:hover { stroke: #cc0000; stroke-width: 3px; }
+    .temp-connection { pointer-events: none; }
+    .connector.connection-target { background: #007acc; transform: translateX(-50%) scale(1.6); }
     #params-pane { width: 300px; height: 100vh; overflow-y: auto; border-left: 1px solid #ccc; padding: 10px; box-sizing: border-box; background: #fff; }
     
     /* Bottom action buttons - all inline */
@@ -113,6 +118,10 @@
       border-radius: 8px;
       min-width: 150px;
       text-align: center;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
     }
     .node.selected { 
       border-color: #007acc; 
@@ -402,7 +411,9 @@
     </div>
   </div>
   <div id='canvas-container'>
-    <div id='canvas'></div>
+    <div id='canvas'>
+      <svg id='connection-svg'></svg>
+    </div>
     <!-- Edge glow indicators -->
     <div class='edge-glow top'></div>
     <div class='edge-glow bottom'></div>
@@ -485,7 +496,10 @@
   </div>
 
   <script>
-    const instance = jsPlumb.getInstance({Container: 'canvas'});
+    // D3 setup
+    const svg = d3.select('#connection-svg');
+    const connectionsGroup = svg.append('g').attr('class', 'connections');
+    
     const opList = document.getElementById('op-list');
     const canvas = document.getElementById('canvas');
     const prefabSelect = document.getElementById('prefab-select');
@@ -495,6 +509,167 @@
     let lastDeletedNode = null;
     let isLoadingPipeline = false;
     let isProgrammaticConnection = false;
+    
+    // Connection data
+    let connections = [];
+    let nodes = [];
+    
+    // D3 helper functions
+    function updateSVGSize() {
+      const rect = canvas.getBoundingClientRect();
+      svg.attr('width', rect.width).attr('height', rect.height);
+    }
+    
+    function createConnection(sourceNode, targetNode) {
+      const connectionId = `conn_${sourceNode.id}_${targetNode.id}`;
+      const connection = {
+        id: connectionId,
+        source: sourceNode,
+        target: targetNode
+      };
+      connections.push(connection);
+      return connection;
+    }
+    
+    function removeConnection(connection) {
+      const index = connections.indexOf(connection);
+      if (index > -1) {
+        connections.splice(index, 1);
+      }
+    }
+    
+    function drawConnections() {
+      const connectionPaths = connectionsGroup.selectAll('.connection-path')
+        .data(connections, d => d.id);
+      
+      connectionPaths.exit().remove();
+      
+      connectionPaths.enter()
+        .append('path')
+        .attr('class', 'connection-path')
+        .attr('marker-end', 'url(#arrowhead)')
+        .on('click', function(event, d) {
+          // Delete connection on click
+          event.stopPropagation();
+          removeConnection(d);
+          drawConnections();
+        });
+      
+      connectionPaths
+        .attr('d', d => {
+          const sourceRect = d.source.getBoundingClientRect();
+          const targetRect = d.target.getBoundingClientRect();
+          const canvasRect = canvas.getBoundingClientRect();
+          
+          const sourceX = sourceRect.left - canvasRect.left + sourceRect.width / 2;
+          const sourceY = sourceRect.bottom - canvasRect.top;
+          const targetX = targetRect.left - canvasRect.left + targetRect.width / 2;
+          const targetY = targetRect.top - canvasRect.top;
+          
+          const midY = sourceY + (targetY - sourceY) * 0.5;
+          
+          return `M ${sourceX} ${sourceY} C ${sourceX} ${midY} ${targetX} ${midY} ${targetX} ${targetY}`;
+        });
+    }
+    
+    // Initialize SVG arrowhead marker
+    svg.append('defs').append('marker')
+      .attr('id', 'arrowhead')
+      .attr('viewBox', '0 -5 10 10')
+      .attr('refX', 8)
+      .attr('refY', 0)
+      .attr('markerWidth', 6)
+      .attr('markerHeight', 6)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('d', 'M0,-5L10,0L0,5')
+      .attr('fill', '#333');
+    
+    // Connection drag state
+    let connectionDragState = {
+      active: false,
+      sourceNode: null,
+      tempLine: null
+    };
+    
+    function startConnectionDrag(sourceNode, event) {
+      connectionDragState.active = true;
+      connectionDragState.sourceNode = sourceNode;
+      
+      // Create temporary line for visual feedback
+      const sourceRect = sourceNode.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
+      const startX = sourceRect.left - canvasRect.left + sourceRect.width / 2;
+      const startY = sourceRect.bottom - canvasRect.top;
+      
+      connectionDragState.tempLine = connectionsGroup.append('path')
+        .attr('class', 'temp-connection')
+        .attr('stroke', '#007acc')
+        .attr('stroke-width', 2)
+        .attr('fill', 'none')
+        .attr('stroke-dasharray', '5,5');
+      
+      // Add mouse move listener to canvas
+      canvas.addEventListener('mousemove', updateTempConnection);
+      canvas.addEventListener('mouseup', cancelConnectionDrag);
+    }
+    
+    function updateTempConnection(event) {
+      if (!connectionDragState.active || !connectionDragState.tempLine) return;
+      
+      const sourceRect = connectionDragState.sourceNode.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
+      const startX = sourceRect.left - canvasRect.left + sourceRect.width / 2;
+      const startY = sourceRect.bottom - canvasRect.top;
+      const endX = event.clientX - canvasRect.left;
+      const endY = event.clientY - canvasRect.top;
+      
+      const midY = startY + (endY - startY) * 0.5;
+      const path = `M ${startX} ${startY} C ${startX} ${midY} ${endX} ${midY} ${endX} ${endY}`;
+      
+      connectionDragState.tempLine.attr('d', path);
+    }
+    
+    function finishConnectionDrag(targetNode) {
+      if (!connectionDragState.active || !connectionDragState.sourceNode) return;
+      
+      const sourceNode = connectionDragState.sourceNode;
+      
+      // Only create connection if source and target are different
+      if (sourceNode !== targetNode) {
+        // Check if connection already exists
+        const existingConnection = connections.find(c => 
+          c.source === sourceNode && c.target === targetNode
+        );
+        
+        if (!existingConnection) {
+          if (!isLoadingPipeline && !isProgrammaticConnection) {
+            handleNewConnection(sourceNode, targetNode);
+          }
+          createConnection(sourceNode, targetNode);
+          drawConnections();
+        }
+      }
+      
+      cancelConnectionDrag();
+    }
+    
+    function cancelConnectionDrag() {
+      if (connectionDragState.tempLine) {
+        connectionDragState.tempLine.remove();
+      }
+      
+      connectionDragState.active = false;
+      connectionDragState.sourceNode = null;
+      connectionDragState.tempLine = null;
+      
+      canvas.removeEventListener('mousemove', updateTempConnection);
+      canvas.removeEventListener('mouseup', cancelConnectionDrag);
+    }
+    
+    // Initialize SVG size
+    updateSVGSize();
+    window.addEventListener('resize', updateSVGSize);
     
     // Copy-paste functionality variables
     let selectedNodes = new Set();
@@ -624,6 +799,29 @@
       inAnchor.className = 'connector input';
       inAnchor.dataset.role = 'in';
       node.appendChild(inAnchor);
+      
+      // Add connection event handlers
+      outAnchor.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        startConnectionDrag(node, e);
+      });
+      
+      inAnchor.addEventListener('mouseenter', (e) => {
+        if (connectionDragState.active) {
+          inAnchor.classList.add('connection-target');
+        }
+      });
+      
+      inAnchor.addEventListener('mouseleave', (e) => {
+        inAnchor.classList.remove('connection-target');
+      });
+      
+      inAnchor.addEventListener('mouseup', (e) => {
+        if (connectionDragState.active) {
+          e.stopPropagation();
+          finishConnectionDrag(node);
+        }
+      });
 
       // Create delete button
       const deleteBtn = document.createElement('div');
@@ -649,9 +847,13 @@
       });
 
       canvas.appendChild(node);
-      // Make node draggable with group support
-      instance.draggable(node, {
-        start: function(params) {
+      
+      // Add to nodes array
+      nodes.push(node);
+      
+      // Make node draggable with D3
+      const drag = d3.drag()
+        .on('start', function(event) {
           if (selectedNodes.size > 1 && selectedNodes.has(node)) {
             // Capture original positions for each selected node
             groupDragData.active = true;
@@ -666,40 +868,36 @@
           } else {
             groupDragData.active = false;
           }
-        },
-        drag: function(params) {
+        })
+        .on('drag', function(event) {
+          const newX = parseInt(node.style.left) + event.dx;
+          const newY = parseInt(node.style.top) + event.dy;
+          node.style.left = newX + 'px';
+          node.style.top = newY + 'px';
+          
           if (groupDragData.active && groupDragData.draggingNode === node) {
             const orig = groupDragData.originals.get(node);
-            if (!orig) return;
-            const currentLeft = parseInt(node.style.left) || 0;
-            const currentTop = parseInt(node.style.top) || 0;
-            const deltaX = currentLeft - orig.left;
-            const deltaY = currentTop - orig.top;
-            groupDragData.originals.forEach((pos, n) => {
-              if (n !== node) {
-                n.style.left = (pos.left + deltaX) + 'px';
-                n.style.top = (pos.top + deltaY) + 'px';
-                instance.revalidate(n);
-              }
-            });
+            if (orig) {
+              const deltaX = newX - orig.left;
+              const deltaY = newY - orig.top;
+              groupDragData.originals.forEach((pos, n) => {
+                if (n !== node) {
+                  n.style.left = (pos.left + deltaX) + 'px';
+                  n.style.top = (pos.top + deltaY) + 'px';
+                }
+              });
+            }
           }
-        },
-        stop: function(params) {
+          
+          drawConnections();
+        })
+        .on('end', function(event) {
           groupDragData.active = false;
           groupDragData.draggingNode = null;
           updateEdgeGlow();
-        }
-      });
-      instance.makeSource(outAnchor, {
-        anchor: 'BottomCenter',
-        connector: ['Bezier', { curviness: 30 }],
-        maxConnections: -1
-      });
-      instance.makeTarget(inAnchor, {
-        anchor: 'TopCenter',
-        connector: ['Bezier', { curviness: 30 }],
-        maxConnections: -1
-      });
+        });
+        
+      d3.select(node).call(drag);
       
       // Create parameter tile
       const tile = createParamTile(node, fqcn, params, metadata);
@@ -813,51 +1011,43 @@
       currentPanY += deltaY;
       
       // Continuously update connections during animation
-      function updateConnections() {
+      function updateConnectionsAnimation() {
         const elapsed = performance.now() - startTime;
         if (elapsed < duration) {
-          // Revalidate all nodes and repaint connections
-          nodes.forEach(node => {
-            instance.revalidate(node);
-          });
-          instance.repaintEverything();
+          // Redraw connections
+          drawConnections();
           
           // Continue animation
-          requestAnimationFrame(updateConnections);
+          requestAnimationFrame(updateConnectionsAnimation);
         } else {
           // Animation complete - final cleanup
           nodes.forEach(node => {
-            instance.revalidate(node);
             node.style.transition = '';
           });
-          instance.repaintEverything();
+          drawConnections();
           updateEdgeGlow();
         }
       }
       
       // Start the connection update loop
-      requestAnimationFrame(updateConnections);
+      requestAnimationFrame(updateConnectionsAnimation);
     }
     
     function panAllNodes(deltaX, deltaY) {
-      const nodes = document.querySelectorAll('.node');
-      nodes.forEach(node => {
+      const nodeElements = document.querySelectorAll('.node');
+      nodeElements.forEach(node => {
         const currentX = parseInt(node.style.left) || 0;
         const currentY = parseInt(node.style.top) || 0;
         node.style.left = (currentX + deltaX) + 'px';
         node.style.top = (currentY + deltaY) + 'px';
-        
-        // Notify jsPlumb that the node has moved
-        instance.revalidate(node);
       });
       
       // Update current pan position
       currentPanX += deltaX;
       currentPanY += deltaY;
       
-      // Repaint connections
-      instance.repaintEverything();
-
+      // Redraw connections
+      drawConnections();
       updateEdgeGlow();
     }
     
@@ -920,10 +1110,8 @@
       // Update current pan position
       currentPanY += deltaY;
       
-      // Revalidate connections without full repaint to avoid SVG errors
-      nodes.forEach(node => {
-        instance.revalidate(node);
-      });
+      // Redraw connections
+      drawConnections();
     });
 
           // Track mouse position for paste positioning
@@ -1029,13 +1217,13 @@
     // Periodic check (fallback) in case some events missed
     setInterval(updateEdgeGlow, 1000);
 
-    function optimizeLayout(connections) {
-      const nodes = Array.from(document.querySelectorAll('.node'));
-      if (nodes.length <= 1) return;
+    function optimizeLayout(connectionData) {
+      const nodeElements = Array.from(document.querySelectorAll('.node'));
+      if (nodeElements.length <= 1) return;
       
       console.log('Applying Sugiyama-style hierarchy layout');
       
-      const graph = buildDirectedGraph(nodes, connections);
+      const graph = buildDirectedGraph(nodeElements, connectionData);
       let layers = assignLayers(graph);
       
       // Add dummy nodes for edges spanning multiple layers
@@ -1044,8 +1232,8 @@
       const crossingReducedLayers = reduceCrossings(augmentedLayers, augmentedGraph);
       positionNodes(crossingReducedLayers, augmentedGraph);
       
-      // Repaint all connections
-      instance.repaintEverything();
+      // Redraw all connections
+      drawConnections();
       updateEdgeGlow();
     }
     
@@ -1283,7 +1471,6 @@
           if (element && pos) {
             element.style.left = (pos.x + currentPanX) + 'px';
             element.style.top = (pos.y + currentPanY) + 'px';
-            instance.revalidate(element);
           }
         }
       });
@@ -1720,9 +1907,13 @@
     }
 
     function clearCanvas() {
-      instance.deleteEveryConnection();
-      instance.deleteEveryEndpoint();
-      canvas.innerHTML = '';
+      // Clear D3 connections
+      connections = [];
+      nodes = [];
+      connectionsGroup.selectAll('*').remove();
+      
+      // Clear DOM nodes
+      canvas.querySelectorAll('.node').forEach(node => node.remove());
       paramTiles.innerHTML = '';
       counter = 0;
       selectedNode = null;
@@ -1738,11 +1929,11 @@
       
       // Handle both old format (array) and new format (object with ops and connections)
       const ops = Array.isArray(data) ? data : data.ops;
-      const connections = data.connections || [];
+      const connectionData = data.connections || [];
       
       let x = 50;
       let y = 50;
-      const nodes = [];
+      const nodeData = [];
       const nodesByOutputVar = new Map();
       
             ops.forEach((op, index) => {
@@ -1819,30 +2010,28 @@
             }
           }
         }
-        nodes.push({node: node, op: op, index: index});
+        nodeData.push({node: node, op: op, index: index});
         y += 150;
       });
 
             // Connect nodes using the backend-provided connection information
       isProgrammaticConnection = true;
-      connections.forEach(conn => {
-        const sourceNode = nodes.find(n => n.index === conn.source_index);
-        const targetNode = nodes.find(n => n.index === conn.target_index);
+      connectionData.forEach(conn => {
+        const sourceNode = nodeData.find(n => n.index === conn.source_index);
+        const targetNode = nodeData.find(n => n.index === conn.target_index);
         
         if (sourceNode && targetNode) {
-          instance.connect({
-            source: sourceNode.node.querySelector('[data-role="out"]'),
-            target: targetNode.node.querySelector('[data-role="in"]'),
-            connector: ['Bezier', { curviness: 30 }],
-            anchors: ['BottomCenter', 'TopCenter']
-          });
+          createConnection(sourceNode.node, targetNode.node);
         }
       });
       isProgrammaticConnection = false;
       
+      // Draw all connections
+      drawConnections();
+      
       // Optimize layout after loading pipeline
-      if (connections.length > 0) {
-        optimizeLayout(connections);
+      if (connectionData.length > 0) {
+        optimizeLayout(connectionData);
       }
       
       isLoadingPipeline = false; // Re-enable connection dialog
@@ -2278,39 +2467,26 @@
           isProgrammaticConnection = true;
           
           // Clear existing connections
-          instance.deleteEveryConnection();
+          connections = [];
           
           // Recreate connections based on analysis
-          const nodesByOutputVar = new Map();
-          const nodes = Array.from(document.querySelectorAll('.node'));
-          
-          nodes.forEach(node => {
-            // Check all output parameter inputs for this node
-            const outputInputs = node.querySelectorAll('input[data-output]');
-            outputInputs.forEach(outInput => {
-              if (outInput && outInput.value) {
-                nodesByOutputVar.set(outInput.value, node);
-              }
-            });
-          });
+          const nodeElements = Array.from(document.querySelectorAll('.node'));
           
           data.connections.forEach(conn => {
-            const sourceNode = nodes.find(node => {
+            const sourceNode = nodeElements.find(node => {
               return parseInt(node.dataset.opIndex) === conn.source_index;
             });
-            const targetNode = nodes.find(node => {
+            const targetNode = nodeElements.find(node => {
               return parseInt(node.dataset.opIndex) === conn.target_index;
             });
             
             if (sourceNode && targetNode) {
-              instance.connect({
-                source: sourceNode.querySelector('[data-role="out"]'),
-                target: targetNode.querySelector('[data-role="in"]'),
-                connector: ['Bezier', { curviness: 30 }],
-                anchors: ['BottomCenter', 'TopCenter']
-              });
+              createConnection(sourceNode, targetNode);
             }
           });
+          
+          // Draw all connections
+          drawConnections();
           
           // Optimize layout after connections are established
           optimizeLayout(data.connections);
@@ -2420,21 +2596,21 @@
       }
       
       // Hide connections associated with the node
-      const allConnections = instance.getAllConnections();
-      const nodeConnections = allConnections.filter(conn => 
+      const nodeConnections = connections.filter(conn => 
         conn.source === node || conn.target === node
       );
       
       // Store connections for restoration
       node.dataset.hiddenConnections = JSON.stringify(nodeConnections.map(conn => ({
         sourceId: conn.source.id,
-        targetId: conn.target.id,
-        sourceEndpoint: conn.endpoints[0].anchor.type,
-        targetEndpoint: conn.endpoints[1].anchor.type
+        targetId: conn.target.id
       })));
       
-      // Remove connections
-      nodeConnections.forEach(conn => instance.deleteConnection(conn));
+      // Remove connections from array
+      nodeConnections.forEach(conn => removeConnection(conn));
+      
+      // Redraw connections
+      drawConnections();
       
       // Show undo banner
       document.getElementById('undo-banner').style.display = 'block';
@@ -2442,7 +2618,15 @@
 
     function permanentlyRemoveNode({ node, tile }) {
         if (tile) tile.remove();
-        instance.remove(node); // This also removes the element from the DOM
+        
+        // Remove from nodes array
+        const nodeIndex = nodes.indexOf(node);
+        if (nodeIndex > -1) {
+          nodes.splice(nodeIndex, 1);
+        }
+        
+        // Remove the element from the DOM
+        node.remove();
     }
     
     function undoDelete() {
@@ -2468,15 +2652,13 @@
             const targetNode = document.getElementById(connData.targetId);
             
             if (sourceNode && targetNode) {
-              instance.connect({
-                source: sourceNode.querySelector('[data-role="out"]'),
-                target: targetNode.querySelector('[data-role="in"]'),
-                connector: ['Bezier', { curviness: 30 }],
-                anchors: ['BottomCenter', 'TopCenter']
-              });
+              createConnection(sourceNode, targetNode);
             }
           });
           isProgrammaticConnection = false;
+          
+          // Redraw connections
+          drawConnections();
           
           // Clear the stored connection data
           delete node.dataset.hiddenConnections;
@@ -2527,21 +2709,7 @@
       }
     }
 
-    // Handle connection events
-    instance.bind('connection', function(info) {
-      // Only show connection dialog for user-initiated connections
-      if (!isLoadingPipeline && !isProgrammaticConnection) {
-        // Get the actual node elements (the connection endpoints are inside the nodes)
-        const sourceNode = info.source.closest('.node');
-        const targetNode = info.target.closest('.node');
-        
-
-        
-        if (sourceNode && targetNode) {
-          handleNewConnection(sourceNode, targetNode);
-        }
-      }
-    });
+    // Connection handling is now done in the finishConnectionDrag function
 
     loadOps();
     loadPrefabs();
