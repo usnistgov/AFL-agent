@@ -78,6 +78,7 @@ tensorflow = [
 pytorch = [
     "torch",
     "torchvision",
+    "gpytorch"
 ]
 
 apdist = [
