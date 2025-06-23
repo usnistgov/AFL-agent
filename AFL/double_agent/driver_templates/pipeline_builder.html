@@ -11,7 +11,7 @@
     #canvas { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #f7f7f7; overflow: hidden; cursor: grab; }
     #canvas.dragging { cursor: grabbing; }
     #connection-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-    .connection-path { fill: none; stroke: #333; stroke-width: 2px; pointer-events: auto; cursor: pointer; }
+    .connection-path { fill: none; stroke: #333; stroke-width: 2px; pointer-events: auto; cursor: crosshair; }
     .connection-path:hover { stroke: #cc0000; stroke-width: 3px; }
     .temp-connection { pointer-events: none; }
     .connector.connection-target { background: #007acc; transform: translateX(-50%) scale(1.6); }
@@ -64,6 +64,7 @@
     #paste-btn { background: #17a2b8; }
     #load-prefab-btn { background: #6f42c1; }
     #optimize-layout { background: #fd7e14; }
+    #pipeline-info-btn { background: #17a2b8; }
     #submit-overlay { background: #007acc; }
 
     
@@ -393,7 +394,113 @@
     .edge-glow.top {top: 0; left: 0; right: 0; height: 25px; background: linear-gradient(to bottom, rgba(0,122,204,0.6), transparent);}
     .edge-glow.bottom {bottom: 0; left: 0; right: 0; height: 25px; background: linear-gradient(to top, rgba(0,122,204,0.6), transparent);}
     .edge-glow.left {top: 0; left: 0; bottom: 0; width: 25px; background: linear-gradient(to right, rgba(0,122,204,0.6), transparent);} 
-    .edge-glow.right {top: 0; right: 0; bottom: 0; width: 25px; background: linear-gradient(to left, rgba(0,122,204,0.6), transparent);} 
+    .edge-glow.right {top: 0; right: 0; bottom: 0; width: 25px; background: linear-gradient(to left, rgba(0,122,204,0.6), transparent);}
+    
+    /* Dictionary editor styling */
+    .dict-param-input {
+      background: #f0f8ff;
+      border: 2px solid #007acc;
+      cursor: pointer;
+    }
+    .dict-param-input:hover {
+      background: #e6f3ff;
+    }
+    
+    /* List editor styling */
+    .list-param-input {
+      background: #f0fff0;
+      border: 2px solid #28a745;
+      cursor: pointer;
+    }
+    .list-param-input:hover {
+      background: #e6ffe6;
+    }
+    .dict-key-row {
+      display: flex;
+      align-items: center;
+      margin: 5px 0;
+      padding: 5px;
+      border: 1px solid #eee;
+      border-radius: 3px;
+      background: #fafafa;
+    }
+    .dict-key-row:hover {
+      background: #f0f0f0;
+    }
+    .dict-key-name {
+      font-weight: bold;
+      margin-right: 10px;
+      min-width: 80px;
+    }
+    .dict-key-value {
+      flex: 1;
+      margin-right: 10px;
+    }
+    .dict-key-type {
+      font-size: 11px;
+      color: #666;
+      margin-right: 10px;
+      min-width: 50px;
+    }
+    .dict-key-actions {
+      display: flex;
+      gap: 5px;
+    }
+    .dict-nested {
+      margin-left: 20px;
+      border-left: 2px solid #ddd;
+      padding-left: 10px;
+    }
+    .dict-validation-error {
+      color: #dc3545;
+      font-weight: bold;
+    }
+    .dict-validation-success {
+      color: #28a745;
+      font-weight: bold;
+    }
+    
+    /* List editor specific styling */
+    .list-item-row {
+      display: flex;
+      align-items: center;
+      margin: 5px 0;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: #fafafa;
+    }
+    .list-item-row:hover {
+      background: #f0f0f0;
+    }
+    .list-item-index {
+      font-weight: bold;
+      margin-right: 10px;
+      min-width: 30px;
+      color: #666;
+    }
+    .list-item-value {
+      flex: 1;
+      margin-right: 10px;
+    }
+    .list-item-type {
+      font-size: 11px;
+      color: #666;
+      margin-right: 10px;
+      min-width: 50px;
+    }
+    .list-item-actions {
+      display: flex;
+      gap: 5px;
+    }
+    .list-validation-error {
+      color: #dc3545;
+      font-weight: bold;
+    }
+    .list-validation-success {
+      color: #28a745;
+      font-weight: bold;
+    } 
   </style>
 </head>
 <body>
@@ -434,6 +541,7 @@
     <button id='load-prefab-btn' class='action-button'>Load Prefab</button>
     <button id='save-prefab-btn' class='action-button'>Save Prefab</button>
     <button id='optimize-layout' class='action-button'>Optimize Layout</button>
+    <button id='pipeline-info-btn' class='action-button'>Info</button>
     <button id='submit-overlay' class='action-button'>Submit Pipeline</button>
     <div id='copy-paste-buttons'>
       <button id='copy-btn' class='action-button' disabled>Copy</button>
@@ -491,6 +599,77 @@
       <pre id='doc-modal-content' style='white-space: pre-wrap; font-family: monospace; font-size: 13px;'></pre>
       <div style='text-align: right; margin-top: 15px;'>
         <button id='doc-modal-close' style='padding: 6px 12px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer;'>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pipeline Info Modal -->
+  <div id='pipeline-info-modal' style='display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000;'>
+    <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; max-width: 800px; width: 90%; max-height: 80%; overflow-y: auto;'>
+      <h3 style='margin-top: 0;'>Pipeline Information</h3>
+      <pre id='pipeline-info-content' style='white-space: pre-wrap; font-family: monospace; font-size: 13px; background: #f8f9fa; padding: 15px; border-radius: 4px; border: 1px solid #dee2e6;'></pre>
+      <div style='text-align: right; margin-top: 15px;'>
+        <button id='pipeline-info-close' style='padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer;'>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dictionary Editor Modal -->
+  <div id='dict-editor-modal' style='display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000;'>
+    <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; max-width: 800px; width: 95%; max-height: 90%; overflow-y: auto;'>
+      <h3 id='dict-editor-title' style='margin-top: 0;'>Edit Dictionary Parameter</h3>
+      <div id='dict-editor-container' style='margin: 20px 0; border: 1px solid #ddd; border-radius: 4px; min-height: 400px;'>
+        <div id='dict-editor-toolbar' style='background: #f8f9fa; padding: 10px; border-bottom: 1px solid #ddd; display: flex; gap: 10px; align-items: center;'>
+          <button id='dict-add-key' style='padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;'>Add Key</button>
+          <button id='dict-format-json' style='padding: 5px 10px; background: #6c757d; color: white; border: none; border-radius: 3px; cursor: pointer;'>Format JSON</button>
+          <button id='dict-validate' style='padding: 5px 10px; background: #17a2b8; color: white; border: none; border-radius: 3px; cursor: pointer;'>Validate</button>
+          <span id='dict-validation-status' style='margin-left: auto; padding: 5px; font-size: 12px;'></span>
+        </div>
+        <div id='dict-editor-content' style='padding: 15px;'>
+          <div id='dict-tree-view' style='font-family: monospace; font-size: 13px;'></div>
+          <div id='dict-raw-view' style='display: none;'>
+            <textarea id='dict-raw-editor' style='width: 100%; height: 300px; font-family: monospace; font-size: 13px; border: 1px solid #ccc; border-radius: 3px; padding: 10px; box-sizing: border-box;'></textarea>
+          </div>
+        </div>
+      </div>
+      <div style='display: flex; justify-content: space-between; align-items: center; margin-top: 20px;'>
+        <div>
+          <button id='dict-view-toggle' style='padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer;'>Raw JSON View</button>
+        </div>
+        <div>
+          <button id='dict-editor-cancel' style='margin-right: 10px; padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer;'>Cancel</button>
+          <button id='dict-editor-save' style='padding: 8px 16px; background: #007acc; color: white; border: none; border-radius: 4px; cursor: pointer;'>Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- List Editor Modal -->
+  <div id='list-editor-modal' style='display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000;'>
+    <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; max-width: 700px; width: 95%; max-height: 90%; overflow-y: auto;'>
+      <h3 id='list-editor-title' style='margin-top: 0;'>Edit List Parameter</h3>
+      <div id='list-editor-container' style='margin: 20px 0; border: 1px solid #ddd; border-radius: 4px; min-height: 400px;'>
+        <div id='list-editor-toolbar' style='background: #f8f9fa; padding: 10px; border-bottom: 1px solid #ddd; display: flex; gap: 10px; align-items: center;'>
+          <button id='list-add-item' style='padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;'>Add Item</button>
+          <button id='list-format-json' style='padding: 5px 10px; background: #6c757d; color: white; border: none; border-radius: 3px; cursor: pointer;'>Format JSON</button>
+          <button id='list-validate' style='padding: 5px 10px; background: #17a2b8; color: white; border: none; border-radius: 3px; cursor: pointer;'>Validate</button>
+          <span id='list-validation-status' style='margin-left: auto; padding: 5px; font-size: 12px;'></span>
+        </div>
+        <div id='list-editor-content' style='padding: 15px;'>
+          <div id='list-items-view' style='font-family: monospace; font-size: 13px;'></div>
+          <div id='list-raw-view' style='display: none;'>
+            <textarea id='list-raw-editor' style='width: 100%; height: 300px; font-family: monospace; font-size: 13px; border: 1px solid #ccc; border-radius: 3px; padding: 10px; box-sizing: border-box;'></textarea>
+          </div>
+        </div>
+      </div>
+      <div style='display: flex; justify-content: space-between; align-items: center; margin-top: 20px;'>
+        <div>
+          <button id='list-view-toggle' style='padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer;'>Raw JSON View</button>
+        </div>
+        <div>
+          <button id='list-editor-cancel' style='margin-right: 10px; padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer;'>Cancel</button>
+          <button id='list-editor-save' style='padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;'>Save</button>
+        </div>
       </div>
     </div>
   </div>
@@ -670,6 +849,500 @@
     // Initialize SVG size
     updateSVGSize();
     window.addEventListener('resize', updateSVGSize);
+    
+    // Dictionary editor functionality
+    let dictEditorState = {
+      currentInput: null,
+      currentParamName: '',
+      currentData: {},
+      isRawView: false
+    };
+    
+    let listEditorState = {
+      currentInput: null,
+      currentParamName: '',
+      currentData: [],
+      isRawView: false
+    };
+    
+    function isDictParameter(paramName, paramType) {
+      // Check if parameter type indicates it's a dictionary
+      return paramType === 'dict' || paramType === 'Dict' || 
+             paramName.toLowerCase().includes('dict') ||
+             paramName.toLowerCase().includes('config') ||
+             paramName.toLowerCase().includes('params') ||
+             paramName.toLowerCase().includes('options');
+    }
+    
+    function isListParameter(paramName, paramType) {
+      // Check if parameter type indicates it's a list/array
+      return paramType === 'list' || paramType === 'List' ||
+             paramName.toLowerCase().includes('list') ||
+             paramName.toLowerCase().includes('array') ||
+             paramName.toLowerCase().includes('items') ||
+             paramName.toLowerCase().includes('tags') ||
+             paramName.toLowerCase().includes('variables') && paramName.toLowerCase().includes('s');
+    }
+    
+    function showDictEditor(inputElement, paramName, currentValue) {
+      dictEditorState.currentInput = inputElement;
+      dictEditorState.currentParamName = paramName;
+      
+      // Parse current value
+      try {
+        if (typeof currentValue === 'string') {
+          dictEditorState.currentData = currentValue ? JSON.parse(currentValue) : {};
+        } else {
+          dictEditorState.currentData = currentValue || {};
+        }
+      } catch (e) {
+        dictEditorState.currentData = {};
+      }
+      
+      // Update modal title
+      document.getElementById('dict-editor-title').textContent = `Edit Dictionary: ${paramName}`;
+      
+      // Render the editor
+      renderDictEditor();
+      
+      // Show modal
+      document.getElementById('dict-editor-modal').style.display = 'block';
+    }
+    
+    function renderDictEditor() {
+      const treeView = document.getElementById('dict-tree-view');
+      const rawEditor = document.getElementById('dict-raw-editor');
+      
+      if (dictEditorState.isRawView) {
+        rawEditor.value = JSON.stringify(dictEditorState.currentData, null, 2);
+      } else {
+        treeView.innerHTML = '';
+        renderDictTree(dictEditorState.currentData, treeView, '');
+      }
+      
+      validateDictData();
+    }
+    
+    function renderDictTree(data, container, path) {
+      if (typeof data !== 'object' || data === null) {
+        return;
+      }
+      
+      Object.keys(data).forEach(key => {
+        const value = data[key];
+        const fullPath = path ? `${path}.${key}` : key;
+        
+        const row = document.createElement('div');
+        row.className = 'dict-key-row';
+        
+        const keyName = document.createElement('div');
+        keyName.className = 'dict-key-name';
+        keyName.textContent = key;
+        row.appendChild(keyName);
+        
+        const keyValue = document.createElement('div');
+        keyValue.className = 'dict-key-value';
+        
+        if (typeof value === 'object' && value !== null) {
+          if (Array.isArray(value)) {
+            keyValue.innerHTML = `<em>[Array with ${value.length} items]</em>`;
+          } else {
+            keyValue.innerHTML = `<em>{Object with ${Object.keys(value).length} keys}</em>`;
+          }
+        } else {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = typeof value === 'string' ? value : JSON.stringify(value);
+          input.style.width = '100%';
+          input.addEventListener('change', (e) => {
+            updateDictValue(fullPath, e.target.value);
+          });
+          keyValue.appendChild(input);
+        }
+        row.appendChild(keyValue);
+        
+        const keyType = document.createElement('div');
+        keyType.className = 'dict-key-type';
+        keyType.textContent = Array.isArray(value) ? 'array' : typeof value;
+        row.appendChild(keyType);
+        
+        const actions = document.createElement('div');
+        actions.className = 'dict-key-actions';
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '×';
+        deleteBtn.style.cssText = 'background: #dc3545; color: white; border: none; border-radius: 3px; padding: 2px 6px; cursor: pointer;';
+        deleteBtn.addEventListener('click', () => {
+          deleteDictKey(fullPath);
+        });
+        actions.appendChild(deleteBtn);
+        
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          const expandBtn = document.createElement('button');
+          expandBtn.textContent = '+';
+          expandBtn.style.cssText = 'background: #28a745; color: white; border: none; border-radius: 3px; padding: 2px 6px; cursor: pointer; margin-left: 5px;';
+          expandBtn.addEventListener('click', () => {
+            addNestedKey(fullPath);
+          });
+          actions.appendChild(expandBtn);
+        }
+        
+        row.appendChild(actions);
+        container.appendChild(row);
+        
+        // Render nested objects
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          const nested = document.createElement('div');
+          nested.className = 'dict-nested';
+          renderDictTree(value, nested, fullPath);
+          container.appendChild(nested);
+        }
+      });
+    }
+    
+    function updateDictValue(path, value) {
+      const keys = path.split('.');
+      let current = dictEditorState.currentData;
+      
+      // Navigate to parent object
+      for (let i = 0; i < keys.length - 1; i++) {
+        if (!current[keys[i]]) current[keys[i]] = {};
+        current = current[keys[i]];
+      }
+      
+      // Parse value
+      try {
+        const parsed = JSON.parse(value);
+        current[keys[keys.length - 1]] = parsed;
+      } catch (e) {
+        current[keys[keys.length - 1]] = value;
+      }
+      
+      validateDictData();
+    }
+    
+    function deleteDictKey(path) {
+      const keys = path.split('.');
+      let current = dictEditorState.currentData;
+      
+      // Navigate to parent object
+      for (let i = 0; i < keys.length - 1; i++) {
+        current = current[keys[i]];
+      }
+      
+      delete current[keys[keys.length - 1]];
+      renderDictEditor();
+    }
+    
+    function addNestedKey(path) {
+      const keyName = prompt('Enter key name:');
+      if (!keyName) return;
+      
+      const keys = path.split('.');
+      let current = dictEditorState.currentData;
+      
+      // Navigate to target object
+      for (const key of keys) {
+        current = current[key];
+      }
+      
+      current[keyName] = '';
+      renderDictEditor();
+    }
+    
+    function addTopLevelKey() {
+      const keyName = prompt('Enter key name:');
+      if (!keyName) return;
+      
+      dictEditorState.currentData[keyName] = '';
+      renderDictEditor();
+    }
+    
+    function validateDictData() {
+      const status = document.getElementById('dict-validation-status');
+      try {
+        JSON.stringify(dictEditorState.currentData);
+        status.textContent = '✓ Valid';
+        status.className = 'dict-validation-success';
+        document.getElementById('dict-editor-save').disabled = false;
+      } catch (e) {
+        status.textContent = '✗ Invalid: ' + e.message;
+        status.className = 'dict-validation-error';
+        document.getElementById('dict-editor-save').disabled = true;
+      }
+    }
+    
+    function saveDictEditor() {
+      if (dictEditorState.isRawView) {
+        try {
+          dictEditorState.currentData = JSON.parse(document.getElementById('dict-raw-editor').value);
+        } catch (e) {
+          alert('Invalid JSON: ' + e.message);
+          return;
+        }
+      }
+      
+      const jsonString = JSON.stringify(dictEditorState.currentData);
+      dictEditorState.currentInput.value = jsonString;
+      
+      // Trigger change event to update the node and tile
+      const changeEvent = new Event('change', { bubbles: true });
+      dictEditorState.currentInput.dispatchEvent(changeEvent);
+      
+      closeDictEditor();
+    }
+    
+    function closeDictEditor() {
+      document.getElementById('dict-editor-modal').style.display = 'none';
+      dictEditorState = {
+        currentInput: null,
+        currentParamName: '',
+        currentData: {},
+        isRawView: false
+      };
+    }
+    
+    function toggleDictView() {
+      dictEditorState.isRawView = !dictEditorState.isRawView;
+      
+      const treeView = document.getElementById('dict-tree-view');
+      const rawView = document.getElementById('dict-raw-view');
+      const toggleBtn = document.getElementById('dict-view-toggle');
+      
+      if (dictEditorState.isRawView) {
+        treeView.style.display = 'none';
+        rawView.style.display = 'block';
+        toggleBtn.textContent = 'Tree View';
+        document.getElementById('dict-raw-editor').value = JSON.stringify(dictEditorState.currentData, null, 2);
+      } else {
+        // Parse raw editor content back to data
+        try {
+          dictEditorState.currentData = JSON.parse(document.getElementById('dict-raw-editor').value);
+        } catch (e) {
+          alert('Invalid JSON, reverting to tree view');
+        }
+        treeView.style.display = 'block';
+        rawView.style.display = 'none';
+        toggleBtn.textContent = 'Raw JSON View';
+        renderDictTree(dictEditorState.currentData, treeView, '');
+      }
+      validateDictData();
+    }
+    
+    // List editor functionality
+    function showListEditor(inputElement, paramName, currentValue) {
+      listEditorState.currentInput = inputElement;
+      listEditorState.currentParamName = paramName;
+      
+      // Parse current value
+      try {
+        if (typeof currentValue === 'string') {
+          listEditorState.currentData = currentValue ? JSON.parse(currentValue) : [];
+        } else if (Array.isArray(currentValue)) {
+          listEditorState.currentData = currentValue;
+        } else {
+          listEditorState.currentData = [];
+        }
+      } catch (e) {
+        listEditorState.currentData = [];
+      }
+      
+      // Update modal title
+      document.getElementById('list-editor-title').textContent = `Edit List: ${paramName}`;
+      
+      // Render the editor
+      renderListEditor();
+      
+      // Show modal
+      document.getElementById('list-editor-modal').style.display = 'block';
+    }
+    
+    function renderListEditor() {
+      const itemsView = document.getElementById('list-items-view');
+      const rawEditor = document.getElementById('list-raw-editor');
+      
+      if (listEditorState.isRawView) {
+        rawEditor.value = JSON.stringify(listEditorState.currentData, null, 2);
+      } else {
+        itemsView.innerHTML = '';
+        renderListItems(listEditorState.currentData, itemsView);
+      }
+      
+      validateListData();
+    }
+    
+    function renderListItems(data, container) {
+      if (!Array.isArray(data)) {
+        return;
+      }
+      
+      data.forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = 'list-item-row';
+        
+        const itemIndex = document.createElement('div');
+        itemIndex.className = 'list-item-index';
+        itemIndex.textContent = `[${index}]`;
+        row.appendChild(itemIndex);
+        
+        const itemValue = document.createElement('div');
+        itemValue.className = 'list-item-value';
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = typeof item === 'string' ? item : JSON.stringify(item);
+        input.style.width = '100%';
+        input.addEventListener('change', (e) => {
+          updateListItem(index, e.target.value);
+        });
+        itemValue.appendChild(input);
+        row.appendChild(itemValue);
+        
+        const itemType = document.createElement('div');
+        itemType.className = 'list-item-type';
+        itemType.textContent = Array.isArray(item) ? 'array' : typeof item;
+        row.appendChild(itemType);
+        
+        const actions = document.createElement('div');
+        actions.className = 'list-item-actions';
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '×';
+        deleteBtn.style.cssText = 'background: #dc3545; color: white; border: none; border-radius: 3px; padding: 2px 6px; cursor: pointer;';
+        deleteBtn.addEventListener('click', () => {
+          deleteListItem(index);
+        });
+        actions.appendChild(deleteBtn);
+        
+        const moveUpBtn = document.createElement('button');
+        moveUpBtn.textContent = '↑';
+        moveUpBtn.style.cssText = 'background: #6c757d; color: white; border: none; border-radius: 3px; padding: 2px 6px; cursor: pointer; margin-left: 5px;';
+        moveUpBtn.disabled = index === 0;
+        moveUpBtn.addEventListener('click', () => {
+          moveListItem(index, index - 1);
+        });
+        actions.appendChild(moveUpBtn);
+        
+        const moveDownBtn = document.createElement('button');
+        moveDownBtn.textContent = '↓';
+        moveDownBtn.style.cssText = 'background: #6c757d; color: white; border: none; border-radius: 3px; padding: 2px 6px; cursor: pointer; margin-left: 5px;';
+        moveDownBtn.disabled = index === data.length - 1;
+        moveDownBtn.addEventListener('click', () => {
+          moveListItem(index, index + 1);
+        });
+        actions.appendChild(moveDownBtn);
+        
+        row.appendChild(actions);
+        container.appendChild(row);
+      });
+    }
+    
+    function updateListItem(index, value) {
+      try {
+        const parsed = JSON.parse(value);
+        listEditorState.currentData[index] = parsed;
+      } catch (e) {
+        listEditorState.currentData[index] = value;
+      }
+      validateListData();
+    }
+    
+    function deleteListItem(index) {
+      listEditorState.currentData.splice(index, 1);
+      renderListEditor();
+    }
+    
+    function moveListItem(fromIndex, toIndex) {
+      if (toIndex >= 0 && toIndex < listEditorState.currentData.length) {
+        const item = listEditorState.currentData.splice(fromIndex, 1)[0];
+        listEditorState.currentData.splice(toIndex, 0, item);
+        renderListEditor();
+      }
+    }
+    
+    function addListItem() {
+      const value = prompt('Enter new item value:');
+      if (value !== null) {
+        try {
+          const parsed = JSON.parse(value);
+          listEditorState.currentData.push(parsed);
+        } catch (e) {
+          listEditorState.currentData.push(value);
+        }
+        renderListEditor();
+      }
+    }
+    
+    function validateListData() {
+      const status = document.getElementById('list-validation-status');
+      try {
+        JSON.stringify(listEditorState.currentData);
+        status.textContent = '✓ Valid';
+        status.className = 'list-validation-success';
+        document.getElementById('list-editor-save').disabled = false;
+      } catch (e) {
+        status.textContent = '✗ Invalid: ' + e.message;
+        status.className = 'list-validation-error';
+        document.getElementById('list-editor-save').disabled = true;
+      }
+    }
+    
+    function saveListEditor() {
+      if (listEditorState.isRawView) {
+        try {
+          listEditorState.currentData = JSON.parse(document.getElementById('list-raw-editor').value);
+        } catch (e) {
+          alert('Invalid JSON: ' + e.message);
+          return;
+        }
+      }
+      
+      const jsonString = JSON.stringify(listEditorState.currentData);
+      listEditorState.currentInput.value = jsonString;
+      
+      // Trigger change event to update the node and tile
+      const changeEvent = new Event('change', { bubbles: true });
+      listEditorState.currentInput.dispatchEvent(changeEvent);
+      
+      closeListEditor();
+    }
+    
+    function closeListEditor() {
+      document.getElementById('list-editor-modal').style.display = 'none';
+      listEditorState = {
+        currentInput: null,
+        currentParamName: '',
+        currentData: [],
+        isRawView: false
+      };
+    }
+    
+    function toggleListView() {
+      listEditorState.isRawView = !listEditorState.isRawView;
+      
+      const itemsView = document.getElementById('list-items-view');
+      const rawView = document.getElementById('list-raw-view');
+      const toggleBtn = document.getElementById('list-view-toggle');
+      
+      if (listEditorState.isRawView) {
+        itemsView.style.display = 'none';
+        rawView.style.display = 'block';
+        toggleBtn.textContent = 'Items View';
+        document.getElementById('list-raw-editor').value = JSON.stringify(listEditorState.currentData, null, 2);
+      } else {
+        // Parse raw editor content back to data
+        try {
+          listEditorState.currentData = JSON.parse(document.getElementById('list-raw-editor').value);
+        } catch (e) {
+          alert('Invalid JSON, reverting to items view');
+        }
+        itemsView.style.display = 'block';
+        rawView.style.display = 'none';
+        toggleBtn.textContent = 'Raw JSON View';
+        renderListItems(listEditorState.currentData, itemsView);
+      }
+      validateListData();
+    }
     
     // Copy-paste functionality variables
     let selectedNodes = new Set();
@@ -1399,7 +2072,7 @@
     
     function reduceCrossings(layers, graph) {
       // Simple crossing reduction using barycenter method
-      const maxIterations = 8;
+      const maxIterations = 25;
       
       for (let i = 0; i < maxIterations; i++) {
         // Forward pass
@@ -1832,6 +2505,23 @@
      });
  
       async function loadOps() {
+      /*
+       * Expected backend response format for Dictionary parameter support:
+       * {
+       *   "fqcn": "module.Class",
+       *   "name": "Operation Name",
+       *   "parameters": {...},
+       *   "input_params": [...],
+       *   "output_params": [...],
+       *   "param_types": {
+       *     "config": "dict",
+       *     "options": "Dict",
+       *     "settings": "dict",
+       *     "metadata": "dict"
+       *   },
+       *   "docstring": "Operation documentation"
+       * }
+       */
       try {
         const res = await authenticatedFetch('/pipeline_ops', {
           method: 'GET'
@@ -1848,10 +2538,11 @@
           div.dataset.fqcn = op.fqcn;
           div.dataset.params = JSON.stringify(op.parameters);
 
-          // Store full metadata including docstring
+          // Store full metadata including docstring and parameter types
           const metadataObj = {
             input_params: op.input_params || [],
             output_params: op.output_params || [],
+            param_types: op.param_types || {},
             docstring: op.docstring || ''
           };
           div.dataset.metadata = JSON.stringify(metadataObj);
@@ -2143,12 +2834,40 @@
           input.dataset.isOutputParam = 'true';
         }
         
+        // Check if this is a dictionary or list parameter
+        const paramType = opMetadata && opMetadata.param_types ? opMetadata.param_types[key] : null;
+        const isDict = isDictParameter(key, paramType);
+        const isList = isListParameter(key, paramType);
+        
         if (val !== null && val !== undefined) {
           if (typeof val === 'object') {
             input.value = JSON.stringify(val);
           } else {
             input.value = val;
           }
+        }
+        
+        // Special styling and behavior for dictionary parameters
+        if (isDict) {
+          input.classList.add('dict-param-input');
+          input.readOnly = true;
+          input.title = 'Click to edit dictionary';
+          
+          input.addEventListener('click', (e) => {
+            e.preventDefault();
+            showDictEditor(input, key, input.value);
+          });
+        }
+        // Special styling and behavior for list parameters
+        else if (isList) {
+          input.classList.add('list-param-input');
+          input.readOnly = true;
+          input.title = 'Click to edit list';
+          
+          input.addEventListener('click', (e) => {
+            e.preventDefault();
+            showListEditor(input, key, input.value);
+          });
         }
         
         // Add change listener to update connections when parameters change
@@ -2576,6 +3295,10 @@
       }
     };
 
+    document.getElementById('pipeline-info-btn').onclick = () => {
+      showPipelineInfo();
+    };
+
     function deleteNode(node) {
       // If there's a previously deleted node, remove it for good.
       if (lastDeletedNode) {
@@ -2732,6 +3455,161 @@
       docModalContent.textContent = docstring || 'No documentation available.';
       docModal.style.display = 'block';
     }
+    
+    function generatePipelineInfo() {
+      const nodes = Array.from(document.querySelectorAll('.node:not(.deleted)'));
+      
+      if (nodes.length === 0) {
+        return 'No pipeline operations found.';
+      }
+      
+      // Sort nodes by their visual order (top to bottom)
+      nodes.sort((a, b) => {
+        const aTop = parseInt(a.style.top);
+        const bTop = parseInt(b.style.top);
+        return aTop - bTop;
+      });
+      
+      let info = '';
+      
+      // Header
+      info += `${'PipelineOp'.padEnd(40)} ${'input_variable'.padEnd(20)} ---> ${'output_variable'}\n`;
+      info += `${'-'.repeat(10).padEnd(40)} ${'-'.repeat(20).padEnd(20)} ${'-'.repeat(35)}\n`;
+      
+      // Operations list
+      nodes.forEach((node, index) => {
+        const fqcn = node.dataset.fqcn || 'Unknown';
+        const opName = fqcn.split('.').pop();
+        
+        // Get input and output variables from the node
+        const inputElements = node.querySelectorAll('input[data-input]');
+        const outputElements = node.querySelectorAll('input[data-output]');
+        
+        let inputVars = [];
+        let outputVars = [];
+        
+        inputElements.forEach(input => {
+          if (input.value.trim()) {
+            inputVars.push(input.value.trim());
+          }
+        });
+        
+        outputElements.forEach(output => {
+          if (output.value.trim()) {
+            outputVars.push(output.value.trim());
+          }
+        });
+        
+        const inputStr = inputVars.length > 0 ? inputVars.join(', ') : 'None';
+        const outputStr = outputVars.length > 0 ? outputVars.join(', ') : 'None';
+        
+        info += `${(index + ')').padStart(3)} ${'<' + opName + '>'.padEnd(35)} ${inputStr.padEnd(20)} ---> ${outputStr}\n`;
+      });
+      
+      // Input Variables section
+      const allInputVars = new Set();
+      const allOutputVars = new Set();
+      
+      // Helper function to extract variables from a value (handles both strings and JSON arrays)
+      function extractVariables(value) {
+        const variables = [];
+        if (!value || !value.trim()) return variables;
+        
+        const trimmed = value.trim();
+        
+        // Try to parse as JSON array first
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) {
+            // If it's an array, add all string elements
+            parsed.forEach(item => {
+              if (typeof item === 'string' && item.trim()) {
+                variables.push(item.trim());
+              }
+            });
+            return variables;
+          }
+        } catch (e) {
+          // Not valid JSON, continue with string processing
+        }
+        
+        // If not a JSON array, treat as a single variable or comma-separated list
+        if (trimmed.includes(',')) {
+          // Handle comma-separated values
+          trimmed.split(',').forEach(item => {
+            const cleaned = item.trim();
+            if (cleaned) {
+              variables.push(cleaned);
+            }
+          });
+        } else {
+          // Single variable
+          variables.push(trimmed);
+        }
+        
+        return variables;
+      }
+      
+      nodes.forEach(node => {
+        const inputElements = node.querySelectorAll('input[data-input]');
+        const outputElements = node.querySelectorAll('input[data-output]');
+        
+        inputElements.forEach(input => {
+          const variables = extractVariables(input.value);
+          variables.forEach(variable => allInputVars.add(variable));
+        });
+        
+        outputElements.forEach(output => {
+          const variables = extractVariables(output.value);
+          variables.forEach(variable => allOutputVars.add(variable));
+        });
+      });
+      
+      // Find variables that are inputs but not outputs (pipeline inputs)
+      const pipelineInputs = Array.from(allInputVars).filter(v => !allOutputVars.has(v));
+      
+      info += '\n';
+      info += 'Input Variables\n';
+      info += '---------------\n';
+      if (pipelineInputs.length > 0) {
+        pipelineInputs.forEach((inputVar, index) => {
+          info += `${index}) ${inputVar}\n`;
+        });
+      } else {
+        info += 'No external input variables found.\n';
+      }
+      
+      // Output Variables section
+      const pipelineOutputs = Array.from(allOutputVars).filter(v => !allInputVars.has(v));
+      
+      info += '\n';
+      info += 'Output Variables\n';
+      info += '----------------\n';
+      if (pipelineOutputs.length > 0) {
+        pipelineOutputs.forEach((outputVar, index) => {
+          info += `${index}) ${outputVar}\n`;
+        });
+      } else {
+        info += 'No external output variables found.\n';
+      }
+      
+      // Pipeline statistics
+      info += '\n';
+      info += 'Pipeline Statistics\n';
+      info += '-------------------\n';
+      info += `Total Operations: ${nodes.length}\n`;
+      info += `Total Connections: ${connections.length}\n`;
+      info += `Input Variables: ${pipelineInputs.length}\n`;
+      info += `Output Variables: ${pipelineOutputs.length}\n`;
+      
+      return info;
+    }
+    
+    function showPipelineInfo() {
+      const infoContent = generatePipelineInfo();
+      document.getElementById('pipeline-info-content').textContent = infoContent;
+      document.getElementById('pipeline-info-modal').style.display = 'block';
+    }
 
     docModalClose.addEventListener('click', () => {
       docModal.style.display = 'none';
@@ -2741,6 +3619,69 @@
     docModal.addEventListener('click', (e) => {
       if (e.target === docModal) {
         docModal.style.display = 'none';
+      }
+    });
+    
+    // Pipeline info modal elements and event listeners
+    const pipelineInfoModal = document.getElementById('pipeline-info-modal');
+    const pipelineInfoClose = document.getElementById('pipeline-info-close');
+    
+    pipelineInfoClose.addEventListener('click', () => {
+      pipelineInfoModal.style.display = 'none';
+    });
+    
+    // Close pipeline info modal when clicking outside content
+    pipelineInfoModal.addEventListener('click', (e) => {
+      if (e.target === pipelineInfoModal) {
+        pipelineInfoModal.style.display = 'none';
+      }
+    });
+    
+    // Dictionary editor event listeners
+    document.getElementById('dict-add-key').addEventListener('click', addTopLevelKey);
+    document.getElementById('dict-format-json').addEventListener('click', () => {
+      if (dictEditorState.isRawView) {
+        try {
+          const formatted = JSON.stringify(JSON.parse(document.getElementById('dict-raw-editor').value), null, 2);
+          document.getElementById('dict-raw-editor').value = formatted;
+        } catch (e) {
+          alert('Invalid JSON: ' + e.message);
+        }
+      }
+    });
+    document.getElementById('dict-validate').addEventListener('click', validateDictData);
+    document.getElementById('dict-view-toggle').addEventListener('click', toggleDictView);
+    document.getElementById('dict-editor-save').addEventListener('click', saveDictEditor);
+    document.getElementById('dict-editor-cancel').addEventListener('click', closeDictEditor);
+    
+    // Close dict editor when clicking outside
+    document.getElementById('dict-editor-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'dict-editor-modal') {
+        closeDictEditor();
+      }
+    });
+    
+    // List editor event listeners
+    document.getElementById('list-add-item').addEventListener('click', addListItem);
+    document.getElementById('list-format-json').addEventListener('click', () => {
+      if (listEditorState.isRawView) {
+        try {
+          const formatted = JSON.stringify(JSON.parse(document.getElementById('list-raw-editor').value), null, 2);
+          document.getElementById('list-raw-editor').value = formatted;
+        } catch (e) {
+          alert('Invalid JSON: ' + e.message);
+        }
+      }
+    });
+    document.getElementById('list-validate').addEventListener('click', validateListData);
+    document.getElementById('list-view-toggle').addEventListener('click', toggleListView);
+    document.getElementById('list-editor-save').addEventListener('click', saveListEditor);
+    document.getElementById('list-editor-cancel').addEventListener('click', closeListEditor);
+    
+    // Close list editor when clicking outside
+    document.getElementById('list-editor-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'list-editor-modal') {
+        closeListEditor();
       }
     });
 

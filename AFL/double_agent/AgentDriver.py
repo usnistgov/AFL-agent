@@ -4,7 +4,7 @@ import json
 import inspect
 import importlib
 import pkgutil
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, get_type_hints, Union
 
 import xarray as xr
 
@@ -15,6 +15,69 @@ from AFL.double_agent.PipelineOp import PipelineOp
 
 from importlib.resources import files
 from jinja2 import Template
+
+
+def _get_parameter_types(cls) -> Dict[str, str]:
+    """Extract parameter types from class constructor type annotations.
+    
+    Parameters
+    ----------
+    cls : class
+        The class to extract parameter types from
+        
+    Returns
+    -------
+    Dict[str, str]
+        Dictionary mapping parameter names to their type strings
+    """
+    param_types = {}
+    try:
+        # Get type hints from __init__ method
+        type_hints = get_type_hints(cls.__init__)
+        for param_name, param_type in type_hints.items():
+            if param_name != 'return' and param_name != 'self':
+                # Convert type to string representation
+                type_str = str(param_type)
+                
+                # Handle typing module types by checking origin and args
+                origin = getattr(param_type, '__origin__', None)
+                args = getattr(param_type, '__args__', ())
+                
+                # Detect dictionary types (including Union[Dict, None] for Optional)
+                if (param_type == dict or 
+                    origin == dict or 
+                    'Dict' in type_str or 
+                    'dict' in type_str or
+                    (origin == type(Union) and any('Dict' in str(arg) or arg == dict for arg in args))):
+                    param_types[param_name] = 'dict'
+                # Detect list types
+                elif (param_type == list or 
+                      origin == list or 
+                      'List' in type_str or 
+                      'list' in type_str or
+                      (origin == type(Union) and any('List' in str(arg) or arg == list for arg in args))):
+                    param_types[param_name] = 'list'
+                # Basic types
+                elif param_type == str or type_str == "<class 'str'>":
+                    param_types[param_name] = 'str'
+                elif param_type == int or type_str == "<class 'int'>":
+                    param_types[param_name] = 'int'
+                elif param_type == float or type_str == "<class 'float'>":
+                    param_types[param_name] = 'float'
+                elif param_type == bool or type_str == "<class 'bool'>":
+                    param_types[param_name] = 'bool'
+                else:
+                    # For complex types, just store the simplified string representation
+                    simplified = type_str.replace("<class '", "").replace("'>", "")
+                    # Clean up typing module references
+                    simplified = simplified.replace("typing.", "")
+                    param_types[param_name] = simplified
+                    
+    except Exception as e:
+        # If type hint extraction fails, log but don't crash
+        print(f"Warning: Could not extract type hints from {cls.__name__}: {e}")
+    
+    return param_types
 
 
 def _collect_pipeline_ops() -> List[Dict[str, Any]]:
@@ -46,6 +109,9 @@ def _collect_pipeline_ops() -> List[Dict[str, Any]]:
                          param_name == 'output_variable' or param_name == 'output_variables' or \
                          param_name == 'output_prefix':
                         output_params.append(param_name)
+                
+                # Extract parameter types from type annotations
+                param_types = _get_parameter_types(obj)
 
                 ops.append(
                     {
@@ -55,6 +121,7 @@ def _collect_pipeline_ops() -> List[Dict[str, Any]]:
                         "parameters": params,
                         "input_params": input_params,
                         "output_params": output_params,
+                        "param_types": param_types,
                         "docstring": inspect.getdoc(obj) or "",
                     }
                 )

@@ -13,7 +13,7 @@ Each preprocessor is implemented as a PipelineOp that can be composed with other
 
 import warnings
 from numbers import Number
-from typing import Union, Optional, List, Dict
+from typing import Union, Optional, List
 
 import numpy as np
 import sympy
@@ -371,9 +371,9 @@ class Standardize(Preprocessor):
     scale_variable : str | None, default=None
         If specified, the min/max of this data variable in the supplied `xarray.Dataset` will be used to scale the
         data rather than min/max of the `input_variable` or the supplied `min_val` or `max_val`
-    min_val : Number | None, default=None
+    min_val : dict | Number | None, default=None
         Value used to scale the data minimum
-    max_val : Number | None, default=None
+    max_val : dict | Number | None, default=None
         Value used to scale the data maximum
     name : str, default="Standardize"
         The name to use when added to a Pipeline
@@ -386,8 +386,8 @@ class Standardize(Preprocessor):
         dim: str,
         component_dim: str | None = "component",
         scale_variable: str | None = None,
-        min_val: Number | None = None,
-        max_val: Number | None = None,
+        min_val: dict | Number | None = None,
+        max_val: dict | Number | None = None,
         name: str = "Standardize",
     ) -> None:
         super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
@@ -461,8 +461,8 @@ class Destandardize(Preprocessor):
         dim: str,
         component_dim: str | None = "component",
         scale_variable: str | None = None,
-        min_val: Number | None = None,
-        max_val: Number | None = None,
+        min_val: dict | Number | None = None,
+        max_val: dict | Number | None = None,
         name: str = "Destandardize",
     ) -> None:
 
@@ -716,7 +716,7 @@ class SympyTransform(Preprocessor):
         The sample dimension i.e., the dimension of compositions or grid points
     component_dim : str, default="component"
         The dimension of the component of each gridpoint
-    transforms : Dict[str,object]
+    transforms : dict[str,object]
         A dictionary of transforms (sympy expressions) to evaluate to generate new variables. For this method to
         function, the transforms must be completely specified except for the names in component_dim of the
         input_variable
@@ -762,7 +762,7 @@ class SympyTransform(Preprocessor):
         input_variable: str,
         output_variable: str,
         sample_dim: str,
-        transforms: Dict[str, object],
+        transforms: dict[str, object],
         transform_dim: str,
         component_dim: str = "component",
         name: str = "SympyTransform",
@@ -881,7 +881,7 @@ class VarsToArray(Preprocessor):
         The dimension name for the variables in the output array
     squeeze : bool, default=False
         Whether to squeeze out single-dimension axes
-    variable_mapping : Dict, default=None
+    variable_mapping : dict, default=None
         Optional mapping to rename variables
     name : str, default='VarsToArray'
         The name to use when added to a Pipeline
@@ -893,7 +893,7 @@ class VarsToArray(Preprocessor):
         output_variable: str,
         variable_dim: str,
         squeeze: bool = False,
-        variable_mapping: Dict = None,
+        variable_mapping: dict = None,
         name: str = "VarsToArray",
     ):
 

@@ -212,7 +212,7 @@ class Similarity(PairMetric):
         input_variable: str,
         output_variable: str,
         sample_dim: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: dict | None = None,
         constrain_same: Optional[List] = None,
         constrain_different: Optional[List] = None,
         name="SimilarityMetric",
