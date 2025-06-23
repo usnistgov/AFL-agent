@@ -9,28 +9,66 @@ import os
 import pathlib
 import warnings
 import json
+import shutil
 from typing import List, Dict, Optional, Union
 
 from AFL.double_agent.Pipeline import Pipeline
 
-# Get the path to the prefab directory
+# ----------------------------------------------------------------------------
+# Internal helpers
+# ----------------------------------------------------------------------------
+
+_USER_PREFAB_SUBDIR = pathlib.Path.home() / ".afl" / "prefab"
+
+
+def _ensure_user_prefabs_exist():
+    """Ensure the user prefab directory exists and contains the default prefabs.
+
+    This helper is called lazily by :func:`get_prefab_dir` so that the copy is
+    performed the first time AFL.double_agent.prefab is imported *after* the
+    package has been installed.  This avoids the need for a custom install
+    hook while still providing the expected behaviour that the prefabs are
+    available under ``~/.afl/prefab`` immediately after installation.
+    """
+
+    # Create ~/.afl/prefab if it does not yet exist
+    _USER_PREFAB_SUBDIR.mkdir(parents=True, exist_ok=True)
+
+    # Path that contains the prefabs *inside* the installed package
+    _package_prefab_dir = pathlib.Path(__file__).parent
+
+    # Copy each distributed prefab JSON into the user folder *once* – if the
+    # user has already created a file with the same name we will not clobber
+    # it in order to preserve any local modifications.
+    for json_file in _package_prefab_dir.glob("*.json"):
+        dest_file = _USER_PREFAB_SUBDIR / json_file.name
+        if not dest_file.exists():
+            try:
+                shutil.copy2(json_file, dest_file)
+            except Exception as exc:
+                warnings.warn(
+                    f"Could not copy prefab '{json_file.name}' to user folder: {exc}"
+                )
+
+# Call the helper immediately so that the folder is ready by the time any
+# public API accesses it.
+_ensure_user_prefabs_exist()
+
 def get_prefab_dir():
+    """Return the directory from which prefab pipelines should be read.
+
+    The search path is now the *user* directory ``~/.afl/prefab``.  The
+    directory is created on demand and populated with the default prefab JSON
+    files shipped with the package (see :func:`_ensure_user_prefabs_exist`).
     """
-    Get the path to the prefabricated pipelines directory.
-    
-    Returns
-    -------
-    pathlib.Path
-        Path to the prefab directory.
-    """
-    # The prefab directory is located in AFL/double_agent/prefab
-    module_dir = pathlib.Path(__file__).parent
-    prefab_dir = module_dir
-    
-    if not prefab_dir.exists():
-        warnings.warn(f"Prefab directory not found at {prefab_dir}")
-    
-    return prefab_dir
+
+    if not _USER_PREFAB_SUBDIR.exists():
+        # This should rarely happen because the helper is run at import time,
+        # but we protect against accidental deletions that may happen during a
+        # long-running session.
+        _ensure_user_prefabs_exist()
+
+    return _USER_PREFAB_SUBDIR
 
 def list_prefabs(display_table: bool = True):
     """
@@ -224,9 +262,35 @@ def save_prefab(pipeline: Pipeline, name: str | None = None, overwrite: bool = F
             f"Use overwrite=True to overwrite."
         )
     
-    # Save the pipeline with description
+    # Use Pipeline.write_json to serialize first
     pipeline.write_json(str(file_path), overwrite=True, description=description)
-    
+
+    # ------------------------------------------------------------------
+    # Inject package version information
+    # ------------------------------------------------------------------
+    try:
+        from importlib.metadata import version as _pkg_version, PackageNotFoundError
+
+        try:
+            pkg_version = _pkg_version("AFL-agent")
+        except PackageNotFoundError:
+            # Fallback to _version module if package metadata unavailable (editable/dev installs)
+            from AFL.double_agent import _version as _ver  # type: ignore
+            pkg_version = getattr(_ver, "__version__", "unknown")
+
+        # Load JSON we just wrote, add field, and overwrite file
+        with open(file_path, "r", encoding="utf-8") as fp:
+            data = json.load(fp)
+
+        data["afl_agent_version"] = pkg_version
+
+        with open(file_path, "w", encoding="utf-8") as fp:
+            json.dump(data, fp, indent=1)
+    except Exception as exc:
+        warnings.warn(
+            f"Failed to annotate prefab '{file_path.name}' with package version: {exc}"
+        )
+
     return str(file_path)
 
 # Define any example prefabs that should be available by default
