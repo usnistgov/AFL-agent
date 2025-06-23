@@ -117,6 +117,10 @@ class DoubleAgentDriver(Driver):
         self.pipeline: Optional[Pipeline] = None
         self.results: Dict[str, xr.Dataset] = dict()
 
+        self.useful_links = {
+            "Pipeline Builder": "/pipeline_builder"
+        }
+
     def status(self):
         status = []
         if self.input:

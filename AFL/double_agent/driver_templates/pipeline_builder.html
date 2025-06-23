@@ -1080,6 +1080,28 @@
     function selectNodeFromTile(nodeId) {
       const node = document.getElementById(nodeId);
       if (node) {
+        // Center the node in the canvas viewport
+        const canvasRect = canvas.getBoundingClientRect();
+        const nodeLeft = parseInt(node.style.left) || 0;
+        const nodeTop = parseInt(node.style.top) || 0;
+        const nodeWidth = node.offsetWidth || 150;
+        const nodeHeight = node.offsetHeight || 100;
+        
+        // Calculate where the node center should be to center it in viewport
+        const targetCenterX = canvasRect.width / 2;
+        const targetCenterY = canvasRect.height / 2;
+        
+        // Calculate current node center position
+        const nodeCenterX = nodeLeft + nodeWidth / 2;
+        const nodeCenterY = nodeTop + nodeHeight / 2;
+        
+        // Calculate the pan offset needed to center the node
+        const deltaX = targetCenterX - nodeCenterX;
+        const deltaY = targetCenterY - nodeCenterY;
+        
+        // Apply the pan to all nodes
+        animatedPanAllNodes(deltaX, deltaY);
+        
         selectNode(node);
       }
     }
@@ -1094,7 +1116,8 @@
       title.textContent = fqcn.split('.').pop();
       tile.appendChild(title);
 
-      Object.entries(params).forEach(([key, val]) => {
+      // Helper function to create a parameter input group
+      function createParamGroup(key, val) {
         const group = document.createElement('div');
         group.className = 'param-group';
         
@@ -1114,7 +1137,7 @@
           input.dataset.isOutputParam = 'true';
         }
         
-        if (val !== null) {
+        if (val !== null && val !== undefined) {
           if (typeof val === 'object') {
             input.value = JSON.stringify(val);
           } else {
@@ -1125,12 +1148,31 @@
         // Add change listener to update connections when parameters change
         input.addEventListener('change', (e) => {
           updateNodeAndTileInputs(node.id, key, e.target.value);
+          
+          // Special handling for 'name' parameter to update node title
+          if (key === 'name') {
+            updateNodeTitle(node.id, e.target.value);
+          }
+          
           debounce(updateConnections, 500)();
         });
         
         group.appendChild(label);
         group.appendChild(input);
-        tile.appendChild(group);
+        return group;
+      }
+
+      // Always create 'name' field first
+      const nameValue = params.name || '';
+      const nameGroup = createParamGroup('name', nameValue);
+      tile.appendChild(nameGroup);
+
+      // Create all other parameters (excluding 'name' to avoid duplication)
+      Object.entries(params).forEach(([key, val]) => {
+        if (key !== 'name') {
+          const group = createParamGroup(key, val);
+          tile.appendChild(group);
+        }
       });
 
       tile.addEventListener('click', () => selectNodeFromTile(node.id));
@@ -1751,7 +1793,7 @@
 
       const title = document.createElement('div');
       title.className = 'node-title';
-      title.textContent = fqcn.split('.').pop();
+      title.textContent = params.name || fqcn.split('.').pop();
       node.appendChild(title);
 
       // Info button for docstring
@@ -2006,6 +2048,54 @@
     }
 
     // Canvas panning functionality
+    function animatedPanAllNodes(deltaX, deltaY, duration = 500) {
+      const nodes = document.querySelectorAll('.node');
+      const startTime = performance.now();
+      
+      // Temporarily enable transitions
+      nodes.forEach(node => {
+        node.style.transition = `left ${duration}ms ease-out, top ${duration}ms ease-out`;
+      });
+      
+      // Apply the movement
+      nodes.forEach(node => {
+        const currentX = parseInt(node.style.left) || 0;
+        const currentY = parseInt(node.style.top) || 0;
+        node.style.left = (currentX + deltaX) + 'px';
+        node.style.top = (currentY + deltaY) + 'px';
+      });
+      
+      // Update current pan position
+      currentPanX += deltaX;
+      currentPanY += deltaY;
+      
+      // Continuously update connections during animation
+      function updateConnections() {
+        const elapsed = performance.now() - startTime;
+        if (elapsed < duration) {
+          // Revalidate all nodes and repaint connections
+          nodes.forEach(node => {
+            instance.revalidate(node);
+          });
+          instance.repaintEverything();
+          
+          // Continue animation
+          requestAnimationFrame(updateConnections);
+        } else {
+          // Animation complete - final cleanup
+          nodes.forEach(node => {
+            instance.revalidate(node);
+            node.style.transition = '';
+          });
+          instance.repaintEverything();
+          updateEdgeGlow();
+        }
+      }
+      
+      // Start the connection update loop
+      requestAnimationFrame(updateConnections);
+    }
+    
     function panAllNodes(deltaX, deltaY) {
       const nodes = document.querySelectorAll('.node');
       nodes.forEach(node => {
@@ -2024,6 +2114,7 @@
       
       // Repaint connections
       instance.repaintEverything();
+
       updateEdgeGlow();
     }
     
@@ -2342,6 +2433,23 @@
       const nodeOutput = document.querySelector(`#${nodeId} input[data-output="${paramName}"]`);
       if (nodeOutput && nodeOutput.value !== value) {
         nodeOutput.value = value;
+      }
+      
+      // Special handling for 'name' parameter to update node title
+      if (paramName === 'name') {
+        updateNodeTitle(nodeId, value);
+      }
+    }
+
+    function updateNodeTitle(nodeId, newName) {
+      const node = document.getElementById(nodeId);
+      if (node) {
+        const titleElement = node.querySelector('.node-title');
+        if (titleElement) {
+          // Use the new name if provided, otherwise fall back to the class name
+          const fqcn = node.dataset.fqcn;
+          titleElement.textContent = newName || fqcn.split('.').pop();
+        }
       }
     }
 
