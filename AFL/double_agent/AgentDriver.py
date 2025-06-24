@@ -380,7 +380,6 @@ class DoubleAgentDriver(Driver):
         from AFL.double_agent.prefab import load_prefab
         
         pipeline = load_prefab(name)
-        self.config["pipeline"] = pipeline.to_dict()
 
         connections = self._make_connections(pipeline)
 

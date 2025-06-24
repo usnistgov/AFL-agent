@@ -131,13 +131,25 @@
         display: flex;
     }
     .op-template {
-      border: 1px solid #ccc;
-      padding: 5px 5px 5px 8px;
-      margin-bottom: 5px;
+      border: 2px solid #333;
+      border-radius: 8px;
+      background: #fff;
+      padding: 12px 10px;
+      margin-bottom: 8px;
       cursor: grab;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      min-height: 40px;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      transition: box-shadow 0.2s ease, transform 0.1s ease;
+    }
+    .op-template:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
     }
     .op-template .op-name {
       overflow: hidden;
@@ -587,7 +599,7 @@
     <div class='edge-glow right'></div>
   </div>
   <div id='params-pane'>
-    <h3>Node Parameters</h3>
+    <h3>PipelineOp Parameters</h3>
     <div id='param-tiles'></div>
   </div>
 
