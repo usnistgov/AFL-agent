@@ -549,10 +549,6 @@
     <button id='optimize-layout' class='action-button'>Optimize Layout</button>
     <button id='pipeline-info-btn' class='action-button'>Info</button>
     <button id='submit-overlay' class='action-button'>Submit Pipeline</button>
-    <div id='copy-paste-buttons'>
-      <button id='copy-btn' class='action-button' disabled>Copy</button>
-      <button id='paste-btn' class='action-button' disabled>Paste</button>
-    </div>
   </div>
   
   <!-- Copy indicator -->
@@ -1130,6 +1126,8 @@
         treeView.style.display = 'block';
         rawView.style.display = 'none';
         toggleBtn.textContent = 'Raw JSON View';
+        // Clear tree view before rendering to prevent duplication
+        treeView.innerHTML = '';
         renderDictTree(dictEditorState.currentData, treeView, '');
       }
       validateDictData();
@@ -1345,6 +1343,8 @@
         itemsView.style.display = 'block';
         rawView.style.display = 'none';
         toggleBtn.textContent = 'Raw JSON View';
+        // Clear items view before rendering to prevent duplication
+        itemsView.innerHTML = '';
         renderListItems(listEditorState.currentData, itemsView);
       }
       validateListData();
@@ -1357,8 +1357,6 @@
     let lastMouseY = 0;
     
     // UI elements
-    const copyBtn = document.getElementById('copy-btn');
-    const pasteBtn = document.getElementById('paste-btn');
     const prefabModal = document.getElementById('prefab-modal');
     const loadPrefabModalBtn = document.getElementById('load-prefab-btn');
 
@@ -1820,13 +1818,11 @@
           case 'C':
             e.preventDefault();
             copySelectedNodes();
-            updateButtonStates();
             break;
           case 'v':
           case 'V':
             e.preventDefault();
             pasteNodes();
-            updateButtonStates();
             break;
           case 'a':
           case 'A':
@@ -1837,7 +1833,6 @@
               selectedNodes.add(node);
               node.classList.add('multi-selected');
             });
-            updateButtonStates();
             break;
         }
       }
@@ -2436,8 +2431,6 @@
        // Clear param tile selection
        document.querySelectorAll('.param-tile.selected').forEach(t => t.classList.remove('selected'));
        
-       // Update button states
-       updateButtonStates();
      }
     
     function toggleNodeSelection(node, multiSelect = false) {
@@ -2467,36 +2460,8 @@
          document.querySelectorAll('.param-tile.selected').forEach(t => t.classList.remove('selected'));
        }
        
-       // Update button states
-       updateButtonStates();
      }
      
-     // Update button states based on selection
-     function updateButtonStates() {
-       const copyPasteButtons = document.getElementById('copy-paste-buttons');
-       
-       // Show/hide copy-paste buttons based on selection
-       if (selectedNodes.size > 0) {
-         copyPasteButtons.classList.add('show');
-       } else {
-         copyPasteButtons.classList.remove('show');
-       }
-       
-       // Update button enabled/disabled states
-       copyBtn.disabled = selectedNodes.size === 0;
-       pasteBtn.disabled = clipboard.length === 0;
-     }
-     
-     // Button event handlers
-     copyBtn.addEventListener('click', () => {
-       copySelectedNodes();
-       updateButtonStates();
-     });
-     
-     pasteBtn.addEventListener('click', () => {
-       pasteNodes();
-       updateButtonStates();
-     });
      
      // Prefab modal handlers
      loadPrefabModalBtn.addEventListener('click', () => {
@@ -2582,6 +2547,9 @@
         // After operations are loaded, add missing info buttons to existing nodes
         addMissingInfoButtons();
         
+        // After operations are loaded, apply dict/list functionality to existing parameter tiles
+        applyDictListFunctionality();
+        
         console.log('Pipeline operations loaded successfully');
       } catch (error) {
         opList.innerHTML = '<div class="loading-text" style="color: #e74c3c;">Failed to load pipeline operations</div>';
@@ -2641,6 +2609,100 @@
           showDocModal(metadata.docstring || '', fqcn.split('.').pop());
         });
         node.appendChild(infoBtnNode);
+      });
+    }
+
+    function applyDictListFunctionality() {
+      // Walk through all existing parameter tiles and apply dict/list functionality
+      // if the operation metadata is now available
+      const existingTiles = document.querySelectorAll('.param-tile');
+      
+      existingTiles.forEach(tile => {
+        const nodeId = tile.dataset.nodeId;
+        if (!nodeId) return;
+        
+        const node = document.getElementById(nodeId);
+        if (!node) return;
+        
+        // Get the operation template for this node
+        const fqcn = node.dataset.fqcn;
+        if (!fqcn) return;
+        
+        const opTemplate = document.querySelector(`[data-fqcn="${fqcn}"]`);
+        if (!opTemplate || !opTemplate.dataset.metadata) return;
+        
+        let metadata;
+        try {
+          metadata = JSON.parse(opTemplate.dataset.metadata);
+        } catch (e) {
+          console.warn('Failed to parse metadata for dict/list functionality:', fqcn, e);
+          return;
+        }
+        
+        // Check each parameter input in this tile
+        const paramInputs = tile.querySelectorAll('input[data-param]');
+        paramInputs.forEach(input => {
+          const paramName = input.dataset.param;
+          
+          // Skip if this input already has dict/list functionality applied
+          if (input.classList.contains('dict-param-input') || 
+              input.classList.contains('list-param-input')) {
+            return;
+          }
+          
+          // Check if this parameter should be a dict or list
+          const paramType = metadata.param_types ? metadata.param_types[paramName] : null;
+          const isDict = isDictParameter(paramName, paramType);
+          const isList = isListParameter(paramName, paramType);
+          
+          if (isDict) {
+            // Apply dictionary functionality
+            input.classList.add('dict-param-input');
+            input.readOnly = true;
+            input.title = 'Click to edit dictionary';
+            
+            // Remove any existing change listeners to avoid duplicates
+            input.onchange = null;
+            
+            // Add click listener for dict editor
+            input.addEventListener('click', (e) => {
+              e.preventDefault();
+              showDictEditor(input, paramName, input.value);
+            });
+            
+            // Add change listener for updates
+            input.addEventListener('change', (e) => {
+              updateNodeAndTileInputs(nodeId, paramName, e.target.value);
+              if (paramName === 'name') {
+                updateNodeTitle(nodeId, e.target.value);
+              }
+              debounce(updateConnections, 500)();
+            });
+          } else if (isList) {
+            // Apply list functionality
+            input.classList.add('list-param-input');
+            input.readOnly = true;
+            input.title = 'Click to edit list';
+            
+            // Remove any existing change listeners to avoid duplicates
+            input.onchange = null;
+            
+            // Add click listener for list editor
+            input.addEventListener('click', (e) => {
+              e.preventDefault();
+              showListEditor(input, paramName, input.value);
+            });
+            
+            // Add change listener for updates
+            input.addEventListener('change', (e) => {
+              updateNodeAndTileInputs(nodeId, paramName, e.target.value);
+              if (paramName === 'name') {
+                updateNodeTitle(nodeId, e.target.value);
+              }
+              debounce(updateConnections, 500)();
+            });
+          }
+        });
       });
     }
 
@@ -3530,9 +3592,6 @@
     // Wire up undo button
     document.getElementById('undo-delete').onclick = undoDelete;
     
-    // Initialize button states
-    updateButtonStates();
-
     // Docstring modal elements
     const docModal = document.getElementById('doc-modal');
     const docModalContent = document.getElementById('doc-modal-content');
