@@ -520,6 +520,12 @@
   <div id='canvas-container'>
     <div id='canvas'>
       <svg id='connection-svg'></svg>
+      <!-- Canvas loading indicator -->
+      <div id='canvas-loading' style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; text-align: center; background: rgba(255,255,255,0.9); padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);'>
+        <div class='loading-spinner' style='margin: 0 auto 15px; width: 40px; height: 40px; border-width: 4px;'></div>
+        <div style='color: #666; font-size: 16px; font-weight: 500;'>Loading Pipeline Builder...</div>
+        <div style='color: #999; font-size: 14px; margin-top: 5px;'>Loading operations and current pipeline</div>
+      </div>
     </div>
     <!-- Edge glow indicators -->
     <div class='edge-glow top'></div>
@@ -2575,9 +2581,12 @@
         
         // After operations are loaded, add missing info buttons to existing nodes
         addMissingInfoButtons();
+        
+        console.log('Pipeline operations loaded successfully');
       } catch (error) {
         opList.innerHTML = '<div class="loading-text" style="color: #e74c3c;">Failed to load pipeline operations</div>';
         console.error('Error loading pipeline ops:', error);
+        throw error; // Re-throw to handle in initialization
       }
       // Reset pan position
       currentPanX = 0;
@@ -3486,9 +3495,37 @@
 
     // Connection handling is now done in the finishConnectionDrag function
 
-    loadOps();
-    loadPrefabs();
-    loadCurrentPipeline();
+    // Initialize the application
+    async function initializeApp() {
+      try {
+        // Load operations first (required for proper node metadata)
+        await loadOps();
+        
+        // Load prefabs in parallel with current pipeline
+        const prefabsPromise = loadPrefabs();
+        const currentPipelinePromise = loadCurrentPipeline();
+        
+        // Wait for both to complete
+        await Promise.all([prefabsPromise, currentPipelinePromise]);
+        
+        console.log('Application initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize application:', error);
+      } finally {
+        // Hide the canvas loading spinner
+        hideCanvasLoading();
+      }
+    }
+    
+    function hideCanvasLoading() {
+      const canvasLoading = document.getElementById('canvas-loading');
+      if (canvasLoading) {
+        canvasLoading.style.display = 'none';
+      }
+    }
+    
+    // Start the initialization
+    initializeApp();
 
     // Wire up undo button
     document.getElementById('undo-delete').onclick = undoDelete;
