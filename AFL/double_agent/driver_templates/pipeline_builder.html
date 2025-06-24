@@ -29,6 +29,59 @@
         align-items: center;
     }
     
+    /* Zoom controls */
+    #zoom-controls {
+        position: absolute;
+        top: 20px;
+        right: 320px; /* Position before params pane */
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(5px);
+    }
+    
+    .zoom-button {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 50px;
+        text-align: center;
+    }
+    
+    .zoom-button:hover {
+        background: #5a6268;
+        transform: translateY(-1px);
+    }
+    
+    .zoom-button:active {
+        transform: translateY(0px);
+    }
+    
+    .zoom-button:disabled {
+        background: #adb5bd;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    #zoom-level {
+        text-align: center;
+        font-size: 12px;
+        color: #666;
+        margin: 5px 0;
+        font-weight: bold;
+    }
+    
     .action-button {
         background: #6c757d;
         color: white;
@@ -542,6 +595,15 @@
     Node deleted. <button id='undo-delete'>Undo</button>
   </div>
 
+  <!-- Zoom controls -->
+  <div id='zoom-controls'>
+    <button id='zoom-in' class='zoom-button'>+</button>
+    <div id='zoom-level'>100%</div>
+    <button id='zoom-out' class='zoom-button'>-</button>
+    <button id='fit-to-view' class='zoom-button'>Fit</button>
+    <button id='reset-zoom' class='zoom-button'>Reset</button>
+  </div>
+
   <!-- Bottom action buttons - all inline -->
   <div id='bottom-actions'>
     <button id='load-prefab-btn' class='action-button'>Load Prefab</button>
@@ -691,6 +753,12 @@
     let isLoadingPipeline = false;
     let isProgrammaticConnection = false;
     
+    // Zoom variables - declare early to avoid initialization issues
+    let currentZoom = 1.0;
+    const minZoom = 0.1;
+    const maxZoom = 3.0;
+    const zoomStep = 0.1;
+    
     // Connection data
     let connections = [];
     let nodes = [];
@@ -698,6 +766,7 @@
     // D3 helper functions
     function updateSVGSize() {
       const rect = canvas.getBoundingClientRect();
+      // Keep SVG at full canvas size since we're not scaling the canvas
       svg.attr('width', rect.width).attr('height', rect.height);
     }
     
@@ -1368,7 +1437,10 @@
       const opTemplate = document.querySelector(`[data-fqcn="${fqcn}"]`);
       const params = JSON.parse(opTemplate.dataset.params);
       const metadata = JSON.parse(opTemplate.dataset.metadata);
-      const node = addNode(fqcn, params, e.offsetX, e.offsetY, metadata);
+      
+      // Use zoom-aware coordinates
+      const coords = getCanvasMouseCoordinates(e);
+      const node = addNode(fqcn, params, coords.x, coords.y, metadata);
       
       // Assign a temporary index for new nodes
       const existingNodes = document.querySelectorAll('.node');
@@ -1382,8 +1454,19 @@
       const node = document.createElement('div');
       node.className = 'node';
       node.id = 'node' + (counter++);
-      node.style.left = (x - currentPanX) + 'px';
-      node.style.top = (y - currentPanY) + 'px';
+      
+      // Set base position (unzoomed coordinates)
+      const baseX = x - currentPanX;
+      const baseY = y - currentPanY;
+      node.dataset.baseLeft = baseX;
+      node.dataset.baseTop = baseY;
+      
+      // Set actual position (zoomed coordinates)
+      node.style.left = (baseX * currentZoom) + 'px';
+      node.style.top = (baseY * currentZoom) + 'px';
+      node.style.transform = `scale(${currentZoom})`;
+      node.style.transformOrigin = '0 0';
+      
       node.dataset.fqcn = fqcn;
 
       const title = document.createElement('div');
@@ -1532,14 +1615,14 @@
       const drag = d3.drag()
         .on('start', function(event) {
           if (selectedNodes.size > 1 && selectedNodes.has(node)) {
-            // Capture original positions for each selected node
+            // Capture original base positions for each selected node
             groupDragData.active = true;
             groupDragData.draggingNode = node;
             groupDragData.originals.clear();
             selectedNodes.forEach(n => {
               groupDragData.originals.set(n, {
-                left: parseInt(n.style.left) || 0,
-                top: parseInt(n.style.top) || 0
+                baseLeft: parseFloat(n.dataset.baseLeft) || 0,
+                baseTop: parseFloat(n.dataset.baseTop) || 0
               });
             });
           } else {
@@ -1547,20 +1630,33 @@
           }
         })
         .on('drag', function(event) {
-          const newX = parseInt(node.style.left) + event.dx;
-          const newY = parseInt(node.style.top) + event.dy;
-          node.style.left = newX + 'px';
-          node.style.top = newY + 'px';
+          // Update base position first
+          const currentBaseLeft = parseFloat(node.dataset.baseLeft) || 0;
+          const currentBaseTop = parseFloat(node.dataset.baseTop) || 0;
+          const newBaseLeft = currentBaseLeft + (event.dx / currentZoom);
+          const newBaseTop = currentBaseTop + (event.dy / currentZoom);
+          
+          node.dataset.baseLeft = newBaseLeft;
+          node.dataset.baseTop = newBaseTop;
+          
+          // Update visual position
+          node.style.left = (newBaseLeft * currentZoom) + 'px';
+          node.style.top = (newBaseTop * currentZoom) + 'px';
           
           if (groupDragData.active && groupDragData.draggingNode === node) {
             const orig = groupDragData.originals.get(node);
             if (orig) {
-              const deltaX = newX - orig.left;
-              const deltaY = newY - orig.top;
+              const deltaBaseX = newBaseLeft - orig.baseLeft;
+              const deltaBaseY = newBaseTop - orig.baseTop;
               groupDragData.originals.forEach((pos, n) => {
                 if (n !== node) {
-                  n.style.left = (pos.left + deltaX) + 'px';
-                  n.style.top = (pos.top + deltaY) + 'px';
+                  const newGroupBaseLeft = pos.baseLeft + deltaBaseX;
+                  const newGroupBaseTop = pos.baseTop + deltaBaseY;
+                  
+                  n.dataset.baseLeft = newGroupBaseLeft;
+                  n.dataset.baseTop = newGroupBaseTop;
+                  n.style.left = (newGroupBaseLeft * currentZoom) + 'px';
+                  n.style.top = (newGroupBaseTop * currentZoom) + 'px';
                 }
               });
             }
@@ -1665,6 +1761,138 @@
         return value;
     }
 
+    // Zoom functionality
+    function applyZoom(zoomLevel = currentZoom) {
+      // Apply zoom to all nodes instead of scaling the canvas
+      const nodes = document.querySelectorAll('.node');
+      nodes.forEach(node => {
+        let baseLeft, baseTop;
+        
+        // Initialize base positions if not already set
+        if (!node.dataset.baseLeft || !node.dataset.baseTop) {
+          // If this is the first time, use current visual position divided by old zoom as base
+          const currentLeft = parseFloat(node.style.left) || 0;
+          const currentTop = parseFloat(node.style.top) || 0;
+          baseLeft = currentLeft / (currentZoom || 1);
+          baseTop = currentTop / (currentZoom || 1);
+          node.dataset.baseLeft = baseLeft;
+          node.dataset.baseTop = baseTop;
+        } else {
+          baseLeft = parseFloat(node.dataset.baseLeft);
+          baseTop = parseFloat(node.dataset.baseTop);
+        }
+        
+        // Apply zoom to position and scale
+        node.style.left = (baseLeft * zoomLevel) + 'px';
+        node.style.top = (baseTop * zoomLevel) + 'px';
+        node.style.transform = `scale(${zoomLevel})`;
+        node.style.transformOrigin = '0 0';
+      });
+      
+      // Update SVG size to match canvas (no scaling needed)
+      updateSVGSize();
+      
+      // Redraw connections with new positions
+      drawConnections();
+      
+      // Update zoom level display
+      document.getElementById('zoom-level').textContent = Math.round(zoomLevel * 100) + '%';
+      
+      // Update button states
+      document.getElementById('zoom-in').disabled = zoomLevel >= maxZoom;
+      document.getElementById('zoom-out').disabled = zoomLevel <= minZoom;
+    }
+    
+    function zoomIn() {
+      if (currentZoom < maxZoom) {
+        currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
+        applyZoom(currentZoom);
+        updateEdgeGlow();
+      }
+    }
+    
+    function zoomOut() {
+      if (currentZoom > minZoom) {
+        currentZoom = Math.max(minZoom, currentZoom - zoomStep);
+        applyZoom(currentZoom);
+        updateEdgeGlow();
+      }
+    }
+    
+    function resetZoom() {
+      currentZoom = 1.0;
+      applyZoom(currentZoom);
+      updateEdgeGlow();
+    }
+    
+    function fitToView() {
+      const nodes = document.querySelectorAll('.node:not(.deleted)');
+      if (nodes.length === 0) {
+        resetZoom();
+        return;
+      }
+      
+      // Calculate bounding box using base positions (unzoomed coordinates)
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      
+      nodes.forEach(node => {
+        const baseLeft = parseFloat(node.dataset.baseLeft) || 0;
+        const baseTop = parseFloat(node.dataset.baseTop) || 0;
+        const width = 150; // Use standard node width since we're working with base coordinates
+        const height = 100; // Use standard node height
+        
+        minX = Math.min(minX, baseLeft);
+        minY = Math.min(minY, baseTop);
+        maxX = Math.max(maxX, baseLeft + width);
+        maxY = Math.max(maxY, baseTop + height);
+      });
+      
+      // Add padding
+      const padding = 50;
+      minX -= padding;
+      minY -= padding;
+      maxX += padding;
+      maxY += padding;
+      
+      // Calculate required zoom to fit all nodes
+      const canvasRect = canvas.getBoundingClientRect();
+      const contentWidth = maxX - minX;
+      const contentHeight = maxY - minY;
+      
+      const zoomX = canvasRect.width / contentWidth;
+      const zoomY = canvasRect.height / contentHeight;
+      
+      // Use the smaller zoom to ensure everything fits
+      const targetZoom = Math.min(zoomX, zoomY, maxZoom);
+      currentZoom = Math.max(minZoom, targetZoom);
+      
+      // Pan to center the content (working in base coordinate space)
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      const targetCenterX = canvasRect.width / (2 * currentZoom);
+      const targetCenterY = canvasRect.height / (2 * currentZoom);
+      
+      const panDeltaX = (targetCenterX - centerX) * currentZoom;
+      const panDeltaY = (targetCenterY - centerY) * currentZoom;
+      
+      // Apply zoom first
+      applyZoom(currentZoom);
+      
+      // Then pan to center
+      panAllNodes(panDeltaX, panDeltaY);
+      
+      updateEdgeGlow();
+    }
+    
+    function getCanvasMouseCoordinates(event) {
+      const canvasRect = canvas.getBoundingClientRect();
+      
+      return {
+        x: (event.clientX - canvasRect.left) / currentZoom,
+        y: (event.clientY - canvasRect.top) / currentZoom
+      };
+    }
+
     // Canvas panning functionality
     function animatedPanAllNodes(deltaX, deltaY, duration = 500) {
       const nodes = document.querySelectorAll('.node');
@@ -1675,12 +1903,18 @@
         node.style.transition = `left ${duration}ms ease-out, top ${duration}ms ease-out`;
       });
       
-      // Apply the movement
+      // Apply the movement using base positions
       nodes.forEach(node => {
-        const currentX = parseInt(node.style.left) || 0;
-        const currentY = parseInt(node.style.top) || 0;
-        node.style.left = (currentX + deltaX) + 'px';
-        node.style.top = (currentY + deltaY) + 'px';
+        const baseLeft = parseFloat(node.dataset.baseLeft) || 0;
+        const baseTop = parseFloat(node.dataset.baseTop) || 0;
+        const newBaseLeft = baseLeft + (deltaX / currentZoom);
+        const newBaseTop = baseTop + (deltaY / currentZoom);
+        
+        node.dataset.baseLeft = newBaseLeft;
+        node.dataset.baseTop = newBaseTop;
+        
+        node.style.left = (newBaseLeft * currentZoom) + 'px';
+        node.style.top = (newBaseTop * currentZoom) + 'px';
       });
       
       // Update current pan position
@@ -1713,10 +1947,18 @@
     function panAllNodes(deltaX, deltaY) {
       const nodeElements = document.querySelectorAll('.node');
       nodeElements.forEach(node => {
-        const currentX = parseInt(node.style.left) || 0;
-        const currentY = parseInt(node.style.top) || 0;
-        node.style.left = (currentX + deltaX) + 'px';
-        node.style.top = (currentY + deltaY) + 'px';
+        // Update base positions (unzoomed coordinates)
+        const baseLeft = parseFloat(node.dataset.baseLeft) || 0;
+        const baseTop = parseFloat(node.dataset.baseTop) || 0;
+        const newBaseLeft = baseLeft + (deltaX / currentZoom);
+        const newBaseTop = baseTop + (deltaY / currentZoom);
+        
+        node.dataset.baseLeft = newBaseLeft;
+        node.dataset.baseTop = newBaseTop;
+        
+        // Update actual positions (zoomed coordinates)
+        node.style.left = (newBaseLeft * currentZoom) + 'px';
+        node.style.top = (newBaseTop * currentZoom) + 'px';
       });
 
       
@@ -1766,30 +2008,48 @@
       }
     });
 
-    // Add vertical scrolling support - works like dragging but only vertically
+    // Add mouse wheel support for zoom (with Ctrl) and scrolling (without Ctrl)
     canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
       
-      // Calculate scroll delta with reduced sensitivity
-      const deltaY = -e.deltaY * 0.5;
-      
-      // Only move nodes vertically, similar to dragging behavior
-      const nodes = document.querySelectorAll('.node');
-      nodes.forEach(node => {
-        const currentY = parseInt(node.style.top) || 0;
-        const newY = currentY + deltaY;
+      if (e.ctrlKey || e.metaKey) {
+        // Zoom functionality with Ctrl/Cmd key
+        const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
+        const newZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom + delta));
         
-        // Prevent nodes from going to invalid positions
-        if (newY > -1000 && newY < 10000) {
-          node.style.top = newY + 'px';
+        if (newZoom !== currentZoom) {
+          currentZoom = newZoom;
+          applyZoom(currentZoom);
+          updateEdgeGlow();
         }
-      });
-      
-      // Update current pan position
-      currentPanY += deltaY;
-      
-      // Redraw connections
-      drawConnections();
+      } else {
+        // Original scrolling behavior using base positions
+        const deltaY = -e.deltaY * 0.5;
+        
+        // Only move nodes vertically, similar to dragging behavior
+        const nodes = document.querySelectorAll('.node');
+        nodes.forEach(node => {
+          const baseTop = parseFloat(node.dataset.baseTop) || 0;
+          const newBaseTop = baseTop + (deltaY / currentZoom);
+          
+          // Update base position
+          node.dataset.baseTop = newBaseTop;
+          
+          // Update visual position
+          const newY = newBaseTop * currentZoom;
+          
+          // Prevent nodes from going to invalid positions
+          if (newY > -1000 && newY < 10000) {
+            node.style.top = newY + 'px';
+          }
+        });
+        
+        // Update current pan position
+        currentPanY += deltaY;
+        
+        // Redraw connections
+        drawConnections();
+      }
     });
 
           // Track mouse position for paste positioning
@@ -1834,6 +2094,31 @@
               node.classList.add('multi-selected');
             });
             break;
+          case '=':
+          case '+':
+            e.preventDefault();
+            zoomIn();
+            break;
+          case '-':
+          case '_':
+            e.preventDefault();
+            zoomOut();
+            break;
+          case '0':
+            e.preventDefault();
+            resetZoom();
+            break;
+        }
+      }
+      
+      // Zoom shortcuts without Ctrl/Cmd
+      if (!e.ctrlKey && !e.metaKey) {
+        switch(e.key) {
+          case 'f':
+          case 'F':
+            e.preventDefault();
+            fitToView();
+            break;
         }
       }
       
@@ -1874,12 +2159,13 @@
          const nodeWidth = node.offsetWidth || 150;
          const nodeHeight = node.offsetHeight || 100;
          
+         // Nodes are already positioned at their zoomed coordinates
          // Check if node extends beyond visible canvas area
-         // Nodes are positioned absolutely, so we check against 0,0 to canvas width/height
-         if (nodeTop < 25) showTop = true;
-         if (nodeTop + nodeHeight > canvasRect.height - 25) showBottom = true;
-         if (nodeLeft < 25) showLeft = true;
-         if (nodeLeft + nodeWidth > canvasRect.width - 25) showRight = true;
+         const buffer = 25;
+         if (nodeTop < buffer) showTop = true;
+         if (nodeTop + nodeHeight > canvasRect.height - buffer) showBottom = true;
+         if (nodeLeft < buffer) showLeft = true;
+         if (nodeLeft + nodeWidth > canvasRect.width - buffer) showRight = true;
        });
 
        glowTop.style.opacity = showTop ? 1 : 0;
@@ -2131,7 +2417,7 @@
       layers.forEach((layer, layerIndex) => {
         const y = startY + layerIndex * layerHeight;
         const layerWidth = layer.length * nodeSpacing;
-        const startX = Math.max(50, (canvasRect.width - layerWidth) / 2);
+        const startX = Math.max(50, (canvasRect.width / currentZoom - layerWidth) / 2);
         
         layer.forEach((nodeId, position) => {
           const x = startX + position * nodeSpacing;
@@ -2144,8 +2430,17 @@
           const element = node.element;
           const pos = positions.get(nodeId);
           if (element && pos) {
-            element.style.left = (pos.x + currentPanX) + 'px';
-            element.style.top = (pos.y + currentPanY) + 'px';
+            // Set base positions (unzoomed coordinates)
+            const baseX = pos.x;
+            const baseY = pos.y;
+            element.dataset.baseLeft = baseX;
+            element.dataset.baseTop = baseY;
+            
+            // Set visual positions (zoomed coordinates)
+            element.style.left = (baseX * currentZoom) + 'px';
+            element.style.top = (baseY * currentZoom) + 'px';
+            element.style.transform = `scale(${currentZoom})`;
+            element.style.transformOrigin = '0 0';
           }
         }
       });
@@ -2732,9 +3027,11 @@
       counter = 0;
       selectedNode = null;
       
-      // Reset pan position
+      // Reset pan position and zoom
       currentPanX = 0;
       currentPanY = 0;
+      currentZoom = 1.0;
+      applyZoom(currentZoom);
     }
 
     function loadPipeline(data) {
@@ -2776,6 +3073,12 @@
         
         // Store the operation index on the node for lookup
         node.dataset.opIndex = index;
+        
+        // Ensure base positions are set correctly when loading
+        if (!node.dataset.baseLeft) {
+          node.dataset.baseLeft = x;
+          node.dataset.baseTop = y;
+        }
         
         if (op.args) {
           // Update parameters in the param tile
@@ -3586,11 +3889,29 @@
       }
     }
     
+    // Initialize zoom controls
+    function initializeZoom() {
+      applyZoom(currentZoom);
+    }
+    
     // Start the initialization
-    initializeApp();
+    initializeApp().then(() => {
+      // Initialize zoom after everything else is loaded
+      initializeZoom();
+    }).catch(error => {
+      console.error('Initialization failed:', error);
+      // Still initialize zoom even if other things failed
+      initializeZoom();
+    });
 
     // Wire up undo button
     document.getElementById('undo-delete').onclick = undoDelete;
+    
+    // Wire up zoom control buttons
+    document.getElementById('zoom-in').onclick = zoomIn;
+    document.getElementById('zoom-out').onclick = zoomOut;
+    document.getElementById('fit-to-view').onclick = fitToView;
+    document.getElementById('reset-zoom').onclick = resetZoom;
     
     // Docstring modal elements
     const docModal = document.getElementById('doc-modal');
