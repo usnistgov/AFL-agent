@@ -175,6 +175,29 @@ class Pipeline(PipelineContext):
     def copy(self) -> Self:
         return copy.deepcopy(self)
 
+    def to_dict(
+        self,
+        description: Optional[str] = None
+    ):
+        """Write pipeline to disk as a JSON
+
+        Parameters
+        ----------
+        description: str, optional
+            A descriptive text about the pipeline's purpose and functionality
+        """
+
+        pipeline_dict = {
+            "name": self.name,
+            "date": datetime.datetime.now().strftime("%m/%d/%y %H:%M:%S-%f"),
+            "description": (
+                str(description) if description is not None else self.description
+            ),
+            "ops": [op.to_json() for op in self],
+        }
+        return pipeline_dict
+
+
     def write_json(
         self, filename: str, overwrite=False, description: Optional[str] = None
     ):
@@ -189,18 +212,10 @@ class Pipeline(PipelineContext):
         description: str, optional
             A descriptive text about the pipeline's purpose and functionality
         """
-
         if not overwrite and pathlib.Path(filename).exists():
             raise FileExistsError()
 
-        pipeline_dict = {
-            "name": self.name,
-            "date": datetime.datetime.now().strftime("%m/%d/%y %H:%M:%S-%f"),
-            "description": (
-                str(description) if description is not None else self.description
-            ),
-            "ops": [op.to_json() for op in self],
-        }
+        pipeline_dict = self.to_dict(description=description)
 
         with open(filename, "w") as f:
             json.dump(pipeline_dict, f, indent=1)

@@ -1714,6 +1714,7 @@
         node.style.left = (currentX + deltaX) + 'px';
         node.style.top = (currentY + deltaY) + 'px';
       });
+
       
       // Update current pan position
       currentPanX += deltaX;
@@ -2571,6 +2572,9 @@
           });
           opList.appendChild(div);
         });
+        
+        // After operations are loaded, add missing info buttons to existing nodes
+        addMissingInfoButtons();
       } catch (error) {
         opList.innerHTML = '<div class="loading-text" style="color: #e74c3c;">Failed to load pipeline operations</div>';
         console.error('Error loading pipeline ops:', error);
@@ -2581,6 +2585,54 @@
       // Clear any pending undos
       lastDeletedNode = null;
       document.getElementById('undo-banner').style.display = 'none';
+    }
+
+    function addMissingInfoButtons() {
+      // Walk through all existing nodes and add info buttons if they don't have them
+      // but the corresponding operation template now has docstring metadata
+      const existingNodes = document.querySelectorAll('.node:not(.deleted)');
+      
+      existingNodes.forEach(node => {
+        // Check if this node already has an info button
+        const existingInfoBtn = node.querySelector('.info-btn');
+        if (existingInfoBtn) {
+          return; // Already has an info button, skip
+        }
+        
+        // Get the operation template for this node
+        const fqcn = node.dataset.fqcn;
+        if (!fqcn) {
+          return; // No FQCN, can't find operation template
+        }
+        
+        const opTemplate = document.querySelector(`[data-fqcn="${fqcn}"]`);
+        if (!opTemplate || !opTemplate.dataset.metadata) {
+          return; // No operation template or metadata found
+        }
+        
+        let metadata;
+        try {
+          metadata = JSON.parse(opTemplate.dataset.metadata);
+        } catch (e) {
+          console.warn('Failed to parse metadata for operation:', fqcn, e);
+          return;
+        }
+        
+        // Check if the metadata has a docstring
+        if (!metadata.docstring) {
+          return; // No docstring available
+        }
+        
+        // Create and add the info button
+        const infoBtnNode = document.createElement('div');
+        infoBtnNode.className = 'info-btn';
+        infoBtnNode.textContent = 'i';
+        infoBtnNode.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showDocModal(metadata.docstring || '', fqcn.split('.').pop());
+        });
+        node.appendChild(infoBtnNode);
+      });
     }
 
     async function loadPrefabs() {

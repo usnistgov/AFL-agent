@@ -12,6 +12,7 @@ from AFL.automation.APIServer.Driver import Driver  # type: ignore
 from AFL.automation.shared.utilities import mpl_plot_to_bytes,xarray_to_bytes
 from AFL.double_agent.Pipeline import Pipeline
 from AFL.double_agent.PipelineOp import PipelineOp
+from AFL.double_agent.util import listify
 
 from importlib.resources import files
 from jinja2 import Template
@@ -168,6 +169,7 @@ class DoubleAgentDriver(Driver):
 
     defaults = {}
     defaults["save_path"] = "/home/AFL/"
+    defaults["pipeline"] = {}
 
     def __init__(
         self,
@@ -180,13 +182,28 @@ class DoubleAgentDriver(Driver):
         self.app = None
         self.name = name
 
+
+        if self.config["pipeline"]:
+            assert "name" in self.config["pipeline"], "Pipeline name in config is required"
+            assert "ops" in self.config["pipeline"], "Pipeline ops in config are required"
+            assert "description" in self.config["pipeline"], "Pipeline description in config is required"
+
+            self. pipeline = Pipeline(
+                name=self.config["pipeline"]["name"],
+                ops=[PipelineOp.from_json(op) for op in self.config["pipeline"]["ops"]],
+                description=self.config["pipeline"]["description"],
+            )
+        else:
+            self.pipeline: Optional[Pipeline] = None
+
+
         self.input: Optional[xr.Dataset] = None
-        self.pipeline: Optional[Pipeline] = None
         self.results: Dict[str, xr.Dataset] = dict()
 
         self.useful_links = {
             "Pipeline Builder": "/pipeline_builder"
         }
+
 
     def status(self):
         status = []
@@ -265,10 +282,12 @@ class DoubleAgentDriver(Driver):
         if db_uuid is not None:
             # Load pipeline from dropbox
             self.pipeline = self.retrieve_obj(db_uuid)
+            self.config["pipeline"] = self.pipeline.to_dict()
         else:
             # Construct pipeline from operations list
             pipeline_ops = [PipelineOp.from_json(op) for op in pipeline]
             self.pipeline = Pipeline(name=name, ops=pipeline_ops)
+            self.config["pipeline"] = self.pipeline.to_dict()
 
     def append(self, db_uuid: str, concat_dim: str) -> None:
         """
@@ -343,7 +362,11 @@ class DoubleAgentDriver(Driver):
         """Return the currently loaded pipeline as JSON."""
         if self.pipeline is None:
             return None
-        return [op.to_json() for op in self.pipeline]
+        connections = self._make_connections(self.pipeline)
+        return {
+            'ops': [op.to_json() for op in self.pipeline],
+            'connections': connections
+        }
 
     @Driver.unqueued()
     def prefab_names(self, **kwargs):
@@ -355,10 +378,18 @@ class DoubleAgentDriver(Driver):
     def load_prefab(self, name: str, **kwargs):
         """Load a prefabricated pipeline and return its JSON with connectivity information."""
         from AFL.double_agent.prefab import load_prefab
-        from AFL.double_agent.util import listify
         
         pipeline = load_prefab(name)
-        
+        self.config["pipeline"] = pipeline.to_dict()
+
+        connections = self._make_connections(pipeline)
+
+        return {
+            'ops': [op.to_json() for op in pipeline],
+            'connections': connections
+        }
+
+    def _make_connections(self, pipeline: Pipeline):
         # Create connections between operations based on variable matching
         connections = []
         
@@ -383,11 +414,8 @@ class DoubleAgentDriver(Driver):
                                 'target_index': target_index,
                                 'variable': input_var
                             })
-        
-        return {
-            'ops': [op.to_json() for op in pipeline],
-            'connections': connections
-        }
+
+        return connections
 
     @Driver.unqueued()
     def save_prefab(self, name: str, pipeline: str = "[]", overwrite: bool = True, **kwargs):
