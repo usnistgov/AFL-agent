@@ -53,7 +53,7 @@ function drawConnections() {
   
   connectionPaths.exit().remove();
   
-  connectionPaths.enter()
+  const pathSelection = connectionPaths.enter()
     .append('path')
     .attr('class', 'connection-path')
     .attr('marker-end', 'url(#arrowhead)')
@@ -62,9 +62,11 @@ function drawConnections() {
       event.stopPropagation();
       removeConnection(d);
       drawConnections();
-    });
+    })
+    .merge(connectionPaths); // Merge new and existing elements
   
-  connectionPaths
+  // Apply path calculation to both new and existing elements
+  pathSelection
     .attr('d', d => {
       const sourceRect = d.source.getBoundingClientRect();
       const targetRect = d.target.getBoundingClientRect();
