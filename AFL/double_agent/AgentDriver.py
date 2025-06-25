@@ -153,7 +153,7 @@ def build_pipeline_from_json(ops_json: str, name: str = "Pipeline") -> Dict[str,
 
 def get_pipeline_builder_html() -> str:
     """Return the HTML for the pipeline builder UI."""
-    template_path = files('AFL.double_agent.driver_templates').joinpath('pipeline_builder.html')
+    template_path = files('AFL.double_agent.driver_templates').joinpath('pipeline_builder').joinpath('pipeline_builder.html')
     template = Template(template_path.read_text())
     html = template.render()
     return html
@@ -170,6 +170,12 @@ class DoubleAgentDriver(Driver):
     defaults = {}
     defaults["save_path"] = "/home/AFL/"
     defaults["pipeline"] = {}
+
+    static_dirs = {
+        "js": pathlib.Path(__file__).parent / "driver_templates" / "pipeline_builder" / "js",
+        "img": pathlib.Path(__file__).parent / "driver_templates" / "pipeline_builder" / "img",
+        "css": pathlib.Path(__file__).parent / "driver_templates" / "pipeline_builder" / "css",
+    }
 
     def __init__(
         self,
