@@ -4,7 +4,7 @@ import json
 import inspect
 import importlib
 import pkgutil
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, get_type_hints, Union
 
 import xarray as xr
 
@@ -12,9 +12,73 @@ from AFL.automation.APIServer.Driver import Driver  # type: ignore
 from AFL.automation.shared.utilities import mpl_plot_to_bytes,xarray_to_bytes
 from AFL.double_agent.Pipeline import Pipeline
 from AFL.double_agent.PipelineOp import PipelineOp
+from AFL.double_agent.util import listify
 
 from importlib.resources import files
 from jinja2 import Template
+
+
+def _get_parameter_types(cls) -> Dict[str, str]:
+    """Extract parameter types from class constructor type annotations.
+    
+    Parameters
+    ----------
+    cls : class
+        The class to extract parameter types from
+        
+    Returns
+    -------
+    Dict[str, str]
+        Dictionary mapping parameter names to their type strings
+    """
+    param_types = {}
+    try:
+        # Get type hints from __init__ method
+        type_hints = get_type_hints(cls.__init__)
+        for param_name, param_type in type_hints.items():
+            if param_name != 'return' and param_name != 'self':
+                # Convert type to string representation
+                type_str = str(param_type)
+                
+                # Handle typing module types by checking origin and args
+                origin = getattr(param_type, '__origin__', None)
+                args = getattr(param_type, '__args__', ())
+                
+                # Detect dictionary types (including Union[Dict, None] for Optional)
+                if (param_type == dict or 
+                    origin == dict or 
+                    'Dict' in type_str or 
+                    'dict' in type_str or
+                    (origin == type(Union) and any('Dict' in str(arg) or arg == dict for arg in args))):
+                    param_types[param_name] = 'dict'
+                # Detect list types
+                elif (param_type == list or 
+                      origin == list or 
+                      'List' in type_str or 
+                      'list' in type_str or
+                      (origin == type(Union) and any('List' in str(arg) or arg == list for arg in args))):
+                    param_types[param_name] = 'list'
+                # Basic types
+                elif param_type == str or type_str == "<class 'str'>":
+                    param_types[param_name] = 'str'
+                elif param_type == int or type_str == "<class 'int'>":
+                    param_types[param_name] = 'int'
+                elif param_type == float or type_str == "<class 'float'>":
+                    param_types[param_name] = 'float'
+                elif param_type == bool or type_str == "<class 'bool'>":
+                    param_types[param_name] = 'bool'
+                else:
+                    # For complex types, just store the simplified string representation
+                    simplified = type_str.replace("<class '", "").replace("'>", "")
+                    # Clean up typing module references
+                    simplified = simplified.replace("typing.", "")
+                    param_types[param_name] = simplified
+                    
+    except Exception as e:
+        # If type hint extraction fails, log but don't crash
+        print(f"Warning: Could not extract type hints from {cls.__name__}: {e}")
+    
+    return param_types
 
 
 def _collect_pipeline_ops() -> List[Dict[str, Any]]:
@@ -46,6 +110,9 @@ def _collect_pipeline_ops() -> List[Dict[str, Any]]:
                          param_name == 'output_variable' or param_name == 'output_variables' or \
                          param_name == 'output_prefix':
                         output_params.append(param_name)
+                
+                # Extract parameter types from type annotations
+                param_types = _get_parameter_types(obj)
 
                 ops.append(
                     {
@@ -55,6 +122,7 @@ def _collect_pipeline_ops() -> List[Dict[str, Any]]:
                         "parameters": params,
                         "input_params": input_params,
                         "output_params": output_params,
+                        "param_types": param_types,
                         "docstring": inspect.getdoc(obj) or "",
                     }
                 )
@@ -85,7 +153,7 @@ def build_pipeline_from_json(ops_json: str, name: str = "Pipeline") -> Dict[str,
 
 def get_pipeline_builder_html() -> str:
     """Return the HTML for the pipeline builder UI."""
-    template_path = files('AFL.double_agent.driver_templates').joinpath('pipeline_builder.html')
+    template_path = files('AFL.double_agent.driver_templates').joinpath('pipeline_builder').joinpath('pipeline_builder.html')
     template = Template(template_path.read_text())
     html = template.render()
     return html
@@ -101,6 +169,13 @@ class DoubleAgentDriver(Driver):
 
     defaults = {}
     defaults["save_path"] = "/home/AFL/"
+    defaults["pipeline"] = {}
+
+    static_dirs = {
+        "js": pathlib.Path(__file__).parent / "driver_templates" / "pipeline_builder" / "js",
+        "img": pathlib.Path(__file__).parent / "driver_templates" / "pipeline_builder" / "img",
+        "css": pathlib.Path(__file__).parent / "driver_templates" / "pipeline_builder" / "css",
+    }
 
     def __init__(
         self,
@@ -113,13 +188,28 @@ class DoubleAgentDriver(Driver):
         self.app = None
         self.name = name
 
+
+        if self.config["pipeline"]:
+            assert "name" in self.config["pipeline"], "Pipeline name in config is required"
+            assert "ops" in self.config["pipeline"], "Pipeline ops in config are required"
+            assert "description" in self.config["pipeline"], "Pipeline description in config is required"
+
+            self. pipeline = Pipeline(
+                name=self.config["pipeline"]["name"],
+                ops=[PipelineOp.from_json(op) for op in self.config["pipeline"]["ops"]],
+                description=self.config["pipeline"]["description"],
+            )
+        else:
+            self.pipeline: Optional[Pipeline] = None
+
+
         self.input: Optional[xr.Dataset] = None
-        self.pipeline: Optional[Pipeline] = None
         self.results: Dict[str, xr.Dataset] = dict()
 
         self.useful_links = {
             "Pipeline Builder": "/pipeline_builder"
         }
+
 
     def status(self):
         status = []
@@ -198,10 +288,12 @@ class DoubleAgentDriver(Driver):
         if db_uuid is not None:
             # Load pipeline from dropbox
             self.pipeline = self.retrieve_obj(db_uuid)
+            self.config["pipeline"] = self.pipeline.to_dict()
         else:
             # Construct pipeline from operations list
             pipeline_ops = [PipelineOp.from_json(op) for op in pipeline]
             self.pipeline = Pipeline(name=name, ops=pipeline_ops)
+            self.config["pipeline"] = self.pipeline.to_dict()
 
     def append(self, db_uuid: str, concat_dim: str) -> None:
         """
@@ -276,7 +368,11 @@ class DoubleAgentDriver(Driver):
         """Return the currently loaded pipeline as JSON."""
         if self.pipeline is None:
             return None
-        return [op.to_json() for op in self.pipeline]
+        connections = self._make_connections(self.pipeline)
+        return {
+            'ops': [op.to_json() for op in self.pipeline],
+            'connections': connections
+        }
 
     @Driver.unqueued()
     def prefab_names(self, **kwargs):
@@ -288,10 +384,17 @@ class DoubleAgentDriver(Driver):
     def load_prefab(self, name: str, **kwargs):
         """Load a prefabricated pipeline and return its JSON with connectivity information."""
         from AFL.double_agent.prefab import load_prefab
-        from AFL.double_agent.util import listify
         
         pipeline = load_prefab(name)
-        
+
+        connections = self._make_connections(pipeline)
+
+        return {
+            'ops': [op.to_json() for op in pipeline],
+            'connections': connections
+        }
+
+    def _make_connections(self, pipeline: Pipeline):
         # Create connections between operations based on variable matching
         connections = []
         
@@ -316,11 +419,8 @@ class DoubleAgentDriver(Driver):
                                 'target_index': target_index,
                                 'variable': input_var
                             })
-        
-        return {
-            'ops': [op.to_json() for op in pipeline],
-            'connections': connections
-        }
+
+        return connections
 
     @Driver.unqueued()
     def save_prefab(self, name: str, pipeline: str = "[]", overwrite: bool = True, **kwargs):
