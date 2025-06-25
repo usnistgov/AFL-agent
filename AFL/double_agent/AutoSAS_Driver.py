@@ -4,6 +4,13 @@ import uuid
 from collections import defaultdict
 from typing import Dict, Any, Optional, List, Union
 
+from importlib.resources import files
+from jinja2 import Template
+
+import sasmodels.core
+import sasmodels.data
+import sasmodels.direct_model
+
 import h5py  # type: ignore
 import numpy as np
 import pandas as pd
@@ -27,6 +34,7 @@ class AutoSAS_Driver(Driver):
         self.status_str = "Fresh Server!"
         self.dropbox = dict()
         self.fitter = None
+        self.useful_links = {"AutoSAS Builder": "/autosas_builder"}
         print("self.data exists == :", self.data)
 
     def status(self):
@@ -50,12 +58,12 @@ class AutoSAS_Driver(Driver):
     ) -> None:
         """
         Set the sasdata to be fit from a dropbox UUID
-        
+
         Parameters
         ----------
         db_uuid: str
             Dropbox UUID to retrieve `xarray.Dataset` from
-            
+
         sample_dim: str
             The `xarray` dimension containing each sample
 
@@ -72,16 +80,16 @@ class AutoSAS_Driver(Driver):
             The name of the `xarray.Dataset` variable corresponding to the resolution function
         """
         dataset = self.retrieve_obj(db_uuid)
-        
+
         # Initialize the fitter
         self.fitter = SASFitter(
             model_inputs=self.config["model_inputs"],
             fit_method=self.config["fit_method"],
             q_min=self.config["q_min"],
             q_max=self.config["q_max"],
-            resolution=self.config["resolution"]
+            resolution=self.config["resolution"],
         )
-        
+
         # Set the SAS data in the fitter
         self.fitter.set_sasdata(
             dataset=dataset,
@@ -89,21 +97,21 @@ class AutoSAS_Driver(Driver):
             q_variable=q_variable,
             sas_variable=sas_variable,
             sas_err_variable=sas_err_variable,
-            sas_resolution_variable=sas_resolution_variable
+            sas_resolution_variable=sas_resolution_variable,
         )
 
     def fit_models(self, parallel=False, fit_method=None):
         """
         Execute SAS model fitting using the fitter
-        
+
         Parameters
         ----------
         parallel: bool
             NOT IMPLEMENTED! Flag for parallel processing
-            
+
         fit_method: Optional[Dict]
             Custom fit method parameters
-            
+
         Returns
         -------
         str:
@@ -111,35 +119,56 @@ class AutoSAS_Driver(Driver):
         """
         if self.fitter is None:
             raise ValueError("No SAS data set. Use set_sasdata first.")
-        
+
         # Update fit method if provided
         if fit_method is not None:
             self.config["fit_method"] = fit_method
             self.fitter.fit_method = fit_method
-        
+
         # Perform the fitting
         fit_uuid, output_dataset = self.fitter.fit_models(parallel=parallel)
-        
+
         # Store in data and deposit to dropbox
         for name, array in output_dataset.data_vars.items():
             self.data.add_array(name, array.values)
-            
+
             if array.dims:
                 for dim in array.dims:
                     if dim in output_dataset.coords:
                         dim_name = f"{name}_dim_{dim}"
                         self.data.add_array(dim_name, output_dataset[dim].values)
-        
+
         # Store best fit info
         self.data.add_array("best_chisq", self.fitter.report["best_fits"]["lowest_chisq"])
         self.data.add_array("model_names", self.fitter.report["best_fits"]["model_name"])
         self.data.add_array("all_chisq", self.fitter.report["all_chisq"])
         self.data.add_array("probabilities", self.fitter.report["probabilities"])
-        
+
         # Deposit the output dataset to the dropbox
         self.deposit_obj(obj=output_dataset, uid=fit_uuid)
-        
+
         return fit_uuid
+
+    @Driver.unqueued(render_hint="html")
+    def autosas_builder(self, **kwargs):
+        """Return the AutoSAS builder HTML interface."""
+        template_path = files("AFL.double_agent.driver_templates").joinpath("autosas_builder.html")
+        template = Template(template_path.read_text())
+        return template.render()
+
+    @Driver.unqueued()
+    def sasmodels_list(self, **kwargs):
+        """Return available sasmodels."""
+        return sorted(sasmodels.core.list_models())
+
+    @Driver.unqueued()
+    def model_intensity(self, sasmodel: str, params: Dict[str, Any], q: List[float], **kwargs):
+        """Calculate model intensity for given parameters."""
+        kernel = sasmodels.core.load_model(model_name=sasmodel)
+        data = sasmodels.data.empty_data1D(np.array(q))
+        calculator = sasmodels.direct_model.DirectModel(data, kernel)
+        intensity = calculator(**params)
+        return {"q": q, "I": intensity.tolist()}
 
     def _writedata(self, data):
         filename = pathlib.Path(self.config["filename"])
@@ -148,6 +177,7 @@ class AutoSAS_Driver(Driver):
         with h5py.File(filepath / filename, "w") as f:
             f.create_dataset(str(uuid.uuid1()), data=data)
 
+
 _DEFAULT_PORT = 5058
-if __name__ == '__main__':
+if __name__ == "__main__":
     from AFL.automation.shared.launcher import *
