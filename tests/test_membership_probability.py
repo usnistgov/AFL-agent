@@ -18,5 +18,5 @@ def test_membership_probability(example_dataset1_cluster_result):
     probs = op.output["probs"]
 
     assert probs.dims[0] == "sample"
-    assert np.allclose(probs.sum(dim="cluster"), 1.0)
+    assert np.allclose(probs.sum(dim="labels_unique"), 1.0)
     assert probs.shape[0] == example_dataset1_cluster_result.dims["sample"]

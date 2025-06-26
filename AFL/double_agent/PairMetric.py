@@ -301,66 +301,6 @@ class Distance(PairMetric):
         return self
 
 
-class Delaunay(PairMetric):
-    """Creates a similarity matrix based on Delaunay triangulation
-    
-    This class constructs a binary adjacency matrix where samples that share
-    an edge in the Delaunay triangulation have a similarity of 1.0, and all
-    other pairs have a similarity of 0.0. This is useful for identifying
-    natural neighbors in the data.
-
-    Parameters
-    ----------
-    input_variable : str
-        The name of the data variable to extract from the input dataset
-    output_variable : str
-        The name of the variable to be inserted into the dataset
-    sample_dim : str
-        The dimension containing different samples
-    params : Optional[Dict[str, Any]], default=None
-        Additional parameters (not used in this class)
-    constrain_same : Optional[List], default=None
-        List of pairs that should have perfect similarity
-    constrain_different : Optional[List], default=None
-        List of pairs that should have zero similarity
-    name : str, default="DelaunayMetric"
-        The name to use when added to a Pipeline
-    """
-    def __init__(
-        self,
-        input_variable: str,
-        output_variable: str,
-        sample_dim: str,
-        params: Optional[Dict[str, Any]] = None,
-        constrain_same: Optional[List] = None,
-        constrain_different: Optional[List] = None,
-        name="DelaunayMetric",
-    ) -> None:
-
-        super().__init__(
-            name=name,
-            input_variable=input_variable,
-            output_variable=output_variable,
-            sample_dim=sample_dim,
-            params=params,
-            constrain_same=constrain_same,
-            constrain_different=constrain_different,
-        )
-
-    def calculate(self, dataset: xr.Dataset) -> Self:
-        """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
-        data1 = self._get_variable(dataset)
-        tri = scipy.spatial.Delaunay(data1.values)
-        edges_explicit = np.concatenate(
-            (tri.vertices[:, :2], tri.vertices[:, 1:], tri.vertices[:, ::2]), axis=0
-        )
-        adj = np.zeros((data1.values.shape[0], data1.values.shape[0]))
-        adj[edges_explicit[:, 0], edges_explicit[:, 1]] = 1.0
-        self.W = np.clip(adj + adj.T, 0, 1)
-
-        return self
-
-
 class CombineMetric(PairMetric):
     """Combines multiple similarity/distance matrices into a single matrix
     
