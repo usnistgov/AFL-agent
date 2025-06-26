@@ -435,7 +435,7 @@ class ClusterMembershipProbability(PipelineOp):
         exclude_self: bool = False,
         name: str = "ClusterMembershipProbability",
     ) -> None:
-        super().__init__(name=name, input_variable=None, output_variable=output_variable)
+        super().__init__(name=name, input_variable=[similarity_variable, labels_variable], output_variable=output_variable)
         self.similarity_variable = similarity_variable
         self.labels_variable = labels_variable
         self.sample_dim = sample_dim
@@ -464,6 +464,6 @@ class ClusterMembershipProbability(PipelineOp):
         sum_cluster_sim = np.sum(ave_cluster_sim**self.v, axis=1).reshape(-1, 1)
         probabilities = ave_cluster_sim**self.v / sum_cluster_sim
 
-        dims = [self.sample_dim, "cluster"]
-        self.output[self.output_variable] = xr.DataArray(probabilities, dims=dims)
+        dims = [self.sample_dim, "labels_unique"]
+        self.output[self.output_variable] = xr.DataArray(probabilities, dims=dims,coords={"labels_unique":clusters})
         return self
