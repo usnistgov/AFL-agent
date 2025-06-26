@@ -486,6 +486,32 @@ and similarity matrix.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="AFL.double_agent.Labeler.ClusterMembershipProbability">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Labeler.</span></span><span class="sig-name descname"><span class="pre">ClusterMembershipProbability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">similarity_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'probabilities'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'sample'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ClusterMembershipProbability'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Labeler.ClusterMembershipProbability" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp" title="AFL.double_agent.PipelineOp.PipelineOp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineOp</span></code></a></p>
+<p>Compute soft cluster membership probabilities from similarity and labels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>similarity_variable</strong> (<em>str</em>) – Name of the variable containing the pairwise similarity matrix.</p></li>
+<li><p><strong>labels_variable</strong> (<em>str</em>) – Name of the variable containing hard cluster labels.</p></li>
+<li><p><strong>output_variable</strong> (<em>str</em>) – Variable name to store the membership probabilities.</p></li>
+<li><p><strong>sample_dim</strong> (<em>str</em>) – Dimension name for the samples.</p></li>
+<li><p><strong>v</strong> (<em>float</em><em>, </em><em>default=1.0</em>) – Parameter that adjusts the strength of the partitioning with the similarities.</p></li>
+<li><p><strong>exclude_self</strong> (<em>bool</em><em>, </em><em>default=False</em>) – If True, exclude a sample’s self-similarity when computing its membership
+to its own cluster.</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default &quot;ClusterMembershipProbability&quot;</em>) – The name used when added to a Pipeline.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.Labeler.ClusterMembershipProbability.calculate">
+<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Labeler.ClusterMembershipProbability.calculate" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="AFL.double_agent.Labeler.GaussianMixtureModel">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Labeler.</span></span><span class="sig-name descname"><span class="pre">GaussianMixtureModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'GaussianMixtureModel'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Labeler.GaussianMixtureModel" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Labeler.Labeler" title="AFL.double_agent.Labeler.Labeler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Labeler</span></code></a></p>
@@ -660,6 +686,10 @@ similarity rather than distance metrics.</p>
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Labeler.AffinityPropagation"><code class="docutils literal notranslate"><span class="pre">AffinityPropagation</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Labeler.AffinityPropagation.calculate"><code class="docutils literal notranslate"><span class="pre">AffinityPropagation.calculate()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Labeler.ClusterMembershipProbability"><code class="docutils literal notranslate"><span class="pre">ClusterMembershipProbability</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Labeler.ClusterMembershipProbability.calculate"><code class="docutils literal notranslate"><span class="pre">ClusterMembershipProbability.calculate()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Labeler.GaussianMixtureModel"><code class="docutils literal notranslate"><span class="pre">GaussianMixtureModel</span></code></a><ul class="nav section-nav flex-column">
