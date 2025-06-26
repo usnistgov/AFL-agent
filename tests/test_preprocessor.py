@@ -109,3 +109,33 @@ def test_savgol_filter_data_trimming(example_dataset2):
     assert isinstance(result, xr.DataArray)
     assert not np.any(np.isnan(result))
     assert float(result.log_q.min()) >= np.log10(q_mid)  # Data should start at or after q_mid
+
+
+def test_savgol_filter_index_trimming(example_dataset2):
+    """Test SavgolFilter trimming using integer indices."""
+    # Trim using indices rather than coordinate values
+    xlo_isel = 10
+    xhi_isel = 50
+    q_min_expected = float(example_dataset2.q.isel(q=xlo_isel))
+    q_max_expected = float(example_dataset2.q.isel(q=xhi_isel - 1))
+
+    filter_op = SavgolFilter(
+        input_variable="I",
+        output_variable="index_trimmed",
+        dim="q",
+        window_length=31,
+        polyorder=2,
+        derivative=0,
+        xlo_isel=xlo_isel,
+        xhi_isel=xhi_isel,
+    )
+
+    filter_op.calculate(example_dataset2)
+    result = filter_op.output["index_trimmed"]
+
+    assert "index_trimmed" in filter_op.output
+    assert isinstance(result, xr.DataArray)
+    assert not np.any(np.isnan(result))
+    assert len(result.log_q) == filter_op.npts
+    assert float(result.log_q.min()) == pytest.approx(np.log10(q_min_expected))
+    assert float(result.log_q.max()) == pytest.approx(np.log10(q_max_expected))

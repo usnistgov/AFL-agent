@@ -23,7 +23,9 @@ from sklearn.metrics import pairwise  # type: ignore
 from typing_extensions import Self
 
 from AFL.double_agent.PipelineOp import PipelineOp
-from AFL.double_agent.util import listify
+from AFL.double_agent.util import listify 
+import warnings 
+from scipy.interpolate import UnivariateSpline
 
 
 class PairMetric(PipelineOp):
@@ -210,7 +212,7 @@ class Similarity(PairMetric):
         input_variable: str,
         output_variable: str,
         sample_dim: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: dict | None = None,
         constrain_same: Optional[List] = None,
         constrain_different: Optional[List] = None,
         name="SimilarityMetric",

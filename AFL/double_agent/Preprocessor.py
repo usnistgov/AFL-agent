@@ -13,7 +13,7 @@ Each preprocessor is implemented as a PipelineOp that can be composed with other
 
 import warnings
 from numbers import Number
-from typing import Union, Optional, List, Dict
+from typing import Union, Optional, List
 
 import numpy as np
 import sympy
@@ -23,7 +23,6 @@ from typing_extensions import Self
 
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
-
 
 class Preprocessor(PipelineOp):
     """Base class stub for all preprocessors
@@ -50,7 +49,60 @@ class Preprocessor(PipelineOp):
         """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
         return NotImplementedError(".calculate must be implemented in subclasses")  # type: ignore
 
+class LogLogTransform(Preprocessor):
+    """Pre-processing class to transform SAXS data into log-log scale.
 
+    Parameters
+    ----------
+    input_variable : str
+        The name of the `xarray.Dataset` data variable to extract from the input dataset
+    output_variable : str
+        The name of the variable to be inserted into the `xarray.Dataset` by this `PipelineOp`
+    dim: str
+        The dimension in the `xarray.Dataset` to apply this transform over
+    name : str
+        The name to use when added to a Pipeline. This name is used when calling Pipeline.search()
+    """    
+    def __init__(
+        self,
+        input_variable: str = None,
+        output_variable: str = None,
+        dim: str = "q",
+        name: str = "PreprocessorBase",
+    ) -> None:
+        super().__init__(
+            name=name, input_variable=input_variable, output_variable=output_variable
+        )
+        self.dim = dim
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        """Apply this `PipelineOp` to the supplied `xarray.Dataset`."""
+        data = self._get_variable(dataset)
+
+        domain_variable = "log_" + self.dim
+        domain_values = np.log10(data[self.dim].values)
+        codomain_values = np.log10(np.abs(data.values))
+    
+        coords = {}
+        for d in data.dims:
+            if d!=self.dim:
+                coords[d] = data.coords[d]
+            else:
+                coords[domain_variable] = domain_values
+        
+        dims = tuple(d if d != self.dim else domain_variable for d in data.dims)
+
+        # Create the output variable with correct dims and coords
+        self.output[self.output_variable] = xr.DataArray(
+            codomain_values,
+            dims=dims,
+            coords=coords,
+            attrs={"description": "Co-domain log transformed"}
+        )
+
+        return self
+
+    
 class SavgolFilter(Preprocessor):
     """Smooth and take derivatives of input data via a Savitsky-Golay filter
 
@@ -319,9 +371,9 @@ class Standardize(Preprocessor):
     scale_variable : str | None, default=None
         If specified, the min/max of this data variable in the supplied `xarray.Dataset` will be used to scale the
         data rather than min/max of the `input_variable` or the supplied `min_val` or `max_val`
-    min_val : Number | None, default=None
+    min_val : dict | Number | None, default=None
         Value used to scale the data minimum
-    max_val : Number | None, default=None
+    max_val : dict | Number | None, default=None
         Value used to scale the data maximum
     name : str, default="Standardize"
         The name to use when added to a Pipeline
@@ -334,8 +386,8 @@ class Standardize(Preprocessor):
         dim: str,
         component_dim: str | None = "component",
         scale_variable: str | None = None,
-        min_val: Number | None = None,
-        max_val: Number | None = None,
+        min_val: dict | Number | None = None,
+        max_val: dict | Number | None = None,
         name: str = "Standardize",
     ) -> None:
         super().__init__(name=name, input_variable=input_variable, output_variable=output_variable)
@@ -409,8 +461,8 @@ class Destandardize(Preprocessor):
         dim: str,
         component_dim: str | None = "component",
         scale_variable: str | None = None,
-        min_val: Number | None = None,
-        max_val: Number | None = None,
+        min_val: dict | Number | None = None,
+        max_val: dict | Number | None = None,
         name: str = "Destandardize",
     ) -> None:
 
@@ -664,7 +716,7 @@ class SympyTransform(Preprocessor):
         The sample dimension i.e., the dimension of compositions or grid points
     component_dim : str, default="component"
         The dimension of the component of each gridpoint
-    transforms : Dict[str,object]
+    transforms : dict[str,object]
         A dictionary of transforms (sympy expressions) to evaluate to generate new variables. For this method to
         function, the transforms must be completely specified except for the names in component_dim of the
         input_variable
@@ -710,7 +762,7 @@ class SympyTransform(Preprocessor):
         input_variable: str,
         output_variable: str,
         sample_dim: str,
-        transforms: Dict[str, object],
+        transforms: dict[str, object],
         transform_dim: str,
         component_dim: str = "component",
         name: str = "SympyTransform",
@@ -829,7 +881,7 @@ class VarsToArray(Preprocessor):
         The dimension name for the variables in the output array
     squeeze : bool, default=False
         Whether to squeeze out single-dimension axes
-    variable_mapping : Dict, default=None
+    variable_mapping : dict, default=None
         Optional mapping to rename variables
     name : str, default='VarsToArray'
         The name to use when added to a Pipeline
@@ -841,7 +893,7 @@ class VarsToArray(Preprocessor):
         output_variable: str,
         variable_dim: str,
         squeeze: bool = False,
-        variable_mapping: Dict = None,
+        variable_mapping: dict = None,
         name: str = "VarsToArray",
     ):
 
@@ -910,7 +962,7 @@ class ArrayToVars(Preprocessor):
     def calculate(self, dataset):
         input_arr = dataset[self.input_variable]
         if self.squeeze:
-            output = output.squeeze()
+            input_arr = input_arr.squeeze()
         for var in self.output_variables:
             print(var)
 

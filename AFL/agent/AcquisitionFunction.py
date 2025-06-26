@@ -233,7 +233,7 @@ class LowestDensity(Acquisition):
             self.y_mean = y_mean
             self.y_var = y_var
         else:
-            raise ValueError('Need to pass either GP or y_mean/y_var into calcualte_metric!')
+            raise ValueError('Need to pass either GP or y_mean/y_var into calculate_metric!')
             
 
         GP_domain_transform = self.phasemap.attrs.get('GP_domain_transform',None)
