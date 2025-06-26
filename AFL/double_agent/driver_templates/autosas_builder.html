@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AutoSAS Builder</title>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:20px;}
+#controls{margin-bottom:20px;}
+.model{border:1px solid #ccc;padding:10px;margin-bottom:10px;}
+.param{display:flex;align-items:center;margin:5px 0;}
+.param label{width:100px;}
+</style>
+<script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
+</head>
+<body>
+<h2>AutoSAS Model Builder</h2>
+<div id="controls">
+<select id="model-select"></select>
+<button id="add-model">Add Model</button>
+</div>
+<div id="models"></div>
+<div id="plot" style="width:100%;height:400px;"></div>
+<script>
+async function fetchModels(){
+  const res = await fetch('sasmodels_list');
+  const data = await res.json();
+  const sel = document.getElementById('model-select');
+  data.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;sel.appendChild(o);});
+}
+function createSlider(name,container,cb){
+  const div=document.createElement('div');div.className='param';
+  const lab=document.createElement('label');lab.textContent=name;div.appendChild(lab);
+  const input=document.createElement('input');input.type='range';input.min='-10';input.max='10';input.step='0.01';input.value='1';div.appendChild(input);
+  input.oninput=()=>cb(parseFloat(input.value));
+  container.appendChild(div);
+}
+function addModel(){
+  const modelName=document.getElementById('model-select').value;
+  const div=document.createElement('div');div.className='model';div.innerHTML='<h3>'+modelName+'</h3>';
+  document.getElementById('models').appendChild(div);
+  const params={scale:1,background:0.001};
+  createSlider('scale',div,v=>{params.scale=v;updatePlot(modelName,params);});
+  createSlider('background',div,v=>{params.background=v;updatePlot(modelName,params);});
+  updatePlot(modelName,params);
+}
+async function updatePlot(model,params){
+  const q=[];for(let i=0;i<100;i++){q.push(Math.pow(10,-3+i*0.03));}
+  const res=await fetch('model_intensity',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sasmodel:model,params:params,q:q})});
+  const data=await res.json();
+  Plotly.react('plot',[{x:data.q,y:data.I,mode:'lines'}]);
+}
+document.getElementById('add-model').addEventListener('click',addModel);
+fetchModels();
+</script>
+</body>
+</html>
