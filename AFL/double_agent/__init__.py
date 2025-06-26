@@ -9,7 +9,8 @@ from .plotting import *
 from .Boundary import *
 from .prefab import *
 from .data import *
-from .ExampleTypedOp import *
+from .Graph import *
+
 
 import os
 import subprocess

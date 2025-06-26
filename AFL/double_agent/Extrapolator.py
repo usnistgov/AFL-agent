@@ -360,7 +360,7 @@ class GaussianProcessClassifier(Extrapolator):
                 entropy, dims=self.grid_dim
             )
             self.output[self._prefix_output("y_prob")] = xr.DataArray(
-                y_prob, dims=self.grid_dim
+                y_prob.sum(axis=-1), dims=self.grid_dim
             )
 
         return self
