@@ -109,5 +109,5 @@ ds_out = pipeline.calculate(ds)
 
 If you use AFL-agent in your research, please cite the manuscript:
 
-*"Autonomous Small-Angle Scattering for Accelerated Soft Material Formulation Optimization"* (under review)
+Tyler B. Martin, Duncan R. Sutherland, Austin McDannald, A. Gilad Kusne, Peter A. Beaucage,"Autonomous Small-Angle Scattering for Accelerated Soft Material Formulation Optimization", Chem. Mater. 2025, 37, 12, 4272–4281, https://doi.org/10.1021/acs.chemmater.5c00860
 
