@@ -48,3 +48,7 @@ def _get_version():
 
 __version__ = _get_version()
 
+try:
+    from .DatasetBuilderDriver import DatasetBuilderDriver
+except Exception:  # pragma: no cover - optional dependency
+    DatasetBuilderDriver = None  # type: ignore

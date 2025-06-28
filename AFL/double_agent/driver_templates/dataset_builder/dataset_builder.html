@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='UTF-8'>
+  <title>Dataset Builder</title>
+  <link rel='stylesheet' href='static/css/style.css'>
+</head>
+<body>
+  <h2>Dataset Builder</h2>
+  <div>
+    <input type='file' id='file-input' multiple>
+    <button id='add-files-btn'>Add Files</button>
+  </div>
+
+  <table id='file-table'>
+    <thead>
+      <tr>
+        <th>Select</th>
+        <th>Filename</th>
+        <th>Plugin</th>
+        <th>Dims Mapping (JSON)</th>
+        <th>Coords Mapping (JSON)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <button id='combine-btn'>Combine Selected</button>
+
+  <h3>Dataset Preview</h3>
+  <div id='dataset-output'></div>
+
+  <script src='static/js/main.js'></script>
+</body>
+</html>
