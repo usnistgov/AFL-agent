@@ -79,12 +79,12 @@
 
 /* add menu styling for active variant */
 
-/* note: li.ntd2d_martintb-patch doesn't reliably work with dotted names */
+/* note: li.ntd2d_v1.5.0 doesn't reliably work with dotted names */
 
-li[class~="ntd2d_martintb-patch"] {
+li[class~="ntd2d_v1.5.0"] {
   font-weight: bold;
 }
 
-li[class~="ntd2d_martintb-patch"] a:hover {
+li[class~="ntd2d_v1.5.0"] a:hover {
   text-decoration: none;
 }
