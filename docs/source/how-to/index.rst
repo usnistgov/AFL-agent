@@ -12,4 +12,5 @@ Guides for specific tasks
    autosas_modal_selection
    saving_pipelines
    pipeline_builder
+   dataset_builder
 
