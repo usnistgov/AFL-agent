@@ -96,6 +96,12 @@ def _collect_pipeline_ops() -> List[Dict[str, Any]]:
                     if k != "self"
                 }
                 
+                # Detect required parameters (those without defaults)
+                required_params = []
+                for k, v in sig.parameters.items():
+                    if k != "self" and v.default is inspect._empty:
+                        required_params.append(k)
+                
                 # Detect input/output variable parameters
                 input_params = []
                 output_params = []
@@ -120,6 +126,7 @@ def _collect_pipeline_ops() -> List[Dict[str, Any]]:
                         "module": module.__name__,
                         "fqcn": f"{module.__name__}.{name}",
                         "parameters": params,
+                        "required_params": required_params,
                         "input_params": input_params,
                         "output_params": output_params,
                         "param_types": param_types,
@@ -478,20 +485,41 @@ class DoubleAgentDriver(Driver):
         try:
             ops_list = json.loads(ops)
         except (json.JSONDecodeError, TypeError):
-            return {'connections': []}
+            return {'connections': [], 'errors': []}
+        
         
         # Create PipelineOp instances from the operation definitions
         pipeline_ops = []
-        for op_def in ops_list:
+        errors = []
+        
+        for i, op_def in enumerate(ops_list):
             try:
                 op = PipelineOp.from_json(op_def)
                 pipeline_ops.append(op)
             except Exception as e:
-                # If we can't instantiate an op, skip it for connectivity analysis
-                continue
+                # Collect errors instead of silently skipping
+                op_name = op_def['args'].get('name', f"Operation {i}")
+                op_class = op_def.get('class', 'Unknown class')
+                error_msg = f"Failed to instantiate '{op_name}' ({op_class}): {str(e)}"
+                errors.append({
+                    'operation_index': i,
+                    'operation_name': op_name,
+                    'operation_class': op_class,
+                    'error': str(e),
+                    'error_message': error_msg
+                })
+
+        # If there are errors, return them immediately
+        if errors:
+            return {
+                'connections': [],
+                'errors': errors,
+                'status': 'error',
+                'message': f"Failed to instantiate {len(errors)} operation(s). Pipeline analysis stopped."
+            }
         
         if not pipeline_ops:
-            return {'connections': []}
+            return {'connections': [], 'errors': []}
         
         # Create connections between operations based on variable matching
         connections = []
@@ -517,8 +545,8 @@ class DoubleAgentDriver(Driver):
                                 'target_index': target_index,
                                 'variable': input_var
                             })
-        
-        return {'connections': connections}
+
+        return {'connections': connections, 'errors': []}
 
     def reset_results(self):
         self.results = dict()

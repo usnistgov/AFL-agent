@@ -1871,6 +1871,7 @@ function toggleNodeSelection(node, multiSelect = false) {
       const metadataObj = {
         input_params: op.input_params || [],
         output_params: op.output_params || [],
+        required_params: op.required_params || [],
         param_types: op.param_types || {},
         docstring: op.docstring || ''
       };
@@ -2232,7 +2233,14 @@ async function loadCurrentPipeline() {
       const connRes = await authenticatedFetch(`/analyze_pipeline?ops=${opsParam}`, { method: 'GET' });
       if (connRes.ok) {
         const connData = await connRes.json();
-        connections = connData.connections || [];
+        
+        // Check for pipeline analysis errors
+        if (connData.status === 'error' && connData.errors && connData.errors.length > 0) {
+          showPipelineErrors(connData.errors, connData.message);
+          connections = []; // Clear connections if there are errors
+        } else {
+          connections = connData.connections || [];
+        }
       }
     } catch (e) {
       console.warn('Failed to analyze pipeline for connections:', e);
@@ -2302,17 +2310,26 @@ function createParamTile(node, fqcn, params, opMetadata) {
   tile.appendChild(title);
 
   // Helper function to create a parameter input group
-  function createParamGroup(key, val) {
+  function createParamGroup(key, val, isRequired = false) {
     const group = document.createElement('div');
     group.className = 'param-group';
     
     const label = document.createElement('label');
-    label.textContent = key;
+    label.textContent = isRequired ? `${key} *` : key;
+    if (isRequired) {
+      label.style.fontWeight = 'bold';
+      label.style.color = '#d32f2f';
+    }
     
     const input = document.createElement('input');
     input.type = 'text';
     input.dataset.param = key;
     input.dataset.nodeId = node.id;
+    
+    if (isRequired) {
+      input.style.borderColor = '#d32f2f';
+      input.style.borderWidth = '2px';
+    }
     
     // Mark input/output parameters for special handling
     if (opMetadata && opMetadata.input_params && opMetadata.input_params.includes(key)) {
@@ -2367,7 +2384,7 @@ function createParamTile(node, fqcn, params, opMetadata) {
         updateNodeTitle(node.id, e.target.value);
       }
       
-      debounce(updateConnections, 500)();
+      // debounce(updateConnections, 500)();
     });
     
     group.appendChild(label);
@@ -2375,17 +2392,29 @@ function createParamTile(node, fqcn, params, opMetadata) {
     return group;
   }
 
+  // Get required parameters from metadata
+  const requiredParams = opMetadata && opMetadata.required_params ? opMetadata.required_params : [];
+  
   // Always create 'name' field first
   const nameValue = params.name || '';
-  const nameGroup = createParamGroup('name', nameValue);
+  const nameGroup = createParamGroup('name', nameValue, false); // Name is not marked as required even if it technically is
   tile.appendChild(nameGroup);
 
-  // Create all other parameters (excluding 'name' to avoid duplication)
-  Object.entries(params).forEach(([key, val]) => {
-    if (key !== 'name') {
-      const group = createParamGroup(key, val);
-      tile.appendChild(group);
-    }
+  // Separate parameters into required and optional (excluding 'name' to avoid duplication)
+  const paramEntries = Object.entries(params).filter(([key, val]) => key !== 'name');
+  const requiredParamEntries = paramEntries.filter(([key, val]) => requiredParams.includes(key));
+  const optionalParamEntries = paramEntries.filter(([key, val]) => !requiredParams.includes(key));
+
+  // Add required parameters next (with asterisk)
+  requiredParamEntries.forEach(([key, val]) => {
+    const group = createParamGroup(key, val, true);
+    tile.appendChild(group);
+  });
+
+  // Add optional parameters last
+  optionalParamEntries.forEach(([key, val]) => {
+    const group = createParamGroup(key, val, false);
+    tile.appendChild(group);
   });
 
   tile.addEventListener('click', () => selectNodeFromTile(node.id));
@@ -2670,6 +2699,12 @@ async function updateConnections() {
     if (res.ok) {
       const data = await res.json();
       
+      // Check for pipeline analysis errors
+      if (data.status === 'error' && data.errors && data.errors.length > 0) {
+        showPipelineErrors(data.errors, data.message);
+        return; // Stop processing if there are errors
+      }
+      
       // Set flag to prevent connection dialog during programmatic updates
       isProgrammaticConnection = true;
       
@@ -2700,9 +2735,13 @@ async function updateConnections() {
       
       // Reset flag after programmatic updates are complete
       isProgrammaticConnection = false;
+    } else {
+      const errorText = await res.text();
+      throw new Error('Server error: ' + errorText);
     }
   } catch (error) {
     console.error('Error updating connections:', error);
+    alert('Error updating connections: ' + error.message);
   }
 }
 document.getElementById('submit-overlay').onclick = async () => {
@@ -2720,6 +2759,47 @@ document.getElementById('submit-overlay').onclick = async () => {
   }
   
   try {
+    // Show validation feedback to user
+    const submitButton = document.getElementById('submit-overlay');
+    const originalText = submitButton.textContent;
+    submitButton.textContent = 'Validating Pipeline...';
+    submitButton.disabled = true;
+    
+    try {
+      // First, validate the pipeline by analyzing it
+      console.log('Validating pipeline before submission...');
+      const opsParam = encodeURIComponent(JSON.stringify(ops));
+      const validationRes = await authenticatedFetch(`/analyze_pipeline?ops=${opsParam}`, {
+        method: 'GET'
+      });
+      
+      if (validationRes.ok) {
+        const validationData = await validationRes.json();
+        
+        // Check for pipeline analysis errors
+        if (validationData.status === 'error' && validationData.errors && validationData.errors.length > 0) {
+          console.log('Pipeline validation failed:', validationData.errors);
+          showPipelineErrors(validationData.errors, 'Pipeline validation failed. Please fix the following issues before submitting:');
+          return; // Stop submission if there are validation errors
+        }
+        
+        console.log('Pipeline validation passed, proceeding with submission...');
+      } else {
+        const errorText = await validationRes.text();
+        throw new Error('Pipeline validation failed: ' + errorText);
+      }
+      
+      // Update button text for submission phase
+      submitButton.textContent = 'Submitting Pipeline...';
+    } finally {
+      // Always restore button state in case of early return or error
+      if (submitButton.textContent !== 'Submitting Pipeline...') {
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+      }
+    }
+    
+    // If validation passes, proceed with submission
     const res = await authenticatedFetch('/enqueue', {
       method: 'POST',
       body: JSON.stringify({
@@ -2738,6 +2818,11 @@ document.getElementById('submit-overlay').onclick = async () => {
   } catch (error) {
     console.error('Pipeline submission error:', error);
     alert('Pipeline submission failed: ' + error.message);
+  } finally {
+    // Always restore button state after submission attempt
+    const submitButton = document.getElementById('submit-overlay');
+    submitButton.textContent = 'Submit Pipeline';
+    submitButton.disabled = false;
   }
 };
 
@@ -2776,10 +2861,21 @@ document.getElementById('optimize-layout').onclick = async () => {
     
     if (res.ok) {
       const data = await res.json();
+      
+      // Check for pipeline analysis errors
+      if (data.status === 'error' && data.errors && data.errors.length > 0) {
+        showPipelineErrors(data.errors, data.message);
+        return; // Stop layout optimization if there are errors
+      }
+      
       optimizeLayout(data.connections);
+    } else {
+      const errorText = await res.text();
+      throw new Error('Server error: ' + errorText);
     }
   } catch (error) {
     console.error('Error optimizing layout:', error);
+    alert('Error optimizing layout: ' + error.message);
   }
 };
 
@@ -2983,8 +3079,32 @@ const docModalClose = document.getElementById('doc-modal-close');
 
 function showDocModal(docstring = '', title = 'Documentation') {
   docModalTitle.textContent = title;
-  docModalContent.textContent = docstring || 'No documentation available.';
+  docModalContent.innerHTML = docstring || 'No documentation available.';
   docModal.style.display = 'block';
+}
+
+function showPipelineErrors(errors, message) {
+  let errorHtml = `<div style="margin-bottom: 15px; font-weight: bold; color: #d32f2f;">${message}</div>`;
+  
+  errorHtml += '<div style="max-height: 400px; overflow-y: auto;">';
+  errors.forEach((error, index) => {
+    errorHtml += `
+      <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #f44336; border-radius: 4px; background-color: #ffebee;">
+        <div style="font-weight: bold; margin-bottom: 5px;">
+          Operation ${error.operation_index + 1}: ${error.operation_name}
+        </div>
+        <div style="margin-bottom: 5px; font-family: monospace; font-size: 12px; color: #666;">
+          Class: ${error.operation_class}
+        </div>
+        <div style="color: #d32f2f; font-family: monospace; font-size: 12px; background-color: #fff; padding: 5px; border-radius: 2px;">
+          ${error.error}
+        </div>
+      </div>
+    `;
+  });
+  errorHtml += '</div>';
+  
+  showDocModal(errorHtml, 'Pipeline Analysis Errors');
 }
 
 function generatePipelineInfo() {
