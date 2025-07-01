@@ -216,6 +216,30 @@ function isListParameter(paramName, paramType) {
          paramName.toLowerCase().includes('variables') && paramName.toLowerCase().includes('s');
 }
 
+function updateRequiredFieldStyling(inputElement) {
+  // Find the corresponding label for this input
+  const paramGroup = inputElement.closest('.param-group');
+  if (!paramGroup) return;
+  
+  const label = paramGroup.querySelector('label');
+  if (!label) return;
+  
+  // Check if this is a required field (has asterisk in label)
+  const isRequired = label.textContent.includes('*');
+  if (!isRequired) return;
+  
+  // Update styling based on whether the field has content
+  if (!inputElement.value || inputElement.value.trim() === '') {
+    inputElement.style.borderColor = '#d32f2f';
+    inputElement.style.borderWidth = '2px';
+    label.style.color = '#d32f2f';
+  } else {
+    inputElement.style.borderColor = '';
+    inputElement.style.borderWidth = '';
+    label.style.color = '';
+  }
+}
+
 function showDictEditor(inputElement, paramName, currentValue) {
   dictEditorState.currentInput = inputElement;
   dictEditorState.currentParamName = paramName;
@@ -2318,7 +2342,6 @@ function createParamTile(node, fqcn, params, opMetadata) {
     label.textContent = isRequired ? `${key} *` : key;
     if (isRequired) {
       label.style.fontWeight = 'bold';
-      label.style.color = '#d32f2f';
     }
     
     const input = document.createElement('input');
@@ -2326,9 +2349,19 @@ function createParamTile(node, fqcn, params, opMetadata) {
     input.dataset.param = key;
     input.dataset.nodeId = node.id;
     
-    if (isRequired) {
-      input.style.borderColor = '#d32f2f';
-      input.style.borderWidth = '2px';
+    // Function to update required field styling based on content
+    function updateRequiredStyling() {
+      if (isRequired) {
+        if (!input.value || input.value.trim() === '') {
+          input.style.borderColor = '#d32f2f';
+          input.style.borderWidth = '2px';
+          label.style.color = '#d32f2f';
+        } else {
+          input.style.borderColor = '';
+          input.style.borderWidth = '';
+          label.style.color = '';
+        }
+      }
     }
     
     // Mark input/output parameters for special handling
@@ -2351,6 +2384,9 @@ function createParamTile(node, fqcn, params, opMetadata) {
         input.value = val;
       }
     }
+    
+    // Set initial styling for required fields
+    updateRequiredStyling();
     
     // Special styling and behavior for dictionary parameters
     if (isDict) {
@@ -2379,6 +2415,9 @@ function createParamTile(node, fqcn, params, opMetadata) {
     input.addEventListener('change', (e) => {
       updateNodeAndTileInputs(node.id, key, e.target.value);
       
+      // Update required field styling when value changes
+      updateRequiredStyling();
+      
       // Special handling for 'name' parameter to update node title
       if (key === 'name') {
         updateNodeTitle(node.id, e.target.value);
@@ -2386,6 +2425,11 @@ function createParamTile(node, fqcn, params, opMetadata) {
       
       // debounce(updateConnections, 500)();
     });
+    
+    // Add input listener for real-time styling updates on required fields
+    if (isRequired) {
+      input.addEventListener('input', updateRequiredStyling);
+    }
     
     group.appendChild(label);
     group.appendChild(input);
@@ -2984,6 +3028,8 @@ function updateNodeAndTileInputs(nodeId, paramName, value) {
   const tileInput = document.querySelector(`#param-tiles input[data-node-id="${nodeId}"][data-param="${paramName}"]`);
   if (tileInput && tileInput.value !== value) {
     tileInput.value = value;
+    // Update required field styling if this is a required field
+    updateRequiredFieldStyling(tileInput);
   }
   
   // Update node input if applicable (check for input parameter)
