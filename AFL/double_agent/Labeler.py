@@ -406,6 +406,23 @@ class AffinityPropagation(Labeler):
 class ClusterMembershipProbability(PipelineOp):
     """Compute soft cluster membership probabilities from similarity and labels.
 
+    Given a phase labels for every measurement and pair similarity (N,N) between every pair 
+    of measurements, this method computes the cluster membership as a renormalized average 
+    similarity between a measurement and all other measurements in the cluster.
+
+    For each sample *i* and cluster *k*:
+
+    1.  **Affinity/Similarity** – take the *mean* pairwise affinity/similarity between *i*
+        and every *other* sample assigned to cluster *k*
+        (self-similarity optionally removed).
+    
+    2.  **Softness / sharpness** – raise that average to the power
+        ``v`` (``v > 1`` ⇒ crisper assignments, ``0 < v < 1`` ⇒ softer).
+    
+    3.  **Renormalise** across clusters so the values for sample *i*
+        sum to 1, yielding a probability table
+        ``P(cluster=k | sample=i)`` with shape ``(n_samples, n_clusters)``.
+
     Parameters
     ----------
     similarity_variable : str
