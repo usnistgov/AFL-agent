@@ -274,10 +274,30 @@ class DirichletGPExtrapolator(Extrapolator):
 
     def _predict_mll(self, x, model, **kwargs):
         """
-        x: numpy array of shape (N, d)
-        model: callable returning a torch distribution
-        returns: gradient of entropy for each input, shape (N, d)
+        Compute predictions, probabilities, entropy, and entropy gradients for given inputs.
+
+        Parameters
+        ----------
+        x : numpy.ndarray of shape (N, d)
+            Input features where N is the number of samples and d is the feature dimension.
+        model : callable
+            A callable that takes a torch tensor of shape (N, d) and returns a
+            torch distribution object.
+        **kwargs : dict, optional
+            Additional keyword arguments (not used directly in this function).
+
+        Returns
+        -------
+        pred_labels : torch.Tensor of shape (N,)
+            Predicted class labels obtained via argmax over the mean probabilities.
+        probabilities : torch.Tensor of shape (N, num_classes)
+            Estimated class probabilities averaged over Monte Carlo samples.
+        entropy : torch.Tensor of shape (N,)
+            Entropy of the class probability distribution for each input sample.
+        gradient : torch.Tensor of shape (N, d)
+            Gradient of the entropy with respect to the input features.
         """
+
         xt = torch.from_numpy(x).float().clone().detach().requires_grad_(True)
 
         dist = model(xt)
@@ -390,7 +410,45 @@ class DirichletGPExtrapolator(Extrapolator):
         return model, likelihood
 
     def mcmc(self, train_x, train_y, **kwargs):
-        self.is_mcmc = True
+        """
+        Run Markov Chain Monte Carlo (MCMC) inference for a Gaussian Process (GP) 
+        classification model with a Dirichlet likelihood.
+
+        Parameters
+        ----------
+        train_x : torch.Tensor of shape (N, d)
+            Training inputs, where N is the number of samples and d is the input dimension.
+        train_y : torch.Tensor of shape (N,)
+            Training targets, containing class labels for each sample.
+        **kwargs : dict, optional
+            Additional keyword arguments:
+            
+            - num_samples : int, default=100
+                Number of MCMC samples to draw after warmup.
+            - num_warmup : int, default=100
+                Number of warmup (burn-in) steps before collecting samples.
+            - verbose : bool, default=False
+                If True, display progress bar during MCMC sampling.
+
+        Returns
+        -------
+        samples : dict[str, torch.Tensor]
+            Dictionary of posterior samples. Keys correspond to parameter names 
+            (e.g., "mean_module.constant", "covar_module.base_kernel.lengthscale", 
+            "covar_module.outputscale", "likelihood.second_noise"), and values 
+            are tensors of shape `(num_samples, ...)` depending on parameter dimensions.
+
+        Notes
+        -----
+        - The function sets up a GP model with the following priors:
+        
+        * Constant mean: Uniform(-1, 1)  
+        * Lengthscale: Uniform(0.01, 1.0)  
+        * Outputscale: Uniform(1, 2)  
+        * Likelihood noise: Uniform(1e-3, 1e-1)
+
+        - The inference is performed using Pyro's NUTS sampler.
+        """
 
         num_samples = kwargs.get("num_samples", 100)
         warmup_steps = kwargs.get("num_warmup", 100)
@@ -448,9 +506,45 @@ class DirichletGPExtrapolator(Extrapolator):
                       **kwargs
                     ):
         """
-        Make predictions by sampling from the posterior using the pyro_model.
-        This avoids all the batch dimension issues with pyro_load_from_samples.
+        Make predictions using posterior samples from MCMC.
+
+        This function reconstructs the model for each posterior sample, applies the 
+        sampled parameters, and computes predictions on the test inputs. It avoids 
+        batch-dimension mismatches that may occur with `pyro_load_from_samples`.
+
+        Parameters
+        ----------
+        samples : dict[str, torch.Tensor]
+            Dictionary of posterior samples, typically obtained from `mcmc.get_samples()`.
+            Keys correspond to parameter names (e.g., "mean_module.constant", 
+            "covar_module.base_kernel.lengthscale", "covar_module.outputscale", 
+            "likelihood.second_noise"), and values are tensors of shape `(num_samples, ...)`.
+        train_x : torch.Tensor of shape (N, d)
+            Training inputs used to define the GP model.
+        train_y : torch.Tensor of shape (N,)
+            Training targets containing class labels.
+        test_x : numpy.ndarray of shape (M, d)
+            Test inputs for which predictions will be made.
+        **kwargs : dict, optional
+            Additional keyword arguments:
+            
+            - verbose : bool, default=False
+                If True, display progress bar during prediction sampling.
+
+        Returns
+        -------
+        labels : torch.Tensor of shape (M,)
+            Predicted class labels for the test inputs, obtained by argmax over the 
+            averaged class probabilities.
+        probabilities : torch.Tensor of shape (M, num_classes)
+            Averaged class probabilities across posterior samples.
+        entropy : torch.Tensor of shape (M,)
+            Entropy of the predictive class probability distribution for each test input.
+        gradient : torch.Tensor of shape (M, d)
+            Gradient of the entropy with respect to the test input features.
+
         """
+
         all_predictions = []
         
         sample_keys = list(samples.keys())
