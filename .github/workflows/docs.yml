@@ -1,5 +1,9 @@
 name: "Publish Documentation to NIST Pages"
 
+concurrency:
+   group: ${{ github.workflow }}
+   cancel-in-progress: false
+
 on: [push, pull_request, delete]
 
 jobs:
@@ -10,7 +14,6 @@ jobs:
       - uses: usnistgov/Docs4NIST@0.7
         with:
           docs-folder: docs/
-          # pip-requirements: "requirements_sphinx820.txt"
           conda-environment: "docs.yml"
-          # pip-requirements: "requirements.txt"
+          # pip-requirements: "requirements-docs.txt"
 

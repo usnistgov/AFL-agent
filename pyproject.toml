@@ -8,6 +8,9 @@ source = "vcs"
 [tool.hatch.build.hooks.vcs]
 version-file = "AFL/double_agent/_version.py"
 
+[tool.hatch.metadata]
+allow-direct-references=true
+
 [project]
 name = "AFL-agent"
 dynamic = ["version"]
@@ -68,7 +71,7 @@ graph = [
 ]
 
 tensorflow = [
-    "tensorflow>=2.7",
+    "tensorflow>=2.18",
     "gpflow",
 ]
 
@@ -76,6 +79,10 @@ pytorch = [
     "torch",
     "torchvision",
     "gpytorch"
+]
+
+apdist = [
+    "apdist @ git+https://github.com/kiranvad/Amplitude-Phase-Distance"
 ]
 
 automation = [
@@ -91,9 +98,7 @@ automation = [
 
 dev = [
     "black",
-    "isort",
     "mypy",
-    "pytest",
     "sphinx",
     "sphinx-rtd-theme",
     "sphinxcontrib-apidoc",
@@ -101,6 +106,13 @@ dev = [
     "sphinx-copybutton",
     "pydata-sphinx-theme",
     "sphinx-autosummary-accessors",
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+    "pytest-mock",
+    "hypothesis",
+    "coverage",
+    "nbsphinx",
 ]
 
 all = [
@@ -109,7 +121,8 @@ all = [
     "ipywidgets",
     "ipympl",
     "nodejs",
-    "tensorflow>=2.7",
+    # "pygraphviz", #leave out, breaks documentation build
+    "tensorflow>=2.18",
     "gpflow",
     "torch",
     "torchvision",
@@ -122,24 +135,85 @@ all = [
     "bokeh",
     "requests",
     "black",
-    "isort",
     "mypy",
-    "pytest",
     "sphinx",
     "sphinx-rtd-theme",
     "sphinxcontrib-apidoc",
     "sphinxcontrib-napoleon",
-    "pydata-sphinx-theme",
     "sphinx-copybutton",
+    "pydata-sphinx-theme",
     "sphinx-autosummary-accessors",
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+    "pytest-mock",
+    "hypothesis",
+    "coverage",
+    "nbsphinx",
 ]
 
 [tool.hatch.build]
 packages = ["AFL"]
 include-package-data = true
+include = [
+    "AFL/double_agent/prefab/*.json",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["AFL"]
 
 [tool.hatch.build.targets.sdist]
 packages = ["AFL"]
+
+[tool.coverage.run]
+source = ["AFL.double_agent"]
+omit = [
+    "AFL/double_agent/_version.py",
+    "AFL/double_agent/data/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+# Configure test discovery
+addopts = " --strict-markers --cov=AFL.double_agent --cov-report=term --cov-report=html --cov-report=xml --no-cov-on-fail -v"
+
+# Markers
+markers = [
+    "unit: Mark a test as a unit test",
+    "integration: Mark a test as an integration test",
+    "slow: Mark a test as slow (skipped by default unless --slow is passed)",
+]
+
+# Configure test timing
+minversion = 6.0
+xvs_time = 10
+xvs_trials = 5
+
+# Log configuration
+log_cli = false
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)s] %(message)s"
+log_cli_date_format = "%H:%M:%S"

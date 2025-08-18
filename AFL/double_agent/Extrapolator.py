@@ -323,18 +323,20 @@ class GaussianProcessClassifier(Extrapolator):
         """
         X = dataset[self.feature_input_variable].transpose(self.sample_dim, ...)
         y = dataset[self.predictor_input_variable].transpose(self.sample_dim, ...)
-        self.grid = dataset[self.grid_variable]# store grid for plotting
+        self.grid = dataset[self.grid_variable]  # store grid for plotting
 
         if len(np.unique(y)) == 1:
 
+            grid_shape = dataset[self.grid_variable].shape
+
             self.output[self._prefix_output("mean")] = xr.DataArray(
-                np.ones(dataset.grid.shape), dims=[self.grid_dim]
+                np.ones(grid_shape), dims=[self.grid_dim]
             )
             self.output[self._prefix_output("entropy")] = xr.DataArray(
-                np.ones(dataset.grid.shape), dims=[self.grid_dim]
+                np.ones(grid_shape), dims=[self.grid_dim]
             )
             self.output[self._prefix_output("y_prob")] = xr.DataArray(
-                np.ones(dataset.grid.shape), dims=[self.grid_dim]
+                np.ones(grid_shape), dims=[self.grid_dim]
             )
 
         else:
@@ -358,7 +360,7 @@ class GaussianProcessClassifier(Extrapolator):
                 entropy, dims=self.grid_dim
             )
             self.output[self._prefix_output("y_prob")] = xr.DataArray(
-                entropy, dims=self.grid_dim
+                y_prob.sum(axis=-1), dims=self.grid_dim
             )
 
         return self
