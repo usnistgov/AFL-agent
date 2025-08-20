@@ -119,6 +119,7 @@ class DirichletGPExtrapolator(Extrapolator):
         grid_variable: str,
         grid_dim: str,
         sample_dim: str,
+        component_dim:str,
         params: Optional[Dict[str, Any]] = None,
         name: str = "DirichletGPExtrapolator",
     ) -> None:
@@ -163,6 +164,7 @@ class DirichletGPExtrapolator(Extrapolator):
         )
         self.output_prefix = output_prefix
         self.params = params
+        self.component_dim = component_dim
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply Dirichlet GP classification to the supplied dataset.
@@ -241,7 +243,6 @@ class DirichletGPExtrapolator(Extrapolator):
             )
 
         else:
-            # Set up GP model for multi-class classification
             train_x = torch.from_numpy(X.to_numpy()).to(device)
             train_y = torch.from_numpy(y.to_numpy()).long().squeeze().to(device)
             if self.params.get("method", "mcmc")=="mcmc":
@@ -256,7 +257,6 @@ class DirichletGPExtrapolator(Extrapolator):
                 pred_means, probabilities, entropy, gradient = self._predict_mll(
                     self.grid.values, model, **self.params
                 )
-
             self.output[self._prefix_output("mean")] = xr.DataArray(
                 pred_means.detach().numpy(), dims=self.grid_dim
             )
@@ -267,7 +267,7 @@ class DirichletGPExtrapolator(Extrapolator):
                 probabilities.detach().numpy(), dims=(self.grid_dim, self._prefix_output("n_classes"))
             )
             self.output[self._prefix_output("entropy_gradient")] = xr.DataArray(
-                gradient.detach().numpy(), dims=(self.grid_dim, self._prefix_output("n_classes"))
+                gradient.detach().numpy(), dims=(self.grid_dim, self.component_dim)
             )
 
         return self 
