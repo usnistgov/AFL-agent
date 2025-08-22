@@ -1,4 +1,4 @@
-from typing import Optional, Union, List, Tuple, Dict
+from typing import List, Self
 import numpy as np
 import xarray as xr
 from AFL.double_agent import PipelineOp
