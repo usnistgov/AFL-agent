@@ -676,7 +676,7 @@ class GPModel(ExactGP):
         )
         ard = train_x.shape[-1]
         base_kernel = gpytorch.kernels.MaternKernel(
-            nu=1.5,
+            nu=2.5,
             ard_num_dims=ard,
             batch_shape=torch.Size((num_classes,))
         )
