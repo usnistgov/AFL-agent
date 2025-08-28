@@ -7,26 +7,20 @@ class DesignSpaceHierarchyCost(PipelineOp):
     """
     Compute a hierarchical cost over a grid of design points.
 
-    This class assigns a cost to each point in the design space based on a
-    hierarchical ordering of coordinates, where higher-priority coordinates
-    dominate the contribution. The cost is iteratively updated across calls,
-    allowing dynamic penalization based on exploration history.
-
     Parameters
     ----------
     input_variable : str, optional
-        Name of the input variable from which query points are drawn.
+        Name of the input variable for cost evaluation.
     grid_variable : str, optional
         Name of the variable in the dataset representing the design grid.
     grid_dim : str, optional
         Dimension label of the grid variable in the dataset.
     component_dim : str, optional
-        Dimension label identifying components (coordinates) in the dataset.
+        Dimension label identifying components in the dataset.
     coordinates_order : list of str, optional
-        Ordered list of coordinate names, from highest to lowest cost contribution.
+        Ordered list of variable names from highest to lowest cost contribution.
     coordinates_offsets : list of float, optional
-        Offset values associated with each coordinate in `coordinates_order`.
-        Defaults to zero offsets if not provided.
+        Offset values associated with each variable in `coordinates_order`.
     output_variable : str, optional
         Name of the variable in the dataset where the computed cost will be stored.
     name : str, default="DesignSpaceHierarchyCost"
@@ -34,6 +28,16 @@ class DesignSpaceHierarchyCost(PipelineOp):
 
     Attributes
     ----------
+    coordinates_order : list of str
+        Order of variables used to compute hierarchical costs.
+    coordinates_offsets : list of float
+        Offset values for each variable.
+    grid_variable : str
+        Dataset variable name representing the grid.
+    grid_dim : str
+        Dimension label of the grid variable.
+    component_dim : str
+        Dimension label representing components.
     iteration : int
         Counter for the number of times cost evaluation has been performed.
 
@@ -44,6 +48,7 @@ class DesignSpaceHierarchyCost(PipelineOp):
     evaluate_cost(query)
         Compute cost for each query point using the current iteration and offsets.
     """
+
     def __init__(
         self,
         input_variable: str = None,
@@ -73,19 +78,7 @@ class DesignSpaceHierarchyCost(PipelineOp):
         self.iteration = 1
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        """
-        Compute and store cost over the full grid.
-
-        Parameters
-        ----------
-        dataset : xr.Dataset
-            Dataset containing input query points and grid variables.
-
-        Returns
-        -------
-        DesignSpaceHierarchyCost
-            Updated instance with computed cost stored in `self.output`.
-        """
+        """Compute and store cost over the full grid."""
         query = dataset[self.input_variable]
         grid = dataset[self.grid_variable]
         cost_grid = self.evaluate_cost(query=query)
@@ -94,24 +87,11 @@ class DesignSpaceHierarchyCost(PipelineOp):
         self.output[self.output_variable].attrs[
             "description"
         ] = f"Cost per sample evaluated on {self.input_variable}"
-        self.output[self.output_variable].attrs["domain"] = grid.values.squeeze()
 
         return self
     
     def evaluate_cost(self, query: xr.DataArray) -> np.ndarray:
-        """
-        Compute cost for each query point using previously sampled data.
-
-        Parameters
-        ----------
-        query : xr.DataArray
-            Query points with coordinate labels corresponding to `coordinates_order`.
-
-        Returns
-        -------
-        numpy.ndarray
-            Array of computed costs for each query point.
-        """
+        """Compute cost for each query point using previously sampled data."""
         num_queries = query.shape[0]
         k = len(self.coordinates_order)
         output = np.zeros(num_queries)
@@ -130,40 +110,38 @@ class DesignSpaceHierarchyCost(PipelineOp):
 
 class BinaryProbabilityCost(PipelineOp):
     """
-    Compute a cost based on class probability from a predictive model.
-
-    The cost is derived from the probability assigned to a specific class
-    label, allowing cost-aware optimization in binary settings.
+    Compute a probability-based cost for a binary outcome.
 
     Parameters
     ----------
     input_variable : str, optional
-        Name of the dataset variable containing probability values.
+        Name of the dataset variable containing probabilities.
     grid_variable : str, optional
-        Name of the variable representing the design grid.
+        Name of the variable in the dataset representing the design grid.
     cost_label : int, default=1
-        Index of the class label used for cost computation.
+        Index of the probability corresponding to the cost label.
     dim : str, default="grid"
-        Dimension label of the probability array.
+        Dimension label for the cost output.
     output_variable : str, optional
-        Name of the dataset variable where the cost will be stored.
+        Name of the variable in the dataset where the cost will be stored.
     name : str, default="BinaryProbabilityCost"
         Name of the pipeline operation.
 
     Attributes
     ----------
-    grid_variable : str
-        Name of the dataset variable representing the grid.
-    cost_label : int
-        Index of the class label used for cost computation.
     dim : str
-        Dimension label of the output cost variable.
+        Dimension label for the cost output.
+    grid_variable : str
+        Dataset variable name representing the grid.
+    cost_label : int
+        Index for the probability cost label.
 
     Methods
     -------
     calculate(dataset)
-        Compute probability-based cost and store it in the output variable.
+        Compute and store probability-based cost over the full grid.
     """
+
     def __init__(
         self,
         input_variable: str = None,
@@ -183,19 +161,7 @@ class BinaryProbabilityCost(PipelineOp):
         self.cost_label = cost_label
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        """
-        Compute probability-based cost.
 
-        Parameters
-        ----------
-        dataset : xr.Dataset
-            Dataset containing probability values and grid variable.
-
-        Returns
-        -------
-        BinaryProbabilityCost
-            Updated instance with computed cost stored in `self.output`.
-        """
         prob = dataset[self.input_variable]
         grid = dataset[self.grid_variable]
         cost = prob.values[:, self.cost_label] 
@@ -203,87 +169,71 @@ class BinaryProbabilityCost(PipelineOp):
         output = xr.DataArray(cost, dims=self.dim)
         self.output[self.output_variable] = output
         self.output[self.output_variable].attrs["description"] = "A probability based cost."
-        self.output[self.output_variable].attrs["domain"] = grid.values.squeeze()
 
         return self
 
 class MarginalCost(PipelineOp):
     """
-    Compute marginal cost by averaging over selected coordinate dimensions.
+    MarginalCost class
 
-    This class computes the marginal cost by integrating
-    out specified coordinate dimensions of the design space.
+    Compute the marginal cost by averaging over specified coordinate dimensions.
 
     Parameters
     ----------
     input_variable : str, default="cost"
-        Name of the dataset variable containing cost values.
+        Name of the dataset variable containing the cost values.
     coordinate_dims : list of str, default=['temperature']
-        List of coordinate dimensions to marginalize.
+        Dimensions along which the marginalization is not performed.
     component_dim : str, default="ds_dim"
-        Dimension label for components in the grid.
+        Dimension label identifying components in the dataset.
     grid_variable : str, default="design_space_grid"
-        Name of the dataset variable representing the design grid.
-    output_dim : str, default="marginalized_dim"
-        Dimension label for the marginalized output.
-    output_variable : str, default="marginalized_utility"
-        Name of the dataset variable where marginalized cost will be stored.
+        Name of the variable in the dataset representing the design grid.
+    output_variable : str, default="cost"
+        Name of the variable in the dataset where the marginal cost will be stored.
     name : str, default="MarginalCost"
         Name of the pipeline operation.
 
     Attributes
     ----------
     coordinate_dims : list of str
-        List of coordinate dimensions marginalized over.
+        Dimensions to retain while marginalizing over other dimensions.
     grid_variable : str
-        Dataset variable representing the design grid.
+        Dataset variable name representing the design grid.
     dim : str
-        Component dimension label.
-    output_dim : str
-        Dimension label for the marginalized output.
+        Dimension label representing components.
 
     Methods
     -------
     calculate(dataset)
-        Compute marginal cost by averaging over specified coordinate dimensions.
+        Compute marginal cost and store the resulting values and domain.
     """
+
     def __init__(
         self,
         input_variable: str = "cost",
         coordinate_dims :  List[str]= ['temperature'],
         component_dim: str = "ds_dim",
         grid_variable:str = "design_space_grid",
-        output_dim:str = "marginalized_dim",        
-        output_variable: str = "marginalized_utility",
+        output_variable:str="cost",
         name: str = "MarginalCost",
     ) -> None:
         super().__init__(
             name=name, 
             input_variable=[input_variable], 
-            output_variable=output_variable
+            output_variable=output_variable,
         )
         self.coordinate_dims = coordinate_dims
         self.grid_variable = grid_variable 
         self.dim = component_dim 
-        self.output_dim = output_dim
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        """
-        Compute marginal cost by averaging over selected coordinate dimensions.
-
-        Parameters
-        ----------
-        dataset : xr.Dataset
-            Dataset containing grid and cost variables.
-
-        Returns
-        -------
-        MarginalCost
-            Updated instance with marginalized cost stored in `self.output`.
-        """
         grid = dataset[self.grid_variable]
         cost = dataset[self.input_variable] 
-        
+
+        all_coordinate_dims = grid[self.component_dim].values.tolist()
+        complement_dims = [d for d in all_coordinate_dims if d not in self.coordinate_dims]
+        self.output_prefix = "_".join(i for i in complement_dims)
+
         grid_nonmarginal = grid.drop_sel({self.dim: self.coordinate_dims})
         unique_nonmarginal = grid_nonmarginal.to_pandas().drop_duplicates().reset_index(drop=True)
         x = unique_nonmarginal.values 
@@ -297,60 +247,61 @@ class MarginalCost(PipelineOp):
             cost_xi = cost.values[idx].squeeze() # cost across the coordinate_dims
             marginal_cost[i] = cost_xi.mean() # marginal over other dims 
 
-        output = xr.DataArray(marginal_cost, dims=self.output_dim)
+        output = xr.DataArray(marginal_cost, dims=self._prefix_output("n"))
         self.output[self.output_variable] = output
         self.output[self.output_variable].attrs["description"] = "A probability based cost."
-        self.output[self.output_variable].attrs["domain"] = x 
-        
+
+
+        domain_variable = self._prefix_output("domain")
+        if not domain_variable in dataset:
+            all_coordinate_dims = grid[self.dim].values.tolist()
+            complement_dims = [d for d in all_coordinate_dims if d not in self.coordinate_dims]
+            domain = xr.DataArray(x.reshape(-1, len(complement_dims)), 
+                                dims=(self._prefix_output("n"), self._prefix_output("d")),
+                                coords={self._prefix_output("d"): complement_dims}
+                                )
+            self.output[domain_variable] = domain
+            self.output[domain_variable].attrs["description"] = f"Domain of the {self.output_variable} computed." # type: ignore
         return self
 
 class SlicedCost(PipelineOp):
     """
-    Compute sliced cost at a conditioning point along a chosen coordinate dimension.
-
-    This class extracts the cost along a single coordinate dimension,
-    conditioned on fixing all other complement dimensions to a specific
-    point.
+    Compute a slice of cost along a specified coordinate dimension conditioned on a given point.
 
     Parameters
     ----------
     input_variable : str, default="cost"
-        Name of the dataset variable containing cost values.
+        Name of the dataset variable containing the cost values.
     conditioning_point : str, default="next_composition"
-        Name of the dataset variable specifying the conditioning point.
+        Dataset variable representing the point used for conditioning.
     coordinate_dim : str, default="temperature"
-        Coordinate dimension along which slicing is performed.
+        Coordinate dimension along which the slice is performed.
     grid_variable : str, default="design_space_grid"
-        Name of the dataset variable representing the design grid.
+        Name of the variable in the dataset representing the design grid.
     component_dim : str, default="ds_dim"
-        Dimension label for components in the grid.
-    output_dim : str, default="sliced_dim"
-        Dimension label for the sliced output.
-    output_variable : str, default="sliced_cost"
-        Name of the dataset variable where sliced cost will be stored.
+        Dimension label identifying components in the dataset.
+    output_variable : str, default="temperature"
+        Name of the variable in the dataset where the sliced cost will be stored.
     name : str, default="SlicedCost"
         Name of the pipeline operation.
 
     Attributes
     ----------
-    complement_dims : list of str
-        Dimensions fixed at the conditioning point.
-    slice_dim : str
-        Dimension along which slicing is performed.
+    coordinate_dim : str
+        Dimension along which the slicing is performed.
     conditioning_point : str
-        Dataset variable specifying the conditioning point.
+        Dataset variable representing the conditioning point.
     grid_variable : str
-        Dataset variable representing the design grid.
+        Dataset variable name representing the design grid.
     dim : str
-        Component dimension label.
-    output_dim : str
-        Dimension label for the sliced output.
+        Dimension label representing components.
 
     Methods
     -------
     calculate(dataset)
-        Extract cost along a sliced dimension conditioned on other coordinates.
+        Compute cost slice at the conditioning point and store the values and domain.
     """
+
     def __init__(
         self,
         input_variable: str = "cost",
@@ -358,42 +309,28 @@ class SlicedCost(PipelineOp):
         coordinate_dim:str = "temperature",
         grid_variable:str = "design_space_grid",        
         component_dim: str = "ds_dim",
-        output_dim : str = "sliced_dim",
-        output_variable: str = "sliced_cost",
+        output_variable:str="temperature",
         name: str = "SlicedCost",
     ) -> None:
         super().__init__(
             name=name, 
             input_variable=[input_variable], 
-            output_variable=output_variable
+            output_variable=output_variable,
+            output_prefix = f"{coordinate_dim}"
         )
-        self.slice_dim = coordinate_dim
+        self.coordinate_dim = coordinate_dim
         self.conditioning_point = conditioning_point       
         self.grid_variable = grid_variable 
         self.dim = component_dim 
-        self.output_dim = output_dim
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        """
-        Compute sliced cost at the conditioning point.
-
-        Parameters
-        ----------
-        dataset : xr.Dataset
-            Dataset containing grid, cost, and conditioning point variables.
-
-        Returns
-        -------
-        SlicedCost
-            Updated instance with sliced cost stored in `self.output`.
-        """
         cp = dataset[self.conditioning_point]
 
         grid = dataset[self.grid_variable]
         all_coordinate_dims = grid[self.dim].values.tolist()
         complement_dims = [d for d in all_coordinate_dims if d not in self.coordinate_dim]
         grid_complement_dims = grid.sel({self.dim:complement_dims}).values
-        grid_slice_dim = grid.sel({self.dim:self.slice_dim}).values
+        grid_slice_dim = grid.sel({self.dim:self.coordinate_dim}).values
 
         squared_distances = np.sum((cp.values - grid_complement_dims) ** 2, axis=1)
         idx = np.argwhere(squared_distances<1e-5)
@@ -402,41 +339,43 @@ class SlicedCost(PipelineOp):
         # Extract cost at cp : c_{cp}(slice_dim)
         sliced_cost = cost.values[idx]
 
-        output = xr.DataArray(sliced_cost.squeeze(), dims=self.output_dim)
+        output = xr.DataArray(sliced_cost.squeeze(), dims=self._prefix_output("n"))
         self.output[self.output_variable] = output # type: ignore
         self.output[self.output_variable].attrs["description"] = "Utility calculated along the temperature axis" # type: ignore
-        self.output[self.output_variable].attrs["domain"] = grid_slice_dim[idx].squeeze() 
 
+        domain_variable = self._prefix_output("domain")
+        if not domain_variable in dataset:
+            domain = xr.DataArray(grid_slice_dim[idx].squeeze(), dims=self._prefix_output("n"))
+            self.output[domain_variable] = domain
+            self.output[domain_variable].attrs["description"] = f"Domain of the {self.output_variable} computed." # type: ignore
         return self
 
 class UtilityWithCost(PipelineOp):
     """
-    Apply utility with cost weighting to a design grid.
+    Apply acquisition with cost weighting to a design grid.
 
-    This class modifies an utility function by incorporating
+    This class modifies an acquisition function by incorporating
     cost penalties, following the formulation in Equation (9) of
     "Cost-Aware Bayesian Optimization" (https://arxiv.org/pdf/1909.03600).
-    The utility is scaled as::
+    The acquisition is scaled as::
 
         Q(x, t) * ∏ (1 - C_i(x, t))
 
-    where Q is the utility function and C_i are cost terms.
-
-    Note
-    ----
-    This works best when the cost functions are bound to [0,1],
-    as is the case when using `DesignSpaceHierarchyCost` on [0,1]
-    normalized design space coordinates.
+    where Q is the acquisition function and C_i are cost terms.
+    
+    Note: 
+    This works best when the cost functions are bound to [0,1] as is the case when
+    using `DesignSpaceHierarchyCost` on [0,1] normalized design space.
 
     Parameters
     ----------
     input_variable : str, optional
-        Name of the dataset variable containing the utility values.
+        Name of the dataset variable containing the acquisition values.
     cost_variables : list of str, optional
         List of dataset variables containing normalized cost values.
     output_variable : str, optional
-        Name of the variable in the dataset where the modified utility will be stored.
-    name : str, default="UtilityWithCost"
+        Name of the variable in the dataset where the modified acquisition will be stored.
+    name : str, default="AcquisitonWithCost"
         Name of the pipeline operation.
 
     Attributes
@@ -447,8 +386,9 @@ class UtilityWithCost(PipelineOp):
     Methods
     -------
     calculate(dataset)
-        Apply utility with cost weighting and store the result.
+        Apply acquisition with cost weighting and store the result.
     """
+
     def __init__(
         self,
         input_variable: str = None,
@@ -464,19 +404,7 @@ class UtilityWithCost(PipelineOp):
         self.cost_variables = cost_variables
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        """
-        Apply utility function with cost weighting.
 
-        Parameters
-        ----------
-        dataset : xr.Dataset
-            Dataset containing utility and cost variables.
-
-        Returns
-        -------
-        UtilityWithCost
-            Updated instance with cost-adjusted utility stored in `self.output`.
-        """
         acqv = dataset[self.input_variable]
 
         # Computes acqusition to be Q(x, t)*(1-C(x,t)) following 
@@ -489,8 +417,6 @@ class UtilityWithCost(PipelineOp):
         # Store result
         output = xr.DataArray(acqv_cost, dims=acqv.dims, coords=acqv.coords)
         self.output[self.output_variable] = output
-        self.output[self.output_variable].attrs["description"] = "utility with Cost" 
-        self.output[self.output_variable].attrs["domain"] = acqv.domain
+        self.output[self.output_variable].attrs["description"] = "Acquisition with Cost" 
 
-        
         return self
