@@ -40,16 +40,17 @@ class ArgMax(PipelineOp):
     def __init__(
         self,
         input_variable: str = "composition_utility",
-        coordinate_dims= ["protein", "glycerol"],
-        output_variable: str = "next_sample",
+        grid_variable:str="composition_marginal_domain",
+        output_prefix:str="composition",
         name: str = "ArgMax",
     ) -> None:
+        output_variable = f"{output_prefix}_next"
         super().__init__(
             name=name, 
             input_variable=[input_variable], 
             output_variable=output_variable
         )
-        self.coordinate_dims = coordinate_dims
+        self.grid_variable = grid_variable
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """
@@ -66,12 +67,11 @@ class ArgMax(PipelineOp):
             Updated instance with the optimal design point stored in `self.output`.
         """
         ux = dataset[self.input_variable]
-        x = ux.domain
-        x_opt = x[np.argmax(ux.values).item(),:] # x^* = argmax_{x} u(x)
+        x = dataset[self.grid_variable]
+        x_opt = x.values[np.argmax(ux.values).item(),:] # x^* = argmax_{x} u(x)
         
         output = xr.DataArray(x_opt.reshape(-1, x.shape[-1]),
-                              dims=("n_counts", "d_comp"),
-                              coords={"d_comp": self.coordinate_dims}
+                              dims=(self._prefix_output("next_n"), x.dims[1]),
                             )
         self.output[self.output_variable] = output
         self.output[self.output_variable].attrs["description"] = textwrap.dedent("""
@@ -117,16 +117,20 @@ class FullWidthHalfMaximum1D(PipelineOp):
     def __init__(
         self,
         input_variable: str = "utility",
+        grid_variable:str="temperature_marginal_domain",
         output_variable: str = "next_sample",
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = {},
+        output_prefix:str="temperature",
         name: str = "FullWidthHalfMaximum1D",
     ) -> None:
+        output_variable = f"{output_prefix}_next"
         super().__init__(
             name=name, 
             input_variable=[input_variable], 
             output_variable=output_variable
         )
         self.params = params
+        self.grid_variable = grid_variable
     
     def calculate(self, dataset: xr.Dataset) -> Self:
         """
@@ -143,12 +147,11 @@ class FullWidthHalfMaximum1D(PipelineOp):
             Updated instance with FWHM points stored in `self.output`.
         """
         u = dataset[self.input_variable]
-        x = u.domain
+        x = dataset[self.grid_variable]
 
-        x_opt = self.optimize(x, u.values, **self.params)
-        
-        output = xr.DataArray(np.asarray(x_opt).reshape(-1),
-                              dims=("n_next"),
+        x_opt = self.optimize(x.values, u.values, **self.params)
+        output = xr.DataArray(np.atleast_1d(x_opt.squeeze()),
+                              dims=self._prefix_output("next_n"),
                             )
         self.output[self.output_variable] = output
         self.output[self.output_variable].attrs["description"] = textwrap.dedent("""
@@ -159,29 +162,26 @@ class FullWidthHalfMaximum1D(PipelineOp):
 
     def optimize(self, x, f, **kwargs):
         """
-        Find peaks in a 1D function and compute their full-width half-maximum (FWHM).
+        Find peaks in f(x) and compute their full width at half maximum (FWHM).
 
-        For each peak, returns three points: the left half-maximum location,
-        the peak maximum, and the right half-maximum location. If no peaks
-        are found, the function falls back to returning the global maximum.
+        If no clear peaks are found, returns the location of the global maximum.
 
         Parameters
         ----------
         x : array-like
-            1D array of x values corresponding to the domain.
+            1D array of x values.
         f : array-like
             1D array of function values f(x).
         **kwargs : dict
-            Extra keyword arguments passed to `scipy.signal.find_peaks`
-            (e.g., `height=...`, `distance=...`, `prominence=...`).
+            Extra keyword arguments passed to scipy.signal.find_peaks,
+            e.g. height=..., distance=..., prominence=...
 
         Returns
         -------
-        ndarray
-            Sorted array of x values. For each detected peak, three values
-            are included: [left_half_max, peak_max, right_half_max].
-            If no peaks are found, returns an array containing only
-            the global maximum.
+        xb : ndarray
+            Sorted array of x values. For each peak, three values are returned:
+            [left_half_max, peak_max, right_half_max].
+            If no peaks are found, returns [x[argmax(f)]].
         """
         x = np.asarray(x)
         f = np.asarray(f).squeeze()
