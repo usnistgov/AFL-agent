@@ -92,23 +92,6 @@ class DirichletGPExtrapolator(Extrapolator):
         - "{prefix}y_prob": Class probabilities for each grid point
         - "{prefix}entropy": Prediction entropy (only for single-class case)
 
-    Examples
-    --------
-    >>> # Create extrapolator for materials classification
-    >>> extrapolator = DirichletGPExtrapolator(
-    ...     feature_input_variable="composition",
-    ...     predictor_input_variable="phase_labels", 
-    ...     output_prefix="gp_",
-    ...     grid_variable="composition_grid",
-    ...     grid_dim="grid_point",
-    ...     sample_dim="sample",
-    ...     params={"learning_rate": 0.05, "n_iterations": 300, "verbose": True}
-    ... )
-    >>> 
-    >>> # Apply to dataset
-    >>> result = extrapolator.calculate(dataset)
-    >>> probabilities = result.output["gp_y_prob"]
-    >>> predictions = result.output["gp_mean"]
     """
 
     def __init__(
@@ -208,23 +191,6 @@ class DirichletGPExtrapolator(Extrapolator):
         For multi-class cases, the method uses Monte Carlo sampling (256 samples)
         from the posterior predictive distribution to estimate class probabilities,
         providing robust uncertainty quantification.
-
-        Examples
-        --------
-        >>> # Prepare dataset with composition features and phase labels
-        >>> dataset = xr.Dataset({
-        ...     'composition': (['sample', 'element'], composition_array),
-        ...     'phase_labels': (['sample'], label_array),
-        ...     'composition_grid': (['grid_point', 'element'], grid_array)
-        ... })
-        >>> 
-        >>> # Apply extrapolation
-        >>> extrapolator = DirichletGPExtrapolator(...)
-        >>> result = extrapolator.calculate(dataset)
-        >>> 
-        >>> # Access results
-        >>> class_probs = result.output['prefix_y_prob']  # Shape: (grid_point, n_classes)
-        >>> predictions = result.output['prefix_mean']    # Shape: (grid_point,)
         """
         X = dataset[self.feature_input_variable].transpose(self.sample_dim, ...)
         y = dataset[self.predictor_input_variable].transpose(self.sample_dim, ...)
@@ -257,6 +223,7 @@ class DirichletGPExtrapolator(Extrapolator):
                 pred_means, probabilities, entropy, gradient = self._predict_mll(
                     self.grid.values, model, **self.params
                 )
+                
             self.output[self._prefix_output("mean")] = xr.DataArray(
                 pred_means.detach().numpy(), dims=self.grid_dim
             )
@@ -364,18 +331,6 @@ class DirichletGPExtrapolator(Extrapolator):
         - Training loss (negative log marginal likelihood)
         - Mean kernel lengthscale across dimensions
         - Mean noise level in the likelihood
-
-        Examples
-        --------
-        >>> # Manual training call (typically handled internally)
-        >>> model, likelihood = extrapolator.fit(
-        ...     train_x=training_features,
-        ...     model=gp_model, 
-        ...     likelihood=dirichlet_likelihood,
-        ...     learning_rate=0.05,
-        ...     n_iterations=500,
-        ...     verbose=True
-        ... )
         """
         likelihood = DirichletClassificationLikelihood(
             train_y, learn_additional_noise=True
@@ -630,24 +585,6 @@ class GPModel(ExactGP):
         likelihood (Likelihood): GPyTorch likelihood function (e.g., GaussianLikelihood
             for regression, BernoulliLikelihood for classification).
         num_classes (int): Number of output classes or dimensions.
-    
-    Example:
-        >>> import torch
-        >>> from gpytorch.likelihoods import GaussianLikelihood
-        >>> 
-        >>> # Generate sample data
-        >>> train_x = torch.randn(100, 2)
-        >>> train_y = torch.randn(100, 3)  # 3 classes
-        >>> likelihood = GaussianLikelihood()
-        >>> 
-        >>> # Create model
-        >>> model = GPModel(train_x, train_y, likelihood, num_classes=3)
-        >>> 
-        >>> # Forward pass
-        >>> with torch.no_grad():
-        ...     pred_dist = model(train_x)
-        ...     mean = pred_dist.mean
-        ...     variance = pred_dist.variance
     """
     
     def __init__(self, train_x, train_y, likelihood, num_classes):
@@ -710,13 +647,6 @@ class GPModel(ExactGP):
             This method should typically be called within a torch.no_grad() context
             for prediction, or within the training loop for computing the marginal
             log-likelihood.
-        
-        Example:
-            >>> test_x = torch.randn(50, 2)
-            >>> with torch.no_grad():
-            ...     pred_dist = model(test_x)
-            ...     mean_pred = pred_dist.mean  # Shape: (num_classes, 50)
-            ...     var_pred = pred_dist.variance  # Shape: (num_classes, 50)
         """
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
