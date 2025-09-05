@@ -5,33 +5,31 @@ from AFL.double_agent import PipelineOp
 
 class MarginalEntropyOverDimension(PipelineOp):
     """
-    Compute marginal entropy by averaging probabilities over specified coordinate dimensions.
+    Compute marginal entropy by averaging probability over selected dimensions.
 
-    This class marginalizes the probability distribution over given coordinate
-    dimensions and computes the Shannon entropy at each remaining point in the
-    design space. The entropy serves as a measure of uncertainty.
+    This class calculates the marginal entropy of a probability distribution 
+    by marginalizing over specified `coordinate_dims`. The resulting entropy 
+    is used as a utility measure.
 
     Parameters
     ----------
     input_variable : str, default="probability"
-        Name of the dataset variable containing probability distributions.
+        Name of the dataset variable containing probability values.
     coordinate_dims : list of str, default=['temperature']
-        List of coordinate dimensions to marginalize out.
+        Dimensions over which the probabilities are marginalized.
     component_dim : str, default="ds_dim"
-        Dimension label for components in the design grid.
+        Dimension label representing components in the design grid.
     grid_variable : str, default="design_space_grid"
-        Name of the dataset variable representing the design grid.
-    output_dim : str, default="n_comp"
-        Dimension label for the marginalized entropy output.
+        Dataset variable representing the design grid.
     output_variable : str, default="composition_utility"
-        Name of the dataset variable where marginalized entropy will be stored.
+        Name of the variable in the dataset to store the entropy-based utility.
     name : str, default="MarginalEntropyOverDimension"
         Name of the pipeline operation.
 
     Methods
     -------
     calculate(dataset)
-        Compute marginal entropy by averaging over specified coordinate dimensions.
+        Compute marginal entropy over specified dimensions and store the result.
     """
     def __init__(
         self,
@@ -54,17 +52,24 @@ class MarginalEntropyOverDimension(PipelineOp):
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """
-        Compute marginal entropy by averaging probabilities over given dimensions.
+        Compute marginal entropy over specified dimensions.
+
+        For each unique combination of non-marginal coordinates, this method
+        averages the probabilities over the `coordinate_dims` and calculates
+        the entropy.
 
         Parameters
         ----------
         dataset : xr.Dataset
-            Dataset containing probability distributions and grid variables.
+            Dataset containing the design grid and probability values.
 
         Returns
         -------
-        MarginalEntropyOverDimension
-            Updated instance with marginalized entropy stored in `self.output`.
+        self : MarginalEntropyOverDimension
+            Returns self with `output` containing:
+            
+            - `output_variable`: Array of marginal entropy values per unique non-marginal point.
+            - `<output_prefix>_domain`: Array of corresponding domain points for non-marginal dimensions.
         """
         grid = dataset[self.grid_variable]
         all_coordinate_dims = grid[self.component_dim].values.tolist()
@@ -105,49 +110,32 @@ class MarginalEntropyOverDimension(PipelineOp):
     
 class MarginalEntropyAlongDimension(PipelineOp):
     """
-    Compute marginal entropy along a single coordinate dimension, conditioned on a point.
+    Compute marginal entropy along a specified coordinate dimension at a conditioning point.
 
-    This class computes entropy of probability distributions along a chosen
-    coordinate dimension (e.g., temperature), while fixing the values of all
-    complementary dimensions at a specified conditioning point.
+    This class calculates the entropy of probability values along a single
+    coordinate dimension, conditioned on a reference point in all other dimensions.
 
     Parameters
     ----------
     input_variable : str, default="probability"
-        Name of the dataset variable containing probability distributions.
+        Dataset variable containing probability values.
     conditioning_point : str, default="next_composition"
-        Name of the dataset variable specifying the conditioning point.
+        Reference point along other dimensions for slicing.
     coordinate_dim : str, default="temperature"
-        Coordinate dimension along which entropy is computed.
+        Dimension along which the entropy is computed.
     grid_variable : str, default="design_space_grid"
-        Name of the dataset variable representing the design grid.
+        Dataset variable representing the design grid.
     component_dim : str, default="ds_dim"
-        Dimension label for components in the design grid.
-    output_dim : str, default="n_temp"
-        Dimension label for the entropy output along the chosen dimension.
-    output_variable : str, default="marginal_entropy_along_dim"
-        Name of the dataset variable where computed entropy will be stored.
+        Dimension label representing components in the grid.
+    output_variable : str, default="temperature"
+        Name of the variable to store the marginal entropy along the coordinate.
     name : str, default="MarginalEntropyAlongDimension"
         Name of the pipeline operation.
-
-    Attributes
-    ----------
-    coordinate_dim : str
-        Coordinate dimension along which entropy is computed.
-    conditioning_point : str
-        Dataset variable specifying the conditioning point.
-    grid_variable : str
-        Dataset variable representing the design grid.
-    dim : str
-        Component dimension label.
-    output_dim : str
-        Dimension label for the entropy output.
 
     Methods
     -------
     calculate(dataset)
-        Compute marginal entropy along the chosen coordinate dimension
-        at the specified conditioning point.
+        Compute marginal entropy along `coordinate_dim` at the conditioning point.
     """
     def __init__(
         self,
@@ -172,17 +160,20 @@ class MarginalEntropyAlongDimension(PipelineOp):
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """
-        Compute marginal entropy along a coordinate dimension at a conditioning point.
+        Compute marginal entropy along a single dimension at a conditioning point.
 
         Parameters
         ----------
         dataset : xr.Dataset
-            Dataset containing probability distributions, grid, and conditioning point.
+            Dataset containing the design grid, probability values, and conditioning point.
 
         Returns
         -------
-        MarginalEntropyAlongDimension
-            Updated instance with entropy along the chosen dimension stored in `self.output`.
+        self : MarginalEntropyAlongDimension
+            Returns self with `output` containing:
+            
+            - `output_variable`: Array of entropy values along the specified coordinate dimension.
+            - `<output_prefix>_domain`: Array of corresponding domain points along the coordinate dimension.
         """
         cp = dataset[self.conditioning_point]
 

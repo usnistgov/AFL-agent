@@ -8,34 +8,23 @@ from typing import Optional, Dict, Any
 
 class ArgMax(PipelineOp):
     """
-    Query strategy that selects the design point with maximum utility.
-
-    This class implements the argmax acquisition rule, identifying
-    the point in the design space that maximizes the given utility
-    function. It is particularly useful in Bayesian optimization or
-    active learning where the next experiment is chosen based on
-    maximizing a learned utility surface.
+    Implements argmax query strategy for utility maximization.
 
     Parameters
     ----------
     input_variable : str, default="composition_utility"
-        Name of the dataset variable containing utility values.
-    coordinate_dims : list of str, default=["protein", "glycerol"]
-        Coordinate labels representing components of the design space.
-    output_variable : str, default="next_sample"
-        Name of the dataset variable where the optimal sample will be stored.
+        Dataset variable containing utility values.
+    grid_variable : str, default="composition_marginal_domain"
+        Dataset variable representing the design grid or domain.
+    output_prefix : str, default="composition"
+        Prefix for the output variable.
     name : str, default="ArgMax"
         Name of the pipeline operation.
-
-    Attributes
-    ----------
-    coordinate_dims : list of str
-        Coordinate labels used for the output representation.
 
     Methods
     -------
     calculate(dataset)
-        Select the point with the highest utility and store it in the output.
+        Compute the point(s) in the grid that maximize the utility.
     """
     def __init__(
         self,
@@ -54,25 +43,37 @@ class ArgMax(PipelineOp):
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """
-        Identify the design point that maximizes the utility function.
+        Compute the argmax of the utility over the design grid.
+
+        If the grid is multidimensional, returns the full vector corresponding
+        to the maximum utility.
 
         Parameters
         ----------
         dataset : xr.Dataset
-            Dataset containing utility values and domain information.
+            Dataset containing the utility values and grid variable.
 
         Returns
         -------
-        ArgMax
-            Updated instance with the optimal design point stored in `self.output`.
+        self : ArgMax
+            Returns self with `output` containing the optimal point(s) that
+            maximize the utility.
         """
         ux = dataset[self.input_variable]
         x = dataset[self.grid_variable]
-        x_opt = x.values[np.argmax(ux.values).item(),:] # x^* = argmax_{x} u(x)
         
-        output = xr.DataArray(x_opt.reshape(-1, x.shape[-1]),
-                              dims=(self._prefix_output("next_n"), x.dims[1]),
-                            )
+        # x^* = argmax_{x} u(x)
+        if x.ndim==1:
+            x_opt = x.values[np.argmax(ux.values).item()]
+            output = xr.DataArray(x_opt.reshape(-1, ),
+                                dims=(self._prefix_output("next_n"), ),
+                                )
+        else:
+            x_opt = x.values[np.argmax(ux.values).item(),:] 
+            output = xr.DataArray(x_opt.reshape(-1, x.values.shape[-1]),
+                                dims=(self._prefix_output("next_n"), x.dims[1]),
+                                )
+
         self.output[self.output_variable] = output
         self.output[self.output_variable].attrs["description"] = textwrap.dedent("""
         Optimal composition to be added to the dataset
@@ -82,37 +83,30 @@ class ArgMax(PipelineOp):
 
 class FullWidthHalfMaximum1D(PipelineOp):
     """
-    Query strategy that identifies full-width half-maximum (FWHM) points in 1D.
-
-    This class finds peaks in a one-dimensional utility function and extracts
-    the peak locations along with their left and right half-maximum points.
-    If no peaks are detected, the global maximum is returned. This provides
-    a way to select multiple informative candidates rather than just a single
-    maximum.
+    Find peaks in a 1D utility and compute points at left, middle and right of 
+    their full-width-half-maximum.
 
     Parameters
     ----------
     input_variable : str, default="utility"
-        Name of the dataset variable containing the 1D utility values.
-    output_variable : str, default="next_sample"
-        Name of the dataset variable where optimal sample locations will be stored.
+        Dataset variable containing 1D utility values.
+    grid_variable : str, default="temperature_marginal_domain"
+        Dataset variable representing the domain of the 1D function.
+    output_variable : str, optional
+        Name of the variable in the dataset to store the optimal points.
     params : dict, optional
-        Extra keyword arguments to pass to `scipy.signal.find_peaks`, such as
-        `height`, `distance`, or `prominence` for controlling peak detection.
+        Extra keyword arguments to pass to `scipy.signal.find_peaks`.
+    output_prefix : str, default="temperature"
+        Prefix for the output variable.
     name : str, default="FullWidthHalfMaximum1D"
         Name of the pipeline operation.
-
-    Attributes
-    ----------
-    params : dict or None
-        Parameters used for peak detection.
 
     Methods
     -------
     calculate(dataset)
-        Find peaks in the utility and store corresponding FWHM points.
+        Compute FWHM-based optimal locations and store them in the dataset.
     optimize(x, f, **kwargs)
-        Detect peaks and compute FWHM locations given a 1D function.
+        Identify peaks and their full-width-half-maximum locations in 1D data.
     """
     def __init__(
         self,
@@ -134,17 +128,19 @@ class FullWidthHalfMaximum1D(PipelineOp):
     
     def calculate(self, dataset: xr.Dataset) -> Self:
         """
-        Identify FWHM points in a 1D utility function.
+        Compute optimal 1D locations corresponding to full-width-half-maximum of peaks.
 
         Parameters
         ----------
         dataset : xr.Dataset
-            Dataset containing 1D utility values and domain information.
+            Dataset containing the 1D utility values and grid variable.
 
         Returns
         -------
-        FullWidthHalfMaximum1D
-            Updated instance with FWHM points stored in `self.output`.
+        self : FullWidthHalfMaximum1D
+            Returns self with `output` containing:
+            
+            - `output_variable`: Locations corresponding to FWHM points of each peak.
         """
         u = dataset[self.input_variable]
         x = dataset[self.grid_variable]
@@ -162,26 +158,25 @@ class FullWidthHalfMaximum1D(PipelineOp):
 
     def optimize(self, x, f, **kwargs):
         """
-        Find peaks in f(x) and compute their full width at half maximum (FWHM).
+        Find peaks in `f(x)` and compute their full width at half maximum (FWHM).
 
-        If no clear peaks are found, returns the location of the global maximum.
+        If no peaks are found, returns the global maximum location.
 
         Parameters
         ----------
         x : array-like
             1D array of x values.
         f : array-like
-            1D array of function values f(x).
+            1D array of function values.
         **kwargs : dict
-            Extra keyword arguments passed to scipy.signal.find_peaks,
-            e.g. height=..., distance=..., prominence=...
+            Extra keyword arguments for `scipy.signal.find_peaks`, e.g., height, distance, prominence.
 
         Returns
         -------
-        xb : ndarray
+        xb : np.ndarray
             Sorted array of x values. For each peak, three values are returned:
-            [left_half_max, peak_max, right_half_max].
-            If no peaks are found, returns [x[argmax(f)]].
+            [left_half_max, peak_max, right_half_max]. If no peaks are found,
+            returns [x[argmax(f)]].
         """
         x = np.asarray(x)
         f = np.asarray(f).squeeze()
@@ -209,4 +204,111 @@ class FullWidthHalfMaximum1D(PipelineOp):
         else:
             xb = np.array([x[np.argmax(f)]])  # fallback to global max
 
-        return xb
+        return xb 
+    
+class MinMax1DLineSampler(PipelineOp):
+    """
+    Generate line samples along a 1D domain based on feasibility probabilities.
+
+    Parameters
+    ----------
+    input_variable : str, default="sliced_feasibility_y_prob"
+        Dataset variable containing feasibility probabilities.
+    grid_variable : str, default="temperature_domain"
+        Dataset variable representing the 1D domain.
+    min_value : float, default=0.3
+        Minimum threshold for feasible probabilities.
+    max_value : float, default=1.0
+        Maximum threshold for feasible probabilities.
+    n_samples : int, default=5
+        Number of samples to generate along the feasible domain.
+    output_prefix : str, default="temperature"
+        Prefix for the output variable.
+    name : str, default="TemperatureLineSampler"
+        Name of the pipeline operation.
+
+    Methods
+    -------
+    calculate(dataset)
+        Generate line samples along the domain satisfying the probability constraints.
+    linspace(arr)
+        Return `n_samples` linearly spaced elements from an array.
+    """
+    def __init__(
+        self,
+        input_variable:str = "sliced_feasibility_y_prob",
+        grid_variable:str = "temperature_domain",
+        min_value: float = 0.3,
+        max_value: float = 1.0,
+        n_samples: int = 5,
+        output_prefix:str="temperature",
+        name: str = "TemperatureLineSampler",
+    ) -> None:
+        output_variable = f"{output_prefix}_next"
+        super().__init__(
+            name=name, 
+            input_variable=[input_variable, grid_variable], 
+            output_variable=output_variable
+        )
+        self.input_variable = input_variable
+        self.grid_variable = grid_variable 
+        self.min_value = min_value
+        self.max_value = max_value
+        self.n_samples = n_samples
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        """
+        Generate feasible line samples based on probability thresholds.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            Dataset containing the feasibility probabilities and 1D domain.
+
+        Returns
+        -------
+        self : MinMax1DLineSampler
+            Returns self with `output` containing:
+            
+            - `output_variable`: Array of linearly spaced feasible samples along the domain.
+        """
+        probs = dataset[self.input_variable]
+        grid = dataset[self.grid_variable]
+        flags = (probs>self.min_value) & (probs<self.max_value)
+        feasible = grid[flags]
+
+        line_samples = self.linspace(feasible)
+        output = xr.DataArray(line_samples, 
+                            dims=(self._prefix_output("next_n"), ),
+                        )
+        self.output[self.output_variable] = output
+        self.output[self.output_variable].attrs["description"] = textwrap.dedent("""
+        Samples along the temperature axis that have higher probability of being feasible.
+        The minimum is specified by the point that maximizes the acquisition
+        function for determining phase boundaries (along with any associated costs)
+        """).strip()
+
+        return self 
+
+    def linspace(self, arr):
+        """
+        Return n linearly spaced samples from an array.
+
+        Parameters
+        ----------
+        arr : array-like
+            Input array from which to sample.
+
+        Returns
+        -------
+        samples : numpy.ndarray
+            Array of n elements sampled evenly from arr.
+        """
+        arr = np.sort(arr)
+        if self.n_samples <= 0:
+            raise ValueError(f"self.n_samples={self.n_samples} must be positive")
+        if self.n_samples > len(arr):
+            raise ValueError(f"self.n_samples={self.n_samples} cannot be greater than the length of arr {arr.shape}")
+        
+        indices = np.linspace(0, len(arr) - 1, self.n_samples, dtype=int)
+        return arr[indices]
