@@ -7,18 +7,32 @@ class DesignSpaceHierarchyCost(PipelineOp):
     """
     Compute a hierarchical cost over a grid of design points.
 
+    This class assigns a cost to each point in the design space based on a
+    hierarchical ordering of variables, where higher-cost variables dominate
+    the contribution. The cost is iteratively updated across calls, allowing
+    dynamic penalization based on exploration history.
+
+    Note
+    ----
+    This follows the formulation in Equation (8) of:
+
+        Abdolshah, M., Shilton, A., Rana, S., Gupta, S., & Venkatesh, S. (2019).
+        Cost-aware multi-objective Bayesian optimisation.
+        arXiv preprint arXiv:1909.03600.
+        https://doi.org/10.48550/arXiv.1909.03600
+
     Parameters
     ----------
     input_variable : str, optional
-        Name of the input variable for cost evaluation.
+        Name of the dataset variable representing query points.
     grid_variable : str, optional
-        Name of the variable in the dataset representing the design grid.
+        Name of the dataset variable representing the design grid.
     grid_dim : str, optional
         Dimension label of the grid variable in the dataset.
     component_dim : str, optional
-        Dimension label identifying components in the dataset.
+        Dimension label identifying components (variables) in the dataset.
     coordinates_order : list of str, optional
-        Ordered list of variable names from highest to lowest cost contribution.
+        Ordered list of variable names, from highest to lowest cost contribution.
     coordinates_offsets : list of float, optional
         Offset values associated with each variable in `coordinates_order`.
     output_variable : str, optional
@@ -48,7 +62,6 @@ class DesignSpaceHierarchyCost(PipelineOp):
     evaluate_cost(query)
         Compute cost for each query point using the current iteration and offsets.
     """
-
     def __init__(
         self,
         input_variable: str = None,
@@ -75,12 +88,24 @@ class DesignSpaceHierarchyCost(PipelineOp):
         self.grid_variable = grid_variable
         self.grid_dim = grid_dim
         self.component_dim = component_dim
-        self.iteration = 1
+        self.iteration = 1 
+        self._banned_from_attrs.extend(["iteration"])
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        """Compute and store cost over the full grid."""
+        """
+        Compute and store hierarchical cost over the full grid.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            Dataset containing query points and grid variables.
+
+        Returns
+        -------
+        self : DesignSpaceHierarchyCost
+            Returns self with updated output containing hierarchical costs.
+        """
         query = dataset[self.input_variable]
-        grid = dataset[self.grid_variable]
         cost_grid = self.evaluate_cost(query=query)
 
         self.output[self.output_variable] = xr.DataArray(cost_grid, dims=self.grid_dim)
@@ -91,7 +116,19 @@ class DesignSpaceHierarchyCost(PipelineOp):
         return self
     
     def evaluate_cost(self, query: xr.DataArray) -> np.ndarray:
-        """Compute cost for each query point using previously sampled data."""
+        """
+        Compute cost for each query point using previously sampled data.
+
+        Parameters
+        ----------
+        query : xr.DataArray
+            Data array containing query points for which cost is computed.
+
+        Returns
+        -------
+        output : np.ndarray
+            Array of hierarchical costs for each query point.
+        """
         num_queries = query.shape[0]
         k = len(self.coordinates_order)
         output = np.zeros(num_queries)
@@ -110,38 +147,37 @@ class DesignSpaceHierarchyCost(PipelineOp):
 
 class BinaryProbabilityCost(PipelineOp):
     """
-    Compute a probability-based cost for a binary outcome.
+    Compute a probability-based cost for a binary classification outcome.
+    This Pipeline provides the probability of a particular outcome as a scalar
+    value that can be used as a cost. 
+    For example, probabiity of a particular point in the design space being feasibile.
+
+    Note:
+    -----
+    Since the convention for cost in this module is to score points with
+    higher costs as unfavorable (in terms of utility) when used with `UtilityWithCost`, 
+    we select `cost_label` that indicates the probability of undesired outcome (e.g.: unfeasible).
 
     Parameters
     ----------
     input_variable : str, optional
-        Name of the dataset variable containing probabilities.
+        Name of the dataset variable containing probability values.
     grid_variable : str, optional
-        Name of the variable in the dataset representing the design grid.
+        Name of the dataset variable representing the design grid.
     cost_label : int, default=1
-        Index of the probability corresponding to the cost label.
+        Index of the probability class to consider as cost.
     dim : str, default="grid"
-        Dimension label for the cost output.
+        Dimension label for the output cost array.
     output_variable : str, optional
-        Name of the variable in the dataset where the cost will be stored.
+        Name of the variable in the dataset to store the cost.
     name : str, default="BinaryProbabilityCost"
         Name of the pipeline operation.
-
-    Attributes
-    ----------
-    dim : str
-        Dimension label for the cost output.
-    grid_variable : str
-        Dataset variable name representing the grid.
-    cost_label : int
-        Index for the probability cost label.
 
     Methods
     -------
     calculate(dataset)
-        Compute and store probability-based cost over the full grid.
+        Compute the binary probability cost and store it in the dataset.
     """
-
     def __init__(
         self,
         input_variable: str = None,
@@ -161,7 +197,19 @@ class BinaryProbabilityCost(PipelineOp):
         self.cost_label = cost_label
 
     def calculate(self, dataset: xr.Dataset) -> Self:
+        """
+        Compute the binary probability cost.
 
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            Dataset containing probability values and grid variable.
+
+        Returns
+        -------
+        self : BinaryProbabilityCost
+            Returns self with updated output containing the probability-based cost.
+        """
         prob = dataset[self.input_variable]
         grid = dataset[self.grid_variable]
         cost = prob.values[:, self.cost_label] 
@@ -174,40 +222,28 @@ class BinaryProbabilityCost(PipelineOp):
 
 class MarginalCost(PipelineOp):
     """
-    MarginalCost class
-
-    Compute the marginal cost by averaging over specified coordinate dimensions.
+    Compute marginal cost by averaging across non-selected dimensions.
 
     Parameters
     ----------
     input_variable : str, default="cost"
-        Name of the dataset variable containing the cost values.
+        Name of the dataset variable containing cost values.
     coordinate_dims : list of str, default=['temperature']
-        Dimensions along which the marginalization is not performed.
+        Dimensions to marginalize.
     component_dim : str, default="ds_dim"
-        Dimension label identifying components in the dataset.
+        Dimension label representing components.
     grid_variable : str, default="design_space_grid"
-        Name of the variable in the dataset representing the design grid.
+        Dataset variable representing the design grid.
     output_variable : str, default="cost"
-        Name of the variable in the dataset where the marginal cost will be stored.
+        Name of the variable to store the marginal cost.
     name : str, default="MarginalCost"
         Name of the pipeline operation.
-
-    Attributes
-    ----------
-    coordinate_dims : list of str
-        Dimensions to retain while marginalizing over other dimensions.
-    grid_variable : str
-        Dataset variable name representing the design grid.
-    dim : str
-        Dimension label representing components.
 
     Methods
     -------
     calculate(dataset)
-        Compute marginal cost and store the resulting values and domain.
+        Compute the marginal cost by averaging over non-selected coordinate dimensions.
     """
-
     def __init__(
         self,
         input_variable: str = "cost",
@@ -227,6 +263,19 @@ class MarginalCost(PipelineOp):
         self.dim = component_dim 
 
     def calculate(self, dataset: xr.Dataset) -> Self:
+        """
+        Apply cost-weighted acquisition function to the dataset.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            Dataset containing acquisition and cost values.
+
+        Returns
+        -------
+        self : UtilityWithCost
+            Returns self with updated output containing the cost-weighted acquisition.
+        """
         grid = dataset[self.grid_variable]
         cost = dataset[self.input_variable] 
 
@@ -266,42 +315,30 @@ class MarginalCost(PipelineOp):
 
 class SlicedCost(PipelineOp):
     """
-    Compute a slice of cost along a specified coordinate dimension conditioned on a given point.
+    Compute a slice of the cost along a specified coordinate dimension.
 
     Parameters
     ----------
     input_variable : str, default="cost"
-        Name of the dataset variable containing the cost values.
+        Name of the dataset variable containing cost values.
     conditioning_point : str, default="next_composition"
-        Dataset variable representing the point used for conditioning.
+        Reference point along other dimensions for slicing.
     coordinate_dim : str, default="temperature"
-        Coordinate dimension along which the slice is performed.
+        Dimension along which the slice is computed.
     grid_variable : str, default="design_space_grid"
-        Name of the variable in the dataset representing the design grid.
+        Dataset variable representing the design grid.
     component_dim : str, default="ds_dim"
-        Dimension label identifying components in the dataset.
+        Dimension label representing components.
     output_variable : str, default="temperature"
-        Name of the variable in the dataset where the sliced cost will be stored.
+        Name of the variable to store the sliced cost.
     name : str, default="SlicedCost"
         Name of the pipeline operation.
-
-    Attributes
-    ----------
-    coordinate_dim : str
-        Dimension along which the slicing is performed.
-    conditioning_point : str
-        Dataset variable representing the conditioning point.
-    grid_variable : str
-        Dataset variable name representing the design grid.
-    dim : str
-        Dimension label representing components.
 
     Methods
     -------
     calculate(dataset)
-        Compute cost slice at the conditioning point and store the values and domain.
+        Extract a slice of cost along `coordinate_dim` at the conditioning point.
     """
-
     def __init__(
         self,
         input_variable: str = "cost",
@@ -324,6 +361,27 @@ class SlicedCost(PipelineOp):
         self.dim = component_dim 
 
     def calculate(self, dataset: xr.Dataset) -> Self:
+        """
+        Extract a slice of the cost along `coordinate_dim` at the conditioning point.
+
+        The method identifies the subset of grid points that match the given 
+        `conditioning_point` along all other dimensions, and extracts the cost 
+        values along the specified `coordinate_dim`. Both the sliced cost and its 
+        domain are stored in the output.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            Dataset containing the design space grid, cost values, and the conditioning point.
+
+        Returns
+        -------
+        self : SlicedCost
+            Returns self with updated `output` containing:
+            
+            - `output_variable`: Array of cost values along the `coordinate_dim` slice.
+            - `<output_prefix>_domain`: Array of corresponding coordinate values along the slice.
+        """
         cp = dataset[self.conditioning_point]
 
         grid = dataset[self.grid_variable]
@@ -352,30 +410,23 @@ class SlicedCost(PipelineOp):
 
 class UtilityWithCost(PipelineOp):
     """
-    Apply acquisition with cost weighting to a design grid.
+    Apply acquisition function with cost weighting to a design grid.
 
-    This class modifies an acquisition function by incorporating
-    cost penalties, following the formulation in Equation (9) of
-    "Cost-Aware Bayesian Optimization" (https://arxiv.org/pdf/1909.03600).
-    The acquisition is scaled as::
-
-        Q(x, t) * ∏ (1 - C_i(x, t))
-
-    where Q is the acquisition function and C_i are cost terms.
+    The acquisition is scaled as:
     
-    Note: 
-    This works best when the cost functions are bound to [0,1] as is the case when
-    using `DesignSpaceHierarchyCost` on [0,1] normalized design space.
+        Q(x, t) * ∏ (1 - C_i(x, t))
+    
+    where Q is the acquisition function and C_i are cost terms.
 
     Parameters
     ----------
     input_variable : str, optional
-        Name of the dataset variable containing the acquisition values.
+        Dataset variable containing acquisition values.
     cost_variables : list of str, optional
         List of dataset variables containing normalized cost values.
     output_variable : str, optional
-        Name of the variable in the dataset where the modified acquisition will be stored.
-    name : str, default="AcquisitonWithCost"
+        Name of the variable in the dataset to store the modified acquisition.
+    name : str, default="UtilityWithCost"
         Name of the pipeline operation.
 
     Attributes
@@ -386,9 +437,8 @@ class UtilityWithCost(PipelineOp):
     Methods
     -------
     calculate(dataset)
-        Apply acquisition with cost weighting and store the result.
+        Apply acquisition function with cost weighting and store the result.
     """
-
     def __init__(
         self,
         input_variable: str = None,
@@ -404,7 +454,19 @@ class UtilityWithCost(PipelineOp):
         self.cost_variables = cost_variables
 
     def calculate(self, dataset: xr.Dataset) -> Self:
+        """
+        Apply cost-weighted acquisition function to the dataset.
 
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            Dataset containing acquisition and cost values.
+
+        Returns
+        -------
+        self : UtilityWithCost
+            Returns self with updated output containing the cost-weighted acquisition.
+        """
         acqv = dataset[self.input_variable]
 
         # Computes acqusition to be Q(x, t)*(1-C(x,t)) following 
