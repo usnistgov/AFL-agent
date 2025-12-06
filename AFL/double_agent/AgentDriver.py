@@ -245,9 +245,13 @@ class DoubleAgentDriver(Driver):
         self.input: Optional[xr.Dataset] = None
         self.results: Dict[str, xr.Dataset] = dict()
 
-        self.useful_links = {
-            "Pipeline Builder": "/pipeline_builder"
-        }
+        if self.useful_links is None:
+            self.useful_links = {
+                "Pipeline Builder": "/pipeline_builder"
+            }
+        else:
+            self.useful_links["Pipeline Builder"] = "/pipeline_builder"
+        
 
 
     def status(self):
