@@ -83,12 +83,38 @@ def _get_parameter_types(cls) -> Dict[str, str]:
 
 def _collect_pipeline_ops() -> List[Dict[str, Any]]:
     """Gather metadata for all available :class:`PipelineOp` subclasses."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     ops: List[Dict[str, Any]] = []
     package = importlib.import_module("AFL.double_agent")
     for modinfo in pkgutil.iter_modules(package.__path__):
-        module = importlib.import_module(f"{package.__name__}.{modinfo.name}")
-        for name, obj in inspect.getmembers(module, inspect.isclass):
-            if issubclass(obj, PipelineOp) and obj is not PipelineOp:
+        module_name = f"{package.__name__}.{modinfo.name}"
+        try:
+            module = importlib.import_module(module_name)
+        except Exception as e:
+            msg = f"Skipping module '{module_name}': failed to import ({type(e).__name__}: {e})"
+            print(msg)
+            logger.warning(msg)
+            continue
+        
+        try:
+            members = inspect.getmembers(module, inspect.isclass)
+        except Exception as e:
+            msg = f"Skipping module '{module_name}': failed to inspect members ({type(e).__name__}: {e})"
+            print(msg)
+            logger.warning(msg)
+            continue
+        
+        for name, obj in members:
+            try:
+                if not (issubclass(obj, PipelineOp) and obj is not PipelineOp):
+                    continue
+            except TypeError:
+                # issubclass can raise TypeError for some edge cases
+                continue
+            
+            try:
                 sig = inspect.signature(obj.__init__)
                 params = {
                     k: (v.default if v.default is not inspect._empty else None)
@@ -133,6 +159,12 @@ def _collect_pipeline_ops() -> List[Dict[str, Any]]:
                         "docstring": inspect.getdoc(obj) or "",
                     }
                 )
+            except Exception as e:
+                msg = f"Skipping PipelineOp '{name}' from '{module.__name__}': failed to extract metadata ({type(e).__name__}: {e})"
+                print(msg)
+                logger.warning(msg)
+                continue
+                
     ops.sort(key=lambda o: o["name"])
     return ops
 
