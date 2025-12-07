@@ -209,11 +209,14 @@ class DoubleAgentDriver(Driver):
     defaults = {}
     defaults["save_path"] = "/home/AFL/"
     defaults["pipeline"] = {}
+    defaults["tiled_input_groups"] = []  # List[Dict] with concat_dim, variable_prefix, entry_ids
 
     static_dirs = {
         "js": pathlib.Path(__file__).parent / "driver_templates" / "pipeline_builder" / "js",
         "img": pathlib.Path(__file__).parent / "driver_templates" / "pipeline_builder" / "img",
         "css": pathlib.Path(__file__).parent / "driver_templates" / "pipeline_builder" / "css",
+        "input_builder_js": pathlib.Path(__file__).parent / "driver_templates" / "input_builder" / "js",
+        "input_builder_css": pathlib.Path(__file__).parent / "driver_templates" / "input_builder" / "css",
     }
 
     def __init__(
@@ -247,10 +250,12 @@ class DoubleAgentDriver(Driver):
 
         if self.useful_links is None:
             self.useful_links = {
-                "Pipeline Builder": "/pipeline_builder"
+                "Pipeline Builder": "/pipeline_builder",
+                "Input Builder": "/input_builder"
             }
         else:
             self.useful_links["Pipeline Builder"] = "/pipeline_builder"
+            self.useful_links["Input Builder"] = "/input_builder"
         
 
 
@@ -400,6 +405,151 @@ class DoubleAgentDriver(Driver):
     def pipeline_builder(self, **kwargs):
         """Serve the pipeline builder HTML interface."""
         return get_pipeline_builder_html()
+
+    @Driver.unqueued(render_hint='html')
+    def input_builder(self, **kwargs):
+        """Serve the input builder HTML interface."""
+        template_path = files('AFL.double_agent.driver_templates').joinpath('input_builder').joinpath('input_builder.html')
+        template = Template(template_path.read_text())
+        html = template.render()
+        return html
+
+    @Driver.unqueued()
+    def get_tiled_input_config(self, **kwargs):
+        """Return current tiled_input_groups configuration."""
+        return {
+            'status': 'success',
+            'config': self.config.get("tiled_input_groups", [])
+        }
+
+    @Driver.unqueued()
+    def set_tiled_input_config(self, config: str = None, **kwargs):
+        """Update tiled_input_groups configuration.
+        
+        Parameters
+        ----------
+        config: str
+            JSON string of list of group configs
+        """
+        import json as _json
+        try:
+            if config is None:
+                return {
+                    'status': 'error',
+                    'message': 'config parameter required'
+                }
+            
+            if isinstance(config, str):
+                config_list = _json.loads(config)
+            else:
+                config_list = config
+            
+            # Validate structure
+            if not isinstance(config_list, list):
+                return {
+                    'status': 'error',
+                    'message': 'config must be a list'
+                }
+            
+            for i, group_cfg in enumerate(config_list):
+                if not isinstance(group_cfg, dict):
+                    return {
+                        'status': 'error',
+                        'message': f'Group {i} must be a dictionary'
+                    }
+                required_keys = ['concat_dim', 'variable_prefix', 'entry_ids']
+                for key in required_keys:
+                    if key not in group_cfg:
+                        return {
+                            'status': 'error',
+                            'message': f'Group {i} missing required key: {key}'
+                        }
+                if not isinstance(group_cfg['entry_ids'], list):
+                    return {
+                        'status': 'error',
+                        'message': f'Group {i} entry_ids must be a list'
+                    }
+            
+            # Save to config (PersistentConfig auto-saves on assignment)
+            self.config["tiled_input_groups"] = config_list
+            
+            return {
+                'status': 'success',
+                'message': f'Saved {len(config_list)} group(s)',
+                'config': config_list
+            }
+        except _json.JSONDecodeError as e:
+            return {
+                'status': 'error',
+                'message': f'Invalid JSON: {str(e)}'
+            }
+        except Exception as e:
+            return {
+                'status': 'error',
+                'message': f'Error saving config: {str(e)}'
+            }
+
+    @Driver.unqueued()
+    def test_fetch_entry(self, entry_id: str = None, **kwargs):
+        """Test fetching a single entry from tiled to validate it exists.
+        
+        Parameters
+        ----------
+        entry_id: str
+            Tiled entry ID to test
+            
+        Returns
+        -------
+        dict
+            Status and metadata preview
+        """
+        if entry_id is None:
+            return {
+                'status': 'error',
+                'message': 'entry_id parameter required'
+            }
+        
+        try:
+            # Get tiled client
+            client = self._get_tiled_client()
+            if isinstance(client, dict) and client.get('status') == 'error':
+                return client
+            
+            if entry_id not in client:
+                return {
+                    'status': 'error',
+                    'message': f'Entry "{entry_id}" not found in tiled'
+                }
+            
+            item = client[entry_id]
+            metadata = dict(item.metadata) if hasattr(item, 'metadata') else {}
+            
+            # Try to get basic info about the dataset
+            try:
+                from tiled.client.xarray import DatasetClient
+                if isinstance(item, DatasetClient):
+                    dataset = item.read(optimize_wide_table=False)
+                    dims_info = dict(dataset.sizes)
+                    data_vars = list(dataset.data_vars)
+                else:
+                    dims_info = {}
+                    data_vars = []
+            except Exception:
+                dims_info = {}
+                data_vars = []
+            
+            return {
+                'status': 'success',
+                'entry_id': entry_id,
+                'metadata': metadata,
+                'dims': dims_info,
+                'data_vars': data_vars
+            }
+        except Exception as e:
+            return {
+                'status': 'error',
+                'message': f'Error testing entry: {str(e)}'
+            }
 
     @Driver.unqueued()
     def pipeline_ops(self, **kwargs):
@@ -586,6 +736,255 @@ class DoubleAgentDriver(Driver):
 
     def reset_results(self):
         self.results = dict()
+
+    def _fetch_single_entry(self, entry_id: str) -> tuple:
+        """Fetch a single entry from tiled and extract metadata.
+        
+        Parameters
+        ----------
+        entry_id: str
+            Tiled entry ID to fetch
+            
+        Returns
+        -------
+        tuple
+            (dataset, metadata_dict) where metadata_dict contains sample_name, sample_uuid, 
+            entry_id, and sample_composition
+        """
+        # Get tiled client from base Driver class
+        client = self._get_tiled_client()
+        if isinstance(client, dict) and client.get('status') == 'error':
+            raise ValueError(f"Failed to get tiled client: {client.get('message', 'Unknown error')}")
+        
+        if entry_id not in client:
+            raise ValueError(f'Entry "{entry_id}" not found in tiled')
+        
+        item = client[entry_id]
+        
+        # Fetch dataset
+        from tiled.client.xarray import DatasetClient
+        if isinstance(item, DatasetClient):
+            dataset = item.read(optimize_wide_table=False)
+        else:
+            dataset = item.read()
+        
+        # Extract metadata from tiled item
+        tiled_metadata = dict(item.metadata) if hasattr(item, 'metadata') else {}
+        
+        # Also check dataset attrs for metadata
+        ds_attrs = dict(dataset.attrs) if hasattr(dataset, 'attrs') else {}
+        
+        # Build metadata dict, preferring tiled metadata over dataset attrs
+        metadata = {
+            'entry_id': entry_id,
+            'sample_name': tiled_metadata.get('sample_name') or ds_attrs.get('sample_name') or entry_id,
+            'sample_uuid': tiled_metadata.get('sample_uuid') or ds_attrs.get('sample_uuid') or '',
+            'sample_composition': None
+        }
+        
+        # Extract sample_composition
+        comp_dict = tiled_metadata.get('sample_composition') or ds_attrs.get('sample_composition')
+        if comp_dict and isinstance(comp_dict, dict):
+            # Parse composition dict to extract components and values
+            components = []
+            values = []
+            for comp_name, comp_data in comp_dict.items():
+                # Skip non-component keys like 'units', 'components', etc.
+                if comp_name in ('units', 'conc_units', 'mass_units', 'components'):
+                    continue
+                    
+                if isinstance(comp_data, dict):
+                    # Handle both 'value' (scalar) and 'values' (array) cases
+                    if 'value' in comp_data:
+                        values.append(float(comp_data['value']))
+                        components.append(comp_name)
+                    elif 'values' in comp_data:
+                        val = comp_data['values']
+                        if isinstance(val, (list, tuple)) and len(val) > 0:
+                            values.append(float(val[0]))
+                        else:
+                            values.append(float(val) if val is not None else 0.0)
+                        components.append(comp_name)
+                elif isinstance(comp_data, (int, float)):
+                    # Direct numeric value
+                    values.append(float(comp_data))
+                    components.append(comp_name)
+            
+            if components:
+                metadata['sample_composition'] = {
+                    'components': components,
+                    'values': values
+                }
+        
+        return dataset, metadata
+
+    def _assemble_group(self, group_cfg: Dict[str, Any]) -> xr.Dataset:
+        """Assemble a single group of entries from tiled.
+        
+        Parameters
+        ----------
+        group_cfg: Dict[str, Any]
+            Configuration dict with keys: concat_dim, variable_prefix, entry_ids
+            
+        Returns
+        -------
+        xr.Dataset
+            Concatenated and prefixed dataset
+        """
+        concat_dim = group_cfg.get("concat_dim")
+        variable_prefix = group_cfg.get("variable_prefix", "")
+        entry_ids = group_cfg.get("entry_ids", [])
+        
+        if not entry_ids:
+            raise ValueError(f"Group with concat_dim '{concat_dim}' has no entry_ids")
+        
+        # Fetch all entry datasets and metadata
+        datasets = []
+        metadata_list = []
+        for entry_id in entry_ids:
+            try:
+                ds, metadata = self._fetch_single_entry(entry_id)
+                datasets.append(ds)
+                metadata_list.append(metadata)
+            except Exception as e:
+                raise ValueError(f"Failed to fetch entry '{entry_id}': {str(e)}")
+        
+        if not datasets:
+            raise ValueError(f"No datasets fetched for group with concat_dim '{concat_dim}'")
+        
+        # Collect metadata values for each entry
+        sample_names = [m['sample_name'] for m in metadata_list]
+        sample_uuids = [m['sample_uuid'] for m in metadata_list]
+        entry_id_values = [m['entry_id'] for m in metadata_list]
+        
+        # Build compositions DataArray before concatenation
+        # Collect all unique components across all entries
+        all_components = set()
+        for m in metadata_list:
+            if m['sample_composition']:
+                all_components.update(m['sample_composition']['components'])
+        all_components = sorted(list(all_components))
+        
+        # Create composition data array if we have components
+        if all_components:
+            import numpy as np
+            n_samples = len(datasets)
+            n_components = len(all_components)
+            comp_data = np.zeros((n_samples, n_components))
+            
+            for i, m in enumerate(metadata_list):
+                if m['sample_composition']:
+                    for j, comp_name in enumerate(all_components):
+                        if comp_name in m['sample_composition']['components']:
+                            idx = m['sample_composition']['components'].index(comp_name)
+                            comp_data[i, j] = m['sample_composition']['values'][idx]
+            
+            # Create the compositions DataArray
+            compositions = xr.DataArray(
+                data=comp_data,
+                dims=[concat_dim, "components"],
+                coords={
+                    concat_dim: range(n_samples),
+                    "components": all_components
+                },
+                name="composition"
+            )
+        else:
+            compositions = None
+        
+        # Concatenate along new dimension
+        # Use coords="minimal" to avoid conflict with compat="override"
+        concatenated = xr.concat(datasets, dim=concat_dim, coords="minimal", compat='override')
+        
+        # Assign 1D coordinates along concat_dim
+        concatenated = concatenated.assign_coords({
+            'sample_name': (concat_dim, sample_names),
+            'sample_uuid': (concat_dim, sample_uuids),
+            'entry_id': (concat_dim, entry_id_values)
+        })
+        
+        # Add compositions if we have it
+        if compositions is not None:
+            concatenated = concatenated.assign(composition=compositions)
+        
+        # Prefix names (data vars, coords, dims) but NOT the concat_dim itself
+        rename_dict = {}
+        
+        # Rename data variables
+        for var_name in list(concatenated.data_vars):
+            if not var_name.startswith(variable_prefix):
+                rename_dict[var_name] = variable_prefix + var_name
+        
+        # Rename coordinates (but not concat_dim)
+        for coord_name in list(concatenated.coords):
+            if coord_name == concat_dim:
+                continue  # Don't rename the concat_dim coordinate
+            if coord_name not in concatenated.dims:  # Non-dimension coordinates
+                if not coord_name.startswith(variable_prefix):
+                    rename_dict[coord_name] = variable_prefix + coord_name
+        
+        # Rename dimensions but NOT concat_dim
+        for dim_name in list(concatenated.dims):
+            if dim_name == concat_dim:
+                continue  # Don't rename the concat_dim
+            if not dim_name.startswith(variable_prefix):
+                rename_dict[dim_name] = variable_prefix + dim_name
+        
+        # Apply all renames
+        if rename_dict:
+            concatenated = concatenated.rename(rename_dict)
+        
+        return concatenated
+
+    @Driver.queued()
+    def assemble_input_from_tiled(self, **kwargs):
+        """Assemble input dataset from tiled entries based on configured groups.
+        
+        Returns
+        -------
+        dict
+            Status dict with success/error and dimensions info
+        """
+        groups = self.config.get("tiled_input_groups", [])
+        if not groups:
+            return {
+                'status': 'error',
+                'message': 'No tiled_input_groups configured. Use Input Builder to configure.'
+            }
+        
+        assembled = []
+        for i, group_cfg in enumerate(groups):
+            try:
+                group_ds = self._assemble_group(group_cfg)
+                assembled.append(group_ds)
+            except Exception as e:
+                return {
+                    'status': 'error',
+                    'message': f'Failed to assemble group {i} (concat_dim={group_cfg.get("concat_dim", "unknown")}): {str(e)}'
+                }
+        
+        if not assembled:
+            return {
+                'status': 'error',
+                'message': 'No datasets assembled'
+            }
+        
+        # Merge all groups
+        merged = xr.merge(assembled, compat="override")
+        
+        # Convert non-indexed coordinates to data variables
+        self.input = merged.reset_coords()
+        
+        # Get HTML representation
+        html_repr = self.input._repr_html_() if hasattr(self.input, '_repr_html_') else f'<pre>{str(self.input)}</pre>'
+        
+        return {
+            'status': 'success',
+            'dims': dict(self.input.sizes),
+            'data_vars': list(self.input.data_vars),
+            'coords': list(self.input.coords),
+            'html': html_repr
+        }
 
     def predict(
         self,
