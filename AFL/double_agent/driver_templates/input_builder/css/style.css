@@ -117,6 +117,18 @@ body {
   border-color: #218838;
 }
 
+/* Predict action (orange) */
+.toolbar-btn.predict-action {
+  background: #fd7e14;
+  color: white;
+  border-color: #fd7e14;
+}
+
+.toolbar-btn.predict-action:hover:not(:disabled) {
+  background: #e96b02;
+  border-color: #e96b02;
+}
+
 /* Main Content */
 #main-content {
   display: flex;
@@ -289,12 +301,12 @@ body {
 /* Status Message */
 #status-message {
   position: fixed;
-  bottom: 20px;
+  bottom: 70px; /* Above the outputs pane header */
   right: 20px;
   padding: 12px 20px;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  z-index: 1000;
+  z-index: 1001; /* Above outputs pane */
   max-width: 400px;
 }
 
@@ -498,4 +510,211 @@ body {
   padding: 10px;
   background: #f0f0f0;
   border-radius: 4px;
+}
+
+/* Outputs Pane */
+.outputs-pane {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 2px solid #ddd;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  max-height: 50vh;
+  transition: max-height 0.3s ease;
+}
+
+.outputs-pane.collapsed {
+  max-height: 50px; /* Just show the header */
+}
+
+.outputs-pane.collapsed .outputs-pane-content {
+  display: none;
+}
+
+.outputs-pane-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+  cursor: pointer;
+  user-select: none;
+}
+
+.outputs-pane-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.outputs-pane-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.outputs-count {
+  background: #6f42c1;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.toggle-btn {
+  background: #6f42c1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s;
+}
+
+.toggle-btn:hover {
+  background: #5a32a3;
+}
+
+.clear-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s;
+}
+
+.clear-btn:hover {
+  background: #c82333;
+}
+
+.outputs-pane-content {
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(50vh - 50px);
+}
+
+.outputs-list {
+  padding: 10px;
+}
+
+.output-item {
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 4px;
+  border-left: 4px solid #ccc;
+  background: #f8f9fa;
+}
+
+.output-item.error {
+  border-left-color: #dc3545;
+  background: #fff5f5;
+}
+
+.output-item.success {
+  border-left-color: #28a745;
+  background: #f0fff4;
+}
+
+.output-item.info {
+  border-left-color: #17a2b8;
+  background: #f0f9ff;
+}
+
+.output-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.output-item-type {
+  font-weight: bold;
+  font-size: 12px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.1);
+}
+
+.output-item.error .output-item-type {
+  background: #dc3545;
+  color: white;
+}
+
+.output-item.success .output-item-type {
+  background: #28a745;
+  color: white;
+}
+
+.output-item.info .output-item-type {
+  background: #17a2b8;
+  color: white;
+}
+
+.output-item-time {
+  font-size: 11px;
+  color: #666;
+}
+
+.output-item-message {
+  font-size: 13px;
+  color: #333;
+  margin-bottom: 5px;
+  word-wrap: break-word;
+}
+
+.output-item-details {
+  font-size: 12px;
+  color: #666;
+  font-family: monospace;
+  background: rgba(0,0,0,0.05);
+  padding: 8px;
+  border-radius: 3px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 5px;
+}
+
+.output-item-details.pretty-printed {
+  white-space: pre;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.output-item.error .output-item-details {
+  background: rgba(220, 53, 69, 0.1);
+  color: #721c24;
+}
+
+.output-item-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.output-item-toggle {
+  background: none;
+  border: none;
+  color: #6f42c1;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 4px;
+  text-decoration: underline;
+}
+
+.output-item-toggle:hover {
+  color: #5a32a3;
 }

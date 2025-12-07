@@ -791,6 +791,40 @@ class DoubleAgentDriver(Driver):
             'html': html_repr
         }
 
+    @Driver.unqueued()
+    def check_predict_ready(self, **kwargs):
+        """Check if predict can be called successfully."""
+        # Check pipeline loaded
+        if self.pipeline is None:
+            return {'ready': False, 'error': 'No pipeline loaded'}
+        
+        # Check input assembled  
+        if self.input is None:
+            return {'ready': False, 'error': 'No input assembled'}
+        
+        # Get required input variables from pipeline
+        required_vars = self.pipeline.input_variables()
+        
+        # Filter out generator variables (they don't need to be in the dataset)
+        required_vars = [v for v in required_vars if 'generator' not in v.lower()]
+        
+        # Get available variables from input dataset
+        available_vars = list(self.input.data_vars) + list(self.input.coords)
+        
+        # Check for missing variables
+        missing = [v for v in required_vars if v not in available_vars]
+        
+        if missing:
+            return {
+                'ready': False,
+                'error': f'Missing input variables: {missing}',
+                'required': required_vars,
+                'available': available_vars
+            }
+        
+        return {'ready': True, 'required': required_vars, 'available': available_vars}
+
+    @Driver.queued()
     def predict(
         self,
         deposit: bool = False,

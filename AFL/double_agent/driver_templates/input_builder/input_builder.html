@@ -23,6 +23,7 @@
         <div class='toolbar-divider'></div>
         <button id='preview-json-btn' class='toolbar-btn'>Preview JSON</button>
         <button id='assemble-input-btn' class='toolbar-btn execute-action'>Assemble Input</button>
+        <button id='predict-btn' class='toolbar-btn predict-action'>Predict</button>
       </div>
     </div>
 
@@ -47,6 +48,23 @@
 
     <!-- Status Message -->
     <div id='status-message' class='hidden'></div>
+
+    <!-- Outputs Pane -->
+    <div id='outputs-pane' class='outputs-pane collapsed'>
+      <div id='outputs-pane-header' class='outputs-pane-header'>
+        <h3>Outputs & Errors</h3>
+        <div class='outputs-pane-controls'>
+          <span id='outputs-count' class='outputs-count'>0</span>
+          <button id='toggle-outputs-pane' class='toggle-btn' title='Toggle pane'>▲</button>
+          <button id='clear-outputs-btn' class='clear-btn' title='Clear outputs'>Clear</button>
+        </div>
+      </div>
+      <div id='outputs-pane-content' class='outputs-pane-content'>
+        <div id='outputs-list' class='outputs-list'>
+          <div class='empty-state'>No outputs yet</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- JSON Preview Modal -->
@@ -76,6 +94,32 @@
       <div class='modal-body'>
         <div id='dataset-summary'></div>
         <div id='dataset-html-content'></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prediction Results Modal -->
+  <div id='predict-results-modal' class='modal hidden'>
+    <div class='modal-content modal-large'>
+      <div class='modal-header'>
+        <h3>Prediction Results</h3>
+        <button id='close-predict-modal' class='close-btn'>×</button>
+      </div>
+      <div class='modal-body'>
+        <div id='predict-results-content'></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Return Value Viewer Modal -->
+  <div id='returnval-modal' class='modal hidden'>
+    <div class='modal-content modal-large'>
+      <div class='modal-header'>
+        <h3>Return Value</h3>
+        <button id='close-returnval-modal' class='close-btn'>×</button>
+      </div>
+      <div class='modal-body'>
+        <div id='returnval-content'></div>
       </div>
     </div>
   </div>
