@@ -246,7 +246,7 @@ class DoubleAgentDriver(Driver):
 
 
         self.input: Optional[xr.Dataset] = None
-        self.results: Dict[str, xr.Dataset] = dict()
+        self.last_results: Optional[xr.Dataset] = None
 
         if self.useful_links is None:
             self.useful_links = {
@@ -267,30 +267,6 @@ class DoubleAgentDriver(Driver):
             status.append(f'Pipeline loaded with {len(self.pipeline.ops)} operations')
         return status
         
-
-    def initialize_input(self, db_uuid: str) -> None:
-        """
-        Set the initial input data to be evaluated in the `double_agent.Pipeline`
-
-        Parameters
-        ----------
-        db_uuid: str
-            Dropbox UUID to retrieve `xarray.Dataset` from. The Dataset should be deposited using `Client.deposit_obj`
-            in interactive mode in order to obtain the uuid of the deposited item. See example below
-
-        Example
-        -------
-        ```python
-        from AFL.automation.APIServer.Client import Client
-        import xarray as xr
-
-        client = Client('localhost',port=5053)
-        client.login('User')
-        db_uuid = client.deposit_obj(obj=xr.Dataset(),interactive=True)['return_val']
-        client.enqueue(task_name='initialize_input',db_uuid=db_uuid)
-        ```
-        """
-        self.input = self.retrieve_obj(db_uuid)
 
     def initialize_pipeline(self, db_uuid: str = None, pipeline: List[Dict[str, Any]] = None, name: str = "Pipeline") -> None:
         """
@@ -734,8 +710,6 @@ class DoubleAgentDriver(Driver):
 
         return {'connections': connections, 'errors': []}
 
-    def reset_results(self):
-        self.results = dict()
 
     def _assemble_group(self, group_cfg: Dict[str, Any]) -> xr.Dataset:
         """Assemble a single group of entries from tiled.
@@ -819,8 +793,8 @@ class DoubleAgentDriver(Driver):
 
     def predict(
         self,
-        deposit: bool = True,
-        save_to_disk: bool = True,
+        deposit: bool = False,
+        save_to_disk: bool = False,
         sample_uuid: Optional[str] = None,
         AL_campaign_name: Optional[str] = None,
     ) -> str:
@@ -844,6 +818,8 @@ class DoubleAgentDriver(Driver):
             Optionally provide an AL campaign name to tag the calculation with
 
         """
+        self.assemble_input_from_tiled()
+
         if (self.pipeline is None) or (self.input is None):
             raise ValueError(
                 """Cannot predict without a pipeline and input loaded! Use client.set_driver_object to upload an """
@@ -855,25 +831,24 @@ class DoubleAgentDriver(Driver):
             sample_uuid = 'SAM-'+str(uuid.uuid4())
 
         ag_uid = "AG-" + str(uuid.uuid4())
-        self.results[ag_uid] = self.pipeline.calculate(self.input)
+        self.last_results = self.pipeline.calculate(self.input)
 
-        self.results[ag_uid].attrs['sample_uuid'] = sample_uuid
-        self.results[ag_uid].attrs['ag_uuid'] = ag_uid
-        self.results[ag_uid].attrs['AL_campaign_name'] = AL_campaign_name
+        self.last_results.attrs['sample_uuid'] = sample_uuid
+        self.last_results.attrs['ag_uuid'] = ag_uid
+        self.last_results.attrs['AL_campaign_name'] = AL_campaign_name
 
         if save_to_disk:
             path = (
                 pathlib.Path(self.config["save_path"])
                 / f"{AL_campaign_name}_SAM-{str(sample_uuid)[-6:]}_AG-{ag_uid[-6:]}.nc"
             )
-            self.results[ag_uid].to_netcdf(path)
+            self.last_results.to_netcdf(path)
 
         if deposit:
-            self.deposit_obj(self.results[ag_uid], uid=ag_uid)
+            self.deposit_obj(self.last_results, uid=ag_uid)
         
-        self.last_results = self.results[ag_uid]
         
-        return ag_uid
+        return self.last_results
 
 _OVERRIDE_MAIN_MODULE_NAME = 'DoubleAgentDriver'
 if __name__ == '__main__':
