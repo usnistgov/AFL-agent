@@ -93,7 +93,7 @@ class Extrapolator(PipelineOp):
         self.grid_dim = grid_dim
         self.grid = None# store grid for plotting
 
-        self._banned_from_attrs.extend(["kernel"])
+        self._banned_from_attrs.extend(["kernel", "grid"])
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this extrapolator to the supplied dataset.

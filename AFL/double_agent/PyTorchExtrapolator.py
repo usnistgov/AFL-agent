@@ -7,9 +7,12 @@ import torch
 from gpytorch.models import ExactGP
 from gpytorch.likelihoods import DirichletClassificationLikelihood
 from gpytorch.means import ConstantMean
-from gpytorch.kernels import ScaleKernel, RBFKernel
 from gpytorch.distributions import MultivariateNormal
 from gpytorch.mlls import ExactMarginalLogLikelihood
+import pyro
+from pyro.infer.mcmc import NUTS, MCMC
+from tqdm.auto import tqdm
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 torch.set_default_dtype(torch.double)
 
@@ -89,23 +92,6 @@ class DirichletGPExtrapolator(Extrapolator):
         - "{prefix}y_prob": Class probabilities for each grid point
         - "{prefix}entropy": Prediction entropy (only for single-class case)
 
-    Examples
-    --------
-    >>> # Create extrapolator for materials classification
-    >>> extrapolator = DirichletGPExtrapolator(
-    ...     feature_input_variable="composition",
-    ...     predictor_input_variable="phase_labels", 
-    ...     output_prefix="gp_",
-    ...     grid_variable="composition_grid",
-    ...     grid_dim="grid_point",
-    ...     sample_dim="sample",
-    ...     params={"learning_rate": 0.05, "n_iterations": 300, "verbose": True}
-    ... )
-    >>> 
-    >>> # Apply to dataset
-    >>> result = extrapolator.calculate(dataset)
-    >>> probabilities = result.output["gp_y_prob"]
-    >>> predictions = result.output["gp_mean"]
     """
 
     def __init__(
@@ -116,6 +102,7 @@ class DirichletGPExtrapolator(Extrapolator):
         grid_variable: str,
         grid_dim: str,
         sample_dim: str,
+        component_dim:str,
         params: Optional[Dict[str, Any]] = None,
         name: str = "DirichletGPExtrapolator",
     ) -> None:
@@ -160,6 +147,7 @@ class DirichletGPExtrapolator(Extrapolator):
         )
         self.output_prefix = output_prefix
         self.params = params
+        self.component_dim = component_dim
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply Dirichlet GP classification to the supplied dataset.
@@ -203,23 +191,6 @@ class DirichletGPExtrapolator(Extrapolator):
         For multi-class cases, the method uses Monte Carlo sampling (256 samples)
         from the posterior predictive distribution to estimate class probabilities,
         providing robust uncertainty quantification.
-
-        Examples
-        --------
-        >>> # Prepare dataset with composition features and phase labels
-        >>> dataset = xr.Dataset({
-        ...     'composition': (['sample', 'element'], composition_array),
-        ...     'phase_labels': (['sample'], label_array),
-        ...     'composition_grid': (['grid_point', 'element'], grid_array)
-        ... })
-        >>> 
-        >>> # Apply extrapolation
-        >>> extrapolator = DirichletGPExtrapolator(...)
-        >>> result = extrapolator.calculate(dataset)
-        >>> 
-        >>> # Access results
-        >>> class_probs = result.output['prefix_y_prob']  # Shape: (grid_point, n_classes)
-        >>> predictions = result.output['prefix_mean']    # Shape: (grid_point,)
         """
         X = dataset[self.feature_input_variable].transpose(self.sample_dim, ...)
         y = dataset[self.predictor_input_variable].transpose(self.sample_dim, ...)
@@ -238,40 +209,84 @@ class DirichletGPExtrapolator(Extrapolator):
             )
 
         else:
-            # Set up GP model for multi-class classification
             train_x = torch.from_numpy(X.to_numpy()).to(device)
             train_y = torch.from_numpy(y.to_numpy()).long().squeeze().to(device)
-            likelihood = DirichletClassificationLikelihood(train_y, learn_additional_noise=True)
-            model = GPModel(train_x, likelihood.transformed_targets, likelihood, num_classes=likelihood.num_classes)
-            model, likelihood = self.fit(train_x, model, likelihood, **self.params) # type: ignore
-            
-            # Generate predictions
-            model.eval()
-            likelihood.eval()
-
-            with gpytorch.settings.fast_pred_var(), torch.no_grad():
-                test_x = torch.from_numpy(self.grid.values).to(device)
-                test_dist = model(test_x)
-                pred_means = test_dist.loc
-
-                # Monte Carlo sampling for probability estimation
-                pred_samples = test_dist.sample(torch.Size((256,))).exp()
-                probabilities = (pred_samples / pred_samples.sum(-2, keepdim=True)).mean(0)
-                entropy = torch.special.entr(probabilities).sum(0)
-
-                self.output[self._prefix_output("mean")] = xr.DataArray(
-                    pred_means.numpy().argmax(axis=0), dims=self.grid_dim
+            if self.params.get("method", "mcmc")=="mcmc":
+                samples = self.mcmc(train_x, train_y, **self.params) # type: ignore
+                pred_means, probabilities, entropy, gradient = self._predict_mcmc(
+                    samples, train_x, train_y, self.grid.values, **self.params
                 )
-                self.output[self._prefix_output("entropy")] = xr.DataArray(
-                    entropy.numpy(), dims=self.grid_dim
+            else:
+                model, likelihood = self.mll(train_x, train_y, **self.params) # type: ignore
+                model.eval()
+                likelihood.eval()
+                pred_means, probabilities, entropy, gradient = self._predict_mll(
+                    self.grid.values, model, **self.params
                 )
-                self.output[self._prefix_output("y_prob")] = xr.DataArray(
-                    entropy.numpy(), dims=self.grid_dim
-                )
+                
+            self.output[self._prefix_output("mean")] = xr.DataArray(
+                pred_means.detach().numpy(), dims=self.grid_dim
+            )
+            self.output[self._prefix_output("entropy")] = xr.DataArray(
+                entropy.detach().numpy(), dims=self.grid_dim
+            )
+            self.output[self._prefix_output("y_prob")] = xr.DataArray(
+                probabilities.detach().numpy(), dims=(self.grid_dim, self._prefix_output("n_classes"))
+            )
+            self.output[self._prefix_output("entropy_gradient")] = xr.DataArray(
+                gradient.detach().numpy(), dims=(self.grid_dim, self.component_dim)
+            )
 
         return self 
 
-    def fit(self, train_x, model, likelihood, **kwargs):
+    def _predict_mll(self, x, model, **kwargs):
+        """
+        Compute predictions, probabilities, entropy, and entropy gradients for given inputs.
+
+        Parameters
+        ----------
+        x : numpy.ndarray of shape (N, d)
+            Input features where N is the number of samples and d is the feature dimension.
+        model : callable
+            A callable that takes a torch tensor of shape (N, d) and returns a
+            torch distribution object.
+        **kwargs : dict, optional
+            Additional keyword arguments (not used directly in this function).
+
+        Returns
+        -------
+        pred_labels : torch.Tensor of shape (N,)
+            Predicted class labels obtained via argmax over the mean probabilities.
+        probabilities : torch.Tensor of shape (N, num_classes)
+            Estimated class probabilities averaged over Monte Carlo samples.
+        entropy : torch.Tensor of shape (N,)
+            Entropy of the class probability distribution for each input sample.
+        gradient : torch.Tensor of shape (N, d)
+            Gradient of the entropy with respect to the input features.
+        """
+
+        xt = torch.from_numpy(x).float().clone().detach().requires_grad_(True)
+
+        dist = model(xt)
+
+        pred_samples = dist.rsample(torch.Size((256,))).exp()
+        probabilities = pred_samples / pred_samples.sum(dim=-1, keepdim=True)  # (256, num_classes, N)
+        probabilities = probabilities.mean(dim=0) # shape (num_classes, N)
+        pred_labels = probabilities.argmax(dim=0) # shape (N,)
+        entropy = torch.special.entr(probabilities).sum(dim=0) # shape (N,)
+
+        gradient = torch.autograd.grad(
+            outputs=entropy,
+            inputs=xt,
+            grad_outputs=torch.ones_like(entropy),
+            create_graph=False,
+            retain_graph=False,
+            only_inputs=True
+        )[0]  # (N, sample_dim)
+
+        return pred_labels, probabilities.T, entropy, gradient
+
+    def mll(self, train_x, train_y, **kwargs):
         """Train the Gaussian Process model using exact marginal log-likelihood.
         
         Optimizes the GP hyperparameters by maximizing the marginal log-likelihood
@@ -316,19 +331,16 @@ class DirichletGPExtrapolator(Extrapolator):
         - Training loss (negative log marginal likelihood)
         - Mean kernel lengthscale across dimensions
         - Mean noise level in the likelihood
-
-        Examples
-        --------
-        >>> # Manual training call (typically handled internally)
-        >>> model, likelihood = extrapolator.fit(
-        ...     train_x=training_features,
-        ...     model=gp_model, 
-        ...     likelihood=dirichlet_likelihood,
-        ...     learning_rate=0.05,
-        ...     n_iterations=500,
-        ...     verbose=True
-        ... )
         """
+        likelihood = DirichletClassificationLikelihood(
+            train_y, learn_additional_noise=True
+        )
+        model = GPModel(
+            train_x, 
+            likelihood.transformed_targets, 
+            likelihood, 
+            num_classes=likelihood.num_classes
+        )
         model.train()
         likelihood.train()
         optimizer = torch.optim.Adam(model.parameters(), lr=kwargs.get("learning_rate", 0.1)) 
@@ -349,8 +361,203 @@ class DirichletGPExtrapolator(Extrapolator):
                         model.covar_module.base_kernel.lengthscale.mean().item(),
                         model.likelihood.second_noise_covar.noise.mean().item()
                     ))
-
+        self.is_mcmc = False
         return model, likelihood
+
+    def mcmc(self, train_x, train_y, **kwargs):
+        """
+        Run Markov Chain Monte Carlo (MCMC) inference for a Gaussian Process (GP) 
+        classification model with a Dirichlet likelihood.
+
+        Parameters
+        ----------
+        train_x : torch.Tensor of shape (N, d)
+            Training inputs, where N is the number of samples and d is the input dimension.
+        train_y : torch.Tensor of shape (N,)
+            Training targets, containing class labels for each sample.
+        **kwargs : dict, optional
+            Additional keyword arguments:
+            
+            - num_samples : int, default=100
+                Number of MCMC samples to draw after warmup.
+            - num_warmup : int, default=100
+                Number of warmup (burn-in) steps before collecting samples.
+            - verbose : bool, default=False
+                If True, display progress bar during MCMC sampling.
+
+        Returns
+        -------
+        samples : dict[str, torch.Tensor]
+            Dictionary of posterior samples. Keys correspond to parameter names 
+            (e.g., "mean_module.constant", "covar_module.base_kernel.lengthscale", 
+            "covar_module.outputscale", "likelihood.second_noise"), and values 
+            are tensors of shape `(num_samples, ...)` depending on parameter dimensions.
+
+        Notes
+        -----
+        - The function sets up a GP model with the following priors:
+        
+        * Constant mean: Uniform(-1, 1)  
+        * Lengthscale: Uniform(0.01, 1.0)  
+        * Outputscale: Uniform(1, 2)  
+        * Likelihood noise: Uniform(1e-3, 1e-1)
+
+        - The inference is performed using Pyro's NUTS sampler.
+        """
+
+        num_samples = kwargs.get("num_samples", 100)
+        warmup_steps = kwargs.get("num_warmup", 100)
+        verbose = kwargs.get("verbose", False)
+
+        likelihood = DirichletClassificationLikelihood(
+            train_y,
+            learn_additional_noise=True
+        )
+        num_classes = likelihood.num_classes
+        model = GPModel(
+            train_x,
+            likelihood.transformed_targets,
+            likelihood,
+            num_classes=num_classes
+        )
+
+        model.mean_module.register_prior(
+            "mean_prior", gpytorch.priors.UniformPrior(-1, 1), "constant"
+            )
+        model.covar_module.base_kernel.register_prior(
+            "lengthscale_prior", gpytorch.priors.UniformPrior(0.01, 1.0), "lengthscale"
+            )
+        model.covar_module.register_prior(
+            "outputscale_prior", gpytorch.priors.UniformPrior(1, 2), "outputscale"
+            )
+        likelihood.register_prior(
+            "noise_prior", gpytorch.priors.UniformPrior(1e-3, 1e-1), "second_noise"
+            )
+
+        def pyro_model(x, y):
+            with gpytorch.settings.fast_computations(False, False, False):
+                sampled_model = model.pyro_sample_from_prior()
+                output = sampled_model.likelihood(sampled_model(x))
+                pyro.sample("obs", output, obs=y)
+            return y
+
+        # --- Run MCMC ---
+        nuts = NUTS(pyro_model)
+        mcmc = MCMC(
+            nuts,
+            num_samples=num_samples,
+            warmup_steps=warmup_steps,
+            disable_progbar=not verbose
+        )
+        mcmc.run(train_x, likelihood.transformed_targets)
+
+        return mcmc.get_samples()
+    
+    def _predict_mcmc(self, 
+                      samples,
+                      train_x,
+                      train_y,
+                      test_x,
+                      **kwargs
+                    ):
+        """
+        Make predictions using posterior samples from MCMC.
+
+        This function reconstructs the model for each posterior sample, applies the 
+        sampled parameters, and computes predictions on the test inputs. It avoids 
+        batch-dimension mismatches that may occur with `pyro_load_from_samples`.
+
+        Parameters
+        ----------
+        samples : dict[str, torch.Tensor]
+            Dictionary of posterior samples, typically obtained from `mcmc.get_samples()`.
+            Keys correspond to parameter names (e.g., "mean_module.constant", 
+            "covar_module.base_kernel.lengthscale", "covar_module.outputscale", 
+            "likelihood.second_noise"), and values are tensors of shape `(num_samples, ...)`.
+        train_x : torch.Tensor of shape (N, d)
+            Training inputs used to define the GP model.
+        train_y : torch.Tensor of shape (N,)
+            Training targets containing class labels.
+        test_x : numpy.ndarray of shape (M, d)
+            Test inputs for which predictions will be made.
+        **kwargs : dict, optional
+            Additional keyword arguments:
+            
+            - verbose : bool, default=False
+                If True, display progress bar during prediction sampling.
+
+        Returns
+        -------
+        labels : torch.Tensor of shape (M,)
+            Predicted class labels for the test inputs, obtained by argmax over the 
+            averaged class probabilities.
+        probabilities : torch.Tensor of shape (M, num_classes)
+            Averaged class probabilities across posterior samples.
+        entropy : torch.Tensor of shape (M,)
+            Entropy of the predictive class probability distribution for each test input.
+        gradient : torch.Tensor of shape (M, d)
+            Gradient of the entropy with respect to the test input features.
+
+        """
+
+        all_predictions = []
+        
+        sample_keys = list(samples.keys())
+        num_samples = samples[sample_keys[0]].shape[0]
+        xt = torch.from_numpy(test_x).float().clone().detach().requires_grad_(True)    
+        with tqdm(range(num_samples), disable=not kwargs.get("verbose", False)) as pbar:
+            for i in pbar:
+                pbar.set_description(f"Sampling {i+1}/{num_samples}")
+                sample = {key: val[i] for key, val in samples.items()}
+                
+                likelihood = DirichletClassificationLikelihood(
+                    train_y, learn_additional_noise=True
+                )
+                model = GPModel(
+                    train_x, 
+                    likelihood.transformed_targets, 
+                    likelihood, 
+                    num_classes=likelihood.num_classes
+                )
+                
+                model.eval()
+                likelihood.eval()
+
+                if 'mean_module.constant' in sample:
+                    model.mean_module.constant.data = sample['mean_module.constant']
+                
+                if 'covar_module.base_kernel.lengthscale' in sample:
+                    model.covar_module.base_kernel.lengthscale = sample['covar_module.base_kernel.lengthscale']
+                    
+                if 'covar_module.outputscale' in sample:
+                    model.covar_module.outputscale = sample['covar_module.outputscale']
+                    
+                if 'likelihood.second_noise' in sample:
+                    likelihood.second_noise = sample['likelihood.second_noise']
+                
+                # Make prediction with this sample
+                rho = model(xt)
+                all_predictions.append(rho.mean)  # Shape: [num_classes, num_test_points]
+        
+        # Stack all predictions: [num_samples, num_classes, num_test_points]
+        preds = torch.stack(all_predictions, dim=0)
+        logits_transposed = preds.permute(0, 2, 1)
+        
+        # Compute required outputs
+        probabilities = torch.softmax(logits_transposed, dim=-1).mean(0)  # [N, num_classes]
+        labels = probabilities.argmax(dim=1) # (N, )
+        entropy = torch.special.entr(probabilities).sum(dim=1) # (N, )
+
+        gradient = torch.autograd.grad(
+            outputs=entropy,
+            inputs=xt,
+            grad_outputs=torch.ones_like(entropy),
+            create_graph=False,
+            retain_graph=False,
+            only_inputs=True
+        )[0]  # (N, sample_dim)
+
+        return labels, probabilities, entropy, gradient
 
 class GPModel(ExactGP):
     """
@@ -378,24 +585,6 @@ class GPModel(ExactGP):
         likelihood (Likelihood): GPyTorch likelihood function (e.g., GaussianLikelihood
             for regression, BernoulliLikelihood for classification).
         num_classes (int): Number of output classes or dimensions.
-    
-    Example:
-        >>> import torch
-        >>> from gpytorch.likelihoods import GaussianLikelihood
-        >>> 
-        >>> # Generate sample data
-        >>> train_x = torch.randn(100, 2)
-        >>> train_y = torch.randn(100, 3)  # 3 classes
-        >>> likelihood = GaussianLikelihood()
-        >>> 
-        >>> # Create model
-        >>> model = GPModel(train_x, train_y, likelihood, num_classes=3)
-        >>> 
-        >>> # Forward pass
-        >>> with torch.no_grad():
-        ...     pred_dist = model(train_x)
-        ...     mean = pred_dist.mean
-        ...     variance = pred_dist.variance
     """
     
     def __init__(self, train_x, train_y, likelihood, num_classes):
@@ -419,9 +608,18 @@ class GPModel(ExactGP):
                 GPyTorch likelihood.
         """
         super().__init__(train_x, train_y, likelihood)
-        self.mean_module = ConstantMean(batch_shape=torch.Size((num_classes,)))
-        self.covar_module = ScaleKernel(
-            RBFKernel(batch_shape=torch.Size((num_classes,))),
+        self.mean_module = ConstantMean(
+            batch_shape=torch.Size((num_classes,)),
+        )
+        ard = train_x.shape[-1]
+        base_kernel = gpytorch.kernels.MaternKernel(
+            nu=2.5,
+            ard_num_dims=ard,
+            batch_shape=torch.Size((num_classes,))
+        )
+     
+        self.covar_module = gpytorch.kernels.ScaleKernel(
+            base_kernel,
             batch_shape=torch.Size((num_classes,)),
         )
 
@@ -449,16 +647,7 @@ class GPModel(ExactGP):
             This method should typically be called within a torch.no_grad() context
             for prediction, or within the training loop for computing the marginal
             log-likelihood.
-        
-        Example:
-            >>> test_x = torch.randn(50, 2)
-            >>> with torch.no_grad():
-            ...     pred_dist = model(test_x)
-            ...     mean_pred = pred_dist.mean  # Shape: (num_classes, 50)
-            ...     var_pred = pred_dist.variance  # Shape: (num_classes, 50)
         """
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
         return MultivariateNormal(mean_x, covar_x)
-
-
