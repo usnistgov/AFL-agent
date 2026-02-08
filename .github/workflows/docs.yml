@@ -9,6 +9,7 @@ on: [push, pull_request, delete]
 jobs:
   docs:
     runs-on: ubuntu-latest
+    if: github.event.repository.fork == false
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@v1.3.1
