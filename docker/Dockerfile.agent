@@ -1,0 +1,56 @@
+# Dockerfile for DoubleAgent service
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    git \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY . .
+RUN python -m pip install --user --no-cache-dir --upgrade pip setuptools wheel
+RUN python -m pip install --user --no-cache-dir .[automation]
+# Install AFL-automation from fork (add-docker branch)
+#
+# TODO: change this to https://github.com/usnistgov/AFL-automation
+#       if this PR gets merged: https://github.com/usnistgov/AFL-automation/pull/120
+RUN python -m pip install --user --no-cache-dir \
+    "AFL-automation @ git+https://github.com/marshallmcdonnell/AFL-automation@add-docker"
+
+FROM python:3.12-slim
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy installed packages from builder
+COPY --from=builder /root/.local /root/.local
+
+# Make sure scripts in .local are usable
+ENV PATH=/root/.local/bin:$PATH \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:$PYTHONPATH \
+    AFL_AGENT_PORT=5003 \
+    TILED_SERVER=http://tiled:8000 \
+    TILED_API_KEY=devkey
+
+# Create configuration directory
+RUN mkdir -p /root/.afl
+
+# Copy agent configuration
+COPY docker/config/agent-config.json /root/.afl/config.json
+
+# Expose the agent port
+EXPOSE 5003
+
+# Health check against driver_status endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:5003/driver_status || exit 1
+
+# Default entry point: run the agent driver
+CMD ["python", "-m", "AFL.double_agent.AgentDriver"]

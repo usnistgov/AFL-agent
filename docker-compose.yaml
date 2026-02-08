@@ -1,0 +1,36 @@
+services:
+  tiled:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.tiled
+    ports:
+      - "8000:8000"
+    environment:
+      - TILED_PORT=8000
+    volumes:
+      - tiled-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests,sys; r=requests.get('http://localhost:8000/api/v1/metadata', headers={'X-Tiled-Api-Key':'devkey'}); sys.exit(0 if r.status_code in (200,401,403,404) else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  agent:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.agent
+    ports:
+      - "5003:5003"
+    environment:
+      - AFL_AGENT_PORT=5003
+      - TILED_SERVER=http://tiled:8000
+      - TILED_API_KEY=devkey
+    depends_on:
+      - tiled
+    volumes:
+      - ./docker/config/agent-config.json:/root/.afl/config.json:ro
+    command: ["python", "-m", "AFL.double_agent.AgentDriver"]
+
+volumes:
+  tiled-data:
