@@ -4,9 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-  # TODO: can remove this after merged into 'usnistgov/AFL-agent', used for testing in fork
-  release:
-    types: [published]
   workflow_dispatch: {}
 
 jobs:
