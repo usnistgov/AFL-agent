@@ -1,4 +1,5 @@
 import copy
+import re
 import warnings
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, List
@@ -163,10 +164,50 @@ class PipelineOp(ABC):
         """
         fqcn = json_data["class"]  # e.g. "module.ClassName"
         args = json_data["args"]
+        
+        # Coerce string 'null' values to Python None (can happen from GUI inputs)
+        args = cls._coerce_json_values(args)
+        
         mod_name, class_name = fqcn.rsplit(".", 1)
         module = importlib.import_module(mod_name)
         klass = getattr(module, class_name)
         return klass(**args)
+
+    @staticmethod
+    def _coerce_json_values(obj):
+        """
+        Recursively convert string representations of JSON primitives to their
+        Python equivalents. This handles cases where 'null', 'true', 'false',
+        or numeric strings come through from GUI text inputs.
+        """
+        if isinstance(obj, dict):
+            return {k: PipelineOp._coerce_json_values(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [PipelineOp._coerce_json_values(item) for item in obj]
+        elif isinstance(obj, str):
+            stripped = obj.strip()
+            # Handle null
+            if stripped == 'null':
+                return None
+            # Handle booleans
+            if stripped == 'true':
+                return True
+            if stripped == 'false':
+                return False
+            # Handle numeric values (integers and floats including scientific notation)
+            # Use regex to match valid numeric patterns
+            if re.match(r'^-?\d+$', stripped):
+                # Integer
+                return int(stripped)
+            if re.match(r'^-?\d+\.?\d*(?:[eE][+-]?\d+)?$', stripped):
+                # Float or scientific notation
+                try:
+                    return float(stripped)
+                except ValueError:
+                    pass
+            return obj
+        else:
+            return obj
 
     @abstractmethod
     def calculate(self, dataset: xr.Dataset) -> Self:
