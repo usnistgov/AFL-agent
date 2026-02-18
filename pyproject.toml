@@ -12,7 +12,7 @@ version-file = "AFL/double_agent/_version.py"
 allow-direct-references=true
 
 [project]
-name = "AFL-agent"
+name = "AFL"
 dynamic = ["version"]
 description = "Agent code for the Autonomous Formulation Lab"
 readme = "README.md"
@@ -94,6 +94,10 @@ automation = [
     "pyserial",
     "bokeh",
     "requests",
+]
+
+mlmodels = [
+    "TreeHierarchy @ git+https://github.com/grahamRobertsW/TreeHierarchy"
 ]
 
 dev = [
