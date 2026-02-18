@@ -10,8 +10,19 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      # - uses: martintb/Docs4NIST@themedir-bug
-      - uses: usnistgov/Docs4NIST@0.7
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+      - name: Docs4NIST
+        # uses: martintb/Docs4NIST@themedir-bug
+        uses: usnistgov/Docs4NIST@0.7
         with:
           docs-folder: docs/
           conda-environment: "docs.yml"

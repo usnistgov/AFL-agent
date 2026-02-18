@@ -391,27 +391,116 @@ function deleteDictKey(path) {
 }
 
 function addNestedKey(path) {
-  const keyName = prompt('Enter key name:');
-  if (!keyName) return;
-  
-  const keys = path.split('.');
-  let current = dictEditorState.currentData;
-  
-  // Navigate to target object
-  for (const key of keys) {
-    current = current[key];
-  }
-  
-  current[keyName] = '';
-  renderDictEditor();
+  showAddKeyDialog((keyName, valueType) => {
+    const keys = path.split('.');
+    let current = dictEditorState.currentData;
+    
+    // Navigate to target object
+    for (const key of keys) {
+      current = current[key];
+    }
+    
+    current[keyName] = getDefaultValueForType(valueType);
+    renderDictEditor();
+  });
 }
 
 function addTopLevelKey() {
-  const keyName = prompt('Enter key name:');
-  if (!keyName) return;
+  showAddKeyDialog((keyName, valueType) => {
+    dictEditorState.currentData[keyName] = getDefaultValueForType(valueType);
+    renderDictEditor();
+  });
+}
+
+function getDefaultValueForType(valueType) {
+  switch (valueType) {
+    case 'dict':
+      return {};
+    case 'array':
+      return [];
+    case 'number':
+      return 0;
+    case 'boolean':
+      return false;
+    case 'null':
+      return null;
+    case 'string':
+    default:
+      return '';
+  }
+}
+
+function showAddKeyDialog(callback) {
+  // Create modal overlay
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 4000; display: flex; align-items: center; justify-content: center;';
   
-  dictEditorState.currentData[keyName] = '';
-  renderDictEditor();
+  const dialog = document.createElement('div');
+  dialog.style.cssText = 'background: white; padding: 20px; border-radius: 8px; min-width: 300px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+  
+  dialog.innerHTML = `
+    <h4 style="margin-top: 0; margin-bottom: 15px;">Add New Key</h4>
+    <div style="margin-bottom: 15px;">
+      <label style="display: block; margin-bottom: 5px; font-weight: 500;">Key Name:</label>
+      <input type="text" id="add-key-name" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" placeholder="Enter key name">
+    </div>
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 5px; font-weight: 500;">Value Type:</label>
+      <select id="add-key-type" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+        <option value="string">String (text)</option>
+        <option value="number">Number</option>
+        <option value="boolean">Boolean (true/false)</option>
+        <option value="null">Null</option>
+        <option value="dict">Dictionary (nested object)</option>
+        <option value="array">Array (list)</option>
+      </select>
+    </div>
+    <div style="text-align: right;">
+      <button id="add-key-cancel" style="margin-right: 10px; padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer;">Cancel</button>
+      <button id="add-key-confirm" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Add Key</button>
+    </div>
+  `;
+  
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  
+  const keyNameInput = dialog.querySelector('#add-key-name');
+  const keyTypeSelect = dialog.querySelector('#add-key-type');
+  const cancelBtn = dialog.querySelector('#add-key-cancel');
+  const confirmBtn = dialog.querySelector('#add-key-confirm');
+  
+  // Focus the key name input
+  keyNameInput.focus();
+  
+  const cleanup = () => {
+    document.body.removeChild(overlay);
+  };
+  
+  cancelBtn.addEventListener('click', cleanup);
+  
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) cleanup();
+  });
+  
+  confirmBtn.addEventListener('click', () => {
+    const keyName = keyNameInput.value.trim();
+    if (!keyName) {
+      keyNameInput.style.borderColor = '#dc3545';
+      keyNameInput.focus();
+      return;
+    }
+    const valueType = keyTypeSelect.value;
+    cleanup();
+    callback(keyName, valueType);
+  });
+  
+  keyNameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      confirmBtn.click();
+    } else if (e.key === 'Escape') {
+      cleanup();
+    }
+  });
 }
 
 function validateDictData() {
@@ -1034,6 +1123,8 @@ function buildOps() {
 
 function parseValue(value) {
     const trimmed = value.trim();
+    
+    // Handle JSON objects and arrays
     if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
         try {
             // Attempt to parse as JSON
@@ -1043,6 +1134,30 @@ function parseValue(value) {
             return value;
         }
     }
+    
+    // Handle null - must check before other primitives
+    if (trimmed === 'null') {
+        return null;
+    }
+    
+    // Handle booleans
+    if (trimmed === 'true') {
+        return true;
+    }
+    if (trimmed === 'false') {
+        return false;
+    }
+    
+    // Handle numbers (integers and floats)
+    if (/^-?\d+$/.test(trimmed)) {
+        // Integer
+        return parseInt(trimmed, 10);
+    }
+    if (/^-?\d+\.?\d*(?:[eE][+-]?\d+)?$/.test(trimmed) && !isNaN(parseFloat(trimmed))) {
+        // Float or scientific notation
+        return parseFloat(trimmed);
+    }
+    
     return value;
 }
 
