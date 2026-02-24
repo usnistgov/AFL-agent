@@ -19,20 +19,22 @@ from AFL.double_agent.data import (
     load_dataset,
     example_dataset1,
 )
-try:
-    from TreeHierarchy import (
-        TreeHierarchy,
-        json_decoder,
-    )
-    TREEHIERARCHY_AVAILABLE = True
-except ModuleNotFoundError:
-    TREEHIERARCHY_AVAILABLE = False
-    warnings.warn(
-        "TreeHierarchy module not available; skipping TreeHierarchy tests.",
-        RuntimeWarning,
-        stacklevel=2,
-    )
+# try:
+#     from TreeHierarchy import (
+#         TreeHierarchy,
+#         json_decoder,
+#     )
+#     TREEHIERARCHY_AVAILABLE = True
+# except ModuleNotFoundError:
+#     TREEHIERARCHY_AVAILABLE = False
+#     warnings.warn(
+#         "TreeHierarchy module not available; skipping TreeHierarchy tests.",
+#         RuntimeWarning,
+#         stacklevel=2,
+#     )
 
+from AFL.double_agent.TreeHierarchy import TreeHierarchy, json_decoder
+TREEHIERARCHY_AVAILABLE = True
 
 @pytest.mark.unit
 @pytest.mark.skipif(
