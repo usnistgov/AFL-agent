@@ -35,7 +35,7 @@ class ClassificationPipeline(PipelineOp):
 
     def calculate(self, dataset):
         data = self._get_variable(dataset)
-        predicted_classes = self.classifier.predict(np.log10(data))
+        predicted_classes = self.classifier.predict(data)
         dataset[self.output_variable] = ('sample', predicted_classes)
         return(self)
 
@@ -64,13 +64,67 @@ class RegressionPipeline(PipelineOp):
         key = dataset[self.key_variable].data
         print(np.unique(key))
         print(self.morphology)
-        inds = np.where(np.equal(key, self.morphology))
-        predictions = self.regression.predict(np.log10(data[inds]))
+        inds = np.where(np.equal(key, self.morphology))[0]
+        predictions = self.regression.predict(data[inds])
         if self.output_variable in dataset.data_vars:
             output = dataset[self.output_variable].data
         else:
             output = np.nan * np.ones(data.shape[0])
-        output[inds] = predictions
+        print("INDS")
+        print(inds.shape)
+        print("PREDS")
+        print(predictions.shape)
+        output[inds] = predictions.reshape(-1)
         dataset[self.output_variable] = ('sample', output)
         return(self)
 
+class ThresholdClassificationPipeline(PipelineOp):
+    def __init__(self, input_variable, output_variable, components, threshold, name = "mixture_separation"):
+        super().__init__(input_variable = input_variable,
+                         output_variable = output_variable,
+                         name = name)
+        self.components = components
+        self.threshold = threshold
+
+    def calculate(self, dataset):
+        data = self._get_variable(dataset)
+        labs = []
+        for i in range(data.shape[0]):
+            d = data.data[i]
+            print(d)
+            print(type(d))
+            comps = self.components[d]
+            measures = np.array([dataset[c].data[i] for c in comps])
+            portions = measures/np.sum(measures)
+            print(np.where(portions > self.threshold)[0])
+            if any(portions >= self.threshold):
+                labs += [comps[np.where(portions >= self.threshold)[0][0]]]
+            else:
+                labs += [d]
+        dataset[self.output_variable] = ('sample', labs)
+        return(self)
+
+class FlatAddition(PipelineOp):
+    def __init__(self, input_variable, output_variable, value, name = "flat_addition"):
+        super().__init__(input_variable = input_variable,
+                         output_variable = output_variable,
+                         name = name)
+        self.value = value
+
+    def calculate(self, dataset):
+        data = self._get_variable(dataset)
+        dataset[self.output_variable] = data+self.value
+        return(self)
+
+class IntEncoding(PipelineOp):
+    def __init__(self, input_variable, output_variable, classes, name = "label_encoder"):
+        super().__init__(input_variable = input_variable,
+                         output_variable = output_variable,
+                         name = name)
+        self.classes = classes
+        self.encoding = {c:i for i,c in enumerate(classes)}
+
+    def calculate(self, dataset):
+        data = self._get_variable(dataset)
+        dataset[self.output_variable] = ('sample', [self.encoding[l] for l in data.data])
+        return(self)
