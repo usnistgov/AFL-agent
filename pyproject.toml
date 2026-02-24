@@ -96,6 +96,10 @@ automation = [
     "requests",
 ]
 
+mlmodels = [
+    "TreeHierarchy @ git+https://github.com/grahamRobertsW/TreeHierarchy"
+]
+
 dev = [
     "black",
     "mypy",
