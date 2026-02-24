@@ -7,6 +7,7 @@ import numpy as np
 import xarray as xr
 import json
 import os
+import warnings
 
 from tests.utils import MockPipelineOp
 from AFL.double_agent import TreePipeline as tp
@@ -18,13 +19,26 @@ from AFL.double_agent.data import (
     load_dataset,
     example_dataset1,
 )
-from TreeHierarchy import (
-    TreeHierarchy,
-    json_decoder
-)
+try:
+    from TreeHierarchy import (
+        TreeHierarchy,
+        json_decoder,
+    )
+    TREEHIERARCHY_AVAILABLE = True
+except ModuleNotFoundError:
+    TREEHIERARCHY_AVAILABLE = False
+    warnings.warn(
+        "TreeHierarchy module not available; skipping TreeHierarchy tests.",
+        RuntimeWarning,
+        stacklevel=2,
+    )
 
 
 @pytest.mark.unit
+@pytest.mark.skipif(
+    not TREEHIERARCHY_AVAILABLE,
+    reason="TreeHierarchy module not available",
+)
 class TestClassificationPipeline:
     """Tests for the PipelineOp class."""
     def test_classifier_creation(self):
@@ -46,6 +60,10 @@ class TestClassificationPipeline:
            assert isinstance(pipe.classifier.right.entity, SVC)
 
 @pytest.mark.unit
+@pytest.mark.skipif(
+    not TREEHIERARCHY_AVAILABLE,
+    reason="TreeHierarchy module not available",
+)
 class TestClassificationPipelineLoaded:
     """Tests for the PipelineOp class."""
     def test_classifier_load(self):
@@ -67,6 +85,10 @@ class TestClassificationPipelineLoaded:
            assert isinstance(P[1].classifier.right.entity, SVC)
 
 @pytest.mark.unit
+@pytest.mark.skipif(
+    not TREEHIERARCHY_AVAILABLE,
+    reason="TreeHierarchy module not available",
+)
 class TestClassificationPipelinePerformance:
     """Tests for the PipelineOp class."""
     def test_classifier_load(self):
