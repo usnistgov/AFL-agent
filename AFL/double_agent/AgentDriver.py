@@ -261,6 +261,8 @@ class DoubleAgentDriver(Driver):
 
     def status(self):
         status = []
+        if 'mock_mode' in self.config:
+            status.append(f'mock_mode: {self.config["mock_mode"]}')
         if self.input:
             status.append(f'Input Dims: {self.input.sizes}')
         if self.pipeline:
