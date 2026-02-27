@@ -128,3 +128,22 @@ class IntEncoding(PipelineOp):
         data = self._get_variable(dataset)
         dataset[self.output_variable] = ('sample', [self.encoding[l] for l in data.data])
         return(self)
+
+class TrimQ(PipelineOp):
+    def __init__(self, input_variable, output_variable, input_index, output_index, new_values, name = "q interpolation"):
+        super().__init__(input_variable = input_variable,
+                         output_variable = output_variable,
+                         name=name)
+        self.input_index = input_index
+        self.output_index = output_index
+        self.new_values = new_values
+
+    def calculate(self, dataset):
+        old_q = dataset[self.input_index].data
+        old_I = dataset[self.input_variable].data
+        new_I = np.array([np.interp(self.new_values, old_q, old_I[i,:]) for i in range(old_I.shape[0])])
+        new_coords = [c if c != self.input_index else self.output_index for c in list(dataset[self.input_variable].coords) ]
+        dataset.coords[self.output_index] =  self.new_values
+        #dataset[self.output_variable] = (['sample','trimmed_q'], new_I)
+        dataset[self.output_variable] = ([c if c != self.input_index else self.output_index for c in dataset[self.input_variable].dims ], new_I)
+        return(self)
