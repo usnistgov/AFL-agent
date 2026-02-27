@@ -62,19 +62,14 @@ class RegressionPipeline(PipelineOp):
     def calculate(self, dataset):
         data = self._get_variable(dataset)
         key = dataset[self.key_variable].data
-        print(np.unique(key))
-        print(self.morphology)
         inds = np.where(np.equal(key, self.morphology))[0]
-        predictions = self.regression.predict(data[inds])
         if self.output_variable in dataset.data_vars:
             output = dataset[self.output_variable].data
         else:
             output = np.nan * np.ones(data.shape[0])
-        print("INDS")
-        print(inds.shape)
-        print("PREDS")
-        print(predictions.shape)
-        output[inds] = predictions.reshape(-1)
+        if len(inds) > 0:
+            predictions = self.regression.predict(data[inds])
+            output[inds] = predictions.reshape(-1)
         dataset[self.output_variable] = ('sample', output)
         return(self)
 
@@ -91,12 +86,9 @@ class ThresholdClassificationPipeline(PipelineOp):
         labs = []
         for i in range(data.shape[0]):
             d = data.data[i]
-            print(d)
-            print(type(d))
             comps = self.components[d]
             measures = np.array([dataset[c].data[i] for c in comps])
             portions = measures/np.sum(measures)
-            print(np.where(portions > self.threshold)[0])
             if any(portions >= self.threshold):
                 labs += [comps[np.where(portions >= self.threshold)[0][0]]]
             else:
