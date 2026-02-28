@@ -19,22 +19,16 @@ from AFL.double_agent.data import (
     load_dataset,
     example_dataset1,
 )
-# try:
-#     from TreeHierarchy import (
-#         TreeHierarchy,
-#         json_decoder,
-#     )
-#     TREEHIERARCHY_AVAILABLE = True
-# except ModuleNotFoundError:
-#     TREEHIERARCHY_AVAILABLE = False
-#     warnings.warn(
-#         "TreeHierarchy module not available; skipping TreeHierarchy tests.",
-#         RuntimeWarning,
-#         stacklevel=2,
-#     )
-
-from AFL.double_agent.TreeHierarchy import TreeHierarchy, json_decoder
-TREEHIERARCHY_AVAILABLE = True
+try:
+    from TreeHierarchy import TreeHierarchy, json_decoder
+    TREEHIERARCHY_AVAILABLE = True
+except ModuleNotFoundError:
+    TREEHIERARCHY_AVAILABLE = False
+    warnings.warn(
+        "TreeHierarchy module not available; skipping TreeHierarchy tests.",
+        RuntimeWarning,
+        stacklevel=2,
+    )
 
 @pytest.mark.unit
 @pytest.mark.skipif(
@@ -105,7 +99,6 @@ class TestClassificationPipelinePerformance:
             out = P.calculate(data)
             print(P[0].output_variable)
             np.testing.assert_array_equal(out["predicted_test_labels"].data, ref["reference_predictions"].data)
-
 
 
 
