@@ -19,22 +19,16 @@ from AFL.double_agent.data import (
     load_dataset,
     example_dataset1,
 )
-# try:
-#     from TreeHierarchy import (
-#         TreeHierarchy,
-#         json_decoder,
-#     )
-#     TREEHIERARCHY_AVAILABLE = True
-# except ModuleNotFoundError:
-#     TREEHIERARCHY_AVAILABLE = False
-#     warnings.warn(
-#         "TreeHierarchy module not available; skipping TreeHierarchy tests.",
-#         RuntimeWarning,
-#         stacklevel=2,
-#     )
-
-from AFL.double_agent.TreeHierarchy import TreeHierarchy, json_decoder
-TREEHIERARCHY_AVAILABLE = True
+try:
+    from TreeHierarchy import TreeHierarchy, json_decoder
+    TREEHIERARCHY_AVAILABLE = True
+except ModuleNotFoundError:
+    TREEHIERARCHY_AVAILABLE = False
+    warnings.warn(
+        "TreeHierarchy module not available; skipping TreeHierarchy tests.",
+        RuntimeWarning,
+        stacklevel=2,
+    )
 
 @pytest.mark.unit
 @pytest.mark.skipif(
@@ -86,6 +80,7 @@ class TestClassificationPipelineLoaded:
            assert isinstance(P[1].classifier.left.entity, SVC)
            assert isinstance(P[1].classifier.right.entity, SVC)
 
+#TEST TEMPORARILY REMOVED (TreePipeline.ClassificationPipeline no longer takes log10, will update reference pipeline for coorect value)
 @pytest.mark.unit
 @pytest.mark.skipif(
     not TREEHIERARCHY_AVAILABLE,
@@ -97,14 +92,13 @@ class TestClassificationPipelinePerformance:
 ###        data = load_dataset("classification_data")
 ###        classification_def = json.loads(open(os.path.join(get_data_dir(), "classification_tree.json"), 'r').read())
 ###        pipe = tp.ClassificationPipeline("log_sas_curves", "predicted_labels", classification_def)
-        save_path = os.path.join(get_data_dir(), "classification_pipeline.json")
+        save_path = os.path.join(get_data_dir(), "classification_pipeline_log.json")
         data = load_dataset("example_classification_data")
         ref = load_dataset("reference_predictions")
         with Pipeline.read_json(str(save_path)) as P:
             out = P.calculate(data)
             print(P[0].output_variable)
             np.testing.assert_array_equal(out["predicted_test_labels"].data, ref["reference_predictions"].data)
-
 
 
 
