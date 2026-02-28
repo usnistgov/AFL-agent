@@ -140,7 +140,7 @@ all = [
     "requests",
     "black",
     "mypy",
-    "sphinx",
+    "sphinx<9",
     "sphinx-rtd-theme",
     "sphinxcontrib-apidoc",
     "sphinxcontrib-napoleon",
