@@ -6,8 +6,39 @@ import xarray as xr
 from importlib.resources import files
 from jinja2 import Template
 
-from AFL.automation.APIServer.Driver import Driver  # type: ignore
-from AFL.automation.shared.utilities import mpl_plot_to_bytes, xarray_to_bytes
+try:
+    from AFL.automation.APIServer.Driver import Driver  # type: ignore
+    from AFL.automation.shared.utilities import mpl_plot_to_bytes, xarray_to_bytes
+except ModuleNotFoundError as exc:
+    # Allow unit tests to import this module in environments where AFL-automation
+    # is not installed. Runtime server behavior still requires AFL-automation.
+    if exc.name and exc.name.startswith("AFL.automation"):
+        class Driver:  # type: ignore[override]
+            @staticmethod
+            def unqueued(*args, **kwargs):
+                def decorator(func):
+                    return func
+                return decorator
+
+            @staticmethod
+            def queued(*args, **kwargs):
+                def decorator(func):
+                    return func
+                return decorator
+
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def gather_defaults(self):
+                return getattr(self, "defaults", {})
+
+        def mpl_plot_to_bytes(*args, **kwargs):  # type: ignore[no-redef]
+            raise RuntimeError("mpl_plot_to_bytes requires AFL-automation to be installed.")
+
+        def xarray_to_bytes(*args, **kwargs):  # type: ignore[no-redef]
+            raise RuntimeError("xarray_to_bytes requires AFL-automation to be installed.")
+    else:
+        raise
 from AFL.double_agent.Pipeline import Pipeline
 from AFL.double_agent.util import listify
 
