@@ -1973,31 +1973,24 @@ function toggleNodeSelection(node, multiSelect = false) {
  });
 
   async function loadOps() {
-  /*
-   * Expected backend response format for Dictionary parameter support:
-   * {
-   *   "fqcn": "module.Class",
-   *   "name": "Operation Name",
-   *   "parameters": {...},
-   *   "input_params": [...],
-   *   "output_params": [...],
-   *   "param_types": {
-   *     "config": "dict",
-   *     "options": "Dict",
-   *     "settings": "dict",
-   *     "metadata": "dict"
-   *   },
-   *   "docstring": "Operation documentation"
-   * }
-   */
   try {
     const res = await authenticatedFetch('/pipeline_ops', {
       method: 'GET'
     });
-    const ops = await res.json();
+    const payload = await res.json();
+    const ops = Array.isArray(payload) ? payload : (payload.ops || []);
+    const warnings = payload && Array.isArray(payload.warnings) ? payload.warnings : [];
     
     // Clear loading indicator
     opList.innerHTML = '';
+
+    if (warnings.length > 0) {
+      const warningDiv = document.createElement('div');
+      warningDiv.className = 'loading-text';
+      warningDiv.style.color = '#b58900';
+      warningDiv.textContent = `Loaded with ${warnings.length} warning(s). Some operations may be unavailable.`;
+      opList.appendChild(warningDiv);
+    }
     
     ops.forEach(op => {
       const div = document.createElement('div');
@@ -3181,24 +3174,30 @@ function updateNodeTitle(nodeId, newName) {
 
 // Initialize the application
 async function initializeApp() {
-  try {
-    // Load operations first (required for proper node metadata)
-    await loadOps();
-    
-    // Load prefabs in parallel with current pipeline
-    const prefabsPromise = loadPrefabs();
-    const currentPipelinePromise = loadCurrentPipeline();
-    
-    // Wait for both to complete
-    await Promise.all([prefabsPromise, currentPipelinePromise]);
-    
-    console.log('Application initialized successfully');
-  } catch (error) {
-    console.error('Failed to initialize application:', error);
-  } finally {
-    // Hide the canvas loading spinner
-    hideCanvasLoading();
+  // Start operation loading without blocking initial pipeline render.
+  const opsPromise = loadOps();
+
+  const [prefabsResult, currentPipelineResult] = await Promise.allSettled([
+    loadPrefabs(),
+    loadCurrentPipeline()
+  ]);
+
+  if (prefabsResult.status === 'rejected') {
+    console.error('Failed to load prefabs:', prefabsResult.reason);
   }
+  if (currentPipelineResult.status === 'rejected') {
+    console.error('Failed to load current pipeline:', currentPipelineResult.reason);
+  }
+
+  // Hide canvas loading as soon as core pipeline state is ready.
+  hideCanvasLoading();
+
+  const [opsResult] = await Promise.allSettled([opsPromise]);
+  if (opsResult.status === 'rejected') {
+    console.error('Pipeline operations did not finish loading:', opsResult.reason);
+  }
+
+  console.log('Application initialized successfully');
 }
 
 function hideCanvasLoading() {
