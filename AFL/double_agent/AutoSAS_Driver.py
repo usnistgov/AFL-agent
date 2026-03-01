@@ -11,9 +11,10 @@ import xarray as xr
 
 from AFL.automation.APIServer.Driver import Driver  # type: ignore
 from AFL.double_agent.AutoSAS import SASModel, SASFitter
+from AFL.double_agent.AutoSASWebAppMixin import AutoSASWebAppMixin
 
 
-class AutoSAS_Driver(Driver):
+class AutoSAS_Driver(AutoSASWebAppMixin, Driver):
     defaults = {}
     defaults["savepath"] = "/home/afl642/2402_DT_ISIS_path"
     defaults["q_min"] = 1e-2
@@ -24,6 +25,7 @@ class AutoSAS_Driver(Driver):
 
     def __init__(self):
         Driver.__init__(self, name="SAS_model_fitter", defaults=self.gather_defaults())
+        self._autosas_webapp_init()
         self.status_str = "Fresh Server!"
         self.dropbox = dict()
         self.fitter = None

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoSAS Web App</title>
+  <link rel="stylesheet" href="static/autosas_webapp_css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div>
+        <h1>AutoSAS Web App</h1>
+        <p class="subtitle">Build model_inputs, load tiled data, run fits, and review results.</p>
+      </div>
+      <div class="topbar-actions">
+        <button id="bootstrap-btn">Reload</button>
+        <button id="export-btn">Export JSON</button>
+        <button id="apply-btn" class="primary">Apply model_inputs</button>
+      </div>
+    </header>
+
+    <nav class="tab-nav">
+      <button id="tab-model-btn" class="tab-btn active" data-tab="model">Modeling + Fit</button>
+      <button id="tab-data-btn" class="tab-btn" data-tab="data">Data Loading</button>
+    </nav>
+
+    <section id="tab-model-content" class="tab-content active">
+      <main class="layout">
+        <section class="panel models-panel">
+          <h2>Models</h2>
+          <div class="row">
+            <select id="add-model-select"></select>
+            <button id="add-model-btn">Add</button>
+            <button id="remove-model-btn" class="danger">Remove</button>
+          </div>
+          <div id="models-list" class="models-list"></div>
+        </section>
+
+        <section class="panel editor-panel">
+          <h2>Model Editor</h2>
+          <div id="editor-empty" class="hint">Select a model to edit.</div>
+          <div id="editor-content" class="hidden">
+            <div class="row">
+              <label>Name <input id="model-name" type="text" /></label>
+              <label>q_min <input id="model-qmin" type="number" step="any" /></label>
+              <label>q_max <input id="model-qmax" type="number" step="any" /></label>
+            </div>
+            <div class="row">
+              <label><input type="checkbox" id="filter-pd" /> Show polydispersity</label>
+              <label><input type="checkbox" id="filter-mag" /> Show magnetic</label>
+            </div>
+            <div id="params-table"></div>
+          </div>
+        </section>
+
+        <section class="panel plot-panel">
+          <h2>Preview</h2>
+          <div id="plot"></div>
+        </section>
+      </main>
+
+      <section class="panel fit-controls">
+        <h2>Fit Controls</h2>
+        <div class="row wrap">
+          <button id="run-fit-btn" class="primary">Run Fit</button>
+          <button id="refresh-summary-btn">Refresh Summary</button>
+        </div>
+        <label>Fit method JSON (optional override)
+          <textarea id="fit-method"></textarea>
+        </label>
+      </section>
+    </section>
+
+    <section id="tab-data-content" class="tab-content">
+      <section class="panel fit-controls">
+        <h2>Tiled Data Source</h2>
+        <div class="row wrap">
+          <label>entry_ids (one per line or comma-separated)
+            <textarea id="entry-ids" placeholder="entry_id_1&#10;entry_id_2"></textarea>
+          </label>
+        </div>
+        <div class="row wrap">
+          <label>concat_dim <input id="sample-dim" type="text" value="sample" /></label>
+          <label>variable_prefix (optional) <input id="var-prefix" type="text" value="" /></label>
+          <label>q variable <input id="q-var" type="text" value="q" /></label>
+          <label>intensity variable <input id="sas-var" type="text" value="I" /></label>
+          <label>error variable <input id="sas-err-var" type="text" value="dI" /></label>
+          <label>resolution variable (optional) <input id="sas-res-var" type="text" placeholder="optional" /></label>
+        </div>
+        <div class="row wrap">
+          <button id="set-data-btn" class="primary">Assemble from Tiled + Set Data Context</button>
+          <button id="data-prev-btn">◀ Prev</button>
+          <span id="data-index-indicator" class="data-indicator">Data 0/0</span>
+          <button id="data-next-btn">Next ▶</button>
+        </div>
+      </section>
+
+      <section class="panel outputs-panel">
+        <h2>Assembled Xarray Dataset</h2>
+        <div id="dataset-summary" class="dataset-summary">No dataset loaded.</div>
+        <div id="dataset-html" class="dataset-html"></div>
+      </section>
+    </section>
+
+    <section class="panel outputs-panel">
+      <h2>Results</h2>
+      <pre id="results-box" class="results-box">No fit summary yet.</pre>
+    </section>
+
+    <section class="panel outputs-panel">
+      <h2>Model Inputs JSON</h2>
+      <textarea id="export-box" class="export-box" readonly></textarea>
+    </section>
+
+    <div id="status" class="status"></div>
+  </div>
+
+  <script src="static/autosas_webapp_vendor/plotly.min.js"></script>
+  <script type="module" src="static/autosas_webapp_js/main.js"></script>
+</body>
+</html>

@@ -15,7 +15,7 @@ RUN python -m pip install --user --no-cache-dir .[automation,apdist,mlmodels,ten
 
 # Install AFL-automation from fork
 RUN python -m pip install --user --no-cache-dir \
-    "AFL-automation @ git+https://github.com/usnistgov/AFL-automation@2602_ORNL_beamtime"
+    "AFL-automation @ git+https://github.com/usnistgov/AFL-automation
 
 FROM python:3.12-slim
 WORKDIR /app
