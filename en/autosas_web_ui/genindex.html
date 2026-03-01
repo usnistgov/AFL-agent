@@ -1,0 +1,1987 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Index &#8212; AFL-agent  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/ntd2d.css?v=525a25f0" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=b3ba4146"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'genindex';</script>
+    <link rel="icon" href="_static/logo_light.svg"/>
+    <link rel="index" title="Index" href="#" />
+    <link rel="search" title="Search" href="search.html" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+
+  <link rel="stylesheet" href="https://pages.nist.gov/nist-header-footer/css/nist-combined.css">
+  <script src="https://code.jquery.com/jquery-3.6.2.min.js" type="text/javascript" defer="defer"></script>
+  <script src="https://pages.nist.gov/nist-header-footer/js/nist-header-footer.js" type="text/javascript" defer="defer"></script>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/logo_text_large_light.svg" class="logo__image only-light" alt="AFL-agent  documentation - Home"/>
+    <img src="_static/logo_text_large_dark.svg" class="logo__image only-dark pst-js-only" alt="AFL-agent  documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorials/installation.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="how-to/index.html">
+    How-To Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="explanations/index.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="reference/index.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/usnistgov/afl-agent" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorials/installation.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="how-to/index.html">
+    How-To Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="explanations/index.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="reference/index.html">
+    Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/usnistgov/afl-agent" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none"></div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+
+<h1 id="index">Index</h1>
+
+<div class="genindex-jumpbox">
+ <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
+ | <a href="#C"><strong>C</strong></a>
+ | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
+ | <a href="#F"><strong>F</strong></a>
+ | <a href="#G"><strong>G</strong></a>
+ | <a href="#H"><strong>H</strong></a>
+ | <a href="#I"><strong>I</strong></a>
+ | <a href="#K"><strong>K</strong></a>
+ | <a href="#L"><strong>L</strong></a>
+ | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
+ | <a href="#O"><strong>O</strong></a>
+ | <a href="#P"><strong>P</strong></a>
+ | <a href="#Q"><strong>Q</strong></a>
+ | <a href="#R"><strong>R</strong></a>
+ | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
+ | <a href="#U"><strong>U</strong></a>
+ | <a href="#V"><strong>V</strong></a>
+ | <a href="#W"><strong>W</strong></a>
+ | <a href="#X"><strong>X</strong></a>
+ | <a href="#Z"><strong>Z</strong></a>
+ 
+</div>
+<h2 id="A">A</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.Acquisition">Acquisition (class in AFL.agent.AcquisitionFunction)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/EI_AcquisitionFunction.html#AFL.agent.EI_AcquisitionFunction.Acquisition">(class in AFL.agent.EI_AcquisitionFunction)</a>
+</li>
+        <li><a href="reference/api/agent/UCB_AcquisitionFunction.html#AFL.agent.UCB_AcquisitionFunction.Acquisition">(class in AFL.agent.UCB_AcquisitionFunction)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.AcquisitionError">AcquisitionError</a>
+</li>
+      <li><a href="reference/api/double_agent/AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.AcquisitionFunction">AcquisitionFunction (class in AFL.double_agent.AcquisitionFunction)</a>
+</li>
+      <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.Acquisition.add_exclusion">add_exclusion() (AFL.agent.AcquisitionFunction.Acquisition method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/EI_AcquisitionFunction.html#AFL.agent.EI_AcquisitionFunction.Acquisition.add_exclusion">(AFL.agent.EI_AcquisitionFunction.Acquisition method)</a>
+</li>
+        <li><a href="reference/api/agent/UCB_AcquisitionFunction.html#AFL.agent.UCB_AcquisitionFunction.Acquisition.add_exclusion">(AFL.agent.UCB_AcquisitionFunction.Acquisition method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.CompositionTools.add_grid">add_grid() (AFL.agent.xarray_extensions.CompositionTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.CompositionTools.add_grid">(AFL.double_agent.xarray_extensions.CompositionTools method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp.add_to_dataset">add_to_dataset() (AFL.double_agent.PipelineOp.PipelineOp method)</a>
+</li>
+      <li><a href="reference/api/double_agent/PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp.add_to_tiled">add_to_tiled() (AFL.double_agent.PipelineOp.PipelineOp method)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.AffinityPropagation">AffinityPropagation (class in AFL.agent.PhaseLabeler)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.AffinityPropagation">(class in AFL.double_agent.Labeler)</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.agent.AcquisitionFunction
+
+      <ul>
+        <li><a href="reference/api/agent/AcquisitionFunction.html#module-AFL.agent.AcquisitionFunction">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.agent.EI_AcquisitionFunction
+
+      <ul>
+        <li><a href="reference/api/agent/EI_AcquisitionFunction.html#module-AFL.agent.EI_AcquisitionFunction">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.agent.GaussianProcess
+
+      <ul>
+        <li><a href="reference/api/agent/GaussianProcess.html#module-AFL.agent.GaussianProcess">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.agent.HscedGaussianProcess
+
+      <ul>
+        <li><a href="reference/api/agent/HscedGaussianProcess.html#module-AFL.agent.HscedGaussianProcess">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.agent.Metric
+
+      <ul>
+        <li><a href="reference/api/agent/Metric.html#module-AFL.agent.Metric">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.agent.PhaseLabeler
+
+      <ul>
+        <li><a href="reference/api/agent/PhaseLabeler.html#module-AFL.agent.PhaseLabeler">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.agent.PhaseMap
+
+      <ul>
+        <li><a href="reference/api/agent/PhaseMap.html#module-AFL.agent.PhaseMap">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.agent.PhaseMap_pandas
+
+      <ul>
+        <li><a href="reference/api/agent/PhaseMap_pandas.html#module-AFL.agent.PhaseMap_pandas">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.agent.reduce_usaxs
+
+      <ul>
+        <li><a href="reference/api/agent/reduce_usaxs.html#module-AFL.agent.reduce_usaxs">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.agent.UCB_AcquisitionFunction
+
+      <ul>
+        <li><a href="reference/api/agent/UCB_AcquisitionFunction.html#module-AFL.agent.UCB_AcquisitionFunction">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.agent.util
+
+      <ul>
+        <li><a href="reference/api/agent/util.html#module-AFL.agent.util">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.agent.WatchDog
+
+      <ul>
+        <li><a href="reference/api/agent/WatchDog.html#module-AFL.agent.WatchDog">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.agent.xarray_extensions
+
+      <ul>
+        <li><a href="reference/api/agent/xarray_extensions.html#module-AFL.agent.xarray_extensions">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.double_agent.AcquisitionFunction
+
+      <ul>
+        <li><a href="reference/api/double_agent/AcquisitionFunction.html#module-AFL.double_agent.AcquisitionFunction">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.double_agent.AgentDriver
+
+      <ul>
+        <li><a href="reference/api/double_agent/AgentDriver.html#module-AFL.double_agent.AgentDriver">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.double_agent.AutoSAS
+
+      <ul>
+        <li><a href="reference/api/double_agent/AutoSAS.html#module-AFL.double_agent.AutoSAS">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.double_agent.Boundary
+
+      <ul>
+        <li><a href="reference/api/double_agent/Boundary.html#module-AFL.double_agent.Boundary">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    AFL.double_agent.Extrapolator
+
+      <ul>
+        <li><a href="reference/api/double_agent/Extrapolator.html#module-AFL.double_agent.Extrapolator">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.double_agent.Generator
+
+      <ul>
+        <li><a href="reference/api/double_agent/Generator.html#module-AFL.double_agent.Generator">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.double_agent.Labeler
+
+      <ul>
+        <li><a href="reference/api/double_agent/Labeler.html#module-AFL.double_agent.Labeler">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.double_agent.MaskGrid
+
+      <ul>
+        <li><a href="reference/api/double_agent/MaskGrid.html#module-AFL.double_agent.MaskGrid">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.double_agent.PairMetric
+
+      <ul>
+        <li><a href="reference/api/double_agent/PairMetric.html#module-AFL.double_agent.PairMetric">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.double_agent.Pipeline
+
+      <ul>
+        <li><a href="reference/api/double_agent/Pipeline.html#module-AFL.double_agent.Pipeline">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.double_agent.PipelineContext
+
+      <ul>
+        <li><a href="reference/api/double_agent/PipelineContext.html#module-AFL.double_agent.PipelineContext">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.double_agent.PipelineOp
+
+      <ul>
+        <li><a href="reference/api/double_agent/PipelineOp.html#module-AFL.double_agent.PipelineOp">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.double_agent.plotting
+
+      <ul>
+        <li><a href="reference/api/double_agent/plotting.html#module-AFL.double_agent.plotting">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.double_agent.Preprocessor
+
+      <ul>
+        <li><a href="reference/api/double_agent/Preprocessor.html#module-AFL.double_agent.Preprocessor">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.double_agent.TensorFlowExtrapolator
+
+      <ul>
+        <li><a href="reference/api/double_agent/TensorFlowExtrapolator.html#module-AFL.double_agent.TensorFlowExtrapolator">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.double_agent.util
+
+      <ul>
+        <li><a href="reference/api/double_agent/util.html#module-AFL.double_agent.util">module</a>
+</li>
+      </ul></li>
+      <li>
+    AFL.double_agent.xarray_extensions
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#module-AFL.double_agent.xarray_extensions">module</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.AFL_DataArrayTools">AFL_DataArrayTools (class in AFL.agent.xarray_extensions)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.AFL_DataArrayTools">(class in AFL.double_agent.xarray_extensions)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.AFL_DatasetTools">AFL_DatasetTools (class in AFL.agent.xarray_extensions)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.AFL_DatasetTools">(class in AFL.double_agent.xarray_extensions)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectAIC.all_chisq_var">all_chisq_var (AFL.double_agent.AutoSAS.ModelSelectAIC attribute)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectBestChiSq.all_chisq_var">(AFL.double_agent.AutoSAS.ModelSelectBestChiSq attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectBIC.all_chisq_var">(AFL.double_agent.AutoSAS.ModelSelectBIC attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectParsimony.all_chisq_var">(AFL.double_agent.AutoSAS.ModelSelectParsimony attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/reduce_usaxs.html#AFL.agent.reduce_usaxs.amplifier_corrections">amplifier_corrections() (in module AFL.agent.reduce_usaxs)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.analyze_pipeline">analyze_pipeline() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.append">append() (AFL.agent.PhaseMap_pandas.PhaseMap method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMapModel.append">(AFL.agent.PhaseMap_pandas.PhaseMapModel method)</a>
+</li>
+        <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.AFL_DatasetTools.append">(AFL.agent.xarray_extensions.AFL_DatasetTools method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.append">(AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.append">(AFL.double_agent.Pipeline.Pipeline method)</a>
+</li>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.AFL_DatasetTools.append">(AFL.double_agent.xarray_extensions.AFL_DatasetTools method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.Metric.apply_constraints">apply_constraints() (AFL.agent.Metric.Metric method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.PairMetric.apply_constraints">(AFL.double_agent.PairMetric.PairMetric method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.ArrayToVars">ArrayToVars (class in AFL.double_agent.Preprocessor)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.assemble_input_from_tiled">assemble_input_from_tiled() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.AutoSAS">AutoSAS (class in AFL.double_agent.AutoSAS)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="B">B</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/Generator.html#AFL.double_agent.Generator.BarycentricGrid">BarycentricGrid (class in AFL.double_agent.Generator)</a>
+</li>
+      <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.BarycentricToTernaryXY">BarycentricToTernaryXY (class in AFL.double_agent.Preprocessor)</a>
+</li>
+      <li><a href="reference/api/double_agent/Boundary.html#AFL.double_agent.Boundary.BoundaryScore">BoundaryScore (class in AFL.double_agent.Boundary)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.FitParameter.bounds">bounds (AFL.double_agent.AutoSAS.FitParameter attribute)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.build_pipeline">build_pipeline() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.build_pipeline_from_json">build_pipeline_from_json() (in module AFL.double_agent.AgentDriver)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.build_pipeline_from_ops">build_pipeline_from_ops() (in module AFL.double_agent.AgentDriver)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="C">C</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/reduce_usaxs.html#AFL.agent.reduce_usaxs.calc_R_Q">calc_R_Q() (in module AFL.agent.reduce_usaxs)</a>
+</li>
+      <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.Delaunay.calculate">calculate() (AFL.agent.Metric.Delaunay method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.Distance.calculate">(AFL.agent.Metric.Distance method)</a>
+</li>
+        <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.Dummy.calculate">(AFL.agent.Metric.Dummy method)</a>
+</li>
+        <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.Metric.calculate">(AFL.agent.Metric.Metric method)</a>
+</li>
+        <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.MultiMetric.calculate">(AFL.agent.Metric.MultiMetric method)</a>
+</li>
+        <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.Similarity.calculate">(AFL.agent.Metric.Similarity method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.AcquisitionFunction.calculate">(AFL.double_agent.AcquisitionFunction.AcquisitionFunction method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.MaxValueAF.calculate">(AFL.double_agent.AcquisitionFunction.MaxValueAF method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.MultimodalMask_MaxValueAF.calculate">(AFL.double_agent.AcquisitionFunction.MultimodalMask_MaxValueAF method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.PseudoUCB.calculate">(AFL.double_agent.AcquisitionFunction.PseudoUCB method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.RandomAF.calculate">(AFL.double_agent.AcquisitionFunction.RandomAF method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.AutoSAS.calculate">(AFL.double_agent.AutoSAS.AutoSAS method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.EstimateSASError.calculate">(AFL.double_agent.AutoSAS.EstimateSASError method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectAIC.calculate">(AFL.double_agent.AutoSAS.ModelSelectAIC method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectBestChiSq.calculate">(AFL.double_agent.AutoSAS.ModelSelectBestChiSq method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectBIC.calculate">(AFL.double_agent.AutoSAS.ModelSelectBIC method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectMostProbable.calculate">(AFL.double_agent.AutoSAS.ModelSelectMostProbable method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectParsimony.calculate">(AFL.double_agent.AutoSAS.ModelSelectParsimony method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Boundary.html#AFL.double_agent.Boundary.BoundaryScore.calculate">(AFL.double_agent.Boundary.BoundaryScore method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Boundary.html#AFL.double_agent.Boundary.ConcaveHull.calculate">(AFL.double_agent.Boundary.ConcaveHull method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Extrapolator.html#AFL.double_agent.Extrapolator.DummyExtrapolator.calculate">(AFL.double_agent.Extrapolator.DummyExtrapolator method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Extrapolator.html#AFL.double_agent.Extrapolator.Extrapolator.calculate">(AFL.double_agent.Extrapolator.Extrapolator method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Extrapolator.html#AFL.double_agent.Extrapolator.GaussianProcessClassifier.calculate">(AFL.double_agent.Extrapolator.GaussianProcessClassifier method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Extrapolator.html#AFL.double_agent.Extrapolator.GaussianProcessRegressor.calculate">(AFL.double_agent.Extrapolator.GaussianProcessRegressor method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Generator.html#AFL.double_agent.Generator.BarycentricGrid.calculate">(AFL.double_agent.Generator.BarycentricGrid method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Generator.html#AFL.double_agent.Generator.CartesianGrid.calculate">(AFL.double_agent.Generator.CartesianGrid method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Generator.html#AFL.double_agent.Generator.GaussianPoints.calculate">(AFL.double_agent.Generator.GaussianPoints method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Generator.html#AFL.double_agent.Generator.Generator.calculate">(AFL.double_agent.Generator.Generator method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.AffinityPropagation.calculate">(AFL.double_agent.Labeler.AffinityPropagation method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.ClusterMembershipProbability.calculate">(AFL.double_agent.Labeler.ClusterMembershipProbability method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.GaussianMixtureModel.calculate">(AFL.double_agent.Labeler.GaussianMixtureModel method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.SpectralClustering.calculate">(AFL.double_agent.Labeler.SpectralClustering method)</a>
+</li>
+        <li><a href="reference/api/double_agent/MaskGrid.html#AFL.double_agent.MaskGrid.MaskGrid.calculate">(AFL.double_agent.MaskGrid.MaskGrid method)</a>
+</li>
+        <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.CombineMetric.calculate">(AFL.double_agent.PairMetric.CombineMetric method)</a>
+</li>
+        <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.Distance.calculate">(AFL.double_agent.PairMetric.Distance method)</a>
+</li>
+        <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.Dummy.calculate">(AFL.double_agent.PairMetric.Dummy method)</a>
+</li>
+        <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.PairMetric.calculate">(AFL.double_agent.PairMetric.PairMetric method)</a>
+</li>
+        <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.Similarity.calculate">(AFL.double_agent.PairMetric.Similarity method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.calculate">(AFL.double_agent.Pipeline.Pipeline method)</a>
+</li>
+        <li><a href="reference/api/double_agent/PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp.calculate">(AFL.double_agent.PipelineOp.PipelineOp method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.ArrayToVars.calculate">(AFL.double_agent.Preprocessor.ArrayToVars method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.BarycentricToTernaryXY.calculate">(AFL.double_agent.Preprocessor.BarycentricToTernaryXY method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.Destandardize.calculate">(AFL.double_agent.Preprocessor.Destandardize method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.Extrema.calculate">(AFL.double_agent.Preprocessor.Extrema method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.LogLogTransform.calculate">(AFL.double_agent.Preprocessor.LogLogTransform method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.Preprocessor.calculate">(AFL.double_agent.Preprocessor.Preprocessor method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.SavgolFilter.calculate">(AFL.double_agent.Preprocessor.SavgolFilter method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.Standardize.calculate">(AFL.double_agent.Preprocessor.Standardize method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.Subtract.calculate">(AFL.double_agent.Preprocessor.Subtract method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.SubtractMin.calculate">(AFL.double_agent.Preprocessor.SubtractMin method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.SympyTransform.calculate">(AFL.double_agent.Preprocessor.SympyTransform method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.TernaryXYToBarycentric.calculate">(AFL.double_agent.Preprocessor.TernaryXYToBarycentric method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.VarsToArray.calculate">(AFL.double_agent.Preprocessor.VarsToArray method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.Zscale.calculate">(AFL.double_agent.Preprocessor.Zscale method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.ZscaleError.calculate">(AFL.double_agent.Preprocessor.ZscaleError method)</a>
+</li>
+        <li><a href="reference/api/double_agent/TensorFlowExtrapolator.html#AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator.calculate">(AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator method)</a>
+</li>
+        <li><a href="reference/api/double_agent/TensorFlowExtrapolator.html#AFL.double_agent.TensorFlowExtrapolator.TFGaussianProcessClassifier.calculate">(AFL.double_agent.TensorFlowExtrapolator.TFGaussianProcessClassifier method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.IterationCombined.calculate_metric">calculate_metric() (AFL.agent.AcquisitionFunction.IterationCombined method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.LowestDensity.calculate_metric">(AFL.agent.AcquisitionFunction.LowestDensity method)</a>
+</li>
+        <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.Random.calculate_metric">(AFL.agent.AcquisitionFunction.Random method)</a>
+</li>
+        <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.Variance.calculate_metric">(AFL.agent.AcquisitionFunction.Variance method)</a>
+</li>
+        <li><a href="reference/api/agent/EI_AcquisitionFunction.html#AFL.agent.EI_AcquisitionFunction.EI.calculate_metric">(AFL.agent.EI_AcquisitionFunction.EI method)</a>
+</li>
+        <li><a href="reference/api/agent/EI_AcquisitionFunction.html#AFL.agent.EI_AcquisitionFunction.pseudoEI.calculate_metric">(AFL.agent.EI_AcquisitionFunction.pseudoEI method)</a>
+</li>
+        <li><a href="reference/api/agent/UCB_AcquisitionFunction.html#AFL.agent.UCB_AcquisitionFunction.pseudoUCB.calculate_metric">(AFL.agent.UCB_AcquisitionFunction.pseudoUCB method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.cart2ternary">cart2ternary() (in module AFL.agent.PhaseMap_pandas)</a>
+</li>
+      <li><a href="reference/api/double_agent/Generator.html#AFL.double_agent.Generator.CartesianGrid">CartesianGrid (class in AFL.double_agent.Generator)</a>
+</li>
+      <li><a href="reference/api/agent/reduce_usaxs.html#AFL.agent.reduce_usaxs.centroid">centroid() (in module AFL.agent.reduce_usaxs)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.check_predict_ready">check_predict_ready() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.ScatteringTools.clean">clean() (AFL.agent.xarray_extensions.ScatteringTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.ScatteringTools.clean">(AFL.double_agent.xarray_extensions.ScatteringTools method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.clear_outputs">clear_outputs() (AFL.double_agent.Pipeline.Pipeline method)</a>
+</li>
+      <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.ClusterMembershipProbability">ClusterMembershipProbability (class in AFL.double_agent.Labeler)</a>
+</li>
+      <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.CombineMetric">CombineMetric (class in AFL.double_agent.PairMetric)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.components">components (AFL.agent.PhaseMap_pandas.PhaseMap property)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.composition_grid">composition_grid() (in module AFL.agent.PhaseMap_pandas)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/util.html#AFL.agent.util.composition_grid">(in module AFL.agent.util)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/util.html#AFL.agent.util.composition_grid_ternary">composition_grid_ternary() (in module AFL.agent.util)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.compositions">compositions (AFL.agent.PhaseMap_pandas.PhaseMap property)</a>
+</li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.CompositionTools">CompositionTools (class in AFL.agent.xarray_extensions)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.CompositionTools">(class in AFL.double_agent.xarray_extensions)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/Boundary.html#AFL.double_agent.Boundary.ConcaveHull">ConcaveHull (class in AFL.double_agent.Boundary)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.AutoSAS.construct_clients">construct_clients() (AFL.double_agent.AutoSAS.AutoSAS method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectAIC.construct_clients">(AFL.double_agent.AutoSAS.ModelSelectAIC method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectBIC.construct_clients">(AFL.double_agent.AutoSAS.ModelSelectBIC method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectParsimony.construct_clients">(AFL.double_agent.AutoSAS.ModelSelectParsimony method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/GaussianProcess.html#AFL.agent.GaussianProcess.GP.construct_data">construct_data() (AFL.agent.GaussianProcess.GP method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/HscedGaussianProcess.html#AFL.agent.HscedGaussianProcess.GPR.construct_data">(AFL.agent.HscedGaussianProcess.GPR method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/PipelineContext.html#AFL.double_agent.PipelineContext.PipelineContext.contexts">contexts (AFL.double_agent.PipelineContext.PipelineContext attribute)</a>
+</li>
+      <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.Acquisition.copy">copy() (AFL.agent.AcquisitionFunction.Acquisition method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/EI_AcquisitionFunction.html#AFL.agent.EI_AcquisitionFunction.Acquisition.copy">(AFL.agent.EI_AcquisitionFunction.Acquisition method)</a>
+</li>
+        <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.Metric.copy">(AFL.agent.Metric.Metric method)</a>
+</li>
+        <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.PhaseLabeler.copy">(AFL.agent.PhaseLabeler.PhaseLabeler method)</a>
+</li>
+        <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.copy">(AFL.agent.PhaseMap_pandas.PhaseMap method)</a>
+</li>
+        <li><a href="reference/api/agent/UCB_AcquisitionFunction.html#AFL.agent.UCB_AcquisitionFunction.Acquisition.copy">(AFL.agent.UCB_AcquisitionFunction.Acquisition method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASModel.copy">(AFL.double_agent.AutoSAS.SASModel method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.copy">(AFL.double_agent.Pipeline.Pipeline method)</a>
+</li>
+        <li><a href="reference/api/double_agent/PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp.copy">(AFL.double_agent.PipelineOp.PipelineOp method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.current_pipeline">current_pipeline() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectParsimony.cutoff">cutoff (AFL.double_agent.AutoSAS.ModelSelectParsimony attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="D">D</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASModel.data">data (AFL.double_agent.AutoSAS.SASModel attribute)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.DBSCAN">DBSCAN (class in AFL.agent.PhaseLabeler)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASFitter.DEFAULT_FIT_METHOD">DEFAULT_FIT_METHOD (AFL.double_agent.AutoSAS.SASFitter attribute)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASFitter.DEFAULT_MODEL_INPUTS">DEFAULT_MODEL_INPUTS (AFL.double_agent.AutoSAS.SASFitter attribute)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.defaults">defaults (AFL.double_agent.AgentDriver.DoubleAgentDriver attribute)</a>
+</li>
+      <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.Delaunay">Delaunay (class in AFL.agent.Metric)</a>
+</li>
+      <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.Destandardize">Destandardize (class in AFL.double_agent.Preprocessor)</a>
+</li>
+      <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.Distance">Distance (class in AFL.agent.Metric)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.Distance">(class in AFL.double_agent.PairMetric)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver">DoubleAgentDriver (class in AFL.double_agent.AgentDriver)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.download_last_result">download_last_result() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.draw">draw() (AFL.double_agent.Pipeline.Pipeline method)</a>
+</li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.draw_plotly">draw_plotly() (AFL.double_agent.Pipeline.Pipeline method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.Driver">Driver (class in AFL.double_agent.AgentDriver)</a>
+</li>
+      <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.Dummy">Dummy (class in AFL.agent.Metric)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.Dummy">(class in AFL.double_agent.PairMetric)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/Extrapolator.html#AFL.double_agent.Extrapolator.DummyExtrapolator">DummyExtrapolator (class in AFL.double_agent.Extrapolator)</a>
+</li>
+      <li><a href="reference/api/agent/GaussianProcess.html#AFL.agent.GaussianProcess.DummyGP">DummyGP (class in AFL.agent.GaussianProcess)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/HscedGaussianProcess.html#AFL.agent.HscedGaussianProcess.DummyGP">(class in AFL.agent.HscedGaussianProcess)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/EI_AcquisitionFunction.html#AFL.agent.EI_AcquisitionFunction.EI">EI (class in AFL.agent.EI_AcquisitionFunction)</a>
+</li>
+      <li><a href="reference/api/double_agent/TensorFlowExtrapolator.html#AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator.encode">encode() (AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.FitParameter.error">error (AFL.double_agent.AutoSAS.FitParameter attribute)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.EstimateSASError">EstimateSASError (class in AFL.double_agent.AutoSAS)</a>
+</li>
+      <li><a href="reference/api/double_agent/AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.AcquisitionFunction.exclude_previous_samples">exclude_previous_samples() (AFL.double_agent.AcquisitionFunction.AcquisitionFunction method)</a>
+</li>
+      <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.Acquisition.execute">execute() (AFL.agent.AcquisitionFunction.Acquisition method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/EI_AcquisitionFunction.html#AFL.agent.EI_AcquisitionFunction.Acquisition.execute">(AFL.agent.EI_AcquisitionFunction.Acquisition method)</a>
+</li>
+        <li><a href="reference/api/agent/UCB_AcquisitionFunction.html#AFL.agent.UCB_AcquisitionFunction.Acquisition.execute">(AFL.agent.UCB_AcquisitionFunction.Acquisition method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.extend">extend() (AFL.double_agent.Pipeline.Pipeline method)</a>
+</li>
+      <li><a href="reference/api/double_agent/util.html#AFL.double_agent.util.extract_parameters">extract_parameters() (in module AFL.double_agent.util)</a>
+</li>
+      <li><a href="reference/api/double_agent/Extrapolator.html#AFL.double_agent.Extrapolator.Extrapolator">Extrapolator (class in AFL.double_agent.Extrapolator)</a>
+</li>
+      <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.Extrema">Extrema (class in AFL.double_agent.Preprocessor)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="F">F</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/WatchDog.html#AFL.agent.WatchDog.FileChangeHandler">FileChangeHandler (class in AFL.agent.WatchDog)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASModel.fit">fit() (AFL.double_agent.AutoSAS.SASModel method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.AutoSAS.fit_method">fit_method (AFL.double_agent.AutoSAS.AutoSAS attribute)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASFitter.fit_method">(AFL.double_agent.AutoSAS.SASFitter attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASFitter.fit_models">fit_models() (AFL.double_agent.AutoSAS.SASFitter method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.FitParameter">FitParameter (class in AFL.double_agent.AutoSAS)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.FitParameter.fixed">fixed (AFL.double_agent.AutoSAS.FitParameter attribute)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.format_plot_ternary">format_plot_ternary() (in module AFL.agent.PhaseMap_pandas)</a>
+</li>
+      <li><a href="reference/api/double_agent/PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp.from_json">from_json() (AFL.double_agent.PipelineOp.PipelineOp class method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="G">G</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.Driver.gather_defaults">gather_defaults() (AFL.double_agent.AgentDriver.Driver method)</a>
+</li>
+      <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.gauss2d">gauss2d() (in module AFL.agent.AcquisitionFunction)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/EI_AcquisitionFunction.html#AFL.agent.EI_AcquisitionFunction.gauss2d">(in module AFL.agent.EI_AcquisitionFunction)</a>
+</li>
+        <li><a href="reference/api/agent/UCB_AcquisitionFunction.html#AFL.agent.UCB_AcquisitionFunction.gauss2d">(in module AFL.agent.UCB_AcquisitionFunction)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.GaussianMixtureModel">GaussianMixtureModel (class in AFL.agent.PhaseLabeler)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.GaussianMixtureModel">(class in AFL.double_agent.Labeler)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/Generator.html#AFL.double_agent.Generator.GaussianPoints">GaussianPoints (class in AFL.double_agent.Generator)</a>
+</li>
+      <li><a href="reference/api/double_agent/Extrapolator.html#AFL.double_agent.Extrapolator.GaussianProcessClassifier">GaussianProcessClassifier (class in AFL.double_agent.Extrapolator)</a>
+</li>
+      <li><a href="reference/api/double_agent/Extrapolator.html#AFL.double_agent.Extrapolator.GaussianProcessRegressor">GaussianProcessRegressor (class in AFL.double_agent.Extrapolator)</a>
+</li>
+      <li><a href="reference/api/double_agent/Generator.html#AFL.double_agent.Generator.Generator">Generator (class in AFL.double_agent.Generator)</a>
+</li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.CompositionTools.get">get() (AFL.agent.xarray_extensions.CompositionTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.CompositionTools.get">(AFL.double_agent.xarray_extensions.CompositionTools method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASModel.get_chisq">get_chisq() (AFL.double_agent.AutoSAS.SASModel method)</a>
+</li>
+      <li><a href="reference/api/double_agent/PipelineContext.html#AFL.double_agent.PipelineContext.PipelineContext.get_context">get_context() (AFL.double_agent.PipelineContext.PipelineContext class method)</a>
+</li>
+      <li><a href="reference/api/double_agent/PipelineContext.html#AFL.double_agent.PipelineContext.PipelineContext.get_contexts">get_contexts() (AFL.double_agent.PipelineContext.PipelineContext class method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASModel.get_fit_params">get_fit_params() (AFL.double_agent.AutoSAS.SASModel method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASModel.get_fit_summary">get_fit_summary() (AFL.double_agent.AutoSAS.SASModel method)</a>
+</li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.CompositionTools.get_grid">get_grid() (AFL.agent.xarray_extensions.CompositionTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.CompositionTools.get_grid">(AFL.double_agent.xarray_extensions.CompositionTools method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.CompositionTools.get_grid_old">get_grid_old() (AFL.agent.xarray_extensions.CompositionTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.CompositionTools.get_grid_old">(AFL.double_agent.xarray_extensions.CompositionTools method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.Acquisition.get_next_sample">get_next_sample() (AFL.agent.AcquisitionFunction.Acquisition method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/EI_AcquisitionFunction.html#AFL.agent.EI_AcquisitionFunction.Acquisition.get_next_sample">(AFL.agent.EI_AcquisitionFunction.Acquisition method)</a>
+</li>
+        <li><a href="reference/api/agent/UCB_AcquisitionFunction.html#AFL.agent.UCB_AcquisitionFunction.Acquisition.get_next_sample">(AFL.agent.UCB_AcquisitionFunction.Acquisition method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/UCB_AcquisitionFunction.html#AFL.agent.UCB_AcquisitionFunction.get_next_sample_passthrough">get_next_sample_passthrough() (in module AFL.agent.UCB_AcquisitionFunction)</a>
+</li>
+      <li><a href="reference/api/double_agent/AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.AcquisitionFunction.get_next_samples">get_next_samples() (AFL.double_agent.AcquisitionFunction.AcquisitionFunction method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.get_pipeline_builder_html">get_pipeline_builder_html() (in module AFL.double_agent.AgentDriver)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.get_pipeline_ops">get_pipeline_ops() (in module AFL.double_agent.AgentDriver)</a>
+</li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.CompositionTools.get_range_scaled">get_range_scaled() (AFL.agent.xarray_extensions.CompositionTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.CompositionTools.get_range_scaled">(AFL.double_agent.xarray_extensions.CompositionTools method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.CompositionTools.get_standard_scaled">get_standard_scaled() (AFL.agent.xarray_extensions.CompositionTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.CompositionTools.get_standard_scaled">(AFL.double_agent.xarray_extensions.CompositionTools method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.get_tiled_input_config">get_tiled_input_config() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/agent/GaussianProcess.html#AFL.agent.GaussianProcess.GP">GP (class in AFL.agent.GaussianProcess)</a>
+</li>
+      <li><a href="reference/api/agent/HscedGaussianProcess.html#AFL.agent.HscedGaussianProcess.GPR">GPR (class in AFL.agent.HscedGaussianProcess)</a>
+</li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.graph">graph (AFL.double_agent.Pipeline.Pipeline attribute)</a>
+</li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.graph_edge_labels">graph_edge_labels (AFL.double_agent.Pipeline.Pipeline attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="H">H</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/HscedGaussianProcess.html#AFL.agent.HscedGaussianProcess.HeteroscedasticGaussian">HeteroscedasticGaussian (class in AFL.agent.HscedGaussianProcess)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.initialize_pipeline">initialize_pipeline() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.input_builder">input_builder() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.input_variables">input_variables() (AFL.double_agent.Pipeline.Pipeline method)</a>
+</li>
+      <li><a href="reference/api/double_agent/TensorFlowExtrapolator.html#AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator.invert_encoded">invert_encoded() (AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator method)</a>
+</li>
+      <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.IterationCombined">IterationCombined (class in AFL.agent.AcquisitionFunction)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="K">K</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.KerasClassifier">KerasClassifier (class in AFL.agent.PhaseLabeler)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="L">L</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.AffinityPropagation.label">label() (AFL.agent.PhaseLabeler.AffinityPropagation method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.DBSCAN.label">(AFL.agent.PhaseLabeler.DBSCAN method)</a>
+</li>
+        <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.GaussianMixtureModel.label">(AFL.agent.PhaseLabeler.GaussianMixtureModel method)</a>
+</li>
+        <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.KerasClassifier.label">(AFL.agent.PhaseLabeler.KerasClassifier method)</a>
+</li>
+        <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.PhaseLabeler.label">(AFL.agent.PhaseLabeler.PhaseLabeler method)</a>
+</li>
+        <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.SpectralClustering.label">(AFL.agent.PhaseLabeler.SpectralClustering method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.label_encoder">label_encoder (AFL.agent.PhaseMap_pandas.PhaseMap property)</a>
+</li>
+      <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.Labeler">Labeler (class in AFL.double_agent.Labeler)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.labels">labels (AFL.agent.PhaseMap_pandas.PhaseMap property)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.labels_ordinal">labels_ordinal (AFL.agent.PhaseMap_pandas.PhaseMap property)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.LabelTools">LabelTools (class in AFL.agent.xarray_extensions)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.LabelTools">(class in AFL.double_agent.xarray_extensions)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.last_result">last_result() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMapView_MPL.lines">lines() (AFL.agent.PhaseMap_pandas.PhaseMapView_MPL method)</a>
+</li>
+      <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.listify">listify() (in module AFL.agent.Metric)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/util.html#AFL.double_agent.util.listify">(in module AFL.double_agent.util)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.load">load() (AFL.agent.PhaseMap_pandas.PhaseMap class method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.load_prefab">load_prefab() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.LogLogTransform">LogLogTransform (class in AFL.double_agent.Preprocessor)</a>
+</li>
+      <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.LowestDensity">LowestDensity (class in AFL.agent.AcquisitionFunction)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="M">M</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMapView_MPL.make_axes">make_axes() (AFL.agent.PhaseMap_pandas.PhaseMapView_MPL method)</a>
+</li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.LabelTools.make_default">make_default() (AFL.agent.xarray_extensions.LabelTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.LabelTools.make_default">(AFL.double_agent.xarray_extensions.LabelTools method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.make_graph">make_graph() (AFL.double_agent.Pipeline.Pipeline method)</a>
+</li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.LabelTools.make_ordinal">make_ordinal() (AFL.agent.xarray_extensions.LabelTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.LabelTools.make_ordinal">(AFL.double_agent.xarray_extensions.LabelTools method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/MaskGrid.html#AFL.double_agent.MaskGrid.MaskGrid">MaskGrid (class in AFL.double_agent.MaskGrid)</a>
+</li>
+      <li><a href="reference/api/double_agent/AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.MaxValueAF">MaxValueAF (class in AFL.double_agent.AcquisitionFunction)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.measurements">measurements (AFL.agent.PhaseMap_pandas.PhaseMap property)</a>
+</li>
+      <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.Metric">Metric (class in AFL.agent.Metric)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.AutoSAS.model_dim">model_dim (AFL.double_agent.AutoSAS.AutoSAS attribute)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.AutoSAS.model_inputs">model_inputs (AFL.double_agent.AutoSAS.AutoSAS attribute)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectAIC.model_inputs">(AFL.double_agent.AutoSAS.ModelSelectAIC attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectBIC.model_inputs">(AFL.double_agent.AutoSAS.ModelSelectBIC attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectMostProbable.model_inputs">(AFL.double_agent.AutoSAS.ModelSelectMostProbable attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectParsimony.model_inputs">(AFL.double_agent.AutoSAS.ModelSelectParsimony attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASFitter.model_inputs">(AFL.double_agent.AutoSAS.SASFitter attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectAIC.model_names_var">model_names_var (AFL.double_agent.AutoSAS.ModelSelectAIC attribute)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectBestChiSq.model_names_var">(AFL.double_agent.AutoSAS.ModelSelectBestChiSq attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectBIC.model_names_var">(AFL.double_agent.AutoSAS.ModelSelectBIC attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectMostProbable.model_names_var">(AFL.double_agent.AutoSAS.ModelSelectMostProbable attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectParsimony.model_names_var">(AFL.double_agent.AutoSAS.ModelSelectParsimony attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectParsimony.model_priority">model_priority (AFL.double_agent.AutoSAS.ModelSelectParsimony attribute)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectAIC">ModelSelectAIC (class in AFL.double_agent.AutoSAS)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectBestChiSq">ModelSelectBestChiSq (class in AFL.double_agent.AutoSAS)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectBIC">ModelSelectBIC (class in AFL.double_agent.AutoSAS)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectMostProbable">ModelSelectMostProbable (class in AFL.double_agent.AutoSAS)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectParsimony">ModelSelectParsimony (class in AFL.double_agent.AutoSAS)</a>
+</li>
+      <li>
+    module
+
+      <ul>
+        <li><a href="reference/api/agent/AcquisitionFunction.html#module-AFL.agent.AcquisitionFunction">AFL.agent.AcquisitionFunction</a>
+</li>
+        <li><a href="reference/api/agent/EI_AcquisitionFunction.html#module-AFL.agent.EI_AcquisitionFunction">AFL.agent.EI_AcquisitionFunction</a>
+</li>
+        <li><a href="reference/api/agent/GaussianProcess.html#module-AFL.agent.GaussianProcess">AFL.agent.GaussianProcess</a>
+</li>
+        <li><a href="reference/api/agent/HscedGaussianProcess.html#module-AFL.agent.HscedGaussianProcess">AFL.agent.HscedGaussianProcess</a>
+</li>
+        <li><a href="reference/api/agent/Metric.html#module-AFL.agent.Metric">AFL.agent.Metric</a>
+</li>
+        <li><a href="reference/api/agent/PhaseLabeler.html#module-AFL.agent.PhaseLabeler">AFL.agent.PhaseLabeler</a>
+</li>
+        <li><a href="reference/api/agent/PhaseMap.html#module-AFL.agent.PhaseMap">AFL.agent.PhaseMap</a>
+</li>
+        <li><a href="reference/api/agent/PhaseMap_pandas.html#module-AFL.agent.PhaseMap_pandas">AFL.agent.PhaseMap_pandas</a>
+</li>
+        <li><a href="reference/api/agent/reduce_usaxs.html#module-AFL.agent.reduce_usaxs">AFL.agent.reduce_usaxs</a>
+</li>
+        <li><a href="reference/api/agent/UCB_AcquisitionFunction.html#module-AFL.agent.UCB_AcquisitionFunction">AFL.agent.UCB_AcquisitionFunction</a>
+</li>
+        <li><a href="reference/api/agent/util.html#module-AFL.agent.util">AFL.agent.util</a>
+</li>
+        <li><a href="reference/api/agent/WatchDog.html#module-AFL.agent.WatchDog">AFL.agent.WatchDog</a>
+</li>
+        <li><a href="reference/api/agent/xarray_extensions.html#module-AFL.agent.xarray_extensions">AFL.agent.xarray_extensions</a>
+</li>
+        <li><a href="reference/api/double_agent/AcquisitionFunction.html#module-AFL.double_agent.AcquisitionFunction">AFL.double_agent.AcquisitionFunction</a>
+</li>
+        <li><a href="reference/api/double_agent/AgentDriver.html#module-AFL.double_agent.AgentDriver">AFL.double_agent.AgentDriver</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#module-AFL.double_agent.AutoSAS">AFL.double_agent.AutoSAS</a>
+</li>
+        <li><a href="reference/api/double_agent/Boundary.html#module-AFL.double_agent.Boundary">AFL.double_agent.Boundary</a>
+</li>
+        <li><a href="reference/api/double_agent/Extrapolator.html#module-AFL.double_agent.Extrapolator">AFL.double_agent.Extrapolator</a>
+</li>
+        <li><a href="reference/api/double_agent/Generator.html#module-AFL.double_agent.Generator">AFL.double_agent.Generator</a>
+</li>
+        <li><a href="reference/api/double_agent/Labeler.html#module-AFL.double_agent.Labeler">AFL.double_agent.Labeler</a>
+</li>
+        <li><a href="reference/api/double_agent/MaskGrid.html#module-AFL.double_agent.MaskGrid">AFL.double_agent.MaskGrid</a>
+</li>
+        <li><a href="reference/api/double_agent/PairMetric.html#module-AFL.double_agent.PairMetric">AFL.double_agent.PairMetric</a>
+</li>
+        <li><a href="reference/api/double_agent/Pipeline.html#module-AFL.double_agent.Pipeline">AFL.double_agent.Pipeline</a>
+</li>
+        <li><a href="reference/api/double_agent/PipelineContext.html#module-AFL.double_agent.PipelineContext">AFL.double_agent.PipelineContext</a>
+</li>
+        <li><a href="reference/api/double_agent/PipelineOp.html#module-AFL.double_agent.PipelineOp">AFL.double_agent.PipelineOp</a>
+</li>
+        <li><a href="reference/api/double_agent/plotting.html#module-AFL.double_agent.plotting">AFL.double_agent.plotting</a>
+</li>
+        <li><a href="reference/api/double_agent/Preprocessor.html#module-AFL.double_agent.Preprocessor">AFL.double_agent.Preprocessor</a>
+</li>
+        <li><a href="reference/api/double_agent/TensorFlowExtrapolator.html#module-AFL.double_agent.TensorFlowExtrapolator">AFL.double_agent.TensorFlowExtrapolator</a>
+</li>
+        <li><a href="reference/api/double_agent/util.html#module-AFL.double_agent.util">AFL.double_agent.util</a>
+</li>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#module-AFL.double_agent.xarray_extensions">AFL.double_agent.xarray_extensions</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/util.html#AFL.agent.util.mpl_format_ternary">mpl_format_ternary() (in module AFL.agent.util)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.mpl_plot_to_bytes">mpl_plot_to_bytes() (in module AFL.double_agent.AgentDriver)</a>
+</li>
+      <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.MultiMetric">MultiMetric (class in AFL.agent.Metric)</a>
+</li>
+      <li><a href="reference/api/double_agent/AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.MultimodalMask_MaxValueAF">MultimodalMask_MaxValueAF (class in AFL.double_agent.AcquisitionFunction)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASModel.name">name (AFL.double_agent.AutoSAS.SASModel attribute)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.ncomponents">ncomponents (AFL.agent.PhaseMap_pandas.PhaseMap property)</a>
+</li>
+      <li><a href="reference/api/double_agent/PipelineContext.html#AFL.double_agent.PipelineContext.NoContextException">NoContextException</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.Metric.normalize1">normalize1() (AFL.agent.Metric.Metric method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.PairMetric.normalize1">(AFL.double_agent.PairMetric.PairMetric method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.Metric.normalize2">normalize2() (AFL.agent.Metric.Metric method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.PairMetric.normalize2">(AFL.double_agent.PairMetric.PairMetric method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="O">O</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/WatchDog.html#AFL.agent.WatchDog.FileChangeHandler.on_modified">on_modified() (AFL.agent.WatchDog.FileChangeHandler method)</a>
+</li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.ops">ops (AFL.double_agent.Pipeline.Pipeline attribute)</a>
+</li>
+      <li><a href="reference/api/agent/GaussianProcess.html#AFL.agent.GaussianProcess.GP.optimize">optimize() (AFL.agent.GaussianProcess.GP method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/HscedGaussianProcess.html#AFL.agent.HscedGaussianProcess.GPR.optimize">(AFL.agent.HscedGaussianProcess.GPR method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.AutoSAS.output_prefix">output_prefix (AFL.double_agent.AutoSAS.AutoSAS attribute)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectBestChiSq.output_prefix">(AFL.double_agent.AutoSAS.ModelSelectBestChiSq attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectBIC.output_prefix">(AFL.double_agent.AutoSAS.ModelSelectBIC attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectMostProbable.output_prefix">(AFL.double_agent.AutoSAS.ModelSelectMostProbable attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectParsimony.output_prefix">(AFL.double_agent.AutoSAS.ModelSelectParsimony attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.output_variables">output_variables() (AFL.double_agent.Pipeline.Pipeline method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.PairMetric">PairMetric (class in AFL.double_agent.PairMetric)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASModel.parameters">parameters (AFL.double_agent.AutoSAS.SASModel attribute)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.PhaseLabeler">PhaseLabeler (class in AFL.agent.PhaseLabeler)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap">PhaseMap (class in AFL.agent.PhaseMap_pandas)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.phasemap_grid_factory">phasemap_grid_factory() (in module AFL.agent.PhaseMap_pandas)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMapModel">PhaseMapModel (class in AFL.agent.PhaseMap_pandas)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMapView_MPL">PhaseMapView_MPL (class in AFL.agent.PhaseMap_pandas)</a>
+</li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline">Pipeline (class in AFL.double_agent.Pipeline)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.pipeline_builder">pipeline_builder() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.pipeline_ops">pipeline_ops() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/double_agent/PipelineContext.html#AFL.double_agent.PipelineContext.PipelineContext">PipelineContext (class in AFL.double_agent.PipelineContext)</a>
+</li>
+      <li><a href="reference/api/double_agent/PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp">PipelineOp (class in AFL.double_agent.PipelineOp)</a>
+</li>
+      <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.Acquisition.plot">plot() (AFL.agent.AcquisitionFunction.Acquisition method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/EI_AcquisitionFunction.html#AFL.agent.EI_AcquisitionFunction.Acquisition.plot">(AFL.agent.EI_AcquisitionFunction.Acquisition method)</a>
+</li>
+        <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.plot">(AFL.agent.PhaseMap_pandas.PhaseMap method)</a>
+</li>
+        <li><a href="reference/api/agent/UCB_AcquisitionFunction.html#AFL.agent.UCB_AcquisitionFunction.Acquisition.plot">(AFL.agent.UCB_AcquisitionFunction.Acquisition method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Extrapolator.html#AFL.double_agent.Extrapolator.Extrapolator.plot">(AFL.double_agent.Extrapolator.Extrapolator method)</a>
+</li>
+        <li><a href="reference/api/double_agent/PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp.plot">(AFL.double_agent.PipelineOp.PipelineOp method)</a>
+</li>
+        <li><a href="reference/api/double_agent/plotting.html#AFL.double_agent.plotting.plot">(in module AFL.double_agent.plotting)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.CompositionTools.plot_3D">plot_3D() (AFL.agent.xarray_extensions.CompositionTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.CompositionTools.plot_3D">(AFL.double_agent.xarray_extensions.CompositionTools method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.CompositionTools.plot_continuous">plot_continuous() (AFL.agent.xarray_extensions.CompositionTools method)</a>
+</li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.CompositionTools.plot_discrete">plot_discrete() (AFL.agent.xarray_extensions.CompositionTools method)</a>
+</li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.ScatteringTools.plot_linlin">plot_linlin() (AFL.agent.xarray_extensions.ScatteringTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.ScatteringTools.plot_linlin">(AFL.double_agent.xarray_extensions.ScatteringTools method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.ScatteringTools.plot_loglog">plot_loglog() (AFL.agent.xarray_extensions.ScatteringTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.ScatteringTools.plot_loglog">(AFL.double_agent.xarray_extensions.ScatteringTools method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.ScatteringTools.plot_logwaterfall">plot_logwaterfall() (AFL.agent.xarray_extensions.ScatteringTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.ScatteringTools.plot_logwaterfall">(AFL.double_agent.xarray_extensions.ScatteringTools method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.CompositionTools.plot_mask">plot_mask() (AFL.agent.xarray_extensions.CompositionTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.CompositionTools.plot_mask">(AFL.double_agent.xarray_extensions.CompositionTools method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.plot_operation">plot_operation() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.plot_pipeline">plot_pipeline() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/double_agent/plotting.html#AFL.double_agent.plotting.plot_sas_mpl">plot_sas_mpl() (in module AFL.double_agent.plotting)</a>
+</li>
+      <li><a href="reference/api/double_agent/plotting.html#AFL.double_agent.plotting.plot_sas_plotly">plot_sas_plotly() (in module AFL.double_agent.plotting)</a>
+</li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.CompositionTools.plot_scatter">plot_scatter() (AFL.agent.xarray_extensions.CompositionTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.CompositionTools.plot_scatter">(AFL.double_agent.xarray_extensions.CompositionTools method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/plotting.html#AFL.double_agent.plotting.plot_scatter_mpl">plot_scatter_mpl() (in module AFL.double_agent.plotting)</a>
+</li>
+      <li><a href="reference/api/double_agent/plotting.html#AFL.double_agent.plotting.plot_scatter_plotly">plot_scatter_plotly() (in module AFL.double_agent.plotting)</a>
+</li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.CompositionTools.plot_surface">plot_surface() (AFL.agent.xarray_extensions.CompositionTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.CompositionTools.plot_surface">(AFL.double_agent.xarray_extensions.CompositionTools method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/plotting.html#AFL.double_agent.plotting.plot_surface_mpl">plot_surface_mpl() (in module AFL.double_agent.plotting)</a>
+</li>
+      <li><a href="reference/api/double_agent/plotting.html#AFL.double_agent.plotting.plot_surface_plotly">plot_surface_plotly() (in module AFL.double_agent.plotting)</a>
+</li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.ScatteringTools.plot_waterfall">plot_waterfall() (AFL.agent.xarray_extensions.ScatteringTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.ScatteringTools.plot_waterfall">(AFL.double_agent.xarray_extensions.ScatteringTools method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/GaussianProcess.html#AFL.agent.GaussianProcess.DummyGP.predict">predict() (AFL.agent.GaussianProcess.DummyGP method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/GaussianProcess.html#AFL.agent.GaussianProcess.GP.predict">(AFL.agent.GaussianProcess.GP method)</a>
+</li>
+        <li><a href="reference/api/agent/HscedGaussianProcess.html#AFL.agent.HscedGaussianProcess.DummyGP.predict">(AFL.agent.HscedGaussianProcess.DummyGP method)</a>
+</li>
+        <li><a href="reference/api/agent/HscedGaussianProcess.html#AFL.agent.HscedGaussianProcess.GPR.predict">(AFL.agent.HscedGaussianProcess.GPR method)</a>
+</li>
+        <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.predict">(AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.prefab_names">prefab_names() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.Utilities.preprocess_data">preprocess_data() (AFL.agent.xarray_extensions.Utilities method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.Utilities.preprocess_data">(AFL.double_agent.xarray_extensions.Utilities method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.Preprocessor">Preprocessor (class in AFL.double_agent.Preprocessor)</a>
+</li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.print">print() (AFL.double_agent.Pipeline.Pipeline method)</a>
+</li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.print_code">print_code() (AFL.double_agent.Pipeline.Pipeline method)</a>
+</li>
+      <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.MultiMetric.prod">prod() (AFL.agent.Metric.MultiMetric method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.CombineMetric.prod">(AFL.double_agent.PairMetric.CombineMetric method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.project">project() (AFL.agent.PhaseMap_pandas.PhaseMap method)</a>
+</li>
+      <li><a href="reference/api/agent/EI_AcquisitionFunction.html#AFL.agent.EI_AcquisitionFunction.pseudoEI">pseudoEI (class in AFL.agent.EI_AcquisitionFunction)</a>
+</li>
+      <li><a href="reference/api/agent/UCB_AcquisitionFunction.html#AFL.agent.UCB_AcquisitionFunction.pseudoUCB">pseudoUCB (class in AFL.agent.UCB_AcquisitionFunction)</a>
+</li>
+      <li><a href="reference/api/double_agent/AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.PseudoUCB">PseudoUCB (class in AFL.double_agent.AcquisitionFunction)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Q">Q</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.AutoSAS.q_dim">q_dim (AFL.double_agent.AutoSAS.AutoSAS attribute)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.AutoSAS.q_max">q_max (AFL.double_agent.AutoSAS.AutoSAS attribute)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASFitter.q_max">(AFL.double_agent.AutoSAS.SASFitter attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.AutoSAS.q_min">q_min (AFL.double_agent.AutoSAS.AutoSAS attribute)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASFitter.q_min">(AFL.double_agent.AutoSAS.SASFitter attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.Driver.queued">queued() (AFL.double_agent.AgentDriver.Driver static method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="R">R</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.Random">Random (class in AFL.agent.AcquisitionFunction)</a>
+</li>
+      <li><a href="reference/api/double_agent/AcquisitionFunction.html#AFL.double_agent.AcquisitionFunction.RandomAF">RandomAF (class in AFL.double_agent.AcquisitionFunction)</a>
+</li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.read_json">read_json() (AFL.double_agent.Pipeline.Pipeline static method)</a>
+</li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.read_pkl">read_pkl() (AFL.double_agent.Pipeline.Pipeline static method)</a>
+</li>
+      <li><a href="reference/api/agent/reduce_usaxs.html#AFL.agent.reduce_usaxs.reduce_uascan">reduce_uascan() (in module AFL.agent.reduce_usaxs)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.PhaseLabeler.remap_labels_by_count">remap_labels_by_count() (AFL.agent.PhaseLabeler.PhaseLabeler method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.Labeler.remap_labels_by_count">(AFL.double_agent.Labeler.Labeler method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/reduce_usaxs.html#AFL.agent.reduce_usaxs.remove_masked_data">remove_masked_data() (in module AFL.agent.reduce_usaxs)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.rescale_compositions">rescale_compositions() (in module AFL.agent.PhaseMap_pandas)</a>
+</li>
+      <li><a href="reference/api/agent/GaussianProcess.html#AFL.agent.GaussianProcess.GP.reset_GP">reset_GP() (AFL.agent.GaussianProcess.GP method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/HscedGaussianProcess.html#AFL.agent.HscedGaussianProcess.GPR.reset_GP">(AFL.agent.HscedGaussianProcess.GPR method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/GaussianProcess.html#AFL.agent.GaussianProcess.GP.reset_monitoring">reset_monitoring() (AFL.agent.GaussianProcess.GP method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/HscedGaussianProcess.html#AFL.agent.HscedGaussianProcess.GPR.reset_monitoring">(AFL.agent.HscedGaussianProcess.GPR method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.Acquisition.reset_phasemap">reset_phasemap() (AFL.agent.AcquisitionFunction.Acquisition method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.IterationCombined.reset_phasemap">(AFL.agent.AcquisitionFunction.IterationCombined method)</a>
+</li>
+        <li><a href="reference/api/agent/EI_AcquisitionFunction.html#AFL.agent.EI_AcquisitionFunction.Acquisition.reset_phasemap">(AFL.agent.EI_AcquisitionFunction.Acquisition method)</a>
+</li>
+        <li><a href="reference/api/agent/UCB_AcquisitionFunction.html#AFL.agent.UCB_AcquisitionFunction.Acquisition.reset_phasemap">(AFL.agent.UCB_AcquisitionFunction.Acquisition method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASModel.residuals">residuals() (AFL.double_agent.AutoSAS.SASModel method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASFitter.resolution">resolution (AFL.double_agent.AutoSAS.SASFitter attribute)</a>
+</li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.result">result (AFL.double_agent.Pipeline.Pipeline attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="S">S</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.AutoSAS.sample_dim">sample_dim (AFL.double_agent.AutoSAS.AutoSAS attribute)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectAIC.sample_dim">(AFL.double_agent.AutoSAS.ModelSelectAIC attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectBestChiSq.sample_dim">(AFL.double_agent.AutoSAS.ModelSelectBestChiSq attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectBIC.sample_dim">(AFL.double_agent.AutoSAS.ModelSelectBIC attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectMostProbable.sample_dim">(AFL.double_agent.AutoSAS.ModelSelectMostProbable attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectParsimony.sample_dim">(AFL.double_agent.AutoSAS.ModelSelectParsimony attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.AutoSAS.sas_err_variable">sas_err_variable (AFL.double_agent.AutoSAS.AutoSAS attribute)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.AutoSAS.sas_resolution_variable">sas_resolution_variable (AFL.double_agent.AutoSAS.AutoSAS attribute)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.AutoSAS.sas_variable">sas_variable (AFL.double_agent.AutoSAS.AutoSAS attribute)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASFitter">SASFitter (class in AFL.double_agent.AutoSAS)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASModel.sasmodel">sasmodel (AFL.double_agent.AutoSAS.SASModel attribute)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASModel">SASModel (class in AFL.double_agent.AutoSAS)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.save">save() (AFL.agent.PhaseMap_pandas.PhaseMap method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.save_prefab">save_prefab() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.SavgolFilter">SavgolFilter (class in AFL.double_agent.Preprocessor)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMapView_MPL.scatter">scatter() (AFL.agent.PhaseMap_pandas.PhaseMapView_MPL method)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMapView_MPL.scatter_ternary">scatter_ternary() (AFL.agent.PhaseMap_pandas.PhaseMapView_MPL method)</a>
+</li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.ScatteringTools">ScatteringTools (class in AFL.agent.xarray_extensions)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.ScatteringTools">(class in AFL.double_agent.xarray_extensions)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.search">search() (AFL.double_agent.Pipeline.Pipeline method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.AutoSAS.server_id">server_id (AFL.double_agent.AutoSAS.AutoSAS attribute)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectAIC.server_id">(AFL.double_agent.AutoSAS.ModelSelectAIC attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectBIC.server_id">(AFL.double_agent.AutoSAS.ModelSelectBIC attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectMostProbable.server_id">(AFL.double_agent.AutoSAS.ModelSelectMostProbable attribute)</a>
+</li>
+        <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.ModelSelectParsimony.server_id">(AFL.double_agent.AutoSAS.ModelSelectParsimony attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.SASFitter.set_sasdata">set_sasdata() (AFL.double_agent.AutoSAS.SASFitter method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.set_tiled_input_config">set_tiled_input_config() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.shape">shape (AFL.agent.PhaseMap_pandas.PhaseMap property)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.PhaseLabeler.silhouette">silhouette() (AFL.agent.PhaseLabeler.PhaseLabeler method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.Labeler.silhouette">(AFL.double_agent.Labeler.Labeler method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.Similarity">Similarity (class in AFL.agent.Metric)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.Similarity">(class in AFL.double_agent.PairMetric)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.size">size (AFL.agent.PhaseMap_pandas.PhaseMap property)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.slice">slice() (AFL.agent.PhaseMap_pandas.PhaseMap method)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseLabeler.html#AFL.agent.PhaseLabeler.SpectralClustering">SpectralClustering (class in AFL.agent.PhaseLabeler)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/Labeler.html#AFL.double_agent.Labeler.SpectralClustering">(class in AFL.double_agent.Labeler)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.Standardize">Standardize (class in AFL.double_agent.Preprocessor)</a>
+</li>
+      <li><a href="reference/api/agent/WatchDog.html#AFL.agent.WatchDog.WatchDog.start">start() (AFL.agent.WatchDog.WatchDog method)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.static_dirs">static_dirs (AFL.double_agent.AgentDriver.DoubleAgentDriver attribute)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.status">status() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/agent/WatchDog.html#AFL.agent.WatchDog.WatchDog.stop">stop() (AFL.agent.WatchDog.WatchDog method)</a>
+</li>
+      <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.Subtract">Subtract (class in AFL.double_agent.Preprocessor)</a>
+</li>
+      <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.SubtractMin">SubtractMin (class in AFL.double_agent.Preprocessor)</a>
+</li>
+      <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.MultiMetric.sum">sum() (AFL.agent.Metric.MultiMetric method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/PairMetric.html#AFL.double_agent.PairMetric.CombineMetric.sum">(AFL.double_agent.PairMetric.CombineMetric method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.SympyTransform">SympyTransform (class in AFL.double_agent.Preprocessor)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.ternary2cart">ternary2cart() (in module AFL.agent.PhaseMap_pandas)</a>
+</li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.CompositionTools.ternary_to_xy">ternary_to_xy() (AFL.agent.xarray_extensions.CompositionTools method)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.CompositionTools.ternary_to_xy">(AFL.double_agent.xarray_extensions.CompositionTools method)</a>
+</li>
+        <li><a href="reference/api/agent/util.html#AFL.agent.util.ternary_to_xy">(in module AFL.agent.util)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.TernaryXYToBarycentric">TernaryXYToBarycentric (class in AFL.double_agent.Preprocessor)</a>
+</li>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.DoubleAgentDriver.test_fetch_entry">test_fetch_entry() (AFL.double_agent.AgentDriver.DoubleAgentDriver method)</a>
+</li>
+      <li><a href="reference/api/double_agent/TensorFlowExtrapolator.html#AFL.double_agent.TensorFlowExtrapolator.TFExtrapolator">TFExtrapolator (class in AFL.double_agent.TensorFlowExtrapolator)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/TensorFlowExtrapolator.html#AFL.double_agent.TensorFlowExtrapolator.TFGaussianProcessClassifier">TFGaussianProcessClassifier (class in AFL.double_agent.TensorFlowExtrapolator)</a>
+</li>
+      <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.Metric.to_dict">to_dict() (AFL.agent.Metric.Metric method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.MultiMetric.to_dict">(AFL.agent.Metric.MultiMetric method)</a>
+</li>
+        <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.to_dict">(AFL.double_agent.Pipeline.Pipeline method)</a>
+</li>
+      </ul></li>
+      <li><a href="reference/api/double_agent/PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp.to_json">to_json() (AFL.double_agent.PipelineOp.PipelineOp method)</a>
+</li>
+      <li><a href="reference/api/agent/GaussianProcess.html#AFL.agent.GaussianProcess.GP.transform_domain">transform_domain() (AFL.agent.GaussianProcess.GP method)</a>
+
+      <ul>
+        <li><a href="reference/api/agent/HscedGaussianProcess.html#AFL.agent.HscedGaussianProcess.GPR.transform_domain">(AFL.agent.HscedGaussianProcess.GPR method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.Driver.unqueued">unqueued() (AFL.double_agent.AgentDriver.Driver static method)</a>
+</li>
+      <li><a href="reference/api/agent/PhaseMap_pandas.html#AFL.agent.PhaseMap_pandas.PhaseMap.update_encoder">update_encoder() (AFL.agent.PhaseMap_pandas.PhaseMap method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/Metric.html#AFL.agent.Metric.MultiMetric.update_name">update_name() (AFL.agent.Metric.MultiMetric method)</a>
+</li>
+      <li><a href="reference/api/agent/xarray_extensions.html#AFL.agent.xarray_extensions.Utilities">Utilities (class in AFL.agent.xarray_extensions)</a>
+
+      <ul>
+        <li><a href="reference/api/double_agent/xarray_extensions.html#AFL.double_agent.xarray_extensions.Utilities">(class in AFL.double_agent.xarray_extensions)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/AutoSAS.html#AFL.double_agent.AutoSAS.FitParameter.value">value (AFL.double_agent.AutoSAS.FitParameter attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/AcquisitionFunction.html#AFL.agent.AcquisitionFunction.Variance">Variance (class in AFL.agent.AcquisitionFunction)</a>
+</li>
+      <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.VarsToArray">VarsToArray (class in AFL.double_agent.Preprocessor)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/agent/WatchDog.html#AFL.agent.WatchDog.WatchDog">WatchDog (class in AFL.agent.WatchDog)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.write_json">write_json() (AFL.double_agent.Pipeline.Pipeline method)</a>
+</li>
+      <li><a href="reference/api/double_agent/Pipeline.html#AFL.double_agent.Pipeline.Pipeline.write_pkl">write_pkl() (AFL.double_agent.Pipeline.Pipeline method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="X">X</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/AgentDriver.html#AFL.double_agent.AgentDriver.xarray_to_bytes">xarray_to_bytes() (in module AFL.double_agent.AgentDriver)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Z">Z</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.Zscale">Zscale (class in AFL.double_agent.Preprocessor)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/api/double_agent/Preprocessor.html#AFL.double_agent.Preprocessor.ZscaleError">ZscaleError (class in AFL.double_agent.Preprocessor)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+
+  
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright : Official Contribution of the US Government.  Not subject to copyright in the United States.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+
+  <!-- Taken from https://www.filamentgroup.com/lab/html-includes/#another-demo%3A-including-another-html-file -->
+  <iframe src="_static/ntd2d_menu.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
+  </body>
+</html>
