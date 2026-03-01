@@ -92,3 +92,47 @@ def test_get_pipeline_ops_strict_skips_cache(monkeypatch):
     assert result["ops"] == [{"name": "FreshStrict"}]
     assert result["cache"]["source"] == "fresh"
     assert call_count["count"] == 1
+
+
+def test_double_agent_driver_static_dirs_point_to_apps():
+    static_dirs = agent_driver.DoubleAgentDriver.static_dirs
+
+    assert "apps/pipeline_builder/js" in str(static_dirs["js"])
+    assert "apps/pipeline_builder/img" in str(static_dirs["img"])
+    assert "apps/pipeline_builder/css" in str(static_dirs["css"])
+    assert "apps/input_builder/js" in str(static_dirs["input_builder_js"])
+    assert "apps/input_builder/css" in str(static_dirs["input_builder_css"])
+
+
+def test_web_app_mixin_renders_builder_html():
+    pipeline_html = agent_driver.DoubleAgentDriver._render_pipeline_builder_html()
+    input_html = agent_driver.DoubleAgentDriver._render_input_builder_html()
+
+    assert "<!DOCTYPE html>" in pipeline_html
+    assert "<!DOCTYPE html>" in input_html
+    assert "<title>Pipeline Builder</title>" in pipeline_html
+    assert "<title>Input Builder</title>" in input_html
+
+
+def test_setup_app_links_sets_builder_links():
+    driver = agent_driver.DoubleAgentDriver.__new__(agent_driver.DoubleAgentDriver)
+
+    driver.useful_links = None
+    driver.setup_app_links()
+    assert driver.useful_links == {
+        "Pipeline Builder": "/pipeline_builder",
+        "Input Builder": "/input_builder",
+    }
+
+    driver.useful_links = {"Existing": "/existing"}
+    driver.setup_app_links()
+    assert driver.useful_links["Existing"] == "/existing"
+    assert driver.useful_links["Pipeline Builder"] == "/pipeline_builder"
+    assert driver.useful_links["Input Builder"] == "/input_builder"
+
+
+def test_app_backend_methods_are_mixin_owned():
+    assert agent_driver.DoubleAgentDriver.plot_pipeline.__qualname__.startswith("AgentWebAppMixin.")
+    assert agent_driver.DoubleAgentDriver.get_tiled_input_config.__qualname__.startswith("AgentWebAppMixin.")
+    assert agent_driver.DoubleAgentDriver.pipeline_ops.__qualname__.startswith("AgentWebAppMixin.")
+    assert agent_driver.DoubleAgentDriver.assemble_input_from_tiled.__qualname__.startswith("AgentWebAppMixin.")
