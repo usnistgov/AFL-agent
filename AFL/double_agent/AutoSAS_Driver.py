@@ -27,7 +27,7 @@ class AutoSAS_Driver(AutoSASWebAppMixin, Driver):
     defaults["fit_method"] = SASFitter.DEFAULT_FIT_METHOD
 
     def __init__(self):
-        Driver.__init__(self, name="SAS_model_fitter", defaults=self.gather_defaults())
+        Driver.__init__(self, name="AutoSAS", defaults=self.gather_defaults())
         self._autosas_webapp_init()
         self.status_str = "Fresh Server!"
         self.fitter = None
