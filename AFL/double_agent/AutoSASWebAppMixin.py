@@ -378,6 +378,7 @@ class AutoSASWebAppMixin:
         q_points: Any = 300,
         q_global_min: Any = None,
         q_global_max: Any = None,
+        sample_index: Any = 0,
         **kwargs,
     ):
         """Return model q/I preview for a model configuration."""
@@ -417,10 +418,49 @@ class AutoSASWebAppMixin:
             calculator = sasmodels.direct_model.DirectModel(data, kernel)
             intensity = calculator(**params)
 
+            chi_q = []
+            chi_vals = []
+            fitter = getattr(self, "fitter", None)
+            if fitter is not None and getattr(fitter, "sasdata", None):
+                total = len(fitter.sasdata)
+                idx = int(sample_index)
+                if idx < 0:
+                    idx = 0
+                if idx >= total:
+                    idx = total - 1
+
+                sample = fitter.sasdata[idx]
+                x_data = np.asarray(sample.x)
+                y_data = np.asarray(sample.y)
+                fit_mask = (x_data >= qmin) & (x_data <= qmax)
+                q_fit = x_data[fit_mask]
+                y_fit = y_data[fit_mask]
+
+                if q_fit.size > 0:
+                    fit_data = sasmodels.data.empty_data1D(q_fit)
+                    fit_calc = sasmodels.direct_model.DirectModel(fit_data, kernel)
+                    y_model = np.asarray(fit_calc(**params))
+
+                    dy_full = getattr(sample, "dy", None)
+                    if dy_full is not None:
+                        dy_fit = np.asarray(dy_full)[fit_mask]
+                        valid = np.isfinite(dy_fit) & (dy_fit > 0)
+                        chi = np.full(y_model.shape, np.nan, dtype=float)
+                        chi[valid] = (y_fit[valid] - y_model[valid]) / dy_fit[valid]
+                    else:
+                        chi = y_fit - y_model
+
+                    chi_q = np.asarray(q_fit).tolist()
+                    chi_vals = np.asarray(chi).tolist()
+
             return {
                 "status": "success",
                 "q": np.asarray(q).tolist(),
                 "intensity": np.asarray(intensity).tolist(),
+                "chi_q": chi_q,
+                "chi": chi_vals,
+                "chisq_q": chi_q,  # backward-compatible alias
+                "chisq": chi_vals,  # backward-compatible alias
             }
         except Exception as exc:
             return {
@@ -428,6 +468,10 @@ class AutoSASWebAppMixin:
                 "message": f"Preview failed: {exc}",
                 "q": [],
                 "intensity": [],
+                "chi_q": [],
+                "chi": [],
+                "chisq_q": [],
+                "chisq": [],
             }
 
     @Driver.unqueued()
@@ -551,20 +595,114 @@ class AutoSASWebAppMixin:
             "html": html_repr,
         }
 
-    def autosas_run_fit(self, parallel: Any = False, fit_method: Any = None, **kwargs):
-        """Run fitting using current data context and model_inputs."""
+    def autosas_clear_data_context(self, **kwargs):
+        """Clear loaded SAS data context used by the AutoSAS web app."""
+        self.fitter = None
+        self._autosas_input_dataset = None
+        self.config["autosas_tiled_entry_ids"] = []
+
+        return {
+            "status": "success",
+            "message": "Cleared loaded SAS data context.",
+            "n_samples": 0,
+        }
+
+    def autosas_run_fit(
+        self,
+        parallel: Any = False,
+        fit_method: Any = None,
+        model_inputs: Any = None,
+        sample_index: Any = None,
+        **kwargs,
+    ):
+        """Run fitting for requested model_inputs and sample, or full configured fit when omitted."""
         parallel_flag = self._coerce_bool(parallel)
 
         fit_method_payload = fit_method
         if isinstance(fit_method, str) and fit_method.strip():
             fit_method_payload = json.loads(fit_method)
+        if self.fitter is None or not getattr(self.fitter, "sasdata", None):
+            raise ValueError("No SAS data set. Use set_sasdata first.")
 
-        fit_uuid = self.fit_models(parallel=parallel_flag, fit_method=fit_method_payload)
+        if model_inputs is None and sample_index is None:
+            fit_uuid = self.fit_models(parallel=parallel_flag, fit_method=fit_method_payload)
+            summary = None
+            if self.fitter is not None:
+                summary = self._summary_from_fitter(self.fitter)
+                summary["fit_uuid"] = fit_uuid
+            self._last_fit_uuid = fit_uuid
+            self._last_fit_summary = summary
+            return {
+                "status": "success",
+                "fit_uuid": fit_uuid,
+                "summary": summary,
+            }
 
-        summary = None
-        if self.fitter is not None:
-            summary = self._summary_from_fitter(self.fitter)
-            summary["fit_uuid"] = fit_uuid
+        if model_inputs is None:
+            normalized_inputs = copy.deepcopy(self.config.get("model_inputs", []))
+        else:
+            normalized_inputs = self._normalize_model_inputs(model_inputs)
+        if not normalized_inputs:
+            raise ValueError("At least one model input is required.")
+
+        idx = 0 if sample_index is None else int(sample_index)
+        total_samples = len(self.fitter.sasdata)
+        if idx < 0:
+            idx = 0
+        if idx >= total_samples:
+            idx = total_samples - 1
+
+        fit_target = copy.deepcopy(self.fitter.sasdata[idx])
+        fit_runner = SASFitter(
+            model_inputs=normalized_inputs,
+            fit_method=fit_method_payload or self.config["fit_method"],
+            q_min=self.config["q_min"],
+            q_max=self.config["q_max"],
+            resolution=self.config["resolution"],
+        )
+        fit_runner.sasdata = [fit_target]
+
+        fit_uuid, _ = fit_runner.fit_models(parallel=parallel_flag, fit_method=fit_method_payload)
+
+        summary = self._summary_from_fitter(fit_runner)
+        summary["fit_uuid"] = fit_uuid
+
+        fitted_params = None
+        model_curve_q = []
+        model_curve_i = []
+        chi_curve_q = []
+        chi_curve_vals = []
+        if fit_runner.fit_results and fit_runner.fit_results[0]:
+            fitted_params = copy.deepcopy(fit_runner.fit_results[0][0].get("output_fit_params", {}))
+        if fit_runner.fitted_models and fit_runner.fitted_models[0]:
+            fitted_model = fit_runner.fitted_models[0][0]
+            model_curve_q = np.asarray(getattr(fitted_model, "model_q", [])).tolist()
+            model_curve_i = np.asarray(getattr(fitted_model, "model_I", [])).tolist()
+
+            data_obj = getattr(fitted_model, "data", None)
+            if data_obj is not None:
+                data_x = np.asarray(getattr(data_obj, "x", []))
+                data_y = np.asarray(getattr(data_obj, "y", []))
+                mask = np.asarray(getattr(data_obj, "mask", np.zeros_like(data_x, dtype=bool)))
+                if mask.shape == data_x.shape:
+                    keep = mask == 0
+                else:
+                    keep = np.ones_like(data_x, dtype=bool)
+                y_fit = data_y[keep]
+                model_y = np.asarray(getattr(fitted_model, "model_I", []))
+
+                if y_fit.shape == model_y.shape and y_fit.size > 0:
+                    dy_full = getattr(data_obj, "dy", None)
+                    if dy_full is not None:
+                        dy_fit = np.asarray(dy_full)[keep]
+                        valid = np.isfinite(dy_fit) & (dy_fit > 0)
+                        chi_arr = np.full(model_y.shape, np.nan, dtype=float)
+                        chi_arr[valid] = (y_fit[valid] - model_y[valid]) / dy_fit[valid]
+                    else:
+                        chi_arr = y_fit - model_y
+
+                    chi_curve_q = model_curve_q
+                    chi_curve_vals = np.asarray(chi_arr).tolist()
 
         self._last_fit_uuid = fit_uuid
         self._last_fit_summary = summary
@@ -573,6 +711,21 @@ class AutoSASWebAppMixin:
             "status": "success",
             "fit_uuid": fit_uuid,
             "summary": summary,
+            "sample_index": idx,
+            "fitted_model_name": normalized_inputs[0].get("name"),
+            "fitted_params": fitted_params,
+            "model_curve": {
+                "q": model_curve_q,
+                "intensity": model_curve_i,
+            },
+            "chi_curve": {
+                "q": chi_curve_q,
+                "chi": chi_curve_vals,
+            },
+            "chisq_curve": {  # backward-compatible alias
+                "q": chi_curve_q,
+                "chisq": chi_curve_vals,
+            },
         }
 
     @Driver.unqueued()

@@ -14,6 +14,7 @@ let previewTimer = null;
 let currentTaskId = null;
 let previewAbortController = null;
 let previewRequestId = 0;
+let syncingXAxes = false;
 
 const dom = {
   status: document.getElementById('status'),
@@ -30,8 +31,11 @@ const dom = {
   filterMag: document.getElementById('filter-mag'),
   paramsTable: document.getElementById('params-table'),
   exportBox: document.getElementById('export-box'),
-  resultsBox: document.getElementById('results-box'),
   fitMethod: document.getElementById('fit-method'),
+  fitMethodOpenBtn: document.getElementById('fit-method-open-btn'),
+  fitMethodCloseBtn: document.getElementById('fit-method-close-btn'),
+  fitMethodSaveBtn: document.getElementById('fit-method-save-btn'),
+  fitMethodModal: document.getElementById('fit-method-modal'),
   entryIds: document.getElementById('entry-ids'),
   sampleDim: document.getElementById('sample-dim'),
   varPrefix: document.getElementById('var-prefix'),
@@ -57,14 +61,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function wireEvents() {
-  document.getElementById('bootstrap-btn').addEventListener('click', bootstrap);
   document.getElementById('add-model-btn').addEventListener('click', addModel);
   document.getElementById('remove-model-btn').addEventListener('click', removeModel);
   document.getElementById('apply-btn').addEventListener('click', applyModelInputs);
-  document.getElementById('export-btn').addEventListener('click', refreshExportBox);
   document.getElementById('set-data-btn').addEventListener('click', setDataContext);
+  document.getElementById('clear-data-btn').addEventListener('click', clearDataContext);
   document.getElementById('run-fit-btn').addEventListener('click', runFit);
-  document.getElementById('refresh-summary-btn').addEventListener('click', refreshSummary);
+  dom.fitMethodOpenBtn.addEventListener('click', openFitMethodModal);
+  dom.fitMethodCloseBtn.addEventListener('click', closeFitMethodModal);
+  dom.fitMethodSaveBtn.addEventListener('click', closeFitMethodModal);
+  dom.fitMethodModal.addEventListener('click', (evt) => {
+    if (evt.target === dom.fitMethodModal) closeFitMethodModal();
+  });
+  document.addEventListener('keydown', (evt) => {
+    if (evt.key === 'Escape' && !dom.fitMethodModal.classList.contains('hidden')) {
+      closeFitMethodModal();
+    }
+  });
   dom.tabModelBtn.addEventListener('click', () => setActiveTab('model'));
   dom.tabDataBtn.addEventListener('click', () => setActiveTab('data'));
   dom.dataPrevBtn.addEventListener('click', () => stepLoadedSample(-1));
@@ -111,6 +124,14 @@ function setActiveTab(tabName) {
   dom.tabDataBtn.classList.toggle('active', !modelActive);
   dom.tabModelContent.classList.toggle('active', modelActive);
   dom.tabDataContent.classList.toggle('active', !modelActive);
+}
+
+function openFitMethodModal() {
+  dom.fitMethodModal.classList.remove('hidden');
+}
+
+function closeFitMethodModal() {
+  dom.fitMethodModal.classList.add('hidden');
 }
 
 function isNumericValue(value) {
@@ -164,13 +185,66 @@ function initializePlot() {
     { x: [], y: [], mode: 'lines', name: 'Model', line: { color: '#0b6e6a', width: 2 } },
     { x: [], y: [], mode: 'markers', name: 'Data', marker: { color: '#111', size: 5 } },
   ], {
-    margin: { l: 55, r: 15, t: 20, b: 50 },
+    margin: { l: 55, r: 20, t: 20, b: 50 },
     xaxis: { type: 'log', title: 'q (Å⁻¹)' },
     yaxis: { type: 'log', title: 'Intensity (cm⁻¹)' },
     showlegend: true,
+    legend: {
+      x: 0.02,
+      y: 0.98,
+      xanchor: 'left',
+      yanchor: 'top',
+      bgcolor: 'rgba(255,255,255,0.75)',
+      bordercolor: 'rgba(0,0,0,0.15)',
+      borderwidth: 1,
+    },
     paper_bgcolor: '#fff',
     plot_bgcolor: '#fff',
   }, { responsive: true });
+
+  Plotly.newPlot('chi-plot', [
+    { x: [], y: [], mode: 'markers', name: 'χ(q)', marker: { color: '#b3261e', size: 4 } },
+  ], {
+    margin: { l: 55, r: 20, t: 8, b: 38 },
+    height: 170,
+    xaxis: { type: 'log', title: 'q (Å⁻¹)' },
+    yaxis: { type: 'linear', title: 'Model Error', zeroline: true, zerolinewidth: 1, zerolinecolor: '#666' },
+    showlegend: false,
+    paper_bgcolor: '#fff',
+    plot_bgcolor: '#fff',
+  }, { responsive: true });
+
+  wireLinkedXAxes();
+}
+
+function wireLinkedXAxes() {
+  const plotEl = document.getElementById('plot');
+  const chiEl = document.getElementById('chi-plot');
+  if (!plotEl || !chiEl || !plotEl.on || !chiEl.on) return;
+
+  const syncRelayout = (source, target, eventData) => {
+    if (syncingXAxes || !eventData) return;
+    const hasRange = eventData['xaxis.range[0]'] !== undefined && eventData['xaxis.range[1]'] !== undefined;
+    const hasAuto = eventData['xaxis.autorange'] !== undefined;
+    if (!hasRange && !hasAuto) return;
+
+    syncingXAxes = true;
+    const relayoutPayload = hasRange
+      ? { 'xaxis.range': [eventData['xaxis.range[0]'], eventData['xaxis.range[1]']] }
+      : { 'xaxis.autorange': eventData['xaxis.autorange'] };
+
+    const relayoutResult = Plotly.relayout(target, relayoutPayload);
+    if (relayoutResult && typeof relayoutResult.finally === 'function') {
+      relayoutResult.finally(() => {
+        syncingXAxes = false;
+      });
+    } else {
+      syncingXAxes = false;
+    }
+  };
+
+  plotEl.on('plotly_relayout', (eventData) => syncRelayout(plotEl, chiEl, eventData));
+  chiEl.on('plotly_relayout', (eventData) => syncRelayout(chiEl, plotEl, eventData));
 }
 
 async function ensureAuthenticated() {
@@ -255,10 +329,6 @@ async function bootstrap() {
       await loadSampleByIndex(0);
     } else if ((tiled.entry_ids || []).length > 0 && !data.has_fitter) {
       await setDataContext({ silent: true, refreshBootstrap: false });
-    }
-
-    if (data.last_fit_summary) {
-      dom.resultsBox.textContent = JSON.stringify(data.last_fit_summary, null, 2);
     }
 
     setStatus('AutoSAS web app loaded.');
@@ -385,16 +455,20 @@ function renderParamEditor() {
 
     rows.push(`
       <div class="param-row" data-param="${escapeHtml(paramName)}">
-        <div>
-          <strong>${escapeHtml(paramName)}</strong><br />
-          <small>${escapeHtml(boundsText)}</small>
+        <div class="param-header">
+          <div class="param-header-main">
+            <strong>${escapeHtml(paramName)}</strong>
+            <small>${escapeHtml(boundsText)}</small>
+          </div>
+          <div class="param-flags">
+            <label><input type="checkbox" class="param-autosas" ${info.autosas ? 'checked' : ''} /> Include in AutoSAS</label>
+            <label><input type="checkbox" class="param-bounds" ${info.use_bounds ? 'checked' : ''} /> Set Bounds</label>
+          </div>
         </div>
         <div class="param-controls">
           ${renderValueInput(paramName, info)}
           ${renderBoundsEditor(paramName, info)}
         </div>
-        <label><input type="checkbox" class="param-autosas" ${info.autosas ? 'checked' : ''} /> AutoSAS</label>
-        <label><input type="checkbox" class="param-bounds" ${info.use_bounds ? 'checked' : ''} /> Bounds</label>
       </div>
     `);
   }
@@ -578,7 +652,10 @@ function removeModel() {
 }
 
 function buildModelInputs() {
-  return state.models.map((model) => {
+  return state.models.map((model) => modelToModelInput(model));
+}
+
+function modelToModelInput(model) {
     const fitParams = {};
     const pdGroups = {};
 
@@ -596,17 +673,14 @@ function buildModelInputs() {
         return;
       }
 
-      const p = { value: typeof info.value === 'number' ? Number(info.value) : info.value };
-      if (info.use_bounds && Array.isArray(info.bounds) && info.bounds.length === 2) {
-        p.bounds = [Number(info.bounds[0]), Number(info.bounds[1])];
-      }
-      fitParams[name] = p;
+      fitParams[name] = buildFitParamFromInfo(info);
     });
 
     Object.entries(pdGroups).forEach(([base, pdVals]) => {
-      if (fitParams[base]) {
-        Object.assign(fitParams[base], pdVals);
+      if (!fitParams[base] && model.params[base]) {
+        fitParams[base] = buildFitParamFromInfo(model.params[base]);
       }
+      if (fitParams[base]) Object.assign(fitParams[base], pdVals);
     });
 
     return {
@@ -616,7 +690,14 @@ function buildModelInputs() {
       q_max: Number(model.q_max),
       fit_params: fitParams,
     };
-  });
+}
+
+function buildFitParamFromInfo(info) {
+  const param = { value: typeof info.value === 'number' ? Number(info.value) : info.value };
+  if (info.use_bounds && Array.isArray(info.bounds) && info.bounds.length === 2) {
+    param.bounds = [Number(info.bounds[0]), Number(info.bounds[1])];
+  }
+  return param;
 }
 
 function refreshExportBox() {
@@ -649,7 +730,7 @@ async function updatePreview() {
     const requestId = ++previewRequestId;
 
     const payload = encodeURIComponent(JSON.stringify(model));
-    const res = await authenticatedFetch(`/autosas_preview_model?model_config=${payload}`, {
+    const res = await authenticatedFetch(`/autosas_preview_model?model_config=${payload}&sample_index=${state.loadedSampleIndex}`, {
       method: 'GET',
       signal: previewAbortController.signal,
     });
@@ -672,19 +753,44 @@ async function updatePreview() {
     ];
 
     Plotly.react('plot', traces, {
-      margin: { l: 55, r: 15, t: 20, b: 50 },
+      margin: { l: 55, r: 20, t: 20, b: 50 },
       xaxis: { type: 'log', title: 'q (Å⁻¹)' },
       yaxis: { type: 'log', title: 'Intensity (cm⁻¹)' },
       showlegend: true,
+      legend: {
+        x: 0.02,
+        y: 0.98,
+        xanchor: 'left',
+        yanchor: 'top',
+        bgcolor: 'rgba(255,255,255,0.75)',
+        bordercolor: 'rgba(0,0,0,0.15)',
+        borderwidth: 1,
+      },
       paper_bgcolor: '#fff',
       plot_bgcolor: '#fff',
     }, { responsive: true });
+    updateChiPlot(data.chi_q || data.chisq_q || [], data.chi || data.chisq || []);
   } catch (err) {
     if (err && err.name === 'AbortError') return;
     setStatus(`Preview error: ${err.message}`, true);
   } finally {
     previewAbortController = null;
   }
+}
+
+function updateChiPlot(qVals, chiVals) {
+  if (!window.Plotly) return;
+  Plotly.react('chi-plot', [
+    { x: qVals || [], y: chiVals || [], mode: 'markers', name: 'χ(q)', marker: { color: '#b3261e', size: 4 } },
+  ], {
+    margin: { l: 55, r: 20, t: 8, b: 38 },
+    height: 170,
+    xaxis: { type: 'log', title: 'q (Å⁻¹)' },
+    yaxis: { type: 'linear', title: 'Model Error', zeroline: true, zerolinewidth: 1, zerolinecolor: '#666' },
+    showlegend: false,
+    paper_bgcolor: '#fff',
+    plot_bgcolor: '#fff',
+  }, { responsive: true });
 }
 
 async function queueTask(taskName, payload) {
@@ -703,6 +809,9 @@ async function queueTask(taskName, payload) {
 
 async function waitForTask(taskId, timeoutMs = 180000) {
   const started = Date.now();
+  let missingCount = 0;
+  const maxMissingBeforeAssumeComplete = 3;
+
   while (Date.now() - started < timeoutMs) {
     const res = await authenticatedFetch('/get_queue', { method: 'GET' });
     const [history, runningTask, queue] = await res.json();
@@ -713,12 +822,24 @@ async function waitForTask(taskId, timeoutMs = 180000) {
     }
 
     const stillQueued = (runningTask && runningTask.uuid === taskId) || queue.some((t) => t.uuid === taskId);
-    if (!stillQueued) break;
+    if (!stillQueued) {
+      // Queue/history updates can race: the task may have completed successfully
+      // but not yet appeared in history. Allow a few grace polls first.
+      missingCount += 1;
+      if (missingCount >= maxMissingBeforeAssumeComplete) {
+        return {
+          status: 'success',
+          message: 'Task completed (queue record unavailable).',
+        };
+      }
+    } else {
+      missingCount = 0;
+    }
 
     await sleep(1000);
   }
 
-  throw new Error(`Task ${taskId} timed out.`);
+  throw new Error(`Task ${taskId} timed out while waiting for queue completion.`);
 }
 
 async function applyModelInputs() {
@@ -776,8 +897,10 @@ async function loadSampleByIndex(index) {
 
 async function stepLoadedSample(direction) {
   try {
-    const target = state.loadedSampleIndex + direction;
-    if (target < 0 || target >= state.loadedSampleTotal) return;
+    if (!state.loadedSampleTotal || state.loadedSampleTotal <= 0) return;
+    let target = state.loadedSampleIndex + direction;
+    if (target < 0) target = state.loadedSampleTotal - 1;
+    if (target >= state.loadedSampleTotal) target = 0;
     await loadSampleByIndex(target);
   } catch (err) {
     setStatus(`Sample navigation error: ${err.message}`, true);
@@ -828,39 +951,103 @@ async function setDataContext(options = {}) {
   }
 }
 
+async function clearDataContext() {
+  try {
+    setStatus('Clearing SAS data context...');
+    const taskId = await queueTask('autosas_clear_data_context', {});
+    const result = await waitForTask(taskId);
+
+    state.previewData = null;
+    state.loadedSampleIndex = 0;
+    state.loadedSampleTotal = 0;
+    updateDataNavigator();
+    renderDatasetSummary(null);
+    updateChiPlot([], []);
+    schedulePreviewImmediate();
+
+    setStatus(result?.message || 'SAS data context cleared.');
+  } catch (err) {
+    setStatus(`Clear data error: ${err.message}`, true);
+  }
+}
+
 async function runFit() {
   try {
+    const model = selectedModel();
+    if (!model) {
+      throw new Error('Select a model before running fit.');
+    }
+    if (!state.previewData?.q?.length || !state.previewData?.I?.length) {
+      throw new Error('No loaded data sample to fit. Load data first.');
+    }
+
     let fitMethod = null;
     const rawFitMethod = dom.fitMethod.value.trim();
     if (rawFitMethod) fitMethod = JSON.parse(rawFitMethod);
 
-    setStatus('Running fit...');
-    const payload = fitMethod ? { fit_method: fitMethod } : {};
+    setStatus(`Running fit for ${model.name} on sample ${state.loadedSampleIndex + 1}/${state.loadedSampleTotal || 1}...`);
+    const payload = {
+      model_inputs: [modelToModelInput(model)],
+      sample_index: state.loadedSampleIndex,
+      ...(fitMethod ? { fit_method: fitMethod } : {}),
+    };
     const taskId = await queueTask('autosas_run_fit', payload);
     const result = await waitForTask(taskId, 600000);
 
-    if (result?.summary) {
-      dom.resultsBox.textContent = JSON.stringify(result.summary, null, 2);
+    if (result?.fitted_params) {
+      applyFittedParamsToSelectedModel(result.fitted_params);
+      renderEditor();
+      refreshExportBox();
     }
+
+    if (result?.model_curve?.q && result?.model_curve?.intensity && window.Plotly) {
+      Plotly.react('plot', [
+        { x: result.model_curve.q, y: result.model_curve.intensity, mode: 'lines', name: 'Model', line: { color: '#0b6e6a', width: 2 } },
+        {
+          x: state.previewData?.q || [],
+          y: state.previewData?.I || [],
+          mode: 'markers',
+          name: 'Data',
+          marker: { color: '#111', size: 5 },
+        },
+      ], {
+        margin: { l: 55, r: 20, t: 20, b: 50 },
+        xaxis: { type: 'log', title: 'q (Å⁻¹)' },
+        yaxis: { type: 'log', title: 'Intensity (cm⁻¹)' },
+        showlegend: true,
+        legend: {
+          x: 0.02,
+          y: 0.98,
+          xanchor: 'left',
+          yanchor: 'top',
+          bgcolor: 'rgba(255,255,255,0.75)',
+          bordercolor: 'rgba(0,0,0,0.15)',
+          borderwidth: 1,
+        },
+        paper_bgcolor: '#fff',
+        plot_bgcolor: '#fff',
+      }, { responsive: true });
+    } else {
+      schedulePreviewImmediate();
+    }
+    updateChiPlot(result?.chi_curve?.q || result?.chisq_curve?.q || [], result?.chi_curve?.chi || result?.chisq_curve?.chisq || []);
+
     setStatus(`Fit completed. UUID: ${result?.fit_uuid || 'n/a'}`);
   } catch (err) {
     setStatus(`Run fit error: ${err.message}`, true);
   }
 }
 
-async function refreshSummary() {
-  try {
-    const res = await authenticatedFetch('/autosas_last_fit_summary', { method: 'GET' });
-    const data = await res.json();
-    if (data.status !== 'success') {
-      throw new Error(data.message || 'No summary available');
-    }
+function applyFittedParamsToSelectedModel(fittedParams) {
+  const model = selectedModel();
+  if (!model || !fittedParams || typeof fittedParams !== 'object') return;
 
-    dom.resultsBox.textContent = JSON.stringify(data, null, 2);
-    setStatus('Fit summary refreshed.');
-  } catch (err) {
-    setStatus(`Summary error: ${err.message}`, true);
-  }
+  Object.entries(fittedParams).forEach(([paramName, fitInfo]) => {
+    if (!model.params[paramName] || !fitInfo || typeof fitInfo !== 'object') return;
+    const nextValue = Number(fitInfo.value);
+    if (!Number.isFinite(nextValue)) return;
+    model.params[paramName].value = nextValue;
+  });
 }
 
 function setStatus(message, isError = false) {
