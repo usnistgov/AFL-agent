@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoSAS Web App</title>
+  <link rel="stylesheet" href="static/autosas_webapp_css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div>
+        <h1>AutoSAS Web App</h1>
+        <p class="subtitle">Build model_inputs, load tiled data, run fits, and review results.</p>
+      </div>
+      <div class="topbar-actions">
+      </div>
+    </header>
+
+    <nav class="tab-nav">
+      <button id="tab-data-btn" class="tab-btn active" data-tab="data">Data Loading</button>
+      <button id="tab-model-btn" class="tab-btn" data-tab="model">Modeling + Fit</button>
+    </nav>
+
+    <section id="tab-model-content" class="tab-content">
+      <main class="layout">
+        <section class="left-column">
+          <section class="panel models-panel">
+            <h2>Models</h2>
+            <div class="row">
+              <select id="add-model-select"></select>
+              <button id="add-model-btn">Add</button>
+              <button id="remove-model-btn" class="danger">Remove</button>
+            </div>
+            <div id="models-list" class="models-list"></div>
+          </section>
+        </section>
+
+        <section class="panel editor-panel">
+          <h2>Model Editor</h2>
+          <div id="editor-empty" class="hint">Select a model to edit.</div>
+          <div id="editor-content" class="hidden">
+            <div class="row">
+              <label>Name <input id="model-name" type="text" /></label>
+              <label>q_min <input id="model-qmin" type="number" step="any" /></label>
+              <label>q_max <input id="model-qmax" type="number" step="any" /></label>
+            </div>
+            <div class="row">
+              <label><input type="checkbox" id="filter-pd" /> Show polydispersity</label>
+              <label><input type="checkbox" id="filter-mag" /> Show magnetic</label>
+            </div>
+            <div id="params-table"></div>
+          </div>
+        </section>
+
+        <section class="panel plot-panel">
+          <div class="plot-header">
+            <h2>Preview</h2>
+            <div class="plot-toolbar">
+              <button id="data-prev-btn">◀</button>
+              <span id="data-index-indicator" class="data-indicator">Data 0/0</span>
+              <button id="data-next-btn">▶</button>
+              <button id="run-fit-btn" class="primary">Run Fit</button>
+              <button id="fit-method-open-btn">Fit Method JSON</button>
+            </div>
+          </div>
+          <div id="plot"></div>
+          <div id="chi-plot"></div>
+        </section>
+      </main>
+
+      <section class="panel outputs-panel">
+        <div class="panel-title-row">
+          <h2>AutoSAS Input JSON</h2>
+          <div class="row wrap panel-actions">
+            <button id="apply-btn" class="primary">Send to AutoSAS</button>
+            <button id="run-autosas-btn">Run AutoSAS</button>
+          </div>
+        </div>
+        <textarea id="export-box" class="export-box" readonly></textarea>
+      </section>
+    </section>
+
+    <section id="tab-data-content" class="tab-content active">
+      <section class="panel fit-controls">
+        <h2>Tiled Data Source</h2>
+        <div class="row wrap">
+          <label>entry_ids (one per line or comma-separated)
+            <textarea id="entry-ids" placeholder="entry_id_1&#10;entry_id_2"></textarea>
+          </label>
+        </div>
+        <div class="row wrap">
+          <label>concat_dim <input id="sample-dim" type="text" value="sample" /></label>
+          <label>variable_prefix (optional) <input id="var-prefix" type="text" value="" /></label>
+          <label>q variable <input id="q-var" type="text" value="q" /></label>
+          <label>intensity variable <input id="sas-var" type="text" value="I" /></label>
+          <label>error variable <input id="sas-err-var" type="text" value="dI" /></label>
+          <label>resolution variable (optional) <input id="sas-res-var" type="text" placeholder="optional" /></label>
+        </div>
+        <div class="row wrap">
+          <button id="set-data-btn" class="primary">Fetch Data</button>
+          <button id="clear-data-btn">Clear Data</button>
+        </div>
+      </section>
+
+      <section class="panel outputs-panel">
+        <h2>Assembled Xarray Dataset</h2>
+        <div id="dataset-summary" class="dataset-summary">No dataset loaded.</div>
+        <div id="dataset-html" class="dataset-html"></div>
+      </section>
+    </section>
+
+    <div id="status" class="status"></div>
+  </div>
+  <div id="fit-method-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="panel-title-row">
+        <h2>Fit Method JSON</h2>
+        <button id="fit-method-close-btn">Close</button>
+      </div>
+      <label>Fit method JSON (optional override)
+        <textarea id="fit-method"></textarea>
+      </label>
+      <div class="row wrap modal-actions">
+        <button id="fit-method-save-btn" class="primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="static/autosas_webapp_vendor/plotly.min.js"></script>
+  <script type="module" src="static/autosas_webapp_js/main.js"></script>
+</body>
+</html>
