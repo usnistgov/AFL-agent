@@ -8,6 +8,7 @@ import numpy as np
 import sasmodels.core
 import sasmodels.data
 import sasmodels.direct_model
+import xarray as xr
 from jinja2 import Template
 from AFL.double_agent.AutoSAS import SASFitter
 
@@ -81,6 +82,19 @@ class AutoSASWebAppMixin:
         if value is None:
             return False
         return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+    @staticmethod
+    def _fit_result_as_attrs_dataset(result: dict[str, Any]) -> xr.Dataset:
+        """Encode fit result payload in Dataset.attrs for DataTiled-friendly ingestion."""
+        dataset = xr.Dataset()
+        attrs: dict[str, Any] = {}
+        for key, value in result.items():
+            if value is None or isinstance(value, (str, int, float, bool)):
+                attrs[key] = value
+            else:
+                attrs[key] = json.dumps(value)
+        dataset.attrs.update(attrs)
+        return dataset
 
     @staticmethod
     def _default_bounds(value: float) -> tuple[float, float]:
@@ -613,10 +627,12 @@ class AutoSASWebAppMixin:
         fit_method: Any = None,
         model_inputs: Any = None,
         sample_index: Any = None,
+        return_dataset: Any = False,
         **kwargs,
     ):
         """Run fitting for requested model_inputs and sample, or full configured fit when omitted."""
         parallel_flag = self._coerce_bool(parallel)
+        return_dataset_flag = self._coerce_bool(return_dataset)
 
         fit_method_payload = fit_method
         if isinstance(fit_method, str) and fit_method.strip():
@@ -625,18 +641,26 @@ class AutoSASWebAppMixin:
             raise ValueError("No SAS data set. Use set_sasdata first.")
 
         if model_inputs is None and sample_index is None:
-            fit_uuid = self.fit_models(parallel=parallel_flag, fit_method=fit_method_payload)
+            fit_result = self.fit_models(parallel=parallel_flag, fit_method=fit_method_payload)
+            fit_uuid = None
+            if isinstance(fit_result, xr.Dataset):
+                fit_uuid = fit_result.attrs.get("fit_uuid")
+            elif isinstance(fit_result, str):
+                fit_uuid = fit_result
             summary = None
             if self.fitter is not None:
                 summary = self._summary_from_fitter(self.fitter)
                 summary["fit_uuid"] = fit_uuid
             self._last_fit_uuid = fit_uuid
             self._last_fit_summary = summary
-            return {
+            result = {
                 "status": "success",
                 "fit_uuid": fit_uuid,
                 "summary": summary,
             }
+            if return_dataset_flag:
+                return self._fit_result_as_attrs_dataset(result)
+            return result
 
         if model_inputs is None:
             normalized_inputs = copy.deepcopy(self.config.get("model_inputs", []))
@@ -707,7 +731,7 @@ class AutoSASWebAppMixin:
         self._last_fit_uuid = fit_uuid
         self._last_fit_summary = summary
 
-        return {
+        result = {
             "status": "success",
             "fit_uuid": fit_uuid,
             "summary": summary,
@@ -727,6 +751,33 @@ class AutoSASWebAppMixin:
                 "chisq": chi_curve_vals,
             },
         }
+        if return_dataset_flag:
+            return self._fit_result_as_attrs_dataset(result)
+        return result
+
+    @Driver.unqueued()
+    def autosas_run_fit_unqueued(
+        self,
+        parallel: Any = False,
+        fit_method: Any = None,
+        model_inputs: Any = None,
+        sample_index: Any = None,
+        return_dataset: Any = True,
+        **kwargs,
+    ):
+        """Run AutoSAS fit synchronously via unqueued route.
+
+        Defaults to returning an empty xr.Dataset with fit payload encoded in .attrs,
+        which is useful for DataTiled ingestion.
+        """
+        return self.autosas_run_fit(
+            parallel=parallel,
+            fit_method=fit_method,
+            model_inputs=model_inputs,
+            sample_index=sample_index,
+            return_dataset=return_dataset,
+            **kwargs,
+        )
 
     @Driver.unqueued()
     def autosas_last_fit_summary(self, **kwargs):
@@ -751,3 +802,37 @@ class AutoSASWebAppMixin:
             "status": "error",
             "message": "No fit summary available yet.",
         }
+
+    @Driver.unqueued()
+    def autosas_get_fit_entry_id(
+        self,
+        fit_uuid: Optional[str] = None,
+        fit_task_name: str = "fit_models",
+        **kwargs,
+    ):
+        """Resolve Tiled entry_id for a fit UUID by searching metadata attrs.fit_uuid."""
+        target_fit_uuid = fit_uuid or getattr(self, "_last_fit_uuid", None)
+        if not target_fit_uuid:
+            return {"status": "error", "message": "fit_uuid is required and no last fit UUID is available."}
+
+        if not hasattr(self, "_iter_fit_entries") or not hasattr(self, "_select_latest_entry"):
+            return {"status": "error", "message": "Driver does not implement Tiled fit entry lookup helpers."}
+
+        try:
+            entries = self._iter_fit_entries(
+                fit_uuid=target_fit_uuid,
+                task_name=fit_task_name,
+                allow_task_fallback=False,
+            )
+            entry_id, _ = self._select_latest_entry(entries)
+            return {
+                "status": "success",
+                "fit_uuid": target_fit_uuid,
+                "entry_id": entry_id,
+            }
+        except Exception as exc:
+            return {
+                "status": "error",
+                "fit_uuid": target_fit_uuid,
+                "message": f"Could not resolve Tiled entry for fit UUID '{target_fit_uuid}': {exc}",
+            }

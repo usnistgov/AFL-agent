@@ -64,6 +64,7 @@ function wireEvents() {
   document.getElementById('add-model-btn').addEventListener('click', addModel);
   document.getElementById('remove-model-btn').addEventListener('click', removeModel);
   document.getElementById('apply-btn').addEventListener('click', applyModelInputs);
+  document.getElementById('run-autosas-btn').addEventListener('click', runAutoSAS);
   document.getElementById('set-data-btn').addEventListener('click', setDataContext);
   document.getElementById('clear-data-btn').addEventListener('click', clearDataContext);
   document.getElementById('run-fit-btn').addEventListener('click', runFit);
@@ -842,22 +843,46 @@ async function waitForTask(taskId, timeoutMs = 180000) {
   throw new Error(`Task ${taskId} timed out while waiting for queue completion.`);
 }
 
+async function callUnqueued(taskName, payload = {}) {
+  const params = new URLSearchParams();
+  Object.entries(payload || {}).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    if (typeof value === 'string') {
+      params.set(key, value);
+      return;
+    }
+    params.set(key, JSON.stringify(value));
+  });
+
+  const query = params.toString();
+  const url = query ? `/${taskName}?${query}` : `/${taskName}`;
+  const res = await authenticatedFetch(url, { method: 'GET' });
+  if (!res.ok) {
+    throw new Error(`Failed to call ${taskName}`);
+  }
+  return res.json();
+}
+
 async function applyModelInputs() {
   try {
-    const modelInputs = buildModelInputs();
-    const validateRes = await authenticatedFetch(`/autosas_validate_model_inputs?model_inputs=${encodeURIComponent(JSON.stringify(modelInputs))}`, { method: 'GET' });
-    const validateData = await validateRes.json();
-    if (validateData.status !== 'success') {
-      throw new Error(validateData.message || 'Validation failed');
-    }
-
-    setStatus('Applying model_inputs...');
-    const taskId = await queueTask('autosas_apply_model_inputs', { model_inputs: modelInputs });
-    const result = await waitForTask(taskId);
+    const result = await persistModelInputs('Applying model_inputs...');
     setStatus(result?.message || 'Applied model_inputs.');
   } catch (err) {
     setStatus(`Apply error: ${err.message}`, true);
   }
+}
+
+async function persistModelInputs(statusMessage = 'Applying model_inputs...') {
+  const modelInputs = buildModelInputs();
+  const validateRes = await authenticatedFetch(`/autosas_validate_model_inputs?model_inputs=${encodeURIComponent(JSON.stringify(modelInputs))}`, { method: 'GET' });
+  const validateData = await validateRes.json();
+  if (validateData.status !== 'success') {
+    throw new Error(validateData.message || 'Validation failed');
+  }
+
+  setStatus(statusMessage);
+  const taskId = await queueTask('autosas_apply_model_inputs', { model_inputs: modelInputs });
+  return waitForTask(taskId);
 }
 
 function renderDatasetSummary(dataset) {
@@ -989,10 +1014,11 @@ async function runFit() {
     const payload = {
       model_inputs: [modelToModelInput(model)],
       sample_index: state.loadedSampleIndex,
+      return_dataset: false,
       ...(fitMethod ? { fit_method: fitMethod } : {}),
     };
-    const taskId = await queueTask('autosas_run_fit', payload);
-    const result = await waitForTask(taskId, 600000);
+    currentTaskId = null;
+    const result = await callUnqueued('autosas_run_fit_unqueued', payload);
 
     if (result?.fitted_params) {
       applyFittedParamsToSelectedModel(result.fitted_params);
@@ -1035,6 +1061,58 @@ async function runFit() {
     setStatus(`Fit completed. UUID: ${result?.fit_uuid || 'n/a'}`);
   } catch (err) {
     setStatus(`Run fit error: ${err.message}`, true);
+  }
+}
+
+async function runAutoSAS() {
+  try {
+    if (!state.loadedSampleTotal || state.loadedSampleTotal <= 0) {
+      throw new Error('No loaded SAS data context. Fetch data first.');
+    }
+
+    await persistModelInputs('Sending model_inputs to AutoSAS...');
+
+    let fitMethod = null;
+    const rawFitMethod = dom.fitMethod.value.trim();
+    if (rawFitMethod) fitMethod = JSON.parse(rawFitMethod);
+
+    setStatus(`Running AutoSAS on ${state.loadedSampleTotal} sample(s)...`);
+    const payload = fitMethod ? { fit_method: fitMethod } : {};
+    const taskId = await queueTask('fit_models', payload);
+    const result = await waitForTask(taskId, 600000);
+
+    let fitUuid = result?.fit_uuid || result?.attrs?.fit_uuid || result?.summary?.fit_uuid;
+    if (!fitUuid) {
+      try {
+        const latest = await callUnqueued('autosas_last_fit_summary', {});
+        fitUuid = latest?.fit_uuid || latest?.summary?.fit_uuid || fitUuid;
+      } catch (err) {
+        // Keep silent fallback behavior; status line will still report completion.
+      }
+    }
+    if (fitUuid) {
+      const resolved = await callUnqueued('autosas_get_fit_entry_id', {
+        fit_uuid: fitUuid,
+        fit_task_name: 'fit_models',
+      });
+      if (resolved?.status === 'success' && resolved?.entry_id) {
+        openTiledPlotForEntryId(resolved.entry_id);
+      } else {
+        setStatus(`AutoSAS completed. Could not resolve entry_id for ${fitUuid}.`, true);
+      }
+    }
+    setStatus(`AutoSAS completed. UUID: ${fitUuid || 'n/a'}`);
+  } catch (err) {
+    setStatus(`Run AutoSAS error: ${err.message}`, true);
+  }
+}
+
+function openTiledPlotForEntryId(entryId) {
+  const entryIds = encodeURIComponent(JSON.stringify([entryId]));
+  const plotUrl = `/tiled_plot?entry_ids=${entryIds}`;
+  const opened = window.open(plotUrl, '_blank');
+  if (!opened) {
+    setStatus(`AutoSAS completed, but popup was blocked. Open ${plotUrl} manually.`, true);
   }
 }
 

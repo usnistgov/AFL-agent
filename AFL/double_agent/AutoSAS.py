@@ -927,9 +927,6 @@ class AutoSAS(PipelineOp):
         """
         # Create client connection
         self.construct_clients()
-        
-        # Send dataset to the server
-        db_uuid = self.AutoSAS_client.deposit_obj(obj=dataset)
 
         if self.q_min or self.q_max:
             self.AutoSAS_client.set_config(
@@ -937,25 +934,58 @@ class AutoSAS(PipelineOp):
                 q_max=self.q_max
             )
 
+        entry_ids = []
+        for key in ("tiled_entry_ids", "autosas_tiled_entry_ids", "entry_ids"):
+            candidate = dataset.attrs.get(key)
+            if isinstance(candidate, (list, tuple)):
+                entry_ids = [str(v) for v in candidate if str(v).strip()]
+                if entry_ids:
+                    break
+
+        if entry_ids:
+            context_kw = {
+                "entry_ids": entry_ids,
+                "concat_dim": self.sample_dim,
+                "sample_dim": self.sample_dim,
+                "q_variable": self.q_variable,
+                "sas_variable": self.sas_variable,
+                "sas_err_variable": self.sas_err_variable,
+                "sas_resolution_variable": self.resolution,
+            }
+        else:
+            context_kw = {
+                "dataset_dict": dataset.to_dict(data=True),
+                "sample_dim": self.sample_dim,
+                "q_variable": self.q_variable,
+                "sas_variable": self.sas_variable,
+                "sas_err_variable": self.sas_err_variable,
+                "sas_resolution_variable": self.resolution,
+            }
+
         # Initialize the input data for fitting
         self.AutoSAS_client.enqueue(
             task_name="set_sasdata",
-            db_uuid=db_uuid,
-            sample_dim=self.sample_dim,
-            q_variable=self.q_variable,
-            sas_variable=self.sas_variable,
-            sas_err_variable=self.sas_err_variable,
+            **context_kw,
         )
 
         # Run the fitting
-        fit_calc_id = self.AutoSAS_client.enqueue(
+        fit_result = self.AutoSAS_client.enqueue(
             task_name="fit_models", 
             fit_method=self.fit_method,
             interactive=True
         )['return_val']
 
-        # Retrieve the results
-        autosas_fit = self.AutoSAS_client.retrieve_obj(uid=fit_calc_id, delete=False)
+        if isinstance(fit_result, xr.Dataset):
+            autosas_fit = fit_result
+        else:
+            fit_calc_id = fit_result
+            # Retrieve the results from Tiled-backed fit records.
+            autosas_fit = self.AutoSAS_client.enqueue(
+                task_name="get_fit_dataset",
+                fit_uuid=fit_calc_id,
+                fit_task_name="fit_models",
+                interactive=True,
+            )["return_val"]
         
         # Rename variables and dimensions to match our naming convention
         autosas_fit = autosas_fit.rename_vars({

@@ -110,6 +110,10 @@ h2 { margin: 0 0 10px; font-size: 1rem; }
   margin-bottom: 10px;
 }
 
+.panel-actions {
+  margin-bottom: 0;
+}
+
 .row {
   display: flex;
   gap: 8px;
