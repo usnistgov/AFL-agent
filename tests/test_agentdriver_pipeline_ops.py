@@ -97,11 +97,17 @@ def test_get_pipeline_ops_strict_skips_cache(monkeypatch):
 def test_double_agent_driver_static_dirs_point_to_apps():
     static_dirs = agent_driver.DoubleAgentDriver.static_dirs
 
-    assert "apps/pipeline_builder/js" in str(static_dirs["js"])
-    assert "apps/pipeline_builder/img" in str(static_dirs["img"])
-    assert "apps/pipeline_builder/css" in str(static_dirs["css"])
-    assert "apps/input_builder/js" in str(static_dirs["input_builder_js"])
-    assert "apps/input_builder/css" in str(static_dirs["input_builder_css"])
+    assert "apps/pipeline_builder/js" in static_dirs
+    assert "apps/pipeline_builder/img" in static_dirs
+    assert "apps/pipeline_builder/css" in static_dirs
+    assert "apps/input_builder/js" in static_dirs
+    assert "apps/input_builder/css" in static_dirs
+
+    assert "apps/pipeline_builder/js" in str(static_dirs["apps/pipeline_builder/js"])
+    assert "apps/pipeline_builder/img" in str(static_dirs["apps/pipeline_builder/img"])
+    assert "apps/pipeline_builder/css" in str(static_dirs["apps/pipeline_builder/css"])
+    assert "apps/input_builder/js" in str(static_dirs["apps/input_builder/js"])
+    assert "apps/input_builder/css" in str(static_dirs["apps/input_builder/css"])
 
 
 def test_web_app_mixin_renders_builder_html():

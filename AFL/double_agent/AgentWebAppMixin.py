@@ -47,11 +47,11 @@ class AgentWebAppMixin:
     """Reusable web app endpoints and static asset bindings for agent drivers."""
 
     static_dirs = {
-        "js": pathlib.Path(__file__).parent / "apps" / "pipeline_builder" / "js",
-        "img": pathlib.Path(__file__).parent / "apps" / "pipeline_builder" / "img",
-        "css": pathlib.Path(__file__).parent / "apps" / "pipeline_builder" / "css",
-        "input_builder_js": pathlib.Path(__file__).parent / "apps" / "input_builder" / "js",
-        "input_builder_css": pathlib.Path(__file__).parent / "apps" / "input_builder" / "css",
+        "apps/pipeline_builder/js": pathlib.Path(__file__).parent / "apps" / "pipeline_builder" / "js",
+        "apps/pipeline_builder/img": pathlib.Path(__file__).parent / "apps" / "pipeline_builder" / "img",
+        "apps/pipeline_builder/css": pathlib.Path(__file__).parent / "apps" / "pipeline_builder" / "css",
+        "apps/input_builder/js": pathlib.Path(__file__).parent / "apps" / "input_builder" / "js",
+        "apps/input_builder/css": pathlib.Path(__file__).parent / "apps" / "input_builder" / "css",
     }
 
     @staticmethod
