@@ -10,11 +10,13 @@ try:
     from apdist.distances import AmplitudePhaseDistance as numpy_apdist
     import torch
 except ImportError as e:
-    raise RuntimeError((
-        "ImportError encountered: {}\n"
-        "To use amplitude-distance as a similarity measure, please install:\n"
-        "pip install git+https://github.com/kiranvad/Amplitude-Phase-Distance"
-    ).format(str(e)))
+    # Keep this metric optional so AgentDriver can start without apdist/torch.
+    _APDIST_IMPORT_ERROR = e
+    torch_apdist = None
+    numpy_apdist = None
+    torch = None
+else:
+    _APDIST_IMPORT_ERROR = None
 
 class AmplitudePhaseDistance(PairMetric):
     """Computes pairwise amplitude phase distance between samples
@@ -79,8 +81,18 @@ class AmplitudePhaseDistance(PairMetric):
         )
         self.method = method
 
+    @staticmethod
+    def _ensure_apdist_available() -> None:
+        if _APDIST_IMPORT_ERROR is not None:
+            raise RuntimeError((
+                "AmplitudePhaseDistance requires optional dependency 'apdist' (and 'torch' for continuous mode).\n"
+                "Install with: pip install git+https://github.com/kiranvad/Amplitude-Phase-Distance\n"
+                "Original import error: {}"
+            ).format(str(_APDIST_IMPORT_ERROR)))
+
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this `PipelineOp` to the supplied `xarray.Dataset`"""
+        self._ensure_apdist_available()
         data = self._get_variable(dataset)
 
         domain_variable = [d for d in data.dims if d != self.sample_dim][0]
@@ -125,6 +137,7 @@ class AmplitudePhaseDistance(PairMetric):
         return self 
     
     def _get_pairiwise_ap(self, method, t, f_ref, f_query, **kwargs):
+        self._ensure_apdist_available()
 
         alpha = kwargs.get("alpha", 0.5)
         if method=="continuous":
