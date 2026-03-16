@@ -31,9 +31,9 @@ class AutoSASWebAppMixin:
     """Web-app endpoints and helper logic for AutoSAS model building and fitting."""
 
     static_dirs = {
-        "autosas_webapp_js": pathlib.Path(__file__).parent / "driver_templates" / "autosas_webapp" / "js",
-        "autosas_webapp_css": pathlib.Path(__file__).parent / "driver_templates" / "autosas_webapp" / "css",
-        "autosas_webapp_vendor": pathlib.Path(__file__).parent / "driver_templates" / "autosas_webapp" / "vendor",
+        "apps/autosas_webapp/js": pathlib.Path(__file__).parent / "apps" / "autosas_webapp" / "js",
+        "apps/autosas_webapp/css": pathlib.Path(__file__).parent / "apps" / "autosas_webapp" / "css",
+        "apps/common/plotly": pathlib.Path(__file__).parent / "apps" / "common" / "plotly",
     }
 
     _DEFAULT_Q_MIN = 1e-3
@@ -283,7 +283,7 @@ class AutoSASWebAppMixin:
     def autosas_webapp(self, **kwargs):
         """Serve AutoSAS web application HTML."""
         template_path = (
-            files("AFL.double_agent.driver_templates")
+            files("AFL.double_agent.apps")
             .joinpath("autosas_webapp")
             .joinpath("autosas_webapp.html")
         )
