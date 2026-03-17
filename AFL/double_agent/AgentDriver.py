@@ -3,19 +3,150 @@ import uuid
 import json
 import inspect
 import importlib
-import pkgutil
-from typing import Optional, Dict, Any, List, get_type_hints, Union
+import copy
+import hashlib
+import logging
+import os
+import tempfile
+import threading
+import time
+from datetime import datetime, timezone
+from typing import Optional, Dict, Any, List, Tuple, get_type_hints, Union
 
 import xarray as xr
 
-from AFL.automation.APIServer.Driver import Driver  # type: ignore
-from AFL.automation.shared.utilities import mpl_plot_to_bytes,xarray_to_bytes
+try:
+    from AFL.automation.APIServer.Driver import Driver  # type: ignore
+    from AFL.automation.shared.utilities import mpl_plot_to_bytes, xarray_to_bytes
+except ModuleNotFoundError as exc:
+    # Allow unit tests to import this module in environments where AFL-automation
+    # is not installed. Runtime server behavior still requires AFL-automation.
+    if exc.name and exc.name.startswith("AFL.automation"):
+        class Driver:  # type: ignore[override]
+            @staticmethod
+            def unqueued(*args, **kwargs):
+                def decorator(func):
+                    return func
+                return decorator
+
+            @staticmethod
+            def queued(*args, **kwargs):
+                def decorator(func):
+                    return func
+                return decorator
+
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def gather_defaults(self):
+                return getattr(self, "defaults", {})
+
+        def mpl_plot_to_bytes(*args, **kwargs):  # type: ignore[no-redef]
+            raise RuntimeError("mpl_plot_to_bytes requires AFL-automation to be installed.")
+
+        def xarray_to_bytes(*args, **kwargs):  # type: ignore[no-redef]
+            raise RuntimeError("xarray_to_bytes requires AFL-automation to be installed.")
+    else:
+        raise
 from AFL.double_agent.Pipeline import Pipeline
 from AFL.double_agent.PipelineOp import PipelineOp
-from AFL.double_agent.util import listify
+from AFL.double_agent.AgentWebAppMixin import AgentWebAppMixin
 
-from importlib.resources import files
-from jinja2 import Template
+
+LOGGER = logging.getLogger(__name__)
+_DISCOVERY_LOCK = threading.Lock()
+_PIPELINE_OPS_MEM_CACHE: Optional[Dict[str, Any]] = None
+
+
+def _cache_path() -> pathlib.Path:
+    env_path = os.environ.get("AFL_PIPELINE_OPS_CACHE_PATH")
+    if env_path:
+        return pathlib.Path(env_path).expanduser()
+    return pathlib.Path.home() / ".cache" / "afl-double-agent" / "pipeline_ops_manifest.json"
+
+
+def _candidate_module_files() -> List[pathlib.Path]:
+    module_dir = pathlib.Path(__file__).parent
+    excluded = {
+        "__init__.py",
+        "_version.py",
+        "AgentDriver.py",
+        "util.py",
+    }
+
+    module_files: List[pathlib.Path] = []
+    for path in sorted(module_dir.glob("*.py")):
+        if path.name in excluded or path.name.startswith("_"):
+            continue
+
+        # Cheap pre-filter to avoid importing modules that cannot define PipelineOps.
+        try:
+            if "PipelineOp" not in path.read_text(encoding="utf-8"):
+                continue
+        except Exception:
+            # If the pre-filter fails, keep the module candidate for safety.
+            pass
+        module_files.append(path)
+    return module_files
+
+
+def _module_signature(module_files: List[pathlib.Path]) -> str:
+    hasher = hashlib.sha256()
+    for path in module_files:
+        stat = path.stat()
+        hasher.update(str(path).encode("utf-8"))
+        hasher.update(str(stat.st_mtime_ns).encode("utf-8"))
+        hasher.update(str(stat.st_size).encode("utf-8"))
+    return hasher.hexdigest()
+
+
+def _parse_strict_flag(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _load_disk_cache(expected_signature: str) -> Optional[Dict[str, Any]]:
+    cache_file = _cache_path()
+    if not cache_file.exists():
+        return None
+    try:
+        cached = json.loads(cache_file.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+    if cached.get("signature") != expected_signature:
+        return None
+    if "ops" not in cached or "warnings" not in cached or "generated_at" not in cached:
+        return None
+    return cached
+
+
+def _save_disk_cache(payload: Dict[str, Any]) -> None:
+    cache_file = _cache_path()
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
+
+    fd, tmp_name = tempfile.mkstemp(prefix="pipeline_ops_", suffix=".json", dir=str(cache_file.parent))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as tmp:
+            json.dump(payload, tmp)
+        pathlib.Path(tmp_name).replace(cache_file)
+    finally:
+        try:
+            pathlib.Path(tmp_name).unlink(missing_ok=True)
+        except Exception:
+            pass
+
+
+def _build_warning(module_name: str, stage: str, error: Exception) -> Dict[str, str]:
+    return {
+        "module": module_name,
+        "stage": stage,
+        "error_type": type(error).__name__,
+        "message": str(error),
+    }
 
 
 def _get_parameter_types(cls) -> Dict[str, str]:
@@ -81,32 +212,50 @@ def _get_parameter_types(cls) -> Dict[str, str]:
     return param_types
 
 
-def _collect_pipeline_ops() -> List[Dict[str, Any]]:
+def _collect_pipeline_ops(module_files: List[pathlib.Path], strict: bool = False) -> Tuple[List[Dict[str, Any]], List[Dict[str, str]]]:
     """Gather metadata for all available :class:`PipelineOp` subclasses."""
-    import logging
-    logger = logging.getLogger(__name__)
-    
     ops: List[Dict[str, Any]] = []
-    package = importlib.import_module("AFL.double_agent")
-    for modinfo in pkgutil.iter_modules(package.__path__):
-        module_name = f"{package.__name__}.{modinfo.name}"
+    warnings: List[Dict[str, str]] = []
+
+    for module_path in module_files:
+        module_name = f"AFL.double_agent.{module_path.stem}"
         try:
             module = importlib.import_module(module_name)
         except Exception as e:
-            msg = f"Skipping module '{module_name}': failed to import ({type(e).__name__}: {e})"
-            print(msg)
-            logger.warning(msg)
+            warning = _build_warning(module_name, "import", e)
+            warnings.append(warning)
+            LOGGER.warning(
+                "Skipping module '%s': failed to import (%s: %s)",
+                module_name,
+                type(e).__name__,
+                e,
+            )
+            if strict:
+                raise RuntimeError(
+                    f"PipelineOp discovery failed while importing '{module_name}': {type(e).__name__}: {e}"
+                ) from e
             continue
-        
+
         try:
             members = inspect.getmembers(module, inspect.isclass)
         except Exception as e:
-            msg = f"Skipping module '{module_name}': failed to inspect members ({type(e).__name__}: {e})"
-            print(msg)
-            logger.warning(msg)
+            warning = _build_warning(module_name, "inspect", e)
+            warnings.append(warning)
+            LOGGER.warning(
+                "Skipping module '%s': failed to inspect members (%s: %s)",
+                module_name,
+                type(e).__name__,
+                e,
+            )
+            if strict:
+                raise RuntimeError(
+                    f"PipelineOp discovery failed while inspecting '{module_name}': {type(e).__name__}: {e}"
+                ) from e
             continue
-        
+
         for name, obj in members:
+            if obj.__module__ != module.__name__:
+                continue
             try:
                 if not (issubclass(obj, PipelineOp) and obj is not PipelineOp):
                     continue
@@ -160,18 +309,91 @@ def _collect_pipeline_ops() -> List[Dict[str, Any]]:
                     }
                 )
             except Exception as e:
-                msg = f"Skipping PipelineOp '{name}' from '{module.__name__}': failed to extract metadata ({type(e).__name__}: {e})"
-                print(msg)
-                logger.warning(msg)
+                warning = _build_warning(module_name, "metadata", e)
+                warnings.append(warning)
+                LOGGER.warning(
+                    "Skipping PipelineOp '%s' from '%s': failed to extract metadata (%s: %s)",
+                    name,
+                    module.__name__,
+                    type(e).__name__,
+                    e,
+                )
+                if strict:
+                    raise RuntimeError(
+                        f"PipelineOp discovery failed for class '{name}' in '{module_name}': {type(e).__name__}: {e}"
+                    ) from e
                 continue
-                
+
     ops.sort(key=lambda o: o["name"])
-    return ops
+    return ops, warnings
 
 
-def get_pipeline_ops() -> List[Dict[str, Any]]:
-    """Return metadata describing available pipeline operations."""
-    return _collect_pipeline_ops()
+def get_pipeline_ops(strict: bool = False) -> Dict[str, Any]:
+    """Return metadata describing available pipeline operations with cache metadata."""
+    start = time.perf_counter()
+    module_files = _candidate_module_files()
+    signature = _module_signature(module_files)
+
+    if not strict:
+        with _DISCOVERY_LOCK:
+            global _PIPELINE_OPS_MEM_CACHE
+
+            if _PIPELINE_OPS_MEM_CACHE and _PIPELINE_OPS_MEM_CACHE.get("signature") == signature:
+                result = copy.deepcopy(_PIPELINE_OPS_MEM_CACHE)
+                result["cache"]["source"] = "memory"
+                result["cache"]["duration_ms"] = int((time.perf_counter() - start) * 1000)
+                result.pop("signature", None)
+                return result
+
+            disk_cached = _load_disk_cache(signature)
+            if disk_cached is not None:
+                result = {
+                    "ops": disk_cached["ops"],
+                    "warnings": disk_cached["warnings"],
+                    "cache": {
+                        "source": "disk",
+                        "generated_at": disk_cached["generated_at"],
+                        "signature": disk_cached["signature"],
+                        "duration_ms": int((time.perf_counter() - start) * 1000),
+                    },
+                    "signature": disk_cached["signature"],
+                }
+                _PIPELINE_OPS_MEM_CACHE = copy.deepcopy(result)
+                result.pop("signature", None)
+                return result
+
+    ops, warnings = _collect_pipeline_ops(module_files, strict=strict)
+    generated_at = datetime.now(timezone.utc).isoformat()
+    duration_ms = int((time.perf_counter() - start) * 1000)
+
+    result = {
+        "ops": ops,
+        "warnings": warnings,
+        "cache": {
+            "source": "fresh",
+            "generated_at": generated_at,
+            "signature": signature,
+            "duration_ms": duration_ms,
+        },
+        "signature": signature,
+    }
+
+    if not strict:
+        cache_payload = {
+            "ops": ops,
+            "warnings": warnings,
+            "generated_at": generated_at,
+            "signature": signature,
+        }
+        with _DISCOVERY_LOCK:
+            _PIPELINE_OPS_MEM_CACHE = copy.deepcopy(result)
+            try:
+                _save_disk_cache(cache_payload)
+            except Exception as exc:
+                LOGGER.warning("Failed to write pipeline ops cache: %s: %s", type(exc).__name__, exc)
+
+    result.pop("signature", None)
+    return result
 
 
 def build_pipeline_from_ops(ops: List[Dict[str, Any]], name: str = "Pipeline") -> Dict[str, Any]:
@@ -190,15 +412,7 @@ def build_pipeline_from_json(ops_json: str, name: str = "Pipeline") -> Dict[str,
     return build_pipeline_from_ops(ops, name)
 
 
-def get_pipeline_builder_html() -> str:
-    """Return the HTML for the pipeline builder UI."""
-    template_path = files('AFL.double_agent.driver_templates').joinpath('pipeline_builder').joinpath('pipeline_builder.html')
-    template = Template(template_path.read_text())
-    html = template.render()
-    return html
-
-
-class DoubleAgentDriver(Driver):
+class DoubleAgentDriver(AgentWebAppMixin, Driver):
     """
     Persistent Config
     -----------------
@@ -210,14 +424,6 @@ class DoubleAgentDriver(Driver):
     defaults["save_path"] = "/home/AFL/"
     defaults["pipeline"] = {}
     defaults["tiled_input_groups"] = []  # List[Dict] with concat_dim, variable_prefix, entry_ids
-
-    static_dirs = {
-        "js": pathlib.Path(__file__).parent / "driver_templates" / "pipeline_builder" / "js",
-        "img": pathlib.Path(__file__).parent / "driver_templates" / "pipeline_builder" / "img",
-        "css": pathlib.Path(__file__).parent / "driver_templates" / "pipeline_builder" / "css",
-        "input_builder_js": pathlib.Path(__file__).parent / "driver_templates" / "input_builder" / "js",
-        "input_builder_css": pathlib.Path(__file__).parent / "driver_templates" / "input_builder" / "css",
-    }
 
     def __init__(
         self,
@@ -248,19 +454,14 @@ class DoubleAgentDriver(Driver):
         self.input: Optional[xr.Dataset] = None
         self.last_results: Optional[xr.Dataset] = None
 
-        if self.useful_links is None:
-            self.useful_links = {
-                "Pipeline Builder": "/pipeline_builder",
-                "Input Builder": "/input_builder"
-            }
-        else:
-            self.useful_links["Pipeline Builder"] = "/pipeline_builder"
-            self.useful_links["Input Builder"] = "/input_builder"
+        self.setup_app_links()
         
 
 
     def status(self):
         status = []
+        if 'mock_mode' in self.config:
+            status.append(f'mock_mode: {self.config["mock_mode"]}')
         if self.input:
             status.append(f'Input Dims: {self.input.sizes}')
         if self.pipeline:
@@ -345,484 +546,6 @@ class DoubleAgentDriver(Driver):
             self.input = xr.concat(
                 [self.input, next_sample], dim=concat_dim, data_vars="minimal"
             )
-
-    @Driver.unqueued(render_hint = 'precomposed_svg')
-    def plot_pipeline(self,**kwargs):
-        if self.pipeline is not None:
-            return mpl_plot_to_bytes(self.pipeline.draw(),format='svg')
-        else:
-            return None
-
-    @Driver.unqueued(render_hint = 'html')
-    def last_result(self,**kwargs):
-        return self.last_results._repr_html_()
-
-    @Driver.unqueued(render_hint = 'netcdf')
-    def download_last_result(self,**kwargs):
-        return xarray_to_bytes(self.last_results)
-    
-    @Driver.unqueued(render_hint = 'precomposed_png')
-    def plot_operation(self,operation,**kwargs):
-        try:
-            operation = int(operation)
-        except ValueError:
-            pass
-        if self.pipeline is not None:
-            if isinstance(operation,str):
-                return mpl_plot_to_bytes(self.pipeline.search(operation).plot(),format='png')
-            elif isinstance(operation,int):
-                return mpl_plot_to_bytes(self.pipeline[operation].plot(),format='png')
-            else:
-                return None
-        else:
-            return None
-
-    @Driver.unqueued(render_hint='html')
-    def pipeline_builder(self, **kwargs):
-        """Serve the pipeline builder HTML interface."""
-        return get_pipeline_builder_html()
-
-    @Driver.unqueued(render_hint='html')
-    def input_builder(self, **kwargs):
-        """Serve the input builder HTML interface."""
-        template_path = files('AFL.double_agent.driver_templates').joinpath('input_builder').joinpath('input_builder.html')
-        template = Template(template_path.read_text())
-        html = template.render()
-        return html
-
-    @Driver.unqueued()
-    def get_tiled_input_config(self, **kwargs):
-        """Return current tiled_input_groups configuration."""
-        return {
-            'status': 'success',
-            'config': self.config.get("tiled_input_groups", [])
-        }
-
-    @Driver.unqueued()
-    def set_tiled_input_config(self, config: str = None, **kwargs):
-        """Update tiled_input_groups configuration.
-        
-        Parameters
-        ----------
-        config: str
-            JSON string of list of group configs
-        """
-        import json as _json
-        try:
-            if config is None:
-                return {
-                    'status': 'error',
-                    'message': 'config parameter required'
-                }
-            
-            if isinstance(config, str):
-                config_list = _json.loads(config)
-            else:
-                config_list = config
-            
-            # Validate structure
-            if not isinstance(config_list, list):
-                return {
-                    'status': 'error',
-                    'message': 'config must be a list'
-                }
-            
-            for i, group_cfg in enumerate(config_list):
-                if not isinstance(group_cfg, dict):
-                    return {
-                        'status': 'error',
-                        'message': f'Group {i} must be a dictionary'
-                    }
-                required_keys = ['concat_dim', 'variable_prefix', 'entry_ids']
-                for key in required_keys:
-                    if key not in group_cfg:
-                        return {
-                            'status': 'error',
-                            'message': f'Group {i} missing required key: {key}'
-                        }
-                if not isinstance(group_cfg['entry_ids'], list):
-                    return {
-                        'status': 'error',
-                        'message': f'Group {i} entry_ids must be a list'
-                    }
-            
-            # Save to config (PersistentConfig auto-saves on assignment)
-            self.config["tiled_input_groups"] = config_list
-            
-            return {
-                'status': 'success',
-                'message': f'Saved {len(config_list)} group(s)',
-                'config': config_list
-            }
-        except _json.JSONDecodeError as e:
-            return {
-                'status': 'error',
-                'message': f'Invalid JSON: {str(e)}'
-            }
-        except Exception as e:
-            return {
-                'status': 'error',
-                'message': f'Error saving config: {str(e)}'
-            }
-
-    @Driver.unqueued()
-    def test_fetch_entry(self, entry_id: str = None, **kwargs):
-        """Test fetching a single entry from tiled to validate it exists.
-        
-        Parameters
-        ----------
-        entry_id: str
-            Tiled entry ID to test
-            
-        Returns
-        -------
-        dict
-            Status and metadata preview
-        """
-        if entry_id is None:
-            return {
-                'status': 'error',
-                'message': 'entry_id parameter required'
-            }
-        
-        try:
-            # Get tiled client
-            client = self._get_tiled_client()
-            if isinstance(client, dict) and client.get('status') == 'error':
-                return client
-            
-            if entry_id not in client:
-                return {
-                    'status': 'error',
-                    'message': f'Entry "{entry_id}" not found in tiled'
-                }
-            
-            item = client[entry_id]
-            metadata = dict(item.metadata) if hasattr(item, 'metadata') else {}
-            
-            # Try to get basic info about the dataset
-            try:
-                from tiled.client.xarray import DatasetClient
-                if isinstance(item, DatasetClient):
-                    dataset = item.read(optimize_wide_table=False)
-                    dims_info = dict(dataset.sizes)
-                    data_vars = list(dataset.data_vars)
-                else:
-                    dims_info = {}
-                    data_vars = []
-            except Exception:
-                dims_info = {}
-                data_vars = []
-            
-            return {
-                'status': 'success',
-                'entry_id': entry_id,
-                'metadata': metadata,
-                'dims': dims_info,
-                'data_vars': data_vars
-            }
-        except Exception as e:
-            return {
-                'status': 'error',
-                'message': f'Error testing entry: {str(e)}'
-            }
-
-    @Driver.unqueued()
-    def pipeline_ops(self, **kwargs):
-        """Return metadata for available PipelineOps."""
-        return get_pipeline_ops()
-
-    @Driver.unqueued()
-    def current_pipeline(self, **kwargs):
-        """Return the currently loaded pipeline as JSON."""
-        if self.pipeline is None:
-            return None
-        connections = self._make_connections(self.pipeline)
-        return {
-            'ops': [op.to_json() for op in self.pipeline],
-            'connections': connections
-        }
-
-    @Driver.unqueued()
-    def prefab_names(self, **kwargs):
-        """List available prefabricated pipelines."""
-        from AFL.double_agent.prefab import list_prefabs
-        return list_prefabs(display_table=False)
-
-    @Driver.unqueued()
-    def load_prefab(self, name: str, **kwargs):
-        """Load a prefabricated pipeline and return its JSON with connectivity information."""
-        from AFL.double_agent.prefab import load_prefab
-        
-        pipeline = load_prefab(name)
-
-        connections = self._make_connections(pipeline)
-
-        return {
-            'ops': [op.to_json() for op in pipeline],
-            'connections': connections
-        }
-
-    def _make_connections(self, pipeline: Pipeline):
-        # Create connections between operations based on variable matching
-        connections = []
-        
-        # Create a mapping of output variables to lists of operation indices (one-to-many)
-        output_var_to_op_indices = {}
-        for i, op in enumerate(pipeline.ops):
-            for output_var in listify(op.output_variable):
-                if output_var is not None:
-                    if output_var not in output_var_to_op_indices:
-                        output_var_to_op_indices[output_var] = []
-                    output_var_to_op_indices[output_var].append(i)
-        
-        # Find connections where input variables match output variables
-        for target_index, target_op in enumerate(pipeline.ops):
-            for input_var in listify(target_op.input_variable):
-                if input_var is not None and input_var in output_var_to_op_indices:
-                    # Connect to ALL operations that produce this output variable
-                    for source_index in output_var_to_op_indices[input_var]:
-                        if source_index != target_index:  # Avoid self-loops
-                            connections.append({
-                                'source_index': source_index,
-                                'target_index': target_index,
-                                'variable': input_var
-                            })
-
-        return connections
-
-    @Driver.unqueued()
-    def save_prefab(self, name: str, pipeline: str = "[]", overwrite: bool = True, **kwargs):
-        """Save a pipeline (sent from the UI) as a prefab JSON file.
-
-        Parameters
-        ----------
-        name : str
-            Desired filename (without .json) for the prefab.
-        pipeline : str
-            JSON-encoded list of operation dictionaries from the UI.
-        overwrite : bool, default=True
-            Whether to overwrite an existing prefab of the same name.
-        """
-        import json as _json
-        from AFL.double_agent.PipelineOp import PipelineOp
-        from AFL.double_agent.Pipeline import Pipeline as _Pipeline
-        from AFL.double_agent.prefab import save_prefab as _save_prefab
-
-        try:
-            ops_def = _json.loads(pipeline) if isinstance(pipeline, str) else pipeline
-        except Exception:
-            return {
-                'status': 'error',
-                'message': 'Invalid pipeline JSON.'
-            }
-
-        try:
-            pipeline_ops = [PipelineOp.from_json(op) for op in ops_def]
-            pipeline_obj = _Pipeline(name=name, ops=pipeline_ops)
-            path = _save_prefab(pipeline_obj, name=name, overwrite=overwrite)
-            return {
-                'status': 'success',
-                'path': path
-            }
-        except Exception as exc:
-            return {
-                'status': 'error',
-                'message': str(exc)
-            }
-
-    @Driver.unqueued()
-    def build_pipeline(self, ops: str = "[]", name: str = "Pipeline", **kwargs):
-        """Construct a pipeline from JSON and return the serialized form."""
-        return build_pipeline_from_json(ops, name)
-
-    @Driver.unqueued()
-    def analyze_pipeline(self, ops: str = "[]", **kwargs):
-        """Analyze pipeline operations and return connectivity information."""
-        from AFL.double_agent.PipelineOp import PipelineOp
-        from AFL.double_agent.util import listify
-        import json
-        
-        # Parse the operations from JSON string
-        try:
-            ops_list = json.loads(ops)
-        except (json.JSONDecodeError, TypeError):
-            return {'connections': [], 'errors': []}
-        
-        
-        # Create PipelineOp instances from the operation definitions
-        pipeline_ops = []
-        errors = []
-        
-        for i, op_def in enumerate(ops_list):
-            try:
-                op = PipelineOp.from_json(op_def)
-                pipeline_ops.append(op)
-            except Exception as e:
-                # Collect errors instead of silently skipping
-                op_name = op_def['args'].get('name', f"Operation {i}")
-                op_class = op_def.get('class', 'Unknown class')
-                error_msg = f"Failed to instantiate '{op_name}' ({op_class}): {str(e)}"
-                errors.append({
-                    'operation_index': i,
-                    'operation_name': op_name,
-                    'operation_class': op_class,
-                    'error': str(e),
-                    'error_message': error_msg
-                })
-
-        # If there are errors, return them immediately
-        if errors:
-            return {
-                'connections': [],
-                'errors': errors,
-                'status': 'error',
-                'message': f"Failed to instantiate {len(errors)} operation(s). Pipeline analysis stopped."
-            }
-        
-        if not pipeline_ops:
-            return {'connections': [], 'errors': []}
-        
-        # Create connections between operations based on variable matching
-        connections = []
-        
-        # Create a mapping of output variables to lists of operation indices (one-to-many)
-        output_var_to_op_indices = {}
-        for i, op in enumerate(pipeline_ops):
-            for output_var in listify(op.output_variable):
-                if output_var is not None:
-                    if output_var not in output_var_to_op_indices:
-                        output_var_to_op_indices[output_var] = []
-                    output_var_to_op_indices[output_var].append(i)
-        
-        # Find connections where input variables match output variables
-        for target_index, target_op in enumerate(pipeline_ops):
-            for input_var in listify(target_op.input_variable):
-                if input_var is not None and input_var in output_var_to_op_indices:
-                    # Connect to ALL operations that produce this output variable
-                    for source_index in output_var_to_op_indices[input_var]:
-                        if source_index != target_index:  # Avoid self-loops
-                            connections.append({
-                                'source_index': source_index,
-                                'target_index': target_index,
-                                'variable': input_var
-                            })
-
-        return {'connections': connections, 'errors': []}
-
-
-    def _assemble_group(self, group_cfg: Dict[str, Any]) -> xr.Dataset:
-        """Assemble a single group of entries from tiled.
-        
-        Uses the base Driver.tiled_concat_datasets method to fetch, concatenate,
-        and prefix datasets from Tiled.
-        
-        Parameters
-        ----------
-        group_cfg: Dict[str, Any]
-            Configuration dict with keys: concat_dim, variable_prefix, entry_ids
-            
-        Returns
-        -------
-        xr.Dataset
-            Concatenated and prefixed dataset
-        """
-        concat_dim = group_cfg.get("concat_dim")
-        variable_prefix = group_cfg.get("variable_prefix", "")
-        entry_ids = group_cfg.get("entry_ids", [])
-        
-        if not entry_ids:
-            raise ValueError(f"Group with concat_dim '{concat_dim}' has no entry_ids")
-        
-        # Use base Driver method to fetch and concatenate datasets
-        return self.tiled_concat_datasets(
-            entry_ids=entry_ids,
-            concat_dim=concat_dim,
-            variable_prefix=variable_prefix
-        )
-
-    @Driver.queued()
-    def assemble_input_from_tiled(self, **kwargs):
-        """Assemble input dataset from tiled entries based on configured groups.
-        
-        Returns
-        -------
-        dict
-            Status dict with success/error and dimensions info
-        """
-        groups = self.config.get("tiled_input_groups", [])
-        if not groups:
-            return {
-                'status': 'error',
-                'message': 'No tiled_input_groups configured. Use Input Builder to configure.'
-            }
-        
-        assembled = []
-        for i, group_cfg in enumerate(groups):
-            try:
-                group_ds = self._assemble_group(group_cfg)
-                assembled.append(group_ds)
-            except Exception as e:
-                return {
-                    'status': 'error',
-                    'message': f'Failed to assemble group {i} (concat_dim={group_cfg.get("concat_dim", "unknown")}): {str(e)}'
-                }
-        
-        if not assembled:
-            return {
-                'status': 'error',
-                'message': 'No datasets assembled'
-            }
-        
-        # Merge all groups
-        merged = xr.merge(assembled, compat="override")
-        
-        # Convert non-indexed coordinates to data variables
-        self.input = merged.reset_coords()
-        
-        # Get HTML representation
-        html_repr = self.input._repr_html_() if hasattr(self.input, '_repr_html_') else f'<pre>{str(self.input)}</pre>'
-        
-        return {
-            'status': 'success',
-            'dims': dict(self.input.sizes),
-            'data_vars': list(self.input.data_vars),
-            'coords': list(self.input.coords),
-            'html': html_repr
-        }
-
-    @Driver.unqueued()
-    def check_predict_ready(self, **kwargs):
-        """Check if predict can be called successfully."""
-        # Check pipeline loaded
-        if self.pipeline is None:
-            return {'ready': False, 'error': 'No pipeline loaded'}
-        
-        # Check input assembled  
-        if self.input is None:
-            return {'ready': False, 'error': 'No input assembled'}
-        
-        # Get required input variables from pipeline
-        required_vars = self.pipeline.input_variables()
-        
-        # Filter out generator variables (they don't need to be in the dataset)
-        required_vars = [v for v in required_vars if 'generator' not in v.lower()]
-        
-        # Get available variables from input dataset
-        available_vars = list(self.input.data_vars) + list(self.input.coords)
-        
-        # Check for missing variables
-        missing = [v for v in required_vars if v not in available_vars]
-        
-        if missing:
-            return {
-                'ready': False,
-                'error': f'Missing input variables: {missing}',
-                'required': required_vars,
-                'available': available_vars
-            }
-        
-        return {'ready': True, 'required': required_vars, 'available': available_vars}
 
     @Driver.queued()
     def predict(

@@ -1,6 +1,7 @@
 import copy
 import uuid
 import warnings
+from types import SimpleNamespace
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, ClassVar
@@ -100,10 +101,19 @@ class SASModel:
             self.model.parameters()[key].value = param_dict["value"]
             
             if param_dict.get("bounds") is not None:
+                raw_bounds = param_dict["bounds"]
+                lower, upper = float(raw_bounds[0]), float(raw_bounds[1])
+                if lower > upper:
+                    lower, upper = upper, lower
+
                 self.model.parameters()[key].fixed = False
-                self.model.parameters()[key].bounds = bumps.bounds.Bounded(
-                    *param_dict["bounds"]
-                )
+                # Newer bumps expects an iterable (min, max) tuple. Keep a
+                # compatibility fallback for environments that still expect
+                # a Bounded instance.
+                try:
+                    self.model.parameters()[key].bounds = (lower, upper)
+                except Exception:
+                    self.model.parameters()[key].bounds = bumps.bounds.Bounded(lower, upper)
             else:
                 self.model.parameters()[key].fixed = True
 
@@ -163,6 +173,17 @@ class SASModel:
                 "xtol": 1.5e-6,
                 "verbose": False,
             }
+
+        # If there are no free parameters, treat this as a fixed-parameter
+        # model evaluation and skip optimizer invocation (which can fail with
+        # empty parameter vectors in newer bumps versions).
+        if len(self.problem.labels()) == 0:
+            self.results = SimpleNamespace(x=np.array([], dtype=float), dx=np.array([], dtype=float))
+            self.fit_params = {}
+            self.model_I = self()
+            self.model_q = self.data.x[self.data.mask == 0]
+            self.model_cov = np.zeros((0, 0), dtype=float)
+            return self.results
         
         # Try to fit with provided method, fall back to defaults if it fails
         try:
@@ -183,7 +204,36 @@ class SASModel:
         self.fit_params = dict(zip(self.problem.labels(), self.problem.getp()))
         self.model_I = self(params=self.fit_params)
         self.model_q = self.data.x[self.data.mask == 0]
-        self.model_cov = self.problem.cov()
+        n_params = len(self.problem.labels())
+
+        # Bumps covariance API differs across versions. Prefer direct problem
+        # covariance if available, then fit-result covariance, and finally fall
+        # back to a diagonal covariance to keep downstream reporting robust.
+        cov_matrix = None
+        if hasattr(self.problem, "cov"):
+            try:
+                cov_matrix = self.problem.cov()
+            except Exception:
+                cov_matrix = None
+
+        if cov_matrix is None and self.results is not None:
+            for attr_name in ("cov", "covariance"):
+                if hasattr(self.results, attr_name):
+                    attr = getattr(self.results, attr_name)
+                    try:
+                        cov_matrix = attr() if callable(attr) else attr
+                    except Exception:
+                        cov_matrix = None
+                    if cov_matrix is not None:
+                        break
+
+        if cov_matrix is None:
+            cov_matrix = np.eye(n_params, dtype=float)
+
+        cov_matrix = np.asarray(cov_matrix, dtype=float)
+        if cov_matrix.shape != (n_params, n_params):
+            cov_matrix = np.eye(n_params, dtype=float)
+        self.model_cov = cov_matrix
         
         return self.results
 
@@ -201,10 +251,17 @@ class SASModel:
         params = copy.deepcopy(self.init_params)
         
         # Update with fitted values and errors
+        dx = getattr(self.results, "dx", None)
         for idx, param_name in enumerate(self.problem.labels()):
+            err_val = np.nan
+            if dx is not None:
+                try:
+                    err_val = float(dx[idx])
+                except Exception:
+                    err_val = np.nan
             params[param_name] = {
                 "value": self.results.x[idx],
-                "error": self.results.dx[idx]
+                "error": err_val
             }
 
         # Remove bounds from the output parameters
@@ -514,6 +571,7 @@ class SASFitter:
             Array of model probabilities
         """
         all_probabilities = []
+        eps = 1e-300
         
         for sample_results in self.fit_results:
             # Calculate log likelihood for each model
@@ -522,20 +580,63 @@ class SASFitter:
             for model in sample_results:
                 # Get model parameters
                 chisq = model["chisq"]
-                cov_matrix = np.array(model["cov"])
-                n_params = len(cov_matrix)
+                cov_matrix = np.asarray(model.get("cov", []), dtype=float)
+
+                # Normalize covariance shape across bumps/scipy versions.
+                if cov_matrix.ndim == 0:
+                    cov_matrix = cov_matrix.reshape(1, 1)
+                elif cov_matrix.ndim == 1:
+                    if cov_matrix.size == 0:
+                        cov_matrix = np.zeros((0, 0), dtype=float)
+                    else:
+                        cov_matrix = np.diag(cov_matrix)
+                elif cov_matrix.ndim > 2:
+                    cov_matrix = np.squeeze(cov_matrix)
+                    if cov_matrix.ndim != 2:
+                        cov_matrix = np.zeros((0, 0), dtype=float)
+
+                if cov_matrix.shape[0] != cov_matrix.shape[1]:
+                    # Fall back to smallest square representation.
+                    n = min(cov_matrix.shape[0], cov_matrix.shape[1]) if cov_matrix.ndim == 2 else 0
+                    cov_matrix = cov_matrix[:n, :n] if n > 0 else np.zeros((0, 0), dtype=float)
+
+                n_params = int(cov_matrix.shape[0])
                 
                 # Calculate log marginal likelihood
+                if n_params == 0:
+                    log_det_term = 0.0
+                else:
+                    try:
+                        sign, logdet = np.linalg.slogdet(cov_matrix)
+                        if sign <= 0 or not np.isfinite(logdet):
+                            log_det_term = np.log(eps)
+                        else:
+                            log_det_term = float(logdet)
+                    except Exception:
+                        log_det_term = np.log(eps)
+
                 log_likelihood = (
                     -chisq + 
-                    0.5 * np.log(np.linalg.det(cov_matrix)) + 
+                    0.5 * log_det_term + 
                     0.5 * n_params * np.log(2 * np.pi)
                 )
                 
                 log_likelihoods.append(log_likelihood)
             
             # Convert to probabilities
-            likelihoods = np.exp(log_likelihoods)
+            finite = np.asarray(log_likelihoods, dtype=float)
+            finite[~np.isfinite(finite)] = -np.inf
+            max_ll = np.max(finite)
+            if not np.isfinite(max_ll):
+                probabilities = np.ones(len(finite), dtype=float) / max(len(finite), 1)
+                all_probabilities.append(probabilities)
+                continue
+
+            likelihoods = np.exp(finite - max_ll)
+            if not np.any(np.isfinite(likelihoods)) or float(np.sum(likelihoods)) <= 0:
+                probabilities = np.ones(len(finite), dtype=float) / max(len(finite), 1)
+                all_probabilities.append(probabilities)
+                continue
             probabilities = likelihoods / np.sum(likelihoods)
             
             all_probabilities.append(probabilities)
@@ -826,9 +927,6 @@ class AutoSAS(PipelineOp):
         """
         # Create client connection
         self.construct_clients()
-        
-        # Send dataset to the server
-        db_uuid = self.AutoSAS_client.deposit_obj(obj=dataset)
 
         if self.q_min or self.q_max:
             self.AutoSAS_client.set_config(
@@ -836,25 +934,58 @@ class AutoSAS(PipelineOp):
                 q_max=self.q_max
             )
 
+        entry_ids = []
+        for key in ("tiled_entry_ids", "autosas_tiled_entry_ids", "entry_ids"):
+            candidate = dataset.attrs.get(key)
+            if isinstance(candidate, (list, tuple)):
+                entry_ids = [str(v) for v in candidate if str(v).strip()]
+                if entry_ids:
+                    break
+
+        if entry_ids:
+            context_kw = {
+                "entry_ids": entry_ids,
+                "concat_dim": self.sample_dim,
+                "sample_dim": self.sample_dim,
+                "q_variable": self.q_variable,
+                "sas_variable": self.sas_variable,
+                "sas_err_variable": self.sas_err_variable,
+                "sas_resolution_variable": self.resolution,
+            }
+        else:
+            context_kw = {
+                "dataset_dict": dataset.to_dict(data=True),
+                "sample_dim": self.sample_dim,
+                "q_variable": self.q_variable,
+                "sas_variable": self.sas_variable,
+                "sas_err_variable": self.sas_err_variable,
+                "sas_resolution_variable": self.resolution,
+            }
+
         # Initialize the input data for fitting
         self.AutoSAS_client.enqueue(
             task_name="set_sasdata",
-            db_uuid=db_uuid,
-            sample_dim=self.sample_dim,
-            q_variable=self.q_variable,
-            sas_variable=self.sas_variable,
-            sas_err_variable=self.sas_err_variable,
+            **context_kw,
         )
 
         # Run the fitting
-        fit_calc_id = self.AutoSAS_client.enqueue(
+        fit_result = self.AutoSAS_client.enqueue(
             task_name="fit_models", 
             fit_method=self.fit_method,
             interactive=True
         )['return_val']
 
-        # Retrieve the results
-        autosas_fit = self.AutoSAS_client.retrieve_obj(uid=fit_calc_id, delete=False)
+        if isinstance(fit_result, xr.Dataset):
+            autosas_fit = fit_result
+        else:
+            fit_calc_id = fit_result
+            # Retrieve the results from Tiled-backed fit records.
+            autosas_fit = self.AutoSAS_client.enqueue(
+                task_name="get_fit_dataset",
+                fit_uuid=fit_calc_id,
+                fit_task_name="fit_models",
+                interactive=True,
+            )["return_val"]
         
         # Rename variables and dimensions to match our naming convention
         autosas_fit = autosas_fit.rename_vars({
@@ -1440,4 +1571,3 @@ class ModelSelectMostProbable(PipelineOp):
             dims=[self.sample_dim]
         )
         return self
-
