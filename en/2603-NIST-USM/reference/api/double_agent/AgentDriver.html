@@ -432,8 +432,145 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="afl-double-agent-agentdriver-module">
-<h1>AFL.double_agent.AgentDriver module<a class="headerlink" href="#afl-double-agent-agentdriver-module" title="Permalink to this heading">#</a></h1>
+  <section id="module-AFL.double_agent.AgentDriver">
+<span id="afl-double-agent-agentdriver-module"></span><h1>AFL.double_agent.AgentDriver module<a class="headerlink" href="#module-AFL.double_agent.AgentDriver" title="Permalink to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="AFL.double_agent.AgentDriver.DoubleAgentDriver">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.AgentDriver.</span></span><span class="sig-name descname"><span class="pre">DoubleAgentDriver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'DoubleAgentDriver'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overrides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.AgentDriver.DoubleAgentDriver" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">AgentWebAppMixin</span></code>, <a class="reference internal" href="#AFL.double_agent.AgentDriver.Driver" title="AFL.double_agent.AgentDriver.Driver"><code class="xref py py-class docutils literal notranslate"><span class="pre">Driver</span></code></a></p>
+<section id="persistent-config">
+<h2>Persistent Config<a class="headerlink" href="#persistent-config" title="Permalink to this heading">#</a></h2>
+<dl class="simple">
+<dt>save_path: str</dt><dd><p>path to directory where data will be serialized to</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.AgentDriver.DoubleAgentDriver.append">
+<span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">concat_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#AFL.double_agent.AgentDriver.DoubleAgentDriver.append" title="Permalink to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db_uuid</strong> (<em>str</em>) – Dropbox UUID to retrieve <cite>xarray.Dataset</cite> from. The Dataset should be deposited using <cite>Client.deposit_obj</cite>
+in interactive mode in order to obtain the uuid of the deposited item. See example below</p></li>
+<li><p><strong>concat_dim</strong> (<em>str</em>) – <cite>xarray</cite> dimension in input dataset to concatenate to</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="AFL.double_agent.AgentDriver.DoubleAgentDriver.defaults">
+<span class="sig-name descname"><span class="pre">defaults</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'pipeline':</span> <span class="pre">{},</span> <span class="pre">'save_path':</span> <span class="pre">'/home/AFL/',</span> <span class="pre">'tiled_input_groups':</span> <span class="pre">[]}</span></em><a class="headerlink" href="#AFL.double_agent.AgentDriver.DoubleAgentDriver.defaults" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.AgentDriver.DoubleAgentDriver.initialize_pipeline">
+<span class="sig-name descname"><span class="pre">initialize_pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pipeline</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Pipeline'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#AFL.double_agent.AgentDriver.DoubleAgentDriver.initialize_pipeline" title="Permalink to this definition">#</a></dt>
+<dd><p>Set the <cite>double_agent.Pipeline</cite> to outline</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db_uuid</strong> (<em>str</em><em>, </em><em>optional</em>) – Dropbox UUID to retrieve the <cite>double_agent.Pipeline</cite> from. The Dataset should be deposited using
+<cite>Client.deposit_obj</cite> in interactive mode in order to obtain the uuid of the deposited item.
+Either this or <cite>pipeline</cite> must be provided.</p></li>
+<li><p><strong>pipeline</strong> (<em>List</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – List of pipeline operations in JSON format to construct the pipeline from.
+Either this or <cite>db_uuid</cite> must be provided.</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;Pipeline&quot;</em>) – Name for the pipeline when constructing from operations list.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<p>Using dropbox:
+<a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python
+from AFL.automation.APIServer.Client import Client
+from AFL.double_agent import *</p>
+<p>client = Client(‘localhost’,port=5053)
+client.login(‘User’)
+db_uuid = client.deposit_obj(obj=Pipeline(),interactive=True)[‘return_val’]
+client.enqueue(task_name=’initialize_pipeline’,db_uuid=db_uuid)
+<a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
+<p>Using operations list:
+<code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">ops</span> <span class="pre">=</span> <span class="pre">[{'class':</span> <span class="pre">'AFL.double_agent.SomeOp',</span> <span class="pre">'args':</span> <span class="pre">{...}}]</span>
+<span class="pre">client.enqueue(task_name='initialize_pipeline',</span> <span class="pre">pipeline=ops)</span>
+<span class="pre">`</span></code></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.AgentDriver.DoubleAgentDriver.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">deposit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_to_disk</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">AL_campaign_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#AFL.double_agent.AgentDriver.DoubleAgentDriver.predict" title="Permalink to this definition">#</a></dt>
+<dd><p>Evaluate the pipeline set with <cite>.initialize_pipeline</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>deposit</strong> (<em>bool</em>) – If True, the <cite>xarray.Dataset</cite> resulting from the <cite>Pipeline</cite> calculation will be placed in this <cite>APIServers</cite>
+dropbox for retrieval and the <cite>db_uuid</cite> will be returned.</p></li>
+<li><p><strong>save_to_disk</strong> (<em>bool</em>) – If True, the <cite>xarray.Dataset</cite> resulting from the <cite>Pipeline</cite> calculation will be serialized to disk in
+NetCDF format.</p></li>
+<li><p><strong>sample_uuid</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Optionally provide a sample uuid to tag the calculation with</p></li>
+<li><p><strong>AL_campaign_name</strong> – Optionally provide an AL campaign name to tag the calculation with</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.AgentDriver.DoubleAgentDriver.status">
+<span class="sig-name descname"><span class="pre">status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.AgentDriver.DoubleAgentDriver.status" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="AFL.double_agent.AgentDriver.Driver">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.AgentDriver.</span></span><span class="sig-name descname"><span class="pre">Driver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.AgentDriver.Driver" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.AgentDriver.Driver.gather_defaults">
+<span class="sig-name descname"><span class="pre">gather_defaults</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.AgentDriver.Driver.gather_defaults" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.AgentDriver.Driver.queued">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">queued</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.AgentDriver.Driver.queued" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.AgentDriver.Driver.unqueued">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">unqueued</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.AgentDriver.Driver.unqueued" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="AFL.double_agent.AgentDriver.build_pipeline_from_json">
+<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.AgentDriver.</span></span><span class="sig-name descname"><span class="pre">build_pipeline_from_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ops_json</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Pipeline'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.AgentDriver.build_pipeline_from_json" title="Permalink to this definition">#</a></dt>
+<dd><p>Helper that accepts a JSON string of operations.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="AFL.double_agent.AgentDriver.build_pipeline_from_ops">
+<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.AgentDriver.</span></span><span class="sig-name descname"><span class="pre">build_pipeline_from_ops</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ops</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Pipeline'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.AgentDriver.build_pipeline_from_ops" title="Permalink to this definition">#</a></dt>
+<dd><p>Create a pipeline from a list of operation JSON dictionaries.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="AFL.double_agent.AgentDriver.get_pipeline_ops">
+<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.AgentDriver.</span></span><span class="sig-name descname"><span class="pre">get_pipeline_ops</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.AgentDriver.get_pipeline_ops" title="Permalink to this definition">#</a></dt>
+<dd><p>Return metadata describing available pipeline operations with cache metadata.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="AFL.double_agent.AgentDriver.mpl_plot_to_bytes">
+<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.AgentDriver.</span></span><span class="sig-name descname"><span class="pre">mpl_plot_to_bytes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.AgentDriver.mpl_plot_to_bytes" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="AFL.double_agent.AgentDriver.xarray_to_bytes">
+<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.AgentDriver.</span></span><span class="sig-name descname"><span class="pre">xarray_to_bytes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.AgentDriver.xarray_to_bytes" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
 </section>
 
 
@@ -474,6 +611,36 @@
                 <dialog id="pst-secondary-sidebar-modal"></dialog>
                 <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.AgentDriver.DoubleAgentDriver"><code class="docutils literal notranslate"><span class="pre">DoubleAgentDriver</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.AgentDriver.DoubleAgentDriver.append"><code class="docutils literal notranslate"><span class="pre">DoubleAgentDriver.append()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.AgentDriver.DoubleAgentDriver.defaults"><code class="docutils literal notranslate"><span class="pre">DoubleAgentDriver.defaults</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.AgentDriver.DoubleAgentDriver.initialize_pipeline"><code class="docutils literal notranslate"><span class="pre">DoubleAgentDriver.initialize_pipeline()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.AgentDriver.DoubleAgentDriver.predict"><code class="docutils literal notranslate"><span class="pre">DoubleAgentDriver.predict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.AgentDriver.DoubleAgentDriver.status"><code class="docutils literal notranslate"><span class="pre">DoubleAgentDriver.status()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.AgentDriver.Driver"><code class="docutils literal notranslate"><span class="pre">Driver</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.AgentDriver.Driver.gather_defaults"><code class="docutils literal notranslate"><span class="pre">Driver.gather_defaults()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.AgentDriver.Driver.queued"><code class="docutils literal notranslate"><span class="pre">Driver.queued()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.AgentDriver.Driver.unqueued"><code class="docutils literal notranslate"><span class="pre">Driver.unqueued()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.AgentDriver.build_pipeline_from_json"><code class="docutils literal notranslate"><span class="pre">build_pipeline_from_json()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.AgentDriver.build_pipeline_from_ops"><code class="docutils literal notranslate"><span class="pre">build_pipeline_from_ops()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.AgentDriver.get_pipeline_ops"><code class="docutils literal notranslate"><span class="pre">get_pipeline_ops()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.AgentDriver.mpl_plot_to_bytes"><code class="docutils literal notranslate"><span class="pre">mpl_plot_to_bytes()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.AgentDriver.xarray_to_bytes"><code class="docutils literal notranslate"><span class="pre">xarray_to_bytes()</span></code></a></li>
+</ul>
+  </nav></div>
 
   <div class="sidebar-secondary-item">
   <div role="note" aria-label="source link">
