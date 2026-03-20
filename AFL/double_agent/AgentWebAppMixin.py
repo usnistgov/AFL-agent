@@ -170,17 +170,24 @@ class AgentWebAppMixin:
             if isinstance(client, dict) and client.get("status") == "error":
                 return client
 
-            if entry_id not in client:
-                return {"status": "error", "message": f'Entry "{entry_id}" not found in tiled'}
+            normalized_entry_id = str(entry_id).strip()
+            lookup_entry = getattr(self, "_get_tiled_run_document_item", None)
+            if callable(lookup_entry):
+                normalized_entry_id, item = lookup_entry(normalized_entry_id)
+            else:
+                if normalized_entry_id not in client:
+                    return {"status": "error", "message": f'Entry "{entry_id}" not found in tiled'}
+                item = client[normalized_entry_id]
 
-            item = client[entry_id]
             metadata = dict(item.metadata) if hasattr(item, "metadata") else {}
 
             try:
-                from tiled.client.xarray import DatasetClient
-
-                if isinstance(item, DatasetClient):
+                read_tiled_item = getattr(self, "_read_tiled_item", None)
+                if callable(read_tiled_item):
+                    dataset = read_tiled_item(item)
+                else:
                     dataset = item.read(optimize_wide_table=False)
+                if isinstance(dataset, xr.Dataset):
                     dims_info = dict(dataset.sizes)
                     data_vars = list(dataset.data_vars)
                 else:
@@ -192,7 +199,7 @@ class AgentWebAppMixin:
 
             return {
                 "status": "success",
-                "entry_id": entry_id,
+                "entry_id": normalized_entry_id,
                 "metadata": metadata,
                 "dims": dims_info,
                 "data_vars": data_vars,

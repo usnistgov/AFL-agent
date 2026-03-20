@@ -267,7 +267,7 @@ function renderEditor() {
     <div class="form-group">
       <label for="entry-ids-textarea">Entry IDs *</label>
       <textarea id="entry-ids-textarea" placeholder="Enter entry IDs, one per line or comma-separated">${escapeHtml(entryIdsText)}</textarea>
-      <div class="help-text">Tiled entry IDs to fetch. One per line or comma-separated.</div>
+      <div class="help-text">Tiled entry IDs to fetch. One per line or comma-separated. `QD-...` and `run_documents/QD-...` are both accepted.</div>
       <button class="test-entry-btn" onclick="testFetchEntries()">Test Fetch Entries</button>
     </div>
   `;

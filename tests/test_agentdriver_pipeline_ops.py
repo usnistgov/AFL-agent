@@ -1,3 +1,8 @@
+from types import SimpleNamespace
+
+import pytest
+import xarray as xr
+
 import AFL.double_agent.AgentDriver as agent_driver
 
 
@@ -142,3 +147,61 @@ def test_app_backend_methods_are_mixin_owned():
     assert agent_driver.DoubleAgentDriver.get_tiled_input_config.__qualname__.startswith("AgentWebAppMixin.")
     assert agent_driver.DoubleAgentDriver.pipeline_ops.__qualname__.startswith("AgentWebAppMixin.")
     assert agent_driver.DoubleAgentDriver.assemble_input_from_tiled.__qualname__.startswith("AgentWebAppMixin.")
+
+
+@pytest.mark.parametrize(
+    ("supplied_entry_id", "expected_entry_id"),
+    [
+        ("QD-123", "QD-123"),
+        ("run_documents/QD-123", "QD-123"),
+    ],
+)
+def test_test_fetch_entry_accepts_run_document_entry_ids(monkeypatch, supplied_entry_id, expected_entry_id):
+    driver = agent_driver.DoubleAgentDriver.__new__(agent_driver.DoubleAgentDriver)
+
+    dataset = xr.Dataset(
+        {"I": ("q", [1.0, 2.0])},
+        coords={"q": [0.1, 0.2]},
+    )
+    item = SimpleNamespace(metadata={"attrs": {"task_name": "measure_scattering"}})
+    lookup_calls = []
+
+    monkeypatch.setattr(driver, "_get_tiled_client", lambda: object())
+    monkeypatch.setattr(
+        driver,
+        "_get_tiled_run_document_item",
+        lambda entry_id: (lookup_calls.append(entry_id) or ("QD-123", item)),
+    )
+    monkeypatch.setattr(driver, "_read_tiled_item", lambda selected_item: dataset if selected_item is item else None)
+
+    result = driver.test_fetch_entry(supplied_entry_id)
+
+    assert result["status"] == "success"
+    assert result["entry_id"] == expected_entry_id
+    assert result["metadata"]["attrs"]["task_name"] == "measure_scattering"
+    assert result["dims"] == {"q": 2}
+    assert result["data_vars"] == ["I"]
+    assert lookup_calls == [supplied_entry_id]
+
+
+def test_test_fetch_entry_falls_back_to_direct_client_lookup(monkeypatch):
+    driver = agent_driver.DoubleAgentDriver.__new__(agent_driver.DoubleAgentDriver)
+
+    dataset = xr.Dataset({"I": ("q", [1.0])}, coords={"q": [0.1]})
+    item = SimpleNamespace(
+        metadata={"attrs": {"sample_uuid": "SAM-001"}},
+        read=lambda optimize_wide_table=False: dataset,
+    )
+    client = {"legacy-entry": item}
+
+    monkeypatch.setattr(driver, "_get_tiled_client", lambda: client)
+    monkeypatch.setattr(driver, "_get_tiled_run_document_item", None, raising=False)
+    monkeypatch.setattr(driver, "_read_tiled_item", None, raising=False)
+
+    result = driver.test_fetch_entry("legacy-entry")
+
+    assert result["status"] == "success"
+    assert result["entry_id"] == "legacy-entry"
+    assert result["metadata"]["attrs"]["sample_uuid"] == "SAM-001"
+    assert result["dims"] == {"q": 1}
+    assert result["data_vars"] == ["I"]
