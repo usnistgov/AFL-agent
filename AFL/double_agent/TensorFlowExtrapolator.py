@@ -181,7 +181,7 @@ class TFGaussianProcessClassifier(TFExtrapolator):
             self.output[self._prefix_output("mean")] = xr.DataArray(
                 np.ones(dataset.grid.shape), dims=[self.grid_dim]
             )
-            self.output[self._prefix_output("entropy")] = xr.DataArray(
+            self.output[self._prefix_output("variance")] = xr.DataArray(
                 np.ones(dataset.grid.shape), dims=[self.grid_dim]
             )
 
