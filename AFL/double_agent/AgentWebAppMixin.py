@@ -2,6 +2,7 @@ import json
 import pathlib
 from typing import Any, Dict
 
+import numpy as np
 import xarray as xr
 from importlib.resources import files
 from jinja2 import Template
@@ -359,7 +360,30 @@ class AgentWebAppMixin:
 
     def _materialize_input_dataset(self, dataset: xr.Dataset) -> xr.Dataset:
         """Force tiled-backed lazy arrays into memory before downstream xarray boolean indexing."""
-        return dataset.load()
+        return self._sanitize_object_dtypes_for_chunking(dataset.load())
+
+    @staticmethod
+    def _sanitize_object_dtypes_for_chunking(dataset: xr.Dataset) -> xr.Dataset:
+        """Cast object-typed variables and coordinates to fixed-width strings."""
+        data_var_updates = {}
+        coord_updates = {}
+
+        for name, data_array in dataset.data_vars.items():
+            if data_array.dtype.kind == "O":
+                data_var_updates[name] = data_array.copy(
+                    data=np.asarray(data_array.values).astype(str)
+                )
+
+        for name, coord in dataset.coords.items():
+            if coord.dtype.kind == "O":
+                coord_updates[name] = coord.copy(data=np.asarray(coord.values).astype(str))
+
+        if data_var_updates:
+            dataset = dataset.assign(data_var_updates)
+        if coord_updates:
+            dataset = dataset.assign_coords(coord_updates)
+
+        return dataset
 
     def _assemble_group(self, group_cfg: Dict[str, Any]) -> xr.Dataset:
         """Assemble a single group of entries from tiled."""

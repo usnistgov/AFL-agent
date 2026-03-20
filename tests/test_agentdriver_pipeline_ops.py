@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+import numpy as np
 import pytest
 import xarray as xr
 
@@ -205,3 +206,35 @@ def test_test_fetch_entry_falls_back_to_direct_client_lookup(monkeypatch):
     assert result["metadata"]["attrs"]["sample_uuid"] == "SAM-001"
     assert result["dims"] == {"q": 1}
     assert result["data_vars"] == ["I"]
+
+
+def test_predict_sanitizes_object_dtype_datasets():
+    driver = agent_driver.DoubleAgentDriver.__new__(agent_driver.DoubleAgentDriver)
+    driver.config = {"save_path": "/tmp", "tiled_input_groups": []}
+    driver.input = xr.Dataset(
+        data_vars={
+            "raw_text": ("sample", np.asarray(["alpha", "beta"], dtype=object)),
+        },
+        coords={
+            "sample": [0, 1],
+            "label": ("sample", np.asarray(["s1", "s2"], dtype=object)),
+        },
+    )
+    driver.pipeline = SimpleNamespace(
+        calculate=lambda dataset: dataset.assign(
+            result_text=("sample", np.asarray(["left", "right"], dtype=object))
+        )
+    )
+    driver.last_results = None
+    driver.assemble_input_from_tiled = lambda: None
+    driver.deposit_obj = lambda *args, **kwargs: None
+
+    result = driver.predict()
+
+    assert driver.input["raw_text"].dtype.kind != "O"
+    assert driver.input.coords["label"].dtype.kind != "O"
+    assert driver.last_results["raw_text"].dtype.kind != "O"
+    assert driver.last_results["result_text"].dtype.kind != "O"
+    assert driver.last_results.coords["label"].dtype.kind != "O"
+    assert result["raw_text"].values.tolist() == ["alpha", "beta"]
+    assert result["result_text"].values.tolist() == ["left", "right"]
