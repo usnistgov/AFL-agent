@@ -588,6 +588,7 @@ class DoubleAgentDriver(AgentWebAppMixin, Driver):
             sample_uuid = 'SAM-'+str(uuid.uuid4())
 
         ag_uid = "AG-" + str(uuid.uuid4())
+        self.input = self._materialize_input_dataset(self.input)
         self.last_results = self.pipeline.calculate(self.input)
 
         self.last_results.attrs['sample_uuid'] = sample_uuid

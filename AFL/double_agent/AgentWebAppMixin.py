@@ -357,6 +357,10 @@ class AgentWebAppMixin:
                             )
         return {"connections": connections, "errors": []}
 
+    def _materialize_input_dataset(self, dataset: xr.Dataset) -> xr.Dataset:
+        """Force tiled-backed lazy arrays into memory before downstream xarray boolean indexing."""
+        return dataset.load()
+
     def _assemble_group(self, group_cfg: Dict[str, Any]) -> xr.Dataset:
         """Assemble a single group of entries from tiled."""
         concat_dim = group_cfg.get("concat_dim")
@@ -395,7 +399,7 @@ class AgentWebAppMixin:
             return {"status": "error", "message": "No datasets assembled"}
 
         merged = xr.merge(assembled, compat="override")
-        self.input = merged.reset_coords()
+        self.input = self._materialize_input_dataset(merged.reset_coords())
         html_repr = (
             self.input._repr_html_()
             if hasattr(self.input, "_repr_html_")
