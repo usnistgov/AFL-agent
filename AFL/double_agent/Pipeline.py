@@ -353,7 +353,7 @@ class Pipeline(PipelineContext):
         )
 
         node_text = []
-        regex = re.compile("[\[\]']")
+        regex = re.compile(r"[\[\]']")
         for node in self.graph.nodes():
             VarIn = np.unique(list(n[0] for n in self.graph.in_edges(node)))
             VarOut = np.unique(list(n[0] for n in self.graph.out_edges(node)))
