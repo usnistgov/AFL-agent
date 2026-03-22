@@ -1,3 +1,10 @@
+from types import SimpleNamespace
+
+import numpy as np
+import pytest
+import xarray as xr
+
+import AFL.double_agent._automation_compat as automation_compat
 import AFL.double_agent.AgentDriver as agent_driver
 
 
@@ -142,3 +149,110 @@ def test_app_backend_methods_are_mixin_owned():
     assert agent_driver.DoubleAgentDriver.get_tiled_input_config.__qualname__.startswith("AgentWebAppMixin.")
     assert agent_driver.DoubleAgentDriver.pipeline_ops.__qualname__.startswith("AgentWebAppMixin.")
     assert agent_driver.DoubleAgentDriver.assemble_input_from_tiled.__qualname__.startswith("AgentWebAppMixin.")
+
+
+def test_fallback_driver_exposes_tiled_helpers_for_entry_lookup():
+    driver = automation_compat.FallbackDriver()
+    item = SimpleNamespace(metadata={"attrs": {"task_name": "measure_scattering"}})
+    driver._tiled_client = {
+        driver.TILED_RUN_DOCUMENTS_NODE: {
+            "QD-123": item,
+        }
+    }
+
+    normalized_entry_id, selected_item = driver._get_tiled_run_document_item("run_documents/QD-123")
+
+    assert hasattr(automation_compat.FallbackDriver, "_get_tiled_client")
+    assert hasattr(driver, "_get_tiled_client")
+    assert normalized_entry_id == "QD-123"
+    assert selected_item is item
+
+
+@pytest.mark.parametrize(
+    ("supplied_entry_id", "expected_entry_id"),
+    [
+        ("QD-123", "QD-123"),
+        ("run_documents/QD-123", "QD-123"),
+    ],
+)
+def test_test_fetch_entry_accepts_run_document_entry_ids(monkeypatch, supplied_entry_id, expected_entry_id):
+    driver = agent_driver.DoubleAgentDriver.__new__(agent_driver.DoubleAgentDriver)
+
+    dataset = xr.Dataset(
+        {"I": ("q", [1.0, 2.0])},
+        coords={"q": [0.1, 0.2]},
+    )
+    item = SimpleNamespace(metadata={"attrs": {"task_name": "measure_scattering"}})
+    lookup_calls = []
+
+    monkeypatch.setattr(driver, "_get_tiled_client", lambda: object())
+    monkeypatch.setattr(
+        driver,
+        "_get_tiled_run_document_item",
+        lambda entry_id: (lookup_calls.append(entry_id) or ("QD-123", item)),
+    )
+    monkeypatch.setattr(driver, "_read_tiled_item", lambda selected_item: dataset if selected_item is item else None)
+
+    result = driver.test_fetch_entry(supplied_entry_id)
+
+    assert result["status"] == "success"
+    assert result["entry_id"] == expected_entry_id
+    assert result["metadata"]["attrs"]["task_name"] == "measure_scattering"
+    assert result["dims"] == {"q": 2}
+    assert result["data_vars"] == ["I"]
+    assert lookup_calls == [supplied_entry_id]
+
+
+def test_test_fetch_entry_falls_back_to_direct_client_lookup(monkeypatch):
+    driver = agent_driver.DoubleAgentDriver.__new__(agent_driver.DoubleAgentDriver)
+
+    dataset = xr.Dataset({"I": ("q", [1.0])}, coords={"q": [0.1]})
+    item = SimpleNamespace(
+        metadata={"attrs": {"sample_uuid": "SAM-001"}},
+        read=lambda optimize_wide_table=False: dataset,
+    )
+    client = {"legacy-entry": item}
+
+    monkeypatch.setattr(driver, "_get_tiled_client", lambda: client)
+    monkeypatch.setattr(driver, "_get_tiled_run_document_item", None, raising=False)
+    monkeypatch.setattr(driver, "_read_tiled_item", None, raising=False)
+
+    result = driver.test_fetch_entry("legacy-entry")
+
+    assert result["status"] == "success"
+    assert result["entry_id"] == "legacy-entry"
+    assert result["metadata"]["attrs"]["sample_uuid"] == "SAM-001"
+    assert result["dims"] == {"q": 1}
+    assert result["data_vars"] == ["I"]
+
+
+def test_predict_sanitizes_object_dtype_datasets():
+    driver = agent_driver.DoubleAgentDriver.__new__(agent_driver.DoubleAgentDriver)
+    driver.config = {"save_path": "/tmp", "tiled_input_groups": []}
+    driver.input = xr.Dataset(
+        data_vars={
+            "raw_text": ("sample", np.asarray(["alpha", "beta"], dtype=object)),
+        },
+        coords={
+            "sample": [0, 1],
+            "label": ("sample", np.asarray(["s1", "s2"], dtype=object)),
+        },
+    )
+    driver.pipeline = SimpleNamespace(
+        calculate=lambda dataset: dataset.assign(
+            result_text=("sample", np.asarray(["left", "right"], dtype=object))
+        )
+    )
+    driver.last_results = None
+    driver.assemble_input_from_tiled = lambda: None
+    driver.deposit_obj = lambda *args, **kwargs: None
+
+    result = driver.predict()
+
+    assert driver.input["raw_text"].dtype.kind != "O"
+    assert driver.input.coords["label"].dtype.kind != "O"
+    assert driver.last_results["raw_text"].dtype.kind != "O"
+    assert driver.last_results["result_text"].dtype.kind != "O"
+    assert driver.last_results.coords["label"].dtype.kind != "O"
+    assert result["raw_text"].values.tolist() == ["alpha", "beta"]
+    assert result["result_text"].values.tolist() == ["left", "right"]

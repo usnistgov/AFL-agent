@@ -15,6 +15,31 @@ from typing_extensions import Self
 from AFL.double_agent.PipelineOp import PipelineOp
 from TreeHierarchy import json_decoder
 
+
+def _resolve_sample_dim(data: xr.DataArray, sample_dim: str, variable_name: str) -> str:
+    if sample_dim in data.dims:
+        return sample_dim
+
+    # Backward compatibility for legacy serialized pipelines that predate
+    # sample_dim and implicitly treated axis 0 as the sample axis.
+    if sample_dim == "sample" and len(data.dims) > 0:
+        return data.dims[0]
+
+    raise ValueError(f"variable '{variable_name}' must contain dim '{sample_dim}'.")
+
+
+def _transpose_sample_first(data: xr.DataArray, sample_dim: str, variable_name: str) -> tuple[xr.DataArray, str]:
+    resolved_sample_dim = _resolve_sample_dim(data, sample_dim, variable_name)
+    return data.transpose(resolved_sample_dim, ...), resolved_sample_dim
+
+
+def _sample_coords(data: xr.DataArray, sample_dim: str) -> dict:
+    coords = {}
+    if sample_dim in data.coords:
+        coords[sample_dim] = data.coords[sample_dim]
+    return coords
+
+
 #PipelineOp constructor for classification tree
 #The tree itself is defined in TreeHierarchy
 #This constructor follows the expected PipelineOp syntax
@@ -46,11 +71,16 @@ class ClassificationPipeline(PipelineOp):
         if self.classifier is None:
             raise ValueError("Classifier is not set. Provide model_definition or call set_classifier().")
 
-        data = self._get_variable(dataset)
+        data, sample_dim = _transpose_sample_first(
+            self._get_variable(dataset),
+            self.sample_dim,
+            self.input_variable,
+        )
         predicted_classes = self.classifier.predict(data.values)
         self.output[self.output_variable] = xr.DataArray(
             predicted_classes,
-            dims=[self.sample_dim],
+            dims=[sample_dim],
+            coords=_sample_coords(data, sample_dim),
         )
         return self
 
@@ -92,24 +122,34 @@ class RegressionPipeline(PipelineOp):
         if self.regression is None:
             raise ValueError("Regressor is not set. Provide model_definition or call set_regressor().")
 
-        data = self._get_variable(dataset)
-        key = dataset[self.key_variable]
-        if self.sample_dim not in key.dims:
-            raise ValueError(
-                f"key_variable '{self.key_variable}' must contain dim '{self.sample_dim}'."
-            )
+        data, sample_dim = _transpose_sample_first(
+            self._get_variable(dataset),
+            self.sample_dim,
+            self.input_variable,
+        )
+        key, _ = _transpose_sample_first(
+            dataset[self.key_variable],
+            sample_dim,
+            self.key_variable,
+        )
         key_values = key.values
         inds = np.where(np.equal(key_values, self.morphology))[0]
 
         if self.output_variable in dataset.data_vars:
-            output_da = dataset[self.output_variable].copy()
+            output_da, _ = _transpose_sample_first(
+                dataset[self.output_variable],
+                sample_dim,
+                self.output_variable,
+            )
+            output_da = output_da.copy()
             output = output_da.values
         else:
             output = np.full(key_values.shape[0], np.nan)
-            coords = {}
-            if self.sample_dim in key.coords:
-                coords[self.sample_dim] = key.coords[self.sample_dim]
-            output_da = xr.DataArray(output, dims=[self.sample_dim], coords=coords)
+            output_da = xr.DataArray(
+                output,
+                dims=[sample_dim],
+                coords=_sample_coords(key, sample_dim),
+            )
 
         if len(inds) > 0:
             predictions = self.regression.predict(data.values[inds])
@@ -139,13 +179,22 @@ class ThresholdClassificationPipeline(PipelineOp):
         self.sample_dim = sample_dim
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        data = self._get_variable(dataset)
+        data, sample_dim = _transpose_sample_first(
+            self._get_variable(dataset),
+            self.sample_dim,
+            self.input_variable,
+        )
         data_values = data.values
         labs = []
         for i in range(data_values.shape[0]):
             d = data_values[i]
             comps = self.components[d]
-            measures = np.array([dataset[c].values[i] for c in comps])
+            measures = np.array(
+                [
+                    _transpose_sample_first(dataset[c], sample_dim, c)[0].values[i]
+                    for c in comps
+                ]
+            )
             total = np.sum(measures)
             if total == 0:
                 labs.append(d)
@@ -155,7 +204,11 @@ class ThresholdClassificationPipeline(PipelineOp):
                 labs.append(comps[np.where(portions >= self.threshold)[0][0]])
             else:
                 labs.append(d)
-        self.output[self.output_variable] = xr.DataArray(labs, dims=[self.sample_dim])
+        self.output[self.output_variable] = xr.DataArray(
+            labs,
+            dims=[sample_dim],
+            coords=_sample_coords(data, sample_dim),
+        )
         return self
 
 class FlatAddition(PipelineOp):
@@ -197,13 +250,21 @@ class IntEncoding(PipelineOp):
         self.sample_dim = sample_dim
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        data = self._get_variable(dataset)
+        data, sample_dim = _transpose_sample_first(
+            self._get_variable(dataset),
+            self.sample_dim,
+            self.input_variable,
+        )
         values = []
         for label in data.values:
             if label not in self.encoding:
                 raise ValueError(f"Label '{label}' not in encoding classes.")
             values.append(self.encoding[label])
-        self.output[self.output_variable] = xr.DataArray(values, dims=[self.sample_dim])
+        self.output[self.output_variable] = xr.DataArray(
+            values,
+            dims=[sample_dim],
+            coords=_sample_coords(data, sample_dim),
+        )
         return self
 
 class TrimQ(PipelineOp):

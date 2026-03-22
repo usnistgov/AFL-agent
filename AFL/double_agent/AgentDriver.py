@@ -15,42 +15,10 @@ from typing import Optional, Dict, Any, List, Tuple, get_type_hints, Union
 
 import xarray as xr
 
-try:
-    from AFL.automation.APIServer.Driver import Driver  # type: ignore
-    from AFL.automation.shared.utilities import mpl_plot_to_bytes, xarray_to_bytes
-except ModuleNotFoundError as exc:
-    # Allow unit tests to import this module in environments where AFL-automation
-    # is not installed. Runtime server behavior still requires AFL-automation.
-    if exc.name and exc.name.startswith("AFL.automation"):
-        class Driver:  # type: ignore[override]
-            @staticmethod
-            def unqueued(*args, **kwargs):
-                def decorator(func):
-                    return func
-                return decorator
-
-            @staticmethod
-            def queued(*args, **kwargs):
-                def decorator(func):
-                    return func
-                return decorator
-
-            def __init__(self, *args, **kwargs):
-                pass
-
-            def gather_defaults(self):
-                return getattr(self, "defaults", {})
-
-        def mpl_plot_to_bytes(*args, **kwargs):  # type: ignore[no-redef]
-            raise RuntimeError("mpl_plot_to_bytes requires AFL-automation to be installed.")
-
-        def xarray_to_bytes(*args, **kwargs):  # type: ignore[no-redef]
-            raise RuntimeError("xarray_to_bytes requires AFL-automation to be installed.")
-    else:
-        raise
 from AFL.double_agent.Pipeline import Pipeline
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.AgentWebAppMixin import AgentWebAppMixin
+from AFL.double_agent._automation_compat import Driver
 
 
 LOGGER = logging.getLogger(__name__)
@@ -588,7 +556,10 @@ class DoubleAgentDriver(AgentWebAppMixin, Driver):
             sample_uuid = 'SAM-'+str(uuid.uuid4())
 
         ag_uid = "AG-" + str(uuid.uuid4())
-        self.last_results = self.pipeline.calculate(self.input)
+        self.input = self._materialize_input_dataset(self.input)
+        self.last_results = self._sanitize_object_dtypes_for_chunking(
+            self.pipeline.calculate(self.input)
+        )
 
         self.last_results.attrs['sample_uuid'] = sample_uuid
         self.last_results.attrs['ag_uuid'] = ag_uid

@@ -782,9 +782,11 @@ class SympyTransform(Preprocessor):
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
         data = dataset[self.input_variable].transpose(self.sample_dim, self.component_dim)
+        n = data.sizes[self.sample_dim]
 
         # need to construct a dict of arrays
         comps = {k: v.squeeze().values for k, v in data.groupby(self.component_dim, squeeze=False)}
+
 
         # apply transform
         new_comps = xr.Dataset()
@@ -792,10 +794,16 @@ class SympyTransform(Preprocessor):
             transform = sympy.sympify(transform)
             symbols = list(transform.free_symbols)
             lam = sympy.lambdify(symbols, transform)
-            new_comps[name] = (
-                (self.sample_dim,),
-                listify(lam(**{k.name: comps[k.name] for k in symbols})),
-            )
+
+            if symbols:
+                result = lam(**{k.name: comps[k.name] for k in symbols})
+            else:
+                result = transform.evalf()
+
+            if np.isscalar(result):
+                result = np.full(n, float(result))
+
+            new_comps[name] = ((self.sample_dim,), listify(result))
 
         new_comps = new_comps.to_array(self.transform_dim).transpose(..., self.transform_dim)
 

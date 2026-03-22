@@ -2,44 +2,13 @@ import json
 import pathlib
 from typing import Any, Dict
 
+import numpy as np
 import xarray as xr
 from importlib.resources import files
 from jinja2 import Template
 
-try:
-    from AFL.automation.APIServer.Driver import Driver  # type: ignore
-    from AFL.automation.shared.utilities import mpl_plot_to_bytes, xarray_to_bytes
-except ModuleNotFoundError as exc:
-    # Allow unit tests to import this module in environments where AFL-automation
-    # is not installed. Runtime server behavior still requires AFL-automation.
-    if exc.name and exc.name.startswith("AFL.automation"):
-        class Driver:  # type: ignore[override]
-            @staticmethod
-            def unqueued(*args, **kwargs):
-                def decorator(func):
-                    return func
-                return decorator
-
-            @staticmethod
-            def queued(*args, **kwargs):
-                def decorator(func):
-                    return func
-                return decorator
-
-            def __init__(self, *args, **kwargs):
-                pass
-
-            def gather_defaults(self):
-                return getattr(self, "defaults", {})
-
-        def mpl_plot_to_bytes(*args, **kwargs):  # type: ignore[no-redef]
-            raise RuntimeError("mpl_plot_to_bytes requires AFL-automation to be installed.")
-
-        def xarray_to_bytes(*args, **kwargs):  # type: ignore[no-redef]
-            raise RuntimeError("xarray_to_bytes requires AFL-automation to be installed.")
-    else:
-        raise
 from AFL.double_agent.Pipeline import Pipeline
+from AFL.double_agent._automation_compat import Driver, mpl_plot_to_bytes, xarray_to_bytes
 from AFL.double_agent.util import listify
 
 
@@ -170,17 +139,24 @@ class AgentWebAppMixin:
             if isinstance(client, dict) and client.get("status") == "error":
                 return client
 
-            if entry_id not in client:
-                return {"status": "error", "message": f'Entry "{entry_id}" not found in tiled'}
+            normalized_entry_id = str(entry_id).strip()
+            lookup_entry = getattr(self, "_get_tiled_run_document_item", None)
+            if callable(lookup_entry):
+                normalized_entry_id, item = lookup_entry(normalized_entry_id)
+            else:
+                if normalized_entry_id not in client:
+                    return {"status": "error", "message": f'Entry "{entry_id}" not found in tiled'}
+                item = client[normalized_entry_id]
 
-            item = client[entry_id]
             metadata = dict(item.metadata) if hasattr(item, "metadata") else {}
 
             try:
-                from tiled.client.xarray import DatasetClient
-
-                if isinstance(item, DatasetClient):
+                read_tiled_item = getattr(self, "_read_tiled_item", None)
+                if callable(read_tiled_item):
+                    dataset = read_tiled_item(item)
+                else:
                     dataset = item.read(optimize_wide_table=False)
+                if isinstance(dataset, xr.Dataset):
                     dims_info = dict(dataset.sizes)
                     data_vars = list(dataset.data_vars)
                 else:
@@ -192,7 +168,7 @@ class AgentWebAppMixin:
 
             return {
                 "status": "success",
-                "entry_id": entry_id,
+                "entry_id": normalized_entry_id,
                 "metadata": metadata,
                 "dims": dims_info,
                 "data_vars": data_vars,
@@ -350,6 +326,33 @@ class AgentWebAppMixin:
                             )
         return {"connections": connections, "errors": []}
 
+    def _materialize_input_dataset(self, dataset: xr.Dataset) -> xr.Dataset:
+        """Force tiled-backed lazy arrays into memory before downstream xarray boolean indexing."""
+        return self._sanitize_object_dtypes_for_chunking(dataset.load())
+
+    @staticmethod
+    def _sanitize_object_dtypes_for_chunking(dataset: xr.Dataset) -> xr.Dataset:
+        """Cast object-typed variables and coordinates to fixed-width strings."""
+        data_var_updates = {}
+        coord_updates = {}
+
+        for name, data_array in dataset.data_vars.items():
+            if data_array.dtype.kind == "O":
+                data_var_updates[name] = data_array.copy(
+                    data=np.asarray(data_array.values).astype(str)
+                )
+
+        for name, coord in dataset.coords.items():
+            if coord.dtype.kind == "O":
+                coord_updates[name] = coord.copy(data=np.asarray(coord.values).astype(str))
+
+        if data_var_updates:
+            dataset = dataset.assign(data_var_updates)
+        if coord_updates:
+            dataset = dataset.assign_coords(coord_updates)
+
+        return dataset
+
     def _assemble_group(self, group_cfg: Dict[str, Any]) -> xr.Dataset:
         """Assemble a single group of entries from tiled."""
         concat_dim = group_cfg.get("concat_dim")
@@ -388,7 +391,7 @@ class AgentWebAppMixin:
             return {"status": "error", "message": "No datasets assembled"}
 
         merged = xr.merge(assembled, compat="override")
-        self.input = merged.reset_coords()
+        self.input = self._materialize_input_dataset(merged.reset_coords())
         html_repr = (
             self.input._repr_html_()
             if hasattr(self.input, "_repr_html_")
