@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
+import AFL.double_agent._automation_compat as automation_compat
 import AFL.double_agent.AgentDriver as agent_driver
 
 
@@ -148,6 +149,23 @@ def test_app_backend_methods_are_mixin_owned():
     assert agent_driver.DoubleAgentDriver.get_tiled_input_config.__qualname__.startswith("AgentWebAppMixin.")
     assert agent_driver.DoubleAgentDriver.pipeline_ops.__qualname__.startswith("AgentWebAppMixin.")
     assert agent_driver.DoubleAgentDriver.assemble_input_from_tiled.__qualname__.startswith("AgentWebAppMixin.")
+
+
+def test_fallback_driver_exposes_tiled_helpers_for_entry_lookup():
+    driver = automation_compat.FallbackDriver()
+    item = SimpleNamespace(metadata={"attrs": {"task_name": "measure_scattering"}})
+    driver._tiled_client = {
+        driver.TILED_RUN_DOCUMENTS_NODE: {
+            "QD-123": item,
+        }
+    }
+
+    normalized_entry_id, selected_item = driver._get_tiled_run_document_item("run_documents/QD-123")
+
+    assert hasattr(automation_compat.FallbackDriver, "_get_tiled_client")
+    assert hasattr(driver, "_get_tiled_client")
+    assert normalized_entry_id == "QD-123"
+    assert selected_item is item
 
 
 @pytest.mark.parametrize(
