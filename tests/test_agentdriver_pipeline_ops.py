@@ -1,3 +1,7 @@
+import importlib
+import importlib.metadata
+import pathlib
+import sys
 from types import SimpleNamespace
 
 import numpy as np
@@ -99,6 +103,45 @@ def test_get_pipeline_ops_strict_skips_cache(monkeypatch):
     assert result["ops"] == [{"name": "FreshStrict"}]
     assert result["cache"]["source"] == "fresh"
     assert call_count["count"] == 1
+
+
+def test_collect_pipeline_ops_skips_unsupported_tensorflow_module(monkeypatch):
+    if sys.version_info < (3, 13):
+        pytest.skip("TensorFlow import guard only applies on Python 3.13+")
+
+    monkeypatch.delenv("AFL_ALLOW_UNSAFE_TENSORFLOW_IMPORT", raising=False)
+    sys.modules.pop("AFL.double_agent.TensorFlowExtrapolator", None)
+    tf_version = importlib.metadata.version("tensorflow")
+
+    module_path = pathlib.Path(agent_driver.__file__).with_name("TensorFlowExtrapolator.py")
+    ops, warnings = agent_driver._collect_pipeline_ops([module_path], strict=False)
+
+    assert ops == []
+    assert warnings == [
+        {
+            "module": "AFL.double_agent.TensorFlowExtrapolator",
+            "stage": "import",
+            "error_type": "ImportError",
+            "message": (
+                "TensorFlowExtrapolator is disabled on Python "
+                f"{sys.version_info.major}.{sys.version_info.minor}; "
+                f"installed tensorflow={tf_version} is not stable in this runtime. "
+                "Use Python 3.11 or 3.12 for tensorflow-backed ops, or set "
+                "AFL_ALLOW_UNSAFE_TENSORFLOW_IMPORT=1 to bypass this guard."
+            ),
+        }
+    ]
+
+
+def test_tensorflow_extrapolator_import_fails_fast_on_unsupported_python(monkeypatch):
+    if sys.version_info < (3, 13):
+        pytest.skip("TensorFlow import guard only applies on Python 3.13+")
+
+    monkeypatch.delenv("AFL_ALLOW_UNSAFE_TENSORFLOW_IMPORT", raising=False)
+    sys.modules.pop("AFL.double_agent.TensorFlowExtrapolator", None)
+
+    with pytest.raises(ImportError, match="TensorFlowExtrapolator is disabled on Python"):
+        importlib.import_module("AFL.double_agent.TensorFlowExtrapolator")
 
 
 def test_double_agent_driver_static_dirs_point_to_apps():

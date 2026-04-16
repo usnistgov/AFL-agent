@@ -71,8 +71,8 @@ graph = [
 ]
 
 tensorflow = [
-    "tensorflow>=2.18",
-    "gpflow",
+    "tensorflow>=2.18; python_version < '3.13'",
+    "gpflow; python_version < '3.13'",
 ]
 
 pytorch = [
@@ -126,8 +126,8 @@ all = [
     "ipympl",
     "nodejs",
     # "pygraphviz", #leave out, breaks documentation build
-    "tensorflow>=2.18",
-    "gpflow",
+    "tensorflow>=2.18; python_version < '3.13'",
+    "gpflow; python_version < '3.13'",
     "torch",
     "torchvision",
     "flask<2.3",
