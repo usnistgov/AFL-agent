@@ -111,7 +111,10 @@ def test_collect_pipeline_ops_skips_unsupported_tensorflow_module(monkeypatch):
 
     monkeypatch.delenv("AFL_ALLOW_UNSAFE_TENSORFLOW_IMPORT", raising=False)
     sys.modules.pop("AFL.double_agent.TensorFlowExtrapolator", None)
-    tf_version = importlib.metadata.version("tensorflow")
+    try:
+        tf_version = importlib.metadata.version("tensorflow")
+    except importlib.metadata.PackageNotFoundError:
+        tf_version = "not installed"
 
     module_path = pathlib.Path(agent_driver.__file__).with_name("TensorFlowExtrapolator.py")
     ops, warnings = agent_driver._collect_pipeline_ops([module_path], strict=False)
