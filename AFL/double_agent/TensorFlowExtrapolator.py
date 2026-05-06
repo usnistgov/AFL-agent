@@ -4,7 +4,10 @@ Extrapolators take discrete sample data and extrapolate the data onto a provided
 This file segments all extapolators that require tensorflow.
 """
 
+import os
+import sys
 from typing import List
+from importlib.metadata import PackageNotFoundError, version
 from typing_extensions import Self
 
 import numpy as np
@@ -13,6 +16,30 @@ import tqdm  # type: ignore
 
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
+
+
+def _tensorflow_import_guard() -> None:
+    """Fail fast on runtimes that are known to crash during tensorflow import."""
+    if os.environ.get("AFL_ALLOW_UNSAFE_TENSORFLOW_IMPORT") == "1":
+        return
+    if sys.version_info < (3, 13):
+        return
+
+    try:
+        tf_version = version("tensorflow")
+    except PackageNotFoundError:
+        tf_version = "not installed"
+
+    raise ImportError(
+        "TensorFlowExtrapolator is disabled on Python "
+        f"{sys.version_info.major}.{sys.version_info.minor}; "
+        f"installed tensorflow={tf_version} is not stable in this runtime. "
+        "Use Python 3.11 or 3.12 for tensorflow-backed ops, or set "
+        "AFL_ALLOW_UNSAFE_TENSORFLOW_IMPORT=1 to bypass this guard."
+    )
+
+
+_tensorflow_import_guard()
 
 import tensorflow as tf  # type: ignore
 import gpflow
