@@ -120,6 +120,10 @@ dev = [
     "hypothesis",
     "coverage",
     "nbsphinx",
+    "torch",
+    "torchvision",
+    "gpytorch",
+    "botorch"
 ]
 
 all = [
