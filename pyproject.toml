@@ -81,6 +81,13 @@ pytorch = [
     "gpytorch"
 ]
 
+botorch = [
+    "torch",
+    "torchvision",
+    "gpytorch",
+    "botorch"
+]
+
 apdist = [
     "apdist @ git+https://github.com/kiranvad/Amplitude-Phase-Distance"
 ]

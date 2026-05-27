@@ -24,7 +24,14 @@ from typing_extensions import Self
 from AFL.double_agent.Generator import GaussianPoints
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
-
+from AFL.double_agent.BayesianOptimization import (
+    dataset_to_botorch_candidates,
+    dataset_to_botorch_training_data,
+    evaluate_log_expected_improvement,
+    evaluate_qlog_expected_improvement,
+    fit_single_task_gp,
+    get_observed_best_f,
+)
 
 class AcquisitionError(Exception):
     """Exception raised when an error in the acquisition decision occurs"""
@@ -400,6 +407,7 @@ class RandomAF(AcquisitionFunction):
         self.get_next_samples(self.acquisition)
 
         return self
+
 
 class MultimodalMask_MaxValueAF(AcquisitionFunction):
     """Acquisition function that selects points based on maximum values within specific phase regions.
@@ -836,5 +844,125 @@ class PseudoUCB(AcquisitionFunction):
         ] = "The final acquisition surface that is evaluated to determine the next_sample"
 
         self.get_next_samples(self.acquisition)
+        return self
 
+
+class BoTorchAcquisition(AcquisitionFunction):
+    def __init__(
+        self,
+        feature_input_variable: str,
+        predictor_input_variable: str,
+        grid_variable: str,
+        grid_dim: str = "grid",
+        sample_dim: str = "sample",
+        objective_direction: str = "maximize",
+        standardize: bool = True,
+        output_prefix: Optional[str] = None,
+        output_variable: str = "next_samples",
+        decision_rtol: float = 0.05,
+        excluded_comps_variables: Optional[List[str]] = None,
+        excluded_comps_dim: Optional[str] = None,
+        exclusion_radius: float = 1e-3,
+        count: int = 1,
+        acquisition_kind: str = "auto",
+        best_f_variable: Optional[str] = None,
+        name: str = "BoTorchAcquisition",
+    ) -> None:
+        super().__init__(
+            input_variables=[feature_input_variable, predictor_input_variable],
+            grid_variable=grid_variable,
+            grid_dim=grid_dim,
+            output_prefix=output_prefix,
+            output_variable=output_variable,
+            decision_rtol=decision_rtol,
+            excluded_comps_variables=excluded_comps_variables,
+            excluded_comps_dim=excluded_comps_dim,
+            exclusion_radius=exclusion_radius,
+            count=count,
+            name=name,
+        )
+        self.feature_input_variable = feature_input_variable
+        self.predictor_input_variable = predictor_input_variable
+        self.sample_dim = sample_dim
+        self.objective_direction = objective_direction
+        self.standardize = standardize
+        self.acquisition_kind = acquisition_kind
+        self.best_f_variable = best_f_variable
+        self.acquisition = None
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        self.acquisition = xr.Dataset()
+        self.acquisition["comp_grid"] = dataset[self.grid_variable].transpose(self.grid_dim, ...)
+
+        train_x, train_y = dataset_to_botorch_training_data(
+            dataset=dataset,
+            feature_input_variable=self.feature_input_variable,
+            predictor_input_variable=self.predictor_input_variable,
+            sample_dim=self.sample_dim,
+            objective_direction=self.objective_direction,
+        )
+        candidate_x = dataset_to_botorch_candidates(
+            dataset=dataset,
+            grid_variable=self.grid_variable,
+            grid_dim=self.grid_dim,
+        )
+        model = fit_single_task_gp(
+            train_x=train_x,
+            train_y=train_y,
+            standardize=self.standardize,
+        )
+
+        if self.best_f_variable is not None and self.best_f_variable in dataset:
+            best_f = float(dataset[self.best_f_variable].values[()])
+        else:
+            best_f = get_observed_best_f(train_y)
+
+        acquisition_kind = self.acquisition_kind
+        if acquisition_kind == "auto":
+            acquisition_kind = "qlogei" if self.count > 1 else "logei"
+
+        if acquisition_kind == "qlogei":
+            decision_values = evaluate_qlog_expected_improvement(
+                model=model,
+                candidate_x=candidate_x,
+                best_f=best_f,
+                q=self.count,
+            )
+        else:
+            decision_values = evaluate_log_expected_improvement(
+                model=model,
+                candidate_x=candidate_x,
+                best_f=best_f,
+            )
+
+        decision_surface = xr.DataArray(
+            decision_values.detach().cpu().numpy(),
+            dims=(self.grid_dim,),
+            coords={self.grid_dim: dataset[self.grid_variable][self.grid_dim].values},
+        )
+
+        finite_values = np.isfinite(decision_surface.values)
+        if finite_values.any():
+            finite_surface = decision_surface.where(finite_values, other=0.0)
+            span = finite_surface.max() - finite_surface.min()
+            if float(span.values if hasattr(span, "values") else span) > 1e-16:
+                decision_surface = (finite_surface - finite_surface.min()) / span
+            else:
+                decision_surface = finite_surface
+        else:
+            decision_surface = xr.zeros_like(decision_surface)
+
+        self.acquisition["decision_surface"] = decision_surface
+
+        excluded_comps = self._get_excluded_comps(dataset)
+        if excluded_comps is not None:
+            self.acquisition["excluded_comps"] = excluded_comps
+            self.exclude_previous_samples(self.acquisition)
+
+        self.output[self._prefix_output("decision_surface")] = self.acquisition["decision_surface"]
+        self.output[self._prefix_output("decision_surface")].attrs["description"] = (
+            "The final acquisition surface that is evaluated to determine the next_sample"
+        )
+
+        self.get_next_samples(self.acquisition)
         return self

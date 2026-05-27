@@ -9,6 +9,7 @@ Step-by-step guides for beginners to use AFL-agent
    installation
    quickstart
    building_pipelines
+   bayesopt
    visualization
    autosas_fitting
    interactive

@@ -24,7 +24,15 @@ import matplotlib.pyplot as plt
 
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
-
+from AFL.double_agent.BayesianOptimization import (
+    bounds_from_tensor,
+    dataset_to_botorch_candidates,
+    dataset_to_botorch_training_data,
+    fit_single_task_gp,
+    get_observed_best_f,
+    optimize_posterior_mean,
+    posterior_to_xarray,
+)
 
 
 class Extrapolator(PipelineOp):
@@ -510,4 +518,83 @@ class GaussianProcessRegressor(Extrapolator):
         self.output[self._prefix_output("var")].attrs["reg_type"] = reg_type
         self.output[self._prefix_output("var")].attrs.update(reg.kernel_.get_params())
 
+        return self
+
+
+class BoTorchRegressor(Extrapolator):
+    def __init__(
+        self,
+        feature_input_variable: str,
+        predictor_input_variable: str,
+        output_prefix: str,
+        grid_variable: str,
+        grid_dim: str,
+        sample_dim: str,
+        objective_direction: str = "minimize",
+        standardize: bool = True,
+        posterior_optimize: bool = False,
+        posterior_optimize_restarts: int = 10,
+        posterior_optimize_raw_samples: int = 128,
+        name: str = "BoTorchRegressor",
+    ) -> None:
+        super().__init__(
+            name=name,
+            feature_input_variable=feature_input_variable,
+            predictor_input_variable=predictor_input_variable,
+            output_variables=["mean", "variance", "best_f"],
+            output_prefix=output_prefix,
+            grid_variable=grid_variable,
+            grid_dim=grid_dim,
+            sample_dim=sample_dim,
+        )
+        self.objective_direction = objective_direction
+        self.standardize = standardize
+        self.posterior_optimize = posterior_optimize
+        self.posterior_optimize_restarts = posterior_optimize_restarts
+        self.posterior_optimize_raw_samples = posterior_optimize_raw_samples
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        train_x, train_y = dataset_to_botorch_training_data(
+            dataset=dataset,
+            feature_input_variable=self.feature_input_variable,
+            predictor_input_variable=self.predictor_input_variable,
+            sample_dim=self.sample_dim,
+            objective_direction=self.objective_direction,
+        )
+        candidate_x = dataset_to_botorch_candidates(
+            dataset=dataset,
+            grid_variable=self.grid_variable,
+            grid_dim=self.grid_dim,
+        )
+        model = fit_single_task_gp(
+            train_x=train_x,
+            train_y=train_y,
+            standardize=self.standardize,
+        )
+        posterior = model.posterior(candidate_x)
+        self.grid = dataset[self.grid_variable]
+        self.output.update(
+            posterior_to_xarray(
+                posterior=posterior,
+                grid_index=dataset[self.grid_variable][self.grid_dim],
+                output_prefix=self.output_prefix,
+            )
+        )
+
+        best_f = get_observed_best_f(train_y)
+        if self.posterior_optimize:
+            best_x, best_f = optimize_posterior_mean(
+                model=model,
+                bounds=bounds_from_tensor(candidate_x),
+                q=1,
+                num_restarts=self.posterior_optimize_restarts,
+                raw_samples=self.posterior_optimize_raw_samples,
+            )
+
+        self.output[self._prefix_output("best_f")] = xr.DataArray(best_f)
+        self.output[self._prefix_output("best_x")] = xr.DataArray(
+            best_x.squeeze(0).detach().cpu().numpy(),
+            dims=("component",),
+            coords={"component": dataset[self.feature_input_variable].coords["component"].values},
+        )
         return self
