@@ -50,7 +50,15 @@ def _load_agentdriver_module_with_automation_stubs():
     return module
 
 
-def test_collect_pipeline_ops_skips_unsupported_tensorflow_module():
+@pytest.mark.parametrize(
+    "tensorflow_error",
+    [
+        ModuleNotFoundError("No module named 'tensorflow'", name="tensorflow"),
+        PackageNotFoundError("tensorflow"),
+    ],
+    ids=["missing-module", "missing-package-metadata"],
+)
+def test_collect_pipeline_ops_skips_unavailable_tensorflow_dependency(tensorflow_error):
     agentdriver = _load_agentdriver_module_with_automation_stubs()
     package = SimpleNamespace(__path__=["fake-path"], __name__="AFL.double_agent")
     modinfos = [SimpleNamespace(name="TensorFlowExtrapolator"), SimpleNamespace(name="PyTorchExtrapolator")]
@@ -60,31 +68,9 @@ def test_collect_pipeline_ops_skips_unsupported_tensorflow_module():
         if name == "AFL.double_agent":
             return package
         if name == "AFL.double_agent.TensorFlowExtrapolator":
-            raise ModuleNotFoundError("No module named 'tensorflow'", name="tensorflow")
+            raise tensorflow_error
         if name == "AFL.double_agent.PyTorchExtrapolator":
             return pytorch_module
-        raise AssertionError(f"Unexpected import: {name}")
-
-    with (
-        patch.object(agentdriver.importlib, "import_module", side_effect=fake_import_module),
-        patch.object(agentdriver.pkgutil, "iter_modules", return_value=modinfos),
-        patch.object(agentdriver.inspect, "getmembers", return_value=[]),
-    ):
-        ops = agentdriver._collect_pipeline_ops()
-
-    assert ops == []
-
-
-def test_collect_pipeline_ops_skips_missing_tensorflow_package_metadata():
-    agentdriver = _load_agentdriver_module_with_automation_stubs()
-    package = SimpleNamespace(__path__=["fake-path"], __name__="AFL.double_agent")
-    modinfos = [SimpleNamespace(name="TensorFlowExtrapolator")]
-
-    def fake_import_module(name):
-        if name == "AFL.double_agent":
-            return package
-        if name == "AFL.double_agent.TensorFlowExtrapolator":
-            raise PackageNotFoundError("tensorflow")
         raise AssertionError(f"Unexpected import: {name}")
 
     with (
