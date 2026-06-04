@@ -4,6 +4,7 @@ import json
 import inspect
 import importlib
 import pkgutil
+from importlib.metadata import PackageNotFoundError
 from typing import Optional, Dict, Any, List, get_type_hints, Union
 
 import xarray as xr
@@ -81,12 +82,36 @@ def _get_parameter_types(cls) -> Dict[str, str]:
     return param_types
 
 
+def _is_optional_dependency_failure(exc: Exception) -> bool:
+    """Return True when a module import failed only because an optional dependency is missing."""
+    if isinstance(exc, PackageNotFoundError):
+        return True
+
+    if isinstance(exc, ModuleNotFoundError):
+        missing_name = getattr(exc, "name", None)
+        if missing_name and not missing_name.startswith("AFL."):
+            return True
+
+    if isinstance(exc, RuntimeError):
+        message = str(exc)
+        if "ImportError encountered:" in message and "please install:" in message.lower():
+            return True
+
+    return False
+
+
 def _collect_pipeline_ops() -> List[Dict[str, Any]]:
     """Gather metadata for all available :class:`PipelineOp` subclasses."""
     ops: List[Dict[str, Any]] = []
     package = importlib.import_module("AFL.double_agent")
     for modinfo in pkgutil.iter_modules(package.__path__):
-        module = importlib.import_module(f"{package.__name__}.{modinfo.name}")
+        try:
+            module = importlib.import_module(f"{package.__name__}.{modinfo.name}")
+        except Exception as exc:
+            if _is_optional_dependency_failure(exc):
+                continue
+            raise
+
         for name, obj in inspect.getmembers(module, inspect.isclass):
             if issubclass(obj, PipelineOp) and obj is not PipelineOp:
                 sig = inspect.signature(obj.__init__)
@@ -95,17 +120,17 @@ def _collect_pipeline_ops() -> List[Dict[str, Any]]:
                     for k, v in sig.parameters.items()
                     if k != "self"
                 }
-                
+
                 # Detect required parameters (those without defaults)
                 required_params = []
                 for k, v in sig.parameters.items():
                     if k != "self" and v.default is inspect._empty:
                         required_params.append(k)
-                
+
                 # Detect input/output variable parameters
                 input_params = []
                 output_params = []
-                
+
                 for param_name in params.keys():
                     # Parameters that represent input variables
                     if (param_name.endswith('_variable') and 'input' in param_name) or \
@@ -116,7 +141,7 @@ def _collect_pipeline_ops() -> List[Dict[str, Any]]:
                          param_name == 'output_variable' or param_name == 'output_variables' or \
                          param_name == 'output_prefix':
                         output_params.append(param_name)
-                
+
                 # Extract parameter types from type annotations
                 param_types = _get_parameter_types(obj)
 
