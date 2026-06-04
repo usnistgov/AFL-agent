@@ -1,140 +1,301 @@
-"""Tests for pipeline-op discovery in AFL.double_agent.AgentDriver."""
-
-import importlib.util
+import importlib
+import importlib.metadata
+import pathlib
 import sys
-from importlib.metadata import PackageNotFoundError
-from pathlib import Path
-from types import ModuleType, SimpleNamespace
-from unittest.mock import patch
+from types import SimpleNamespace
 
+import numpy as np
 import pytest
+import xarray as xr
+
+import AFL.double_agent._automation_compat as automation_compat
+import AFL.double_agent.AgentDriver as agent_driver
 
 
-def _load_agentdriver_module_with_automation_stubs():
-    """Load AgentDriver with minimal AFL.automation stubs required for import isolation."""
-    driver_module = ModuleType("AFL.automation.APIServer.Driver")
+def test_parse_strict_flag():
+    assert agent_driver._parse_strict_flag(True) is True
+    assert agent_driver._parse_strict_flag(False) is False
+    assert agent_driver._parse_strict_flag("true") is True
+    assert agent_driver._parse_strict_flag("1") is True
+    assert agent_driver._parse_strict_flag("yes") is True
+    assert agent_driver._parse_strict_flag("on") is True
+    assert agent_driver._parse_strict_flag("false") is False
+    assert agent_driver._parse_strict_flag(None) is False
 
-    class StubDriver:
-        @staticmethod
-        def unqueued(*args, **kwargs):
-            def decorator(func):
-                return func
 
-            return decorator
+def test_get_pipeline_ops_uses_memory_cache(monkeypatch):
+    monkeypatch.setattr(agent_driver, "_PIPELINE_OPS_MEM_CACHE", None)
+    monkeypatch.setattr(agent_driver, "_candidate_module_files", lambda: [])
+    monkeypatch.setattr(agent_driver, "_module_signature", lambda module_files: "sig-1")
+    monkeypatch.setattr(agent_driver, "_load_disk_cache", lambda expected_signature: None)
 
-    driver_module.Driver = StubDriver
+    call_count = {"count": 0}
 
-    utilities_module = ModuleType("AFL.automation.shared.utilities")
-    utilities_module.mpl_plot_to_bytes = lambda *args, **kwargs: b""
-    utilities_module.xarray_to_bytes = lambda *args, **kwargs: b""
+    def fake_collect(module_files, strict=False):
+        call_count["count"] += 1
+        return ([{"name": "OpA"}], [])
 
-    launcher_module = ModuleType("AFL.automation.shared.launcher")
+    monkeypatch.setattr(agent_driver, "_collect_pipeline_ops", fake_collect)
+    monkeypatch.setattr(agent_driver, "_save_disk_cache", lambda payload: None)
 
-    stub_modules = {
-        "AFL.automation": ModuleType("AFL.automation"),
-        "AFL.automation.APIServer": ModuleType("AFL.automation.APIServer"),
-        "AFL.automation.APIServer.Driver": driver_module,
-        "AFL.automation.shared": ModuleType("AFL.automation.shared"),
-        "AFL.automation.shared.utilities": utilities_module,
-        "AFL.automation.shared.launcher": launcher_module,
+    first = agent_driver.get_pipeline_ops()
+    second = agent_driver.get_pipeline_ops()
+
+    assert first["ops"] == [{"name": "OpA"}]
+    assert first["cache"]["source"] == "fresh"
+    assert second["cache"]["source"] == "memory"
+    assert call_count["count"] == 1
+
+
+def test_get_pipeline_ops_uses_disk_cache(monkeypatch):
+    monkeypatch.setattr(agent_driver, "_PIPELINE_OPS_MEM_CACHE", None)
+    monkeypatch.setattr(agent_driver, "_candidate_module_files", lambda: [])
+    monkeypatch.setattr(agent_driver, "_module_signature", lambda module_files: "sig-2")
+    monkeypatch.setattr(
+        agent_driver,
+        "_load_disk_cache",
+        lambda expected_signature: {
+            "ops": [{"name": "DiskOp"}],
+            "warnings": [{"module": "A", "stage": "import", "error_type": "E", "message": "m"}],
+            "generated_at": "2026-03-01T00:00:00+00:00",
+            "signature": "sig-2",
+        },
+    )
+    monkeypatch.setattr(
+        agent_driver,
+        "_collect_pipeline_ops",
+        lambda module_files, strict=False: (_ for _ in ()).throw(AssertionError("collect should not run")),
+    )
+
+    result = agent_driver.get_pipeline_ops()
+
+    assert result["ops"] == [{"name": "DiskOp"}]
+    assert result["warnings"][0]["stage"] == "import"
+    assert result["cache"]["source"] == "disk"
+
+
+def test_get_pipeline_ops_strict_skips_cache(monkeypatch):
+    monkeypatch.setattr(
+        agent_driver,
+        "_PIPELINE_OPS_MEM_CACHE",
+        {
+            "ops": [{"name": "Cached"}],
+            "warnings": [],
+            "cache": {"source": "memory", "generated_at": "old", "signature": "sig-3", "duration_ms": 0},
+            "signature": "sig-3",
+        },
+    )
+    monkeypatch.setattr(agent_driver, "_candidate_module_files", lambda: [])
+    monkeypatch.setattr(agent_driver, "_module_signature", lambda module_files: "sig-3")
+
+    call_count = {"count": 0}
+
+    def fake_collect(module_files, strict=False):
+        call_count["count"] += 1
+        assert strict is True
+        return ([{"name": "FreshStrict"}], [])
+
+    monkeypatch.setattr(agent_driver, "_collect_pipeline_ops", fake_collect)
+    monkeypatch.setattr(agent_driver, "_save_disk_cache", lambda payload: None)
+
+    result = agent_driver.get_pipeline_ops(strict=True)
+
+    assert result["ops"] == [{"name": "FreshStrict"}]
+    assert result["cache"]["source"] == "fresh"
+    assert call_count["count"] == 1
+
+
+def test_collect_pipeline_ops_skips_unsupported_tensorflow_module(monkeypatch):
+    if sys.version_info < (3, 13):
+        pytest.skip("TensorFlow import guard only applies on Python 3.13+")
+
+    monkeypatch.delenv("AFL_ALLOW_UNSAFE_TENSORFLOW_IMPORT", raising=False)
+    sys.modules.pop("AFL.double_agent.TensorFlowExtrapolator", None)
+    tf_version = importlib.metadata.version("tensorflow")
+
+    module_path = pathlib.Path(agent_driver.__file__).with_name("TensorFlowExtrapolator.py")
+    ops, warnings = agent_driver._collect_pipeline_ops([module_path], strict=False)
+
+    assert ops == []
+    assert warnings == [
+        {
+            "module": "AFL.double_agent.TensorFlowExtrapolator",
+            "stage": "import",
+            "error_type": "ImportError",
+            "message": (
+                "TensorFlowExtrapolator is disabled on Python "
+                f"{sys.version_info.major}.{sys.version_info.minor}; "
+                f"installed tensorflow={tf_version} is not stable in this runtime. "
+                "Use Python 3.11 or 3.12 for tensorflow-backed ops, or set "
+                "AFL_ALLOW_UNSAFE_TENSORFLOW_IMPORT=1 to bypass this guard."
+            ),
+        }
+    ]
+
+
+def test_tensorflow_extrapolator_import_fails_fast_on_unsupported_python(monkeypatch):
+    if sys.version_info < (3, 13):
+        pytest.skip("TensorFlow import guard only applies on Python 3.13+")
+
+    monkeypatch.delenv("AFL_ALLOW_UNSAFE_TENSORFLOW_IMPORT", raising=False)
+    sys.modules.pop("AFL.double_agent.TensorFlowExtrapolator", None)
+
+    with pytest.raises(ImportError, match="TensorFlowExtrapolator is disabled on Python"):
+        importlib.import_module("AFL.double_agent.TensorFlowExtrapolator")
+
+
+def test_double_agent_driver_static_dirs_point_to_apps():
+    static_dirs = agent_driver.DoubleAgentDriver.static_dirs
+
+    assert "apps/pipeline_builder/js" in static_dirs
+    assert "apps/pipeline_builder/img" in static_dirs
+    assert "apps/pipeline_builder/css" in static_dirs
+    assert "apps/input_builder/js" in static_dirs
+    assert "apps/input_builder/css" in static_dirs
+
+    assert "apps/pipeline_builder/js" in str(static_dirs["apps/pipeline_builder/js"])
+    assert "apps/pipeline_builder/img" in str(static_dirs["apps/pipeline_builder/img"])
+    assert "apps/pipeline_builder/css" in str(static_dirs["apps/pipeline_builder/css"])
+    assert "apps/input_builder/js" in str(static_dirs["apps/input_builder/js"])
+    assert "apps/input_builder/css" in str(static_dirs["apps/input_builder/css"])
+
+
+def test_web_app_mixin_renders_builder_html():
+    pipeline_html = agent_driver.DoubleAgentDriver._render_pipeline_builder_html()
+    input_html = agent_driver.DoubleAgentDriver._render_input_builder_html()
+
+    assert "<!DOCTYPE html>" in pipeline_html
+    assert "<!DOCTYPE html>" in input_html
+    assert "<title>Pipeline Builder</title>" in pipeline_html
+    assert "<title>Input Builder</title>" in input_html
+
+
+def test_setup_app_links_sets_builder_links():
+    driver = agent_driver.DoubleAgentDriver.__new__(agent_driver.DoubleAgentDriver)
+
+    driver.useful_links = None
+    driver.setup_app_links()
+    assert driver.useful_links == {
+        "Pipeline Builder": "/pipeline_builder",
+        "Input Builder": "/input_builder",
     }
 
-    agentdriver_path = Path(__file__).resolve().parents[1] / "AFL" / "double_agent" / "AgentDriver.py"
-    spec = importlib.util.spec_from_file_location("test_agentdriver_module", agentdriver_path)
-    module = importlib.util.module_from_spec(spec)
+    driver.useful_links = {"Existing": "/existing"}
+    driver.setup_app_links()
+    assert driver.useful_links["Existing"] == "/existing"
+    assert driver.useful_links["Pipeline Builder"] == "/pipeline_builder"
+    assert driver.useful_links["Input Builder"] == "/input_builder"
 
-    with patch.dict(sys.modules, stub_modules):
-        assert spec.loader is not None
-        spec.loader.exec_module(module)
 
-    return module
+def test_app_backend_methods_are_mixin_owned():
+    assert agent_driver.DoubleAgentDriver.plot_pipeline.__qualname__.startswith("AgentWebAppMixin.")
+    assert agent_driver.DoubleAgentDriver.get_tiled_input_config.__qualname__.startswith("AgentWebAppMixin.")
+    assert agent_driver.DoubleAgentDriver.pipeline_ops.__qualname__.startswith("AgentWebAppMixin.")
+    assert agent_driver.DoubleAgentDriver.assemble_input_from_tiled.__qualname__.startswith("AgentWebAppMixin.")
+
+
+def test_fallback_driver_exposes_tiled_helpers_for_entry_lookup():
+    driver = automation_compat.FallbackDriver()
+    item = SimpleNamespace(metadata={"attrs": {"task_name": "measure_scattering"}})
+    driver._tiled_client = {
+        driver.TILED_RUN_DOCUMENTS_NODE: {
+            "QD-123": item,
+        }
+    }
+
+    normalized_entry_id, selected_item = driver._get_tiled_run_document_item("run_documents/QD-123")
+
+    assert hasattr(automation_compat.FallbackDriver, "_get_tiled_client")
+    assert hasattr(driver, "_get_tiled_client")
+    assert normalized_entry_id == "QD-123"
+    assert selected_item is item
 
 
 @pytest.mark.parametrize(
-    "tensorflow_error",
+    ("supplied_entry_id", "expected_entry_id"),
     [
-        ModuleNotFoundError("No module named 'tensorflow'", name="tensorflow"),
-        PackageNotFoundError("tensorflow"),
+        ("QD-123", "QD-123"),
+        ("run_documents/QD-123", "QD-123"),
     ],
-    ids=["missing-module", "missing-package-metadata"],
 )
-def test_collect_pipeline_ops_skips_unavailable_tensorflow_dependency(tensorflow_error):
-    agentdriver = _load_agentdriver_module_with_automation_stubs()
-    package = SimpleNamespace(__path__=["fake-path"], __name__="AFL.double_agent")
-    modinfos = [SimpleNamespace(name="TensorFlowExtrapolator"), SimpleNamespace(name="PyTorchExtrapolator")]
-    pytorch_module = SimpleNamespace()
+def test_test_fetch_entry_accepts_run_document_entry_ids(monkeypatch, supplied_entry_id, expected_entry_id):
+    driver = agent_driver.DoubleAgentDriver.__new__(agent_driver.DoubleAgentDriver)
 
-    def fake_import_module(name):
-        if name == "AFL.double_agent":
-            return package
-        if name == "AFL.double_agent.TensorFlowExtrapolator":
-            raise tensorflow_error
-        if name == "AFL.double_agent.PyTorchExtrapolator":
-            return pytorch_module
-        raise AssertionError(f"Unexpected import: {name}")
-
-    with (
-        patch.object(agentdriver.importlib, "import_module", side_effect=fake_import_module),
-        patch.object(agentdriver.pkgutil, "iter_modules", return_value=modinfos),
-        patch.object(agentdriver.inspect, "getmembers", return_value=[]),
-    ):
-        ops = agentdriver._collect_pipeline_ops()
-
-    assert ops == []
-
-
-def test_collect_pipeline_ops_skips_runtime_wrapped_optional_dependency_errors():
-    agentdriver = _load_agentdriver_module_with_automation_stubs()
-    package = SimpleNamespace(__path__=["fake-path"], __name__="AFL.double_agent")
-    modinfos = [SimpleNamespace(name="AmplitudePhaseDistance")]
-
-    def fake_import_module(name):
-        if name == "AFL.double_agent":
-            return package
-        if name == "AFL.double_agent.AmplitudePhaseDistance":
-            raise RuntimeError(
-                "ImportError encountered: No module named 'apdist'\n"
-                "To use amplitude-distance as a similarity measure, please install:\n"
-                "pip install git+https://github.com/kiranvad/Amplitude-Phase-Distance"
-            )
-        raise AssertionError(f"Unexpected import: {name}")
-
-    with (
-        patch.object(agentdriver.importlib, "import_module", side_effect=fake_import_module),
-        patch.object(agentdriver.pkgutil, "iter_modules", return_value=modinfos),
-        patch.object(agentdriver.inspect, "getmembers", return_value=[]),
-    ):
-        ops = agentdriver._collect_pipeline_ops()
-
-    assert ops == []
-
-
-def test_collect_pipeline_ops_raises_for_internal_module_errors():
-    agentdriver = _load_agentdriver_module_with_automation_stubs()
-    package = SimpleNamespace(__path__=["fake-path"], __name__="AFL.double_agent")
-    modinfos = [SimpleNamespace(name="BrokenModule")]
-
-    def fake_import_module(name):
-        if name == "AFL.double_agent":
-            return package
-        if name == "AFL.double_agent.BrokenModule":
-            raise ModuleNotFoundError("No module named 'AFL.double_agent.missing_internal'", name="AFL.double_agent.missing_internal")
-        raise AssertionError(f"Unexpected import: {name}")
-
-    with (
-        patch.object(agentdriver.importlib, "import_module", side_effect=fake_import_module),
-        patch.object(agentdriver.pkgutil, "iter_modules", return_value=modinfos),
-    ):
-        with pytest.raises(ModuleNotFoundError, match="AFL.double_agent.missing_internal"):
-            agentdriver._collect_pipeline_ops()
-
-
-def test_optional_dependency_detection_does_not_bypass_automation_import_errors():
-    agentdriver = _load_agentdriver_module_with_automation_stubs()
-
-    exc = ModuleNotFoundError(
-        "No module named 'AFL.automation.shared.utilities'",
-        name="AFL.automation.shared.utilities",
+    dataset = xr.Dataset(
+        {"I": ("q", [1.0, 2.0])},
+        coords={"q": [0.1, 0.2]},
     )
+    item = SimpleNamespace(metadata={"attrs": {"task_name": "measure_scattering"}})
+    lookup_calls = []
 
-    assert agentdriver._is_optional_dependency_failure(exc) is False
+    monkeypatch.setattr(driver, "_get_tiled_client", lambda: object())
+    monkeypatch.setattr(
+        driver,
+        "_get_tiled_run_document_item",
+        lambda entry_id: (lookup_calls.append(entry_id) or ("QD-123", item)),
+    )
+    monkeypatch.setattr(driver, "_read_tiled_item", lambda selected_item: dataset if selected_item is item else None)
+
+    result = driver.test_fetch_entry(supplied_entry_id)
+
+    assert result["status"] == "success"
+    assert result["entry_id"] == expected_entry_id
+    assert result["metadata"]["attrs"]["task_name"] == "measure_scattering"
+    assert result["dims"] == {"q": 2}
+    assert result["data_vars"] == ["I"]
+    assert lookup_calls == [supplied_entry_id]
+
+
+def test_test_fetch_entry_falls_back_to_direct_client_lookup(monkeypatch):
+    driver = agent_driver.DoubleAgentDriver.__new__(agent_driver.DoubleAgentDriver)
+
+    dataset = xr.Dataset({"I": ("q", [1.0])}, coords={"q": [0.1]})
+    item = SimpleNamespace(
+        metadata={"attrs": {"sample_uuid": "SAM-001"}},
+        read=lambda optimize_wide_table=False: dataset,
+    )
+    client = {"legacy-entry": item}
+
+    monkeypatch.setattr(driver, "_get_tiled_client", lambda: client)
+    monkeypatch.setattr(driver, "_get_tiled_run_document_item", None, raising=False)
+    monkeypatch.setattr(driver, "_read_tiled_item", None, raising=False)
+
+    result = driver.test_fetch_entry("legacy-entry")
+
+    assert result["status"] == "success"
+    assert result["entry_id"] == "legacy-entry"
+    assert result["metadata"]["attrs"]["sample_uuid"] == "SAM-001"
+    assert result["dims"] == {"q": 1}
+    assert result["data_vars"] == ["I"]
+
+
+def test_predict_sanitizes_object_dtype_datasets():
+    driver = agent_driver.DoubleAgentDriver.__new__(agent_driver.DoubleAgentDriver)
+    driver.config = {"save_path": "/tmp", "tiled_input_groups": []}
+    driver.input = xr.Dataset(
+        data_vars={
+            "raw_text": ("sample", np.asarray(["alpha", "beta"], dtype=object)),
+        },
+        coords={
+            "sample": [0, 1],
+            "label": ("sample", np.asarray(["s1", "s2"], dtype=object)),
+        },
+    )
+    driver.pipeline = SimpleNamespace(
+        calculate=lambda dataset: dataset.assign(
+            result_text=("sample", np.asarray(["left", "right"], dtype=object))
+        )
+    )
+    driver.last_results = None
+    driver.assemble_input_from_tiled = lambda: None
+    driver.deposit_obj = lambda *args, **kwargs: None
+
+    result = driver.predict()
+
+    assert driver.input["raw_text"].dtype.kind != "O"
+    assert driver.input.coords["label"].dtype.kind != "O"
+    assert driver.last_results["raw_text"].dtype.kind != "O"
+    assert driver.last_results["result_text"].dtype.kind != "O"
+    assert driver.last_results.coords["label"].dtype.kind != "O"
+    assert result["raw_text"].values.tolist() == ["alpha", "beta"]
+    assert result["result_text"].values.tolist() == ["left", "right"]

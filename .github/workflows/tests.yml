@@ -1,8 +1,9 @@
 name: Run Tests
 
+# TODO: remove the add-docker branch before merging to main
 on:
   push:
-    branches: [ 'main' ]
+    branches: [ 'main', 'add-docker' ]
   pull_request:
     branches: [ '*' ]
 
@@ -29,7 +30,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e ".[dev]"
+        pip install -e ".[dev,mlmodels]"
         
     - name: Run tests
       run: |

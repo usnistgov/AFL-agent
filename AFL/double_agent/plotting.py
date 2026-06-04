@@ -576,9 +576,7 @@ def plot_scatter_plotly(
     fig = go.Figure()
     
     # Define marker symbols for discrete labels
-    plotly_symbols = ['circle', 'square', 'diamond', 'cross', 'x', 'triangle-up', 
-                      'triangle-down', 'triangle-left', 'triangle-right', 'pentagon', 
-                      'hexagon', 'star', 'hexagram', 'star-triangle-up', 'star-triangle-down']
+    plotly_symbols = ['circle', 'circle-open', 'cross', 'x', 'diamond', 'diamond-open', 'square', 'square-open']
     
     if len(components) == 3 and ternary:
         # Extract coordinates
