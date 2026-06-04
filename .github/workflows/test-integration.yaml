@@ -17,7 +17,13 @@ jobs:
 
       - name: Build and start stack
         run: |
-          docker compose up -d --build --wait --wait-timeout 240
+          set -euo pipefail
+          if ! docker compose up -d --build --wait --wait-timeout 240; then
+            docker compose ps
+            docker compose logs tiled
+            docker compose logs agent
+            exit 1
+          fi
 
       - name: Smoke test Tiled API
         run: |
