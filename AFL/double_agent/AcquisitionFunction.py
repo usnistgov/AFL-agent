@@ -23,14 +23,15 @@ from typing_extensions import Self
 
 from AFL.double_agent.Generator import GaussianPoints
 from AFL.double_agent.PipelineOp import PipelineOp
-from AFL.double_agent.util import listify
-from AFL.double_agent.BayesianOptimization import (
+from AFL.double_agent.util import (
     dataset_to_botorch_candidates,
     dataset_to_botorch_training_data,
     evaluate_log_expected_improvement,
     evaluate_qlog_expected_improvement,
     fit_single_task_gp,
     get_observed_best_f,
+    listify,
+    optimize_acquisition_function,
 )
 
 class AcquisitionError(Exception):
@@ -891,9 +892,6 @@ class BoTorchAcquisition(AcquisitionFunction):
         self.acquisition = None
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        self.acquisition = xr.Dataset()
-        self.acquisition["comp_grid"] = dataset[self.grid_variable].transpose(self.grid_dim, ...)
-
         train_x, train_y = dataset_to_botorch_training_data(
             dataset=dataset,
             feature_input_variable=self.feature_input_variable,
@@ -915,54 +913,84 @@ class BoTorchAcquisition(AcquisitionFunction):
         if self.best_f_variable is not None and self.best_f_variable in dataset:
             best_f = float(dataset[self.best_f_variable].values[()])
         else:
-            best_f = get_observed_best_f(train_y)
+            best_f = get_observed_best_f(
+                train_y,
+                objective_direction=self.objective_direction,
+            )
+
+        internal_best_f = -best_f if self.objective_direction == "minimize" else best_f
 
         acquisition_kind = self.acquisition_kind
         if acquisition_kind == "auto":
             acquisition_kind = "qlogei" if self.count > 1 else "logei"
 
-        if acquisition_kind == "qlogei":
-            decision_values = evaluate_qlog_expected_improvement(
+        # Evaluate acquisition function on the grid for decision surface
+        if acquisition_kind == "logei":
+            acq_values = evaluate_log_expected_improvement(
                 model=model,
                 candidate_x=candidate_x,
-                best_f=best_f,
+                best_f=internal_best_f,
+            )
+        else:  # qlogei
+            acq_values = evaluate_qlog_expected_improvement(
+                model=model,
+                candidate_x=candidate_x,
+                best_f=internal_best_f,
                 q=self.count,
             )
-        else:
-            decision_values = evaluate_log_expected_improvement(
-                model=model,
-                candidate_x=candidate_x,
-                best_f=best_f,
-            )
-
+        
+        # Create decision_surface by reshaping acquisition values to grid structure
+        grid_variable_data = dataset[self.grid_variable]
+        acq_numpy = acq_values.detach().cpu().numpy().reshape(-1)
+        
+        # Reshape to match the grid structure (all dims except the sample dimension)
+        grid_shape = grid_variable_data.shape
         decision_surface = xr.DataArray(
-            decision_values.detach().cpu().numpy(),
-            dims=(self.grid_dim,),
-            coords={self.grid_dim: dataset[self.grid_variable][self.grid_dim].values},
+            acq_numpy.reshape(grid_shape[:-1]) if len(grid_shape) > 1 else acq_numpy,
+            dims=grid_variable_data.dims[:-1],
+            coords={dim: grid_variable_data.coords[dim] for dim in grid_variable_data.dims[:-1]},
         )
-
-        finite_values = np.isfinite(decision_surface.values)
-        if finite_values.any():
-            finite_surface = decision_surface.where(finite_values, other=0.0)
-            span = finite_surface.max() - finite_surface.min()
-            if float(span.values if hasattr(span, "values") else span) > 1e-16:
-                decision_surface = (finite_surface - finite_surface.min()) / span
-            else:
-                decision_surface = finite_surface
-        else:
-            decision_surface = xr.zeros_like(decision_surface)
-
-        self.acquisition["decision_surface"] = decision_surface
-
-        excluded_comps = self._get_excluded_comps(dataset)
-        if excluded_comps is not None:
-            self.acquisition["excluded_comps"] = excluded_comps
-            self.exclude_previous_samples(self.acquisition)
-
-        self.output[self._prefix_output("decision_surface")] = self.acquisition["decision_surface"]
+        
+        self.output[self._prefix_output("decision_surface")] = decision_surface
         self.output[self._prefix_output("decision_surface")].attrs["description"] = (
-            "The final acquisition surface that is evaluated to determine the next_sample"
+            "Acquisition function values evaluated on the grid"
         )
 
-        self.get_next_samples(self.acquisition)
+        # Use BoTorch's optimize_acqf to find optimal points
+        optimized_x, _ = optimize_acquisition_function(
+            model=model,
+            candidate_x=candidate_x,
+            best_f=internal_best_f,
+            acquisition_kind=acquisition_kind,
+            q=self.count,
+            num_restarts=10,
+            raw_samples=128,
+        )
+        
+        # Convert optimized points to numpy array and create output
+        optimized_points = optimized_x.detach().cpu().numpy()
+        
+        # Handle single vs. batch optimization
+        if optimized_points.ndim == 1:
+            optimized_points = optimized_points[np.newaxis, :]
+        
+        # Get component names from the feature input variable
+        component_coords = dataset[self.feature_input_variable].coords.get(
+            "component", None
+        )
+        
+        # Create output for next samples
+        next_samples = xr.DataArray(
+            optimized_points,
+            dims=("next_sample", "component"),
+            coords={
+                "component": component_coords.values if component_coords is not None else range(optimized_points.shape[1])
+            },
+        )
+        
+        self.output[self.output_variable] = next_samples
+        self.output[self.output_variable].attrs["description"] = (
+            "Next sample point(s) optimized using BoTorch acquisition function"
+        )
+        
         return self

@@ -14,6 +14,15 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 torch.set_default_dtype(torch.double)
 
 from AFL.double_agent.Extrapolator import Extrapolator
+from AFL.double_agent.util import (
+    bounds_from_tensor,
+    dataset_to_botorch_candidates,
+    dataset_to_botorch_training_data,
+    fit_single_task_gp,
+    get_observed_best_f,
+    optimize_posterior_mean,
+    posterior_to_xarray,
+)
 
 class DirichletGPExtrapolator(Extrapolator):
     """Gaussian Process classifier for extrapolating class labels using Dirichlet likelihood.
@@ -460,5 +469,136 @@ class GPModel(ExactGP):
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
         return MultivariateNormal(mean_x, covar_x)
+
+
+class BoTorchRegressor(Extrapolator):
+    """Bayesian optimization regressor using BoTorch for Gaussian Process modeling.
+    
+    This extrapolator uses BoTorch's SingleTaskGP model with optional posterior optimization
+    to fit a Gaussian Process to training data and make predictions on a grid, while optionally
+    optimizing the posterior mean to find the best predicted point.
+    
+    Parameters
+    ----------
+    feature_input_variable : str
+        Name of the input feature variable in the dataset.
+    predictor_input_variable : str
+        Name of the output variable to predict in the dataset.
+    output_prefix : str
+        Prefix for naming output variables.
+    grid_variable : str
+        Name of the prediction grid variable in the dataset.
+    grid_dim : str
+        Dimension name for grid points.
+    sample_dim : str
+        Dimension name for training samples.
+    objective_direction : str, default="minimize"
+        Whether to minimize or maximize the objective ("minimize" or "maximize").
+    standardize : bool, default=True
+        Whether to standardize the training data.
+    posterior_optimize : bool, default=False
+        Whether to optimize the posterior mean to find the best point.
+    posterior_optimize_restarts : int, default=10
+        Number of restarts for posterior optimization.
+    posterior_optimize_raw_samples : int, default=128
+        Number of raw samples for posterior optimization.
+    name : str, default="BoTorchRegressor"
+        Name identifier for the extrapolator.
+    
+    Outputs
+    -------
+    mean : xr.DataArray
+        Predicted mean at each grid point.
+    variance : xr.DataArray
+        Predicted variance at each grid point.
+    best_f : xr.DataArray
+        Best observed or optimized objective value.
+    best_x : xr.DataArray
+        Best observed or optimized point (if posterior_optimize=True).
+    """
+    
+    def __init__(
+        self,
+        feature_input_variable: str,
+        predictor_input_variable: str,
+        output_prefix: str,
+        grid_variable: str,
+        grid_dim: str,
+        sample_dim: str,
+        objective_direction: str = "minimize",
+        standardize: bool = True,
+        posterior_optimize: bool = False,
+        posterior_optimize_restarts: int = 10,
+        posterior_optimize_raw_samples: int = 128,
+        name: str = "BoTorchRegressor",
+    ) -> None:
+        super().__init__(
+            name=name,
+            feature_input_variable=feature_input_variable,
+            predictor_input_variable=predictor_input_variable,
+            output_variables=["mean", "variance", "best_f"],
+            output_prefix=output_prefix,
+            grid_variable=grid_variable,
+            grid_dim=grid_dim,
+            sample_dim=sample_dim,
+        )
+        self.objective_direction = objective_direction
+        self.standardize = standardize
+        self.posterior_optimize = posterior_optimize
+        self.posterior_optimize_restarts = posterior_optimize_restarts
+        self.posterior_optimize_raw_samples = posterior_optimize_raw_samples
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        train_x, train_y = dataset_to_botorch_training_data(
+            dataset=dataset,
+            feature_input_variable=self.feature_input_variable,
+            predictor_input_variable=self.predictor_input_variable,
+            sample_dim=self.sample_dim,
+            objective_direction=self.objective_direction,
+        )
+        candidate_x = dataset_to_botorch_candidates(
+            dataset=dataset,
+            grid_variable=self.grid_variable,
+            grid_dim=self.grid_dim,
+        )
+        model = fit_single_task_gp(
+            train_x=train_x,
+            train_y=train_y,
+            standardize=self.standardize,
+        )
+        posterior = model.posterior(candidate_x)
+        self.grid = dataset[self.grid_variable]
+        self.output.update(
+            posterior_to_xarray(
+                posterior=posterior,
+                grid_index=dataset[self.grid_variable][self.grid_dim],
+                output_prefix=self.output_prefix,
+                objective_direction=self.objective_direction,
+            )
+        )
+
+        best_f = get_observed_best_f(
+            train_y,
+            objective_direction=self.objective_direction,
+        )
+        best_x = None
+        if self.posterior_optimize:
+            best_x, best_f = optimize_posterior_mean(
+                model=model,
+                bounds=bounds_from_tensor(candidate_x),
+                q=1,
+                num_restarts=self.posterior_optimize_restarts,
+                raw_samples=self.posterior_optimize_raw_samples,
+                objective_direction=self.objective_direction,
+            )
+
+        self.output[self._prefix_output("best_f")] = xr.DataArray(best_f)
+        if best_x is not None:
+            self.output[self._prefix_output("best_x")] = xr.DataArray(
+                best_x.squeeze(0).detach().cpu().numpy(),
+                dims=("component",),
+                coords={"component": dataset[self.feature_input_variable].coords["component"].values},
+            )
+        return self
 
 
