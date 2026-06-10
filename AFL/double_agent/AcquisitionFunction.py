@@ -15,6 +15,7 @@ Key features:
 """
 
 import copy
+import warnings
 from typing import List, Optional
 
 import numpy as np
@@ -31,6 +32,7 @@ from AFL.double_agent.util import (
     fit_single_task_gp,
     get_observed_best_f,
     listify,
+    make_simplex_constraints,
     optimize_acquisition_function,
 )
 
@@ -896,6 +898,59 @@ class PseudoUCB(AcquisitionFunction):
 
 
 class BoTorchAcquisition(AcquisitionFunction):
+    """BoTorch-based acquisition optimization with optional simplex constraints.
+
+    Parameters
+    ----------
+    feature_input_variable : str
+        Name of the feature variable used to fit the surrogate model.
+    predictor_input_variable : str
+        Name of the scalar objective variable.
+    grid_variable : str
+        Name of the candidate grid variable.
+    grid_dim : str, default="grid"
+        Dimension indexing candidate grid points.
+    sample_dim : str, default="sample"
+        Dimension indexing observed samples.
+    objective_direction : str, default="maximize"
+        Whether the objective is maximized or minimized.
+    standardize : bool, default=True
+        Whether to standardize the GP outputs.
+    output_prefix : str, optional
+        Prefix applied to generated outputs.
+    output_variable : str, default="next_samples"
+        Name of the selected next-sample output variable.
+    decision_rtol : float, default=0.05
+        Relative tolerance used by the base acquisition class.
+    excluded_comps_variables : list[str], optional
+        Previously sampled compositions to exclude.
+    excluded_comps_dim : str, optional
+        Component dimension for excluded compositions.
+    exclusion_radius : float, default=1e-3
+        Radius used for exclusion masking.
+    count : int, default=1
+        Number of points to optimize jointly.
+    acquisition_kind : str, default="auto"
+        Acquisition function family. "auto" selects logEI or qLogEI from `count`.
+    best_f_variable : str, optional
+        Dataset variable containing the incumbent objective value.
+    is_simplex : bool, default=False
+        When True, the acquisition surrogate applies an ilr transform to
+        simplex-valued inputs, fits a Mat\'ern-$\nu=2.5$ ARD covariance in the
+        transformed coordinates, and automatically constrains optimization to
+        the simplex.
+
+        Notes
+        -----
+        The simplex is mathematically defined by the equality
+        :math:`\sum_i x_i = 1` together with non-negativity. BoTorch's optimizer
+        interface consumes linear inequality constraints, so the equality is
+        represented as the equivalent pair
+        :math:`\sum_i x_i \ge 1` and :math:`-\sum_i x_i \ge -1`.
+    name : str, default="BoTorchAcquisition"
+        Pipeline operation name.
+    """
+
     def __init__(
         self,
         feature_input_variable: str,
@@ -914,6 +969,7 @@ class BoTorchAcquisition(AcquisitionFunction):
         count: int = 1,
         acquisition_kind: str = "auto",
         best_f_variable: Optional[str] = None,
+        is_simplex: bool = False,
         name: str = "BoTorchAcquisition",
     ) -> None:
         super().__init__(
@@ -936,6 +992,7 @@ class BoTorchAcquisition(AcquisitionFunction):
         self.standardize = standardize
         self.acquisition_kind = acquisition_kind
         self.best_f_variable = best_f_variable
+        self.is_simplex = is_simplex
         self.acquisition = None
 
     def calculate(self, dataset: xr.Dataset) -> Self:
@@ -955,6 +1012,7 @@ class BoTorchAcquisition(AcquisitionFunction):
             train_x=train_x,
             train_y=train_y,
             standardize=self.standardize,
+            is_simplex=self.is_simplex,
         )
 
         if self.best_f_variable is not None and self.best_f_variable in dataset:
@@ -966,6 +1024,20 @@ class BoTorchAcquisition(AcquisitionFunction):
             )
 
         internal_best_f = -best_f if self.objective_direction == "minimize" else best_f
+
+        regressor_is_simplex = None
+        if f"{self.output_prefix}_is_simplex" in dataset:
+            regressor_is_simplex = bool(dataset[f"{self.output_prefix}_is_simplex"].item())
+
+        if regressor_is_simplex and not self.is_simplex:
+            warnings.warn(
+                "The regressor used simplex-aware geometry but the acquisition model does not. "
+                "This can make the acquisition geometry inconsistent with the fitted surrogate.",
+                stacklevel=2,
+            )
+        inequality_constraints = (
+            make_simplex_constraints(candidate_x.shape[-1]) if self.is_simplex else None
+        )
 
         acquisition_kind = self.acquisition_kind
         if acquisition_kind == "auto":
@@ -1012,6 +1084,7 @@ class BoTorchAcquisition(AcquisitionFunction):
             q=self.count,
             num_restarts=10,
             raw_samples=128,
+            inequality_constraints=inequality_constraints,
         )
         
         # Convert optimized points to numpy array and create output

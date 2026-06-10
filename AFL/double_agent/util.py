@@ -5,7 +5,7 @@ A collection of helper methods/classes
 from __future__ import annotations
 
 import inspect
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Sequence
 
 import numpy as np
 import torch
@@ -15,6 +15,54 @@ from AFL.double_agent.PipelineOp import PipelineOp
 
 
 ObjectiveDirection = Literal["maximize", "minimize"]
+
+
+class ILRTransform(torch.nn.Module):
+    r"""Isometric log-ratio transform used for simplex-aware Gaussian processes.
+
+    The transform maps each composition :math:`x \in S^D` into orthonormal
+    Euclidean coordinates via
+
+    .. math::
+        \operatorname{ilr}(x) = \operatorname{clr}(x) V,
+
+    where :math:`V \in \mathbb{R}^{D \times (D-1)}` is a Helmert basis for the
+    clr hyperplane and
+
+    .. math::
+        \operatorname{clr}(x)_i = \log(x_i) - \frac{1}{D}\sum_{j=1}^{D}\log(x_j).
+
+    The Gaussian process is then fit with a Mat\'ern-$\nu=2.5$ kernel with
+    automatic relevance determination in the transformed coordinates:
+
+    .. math::
+        k_S(x, x') = k_{\mathrm{Mat\'ern}}\left(\operatorname{ilr}(x), \operatorname{ilr}(x')\right).
+
+    This preserves Aitchison geometry while using the simplex's intrinsic
+    :math:`D-1` dimensional Euclidean representation.
+    """
+
+    def __init__(self, n_dim: int, eps: float = 1e-12) -> None:
+        super().__init__()
+        if n_dim < 2:
+            raise ValueError("ILRTransform requires at least two simplex components.")
+        self.eps = eps
+        self.register_buffer("basis", self._helmert_submatrix(n_dim))
+
+    @staticmethod
+    def _helmert_submatrix(n_dim: int) -> torch.Tensor:
+        basis = torch.zeros((n_dim, n_dim - 1), dtype=torch.double)
+        for column in range(n_dim - 1):
+            scale = torch.sqrt(torch.tensor((column + 1) * (column + 2), dtype=torch.double))
+            basis[: column + 1, column] = 1.0 / scale
+            basis[column + 1, column] = -(column + 1) / scale
+        return basis
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = torch.clamp(x, min=self.eps)
+        log_x = torch.log(x)
+        clr = log_x - log_x.mean(dim=-1, keepdim=True)
+        return clr @ self.basis
 
 
 def listify(obj):
@@ -77,11 +125,12 @@ def extract_parameters(op: PipelineOp, method: str = "__init__") -> Dict:
 
 def import_botorch():
     try:
-        from botorch.acquisition import LogExpectedImprovement, qLogExpectedImprovement
+        from botorch.acquisition import LogExpectedImprovement, PosteriorMean, qLogExpectedImprovement
         from botorch.fit import fit_gpytorch_mll
         from botorch.models import SingleTaskGP
         from botorch.models.transforms.outcome import Standardize
         from botorch.optim import optimize_acqf
+        from gpytorch.kernels import MaternKernel, ScaleKernel
         from gpytorch.mlls import ExactMarginalLogLikelihood
     except ImportError as exc:
         raise ImportError(
@@ -91,6 +140,9 @@ def import_botorch():
     return {
         "ExactMarginalLogLikelihood": ExactMarginalLogLikelihood,
         "LogExpectedImprovement": LogExpectedImprovement,
+        "MaternKernel": MaternKernel,
+        "PosteriorMean": PosteriorMean,
+        "ScaleKernel": ScaleKernel,
         "SingleTaskGP": SingleTaskGP,
         "Standardize": Standardize,
         "fit_gpytorch_mll": fit_gpytorch_mll,
@@ -131,20 +183,67 @@ def dataset_to_botorch_candidates(
     return _as_float_tensor(dataset[grid_variable], grid_dim)
 
 
+def make_simplex_constraints(n_dim: int) -> list[tuple[torch.Tensor, torch.Tensor, float]]:
+    """Return BoTorch-compatible simplex constraints.
+
+    BoTorch's `optimize_acqf` accepts linear inequality constraints of the form
+
+    .. math::
+        \sum_i a_i x_i \ge b.
+
+    A simplex equality :math:`\sum_i x_i = 1` is therefore encoded as the pair
+
+    .. math::
+        \sum_i x_i \ge 1, \qquad -\sum_i x_i \ge -1,
+
+    which together are exactly equivalent to the equality constraint. This helper
+    returns that pair so the optimizer can enforce the simplex using the API it
+    already exposes.
+    """
+    indices = torch.arange(n_dim, dtype=torch.long)
+    coefficients = torch.ones(n_dim, dtype=torch.double)
+    return [(indices, coefficients, 1.0), (indices, -coefficients, -1.0)]
+
+
+def sample_dirichlet_initial_conditions(
+    bounds: torch.Tensor,
+    q: int,
+    num_restarts: int,
+    alpha: float = 1.0,
+) -> torch.Tensor:
+    n_dim = bounds.shape[-1]
+    concentration = torch.full((n_dim,), alpha, dtype=bounds.dtype, device=bounds.device)
+    distribution = torch.distributions.Dirichlet(concentration)
+    return distribution.sample((num_restarts, q))
+
+
 def fit_single_task_gp(
     train_x: torch.Tensor,
     train_y: torch.Tensor,
     standardize: bool = True,
+    is_simplex: bool = False,
 ):
     botorch = import_botorch()
     outcome_transform = botorch["Standardize"](m=train_y.shape[-1]) if standardize else None
-    model = botorch["SingleTaskGP"](
-        train_X=train_x,
-        train_Y=train_y,
-        outcome_transform=outcome_transform,
-    )
+    simplex_transform = ILRTransform(train_x.shape[-1]) if is_simplex else None
+    transformed_x = simplex_transform(train_x) if simplex_transform is not None else train_x
+    model_kwargs: dict[str, Any] = {
+        "train_X": transformed_x,
+        "train_Y": train_y,
+        "outcome_transform": outcome_transform,
+    }
+
+    if is_simplex:
+        ard_num_dims = transformed_x.shape[-1]
+        model_kwargs["covar_module"] = botorch["ScaleKernel"](
+            botorch["MaternKernel"](nu=2.5, ard_num_dims=ard_num_dims)
+        )
+
+    model = botorch["SingleTaskGP"](**model_kwargs)
     mll = botorch["ExactMarginalLogLikelihood"](model.likelihood, model)
     botorch["fit_gpytorch_mll"](mll)
+    model._simplex_input_transform = simplex_transform
+    model._is_simplex = is_simplex
     return model
 
 
@@ -177,6 +276,13 @@ def get_observed_best_f(
     return best_f
 
 
+def _transform_model_inputs(model, x: torch.Tensor) -> torch.Tensor:
+    transform = getattr(model, "_simplex_input_transform", None)
+    if transform is None:
+        return x
+    return transform(x)
+
+
 def optimize_posterior_mean(
     model,
     bounds: torch.Tensor,
@@ -184,16 +290,35 @@ def optimize_posterior_mean(
     num_restarts: int = 10,
     raw_samples: int = 128,
     objective_direction: ObjectiveDirection = "maximize",
+    inequality_constraints: Sequence[tuple[torch.Tensor, torch.Tensor, float]] | None = None,
+    batch_initial_conditions: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, float]:
     botorch = import_botorch()
-    from botorch.acquisition import PosteriorMean
+
+    class _TransformedPosteriorMean(torch.nn.Module):
+        def __init__(self, gp_model) -> None:
+            super().__init__()
+            self.posterior_mean = botorch["PosteriorMean"](gp_model)
+            self.gp_model = gp_model
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.posterior_mean(_transform_model_inputs(self.gp_model, x))
+
+    if batch_initial_conditions is None and inequality_constraints is not None:
+        batch_initial_conditions = sample_dirichlet_initial_conditions(
+            bounds=bounds,
+            q=q,
+            num_restarts=num_restarts,
+        )
 
     candidates, values = botorch["optimize_acqf"](
-        acq_function=PosteriorMean(model),
+        acq_function=_TransformedPosteriorMean(model),
         bounds=bounds,
         q=q,
         num_restarts=num_restarts,
         raw_samples=raw_samples,
+        inequality_constraints=inequality_constraints,
+        batch_initial_conditions=batch_initial_conditions,
     )
     best_f = float(values.max().detach().cpu().item())
     if objective_direction == "minimize":
@@ -214,7 +339,8 @@ def evaluate_log_expected_improvement(
 ) -> torch.Tensor:
     botorch = import_botorch()
     acquisition = botorch["LogExpectedImprovement"](model=model, best_f=best_f)
-    return acquisition(candidate_x.unsqueeze(-2)).detach()
+    transformed_x = _transform_model_inputs(model, candidate_x)
+    return acquisition(transformed_x.unsqueeze(-2)).detach()
 
 
 def evaluate_qlog_expected_improvement(
@@ -225,16 +351,17 @@ def evaluate_qlog_expected_improvement(
 ) -> torch.Tensor:
     botorch = import_botorch()
     acquisition = botorch["qLogExpectedImprovement"](model=model, best_f=best_f)
+    transformed_x = _transform_model_inputs(model, candidate_x)
     if q <= 1:
-        return acquisition(candidate_x.unsqueeze(-2)).detach()
+        return acquisition(transformed_x.unsqueeze(-2)).detach()
 
     values = []
-    total = candidate_x.shape[0]
+    total = transformed_x.shape[0]
     for start in range(0, total - q + 1):
-        batch = candidate_x[start : start + q]
+        batch = transformed_x[start : start + q]
         values.append(acquisition(batch.unsqueeze(0)).reshape(()))
 
-    padded = torch.full((total,), float("-inf"), dtype=candidate_x.dtype)
+    padded = torch.full((total,), float("-inf"), dtype=transformed_x.dtype)
     if values:
         padded[: len(values)] = torch.stack(values)
     return padded
@@ -248,14 +375,33 @@ def optimize_acquisition_function(
     q: int = 1,
     num_restarts: int = 10,
     raw_samples: int = 128,
+    inequality_constraints: Sequence[tuple[torch.Tensor, torch.Tensor, float]] | None = None,
+    batch_initial_conditions: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     botorch = import_botorch()
     bounds = bounds_from_tensor(candidate_x)
 
+    class _TransformedAcquisition(torch.nn.Module):
+        def __init__(self, base_acquisition, gp_model) -> None:
+            super().__init__()
+            self.base_acquisition = base_acquisition
+            self.gp_model = gp_model
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.base_acquisition(_transform_model_inputs(self.gp_model, x))
+
     if acquisition_kind == "qlogei":
-        acq_function = botorch["qLogExpectedImprovement"](model=model, best_f=best_f)
+        base_acq_function = botorch["qLogExpectedImprovement"](model=model, best_f=best_f)
     else:
-        acq_function = botorch["LogExpectedImprovement"](model=model, best_f=best_f)
+        base_acq_function = botorch["LogExpectedImprovement"](model=model, best_f=best_f)
+    acq_function = _TransformedAcquisition(base_acq_function, model)
+
+    if batch_initial_conditions is None and inequality_constraints is not None:
+        batch_initial_conditions = sample_dirichlet_initial_conditions(
+            bounds=bounds,
+            q=q,
+            num_restarts=num_restarts,
+        )
 
     candidates, values = botorch["optimize_acqf"](
         acq_function=acq_function,
@@ -263,6 +409,8 @@ def optimize_acquisition_function(
         q=q,
         num_restarts=num_restarts,
         raw_samples=raw_samples,
+        inequality_constraints=inequality_constraints,
+        batch_initial_conditions=batch_initial_conditions,
     )
 
     return candidates.detach(), values.detach()

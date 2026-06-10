@@ -20,6 +20,7 @@ from AFL.double_agent.util import (
     dataset_to_botorch_training_data,
     fit_single_task_gp,
     get_observed_best_f,
+    make_simplex_constraints,
     optimize_posterior_mean,
     posterior_to_xarray,
 )
@@ -502,6 +503,11 @@ class BoTorchRegressor(Extrapolator):
         Number of restarts for posterior optimization.
     posterior_optimize_raw_samples : int, default=128
         Number of raw samples for posterior optimization.
+    is_simplex : bool, default=False
+        When True, the regressor applies an ilr transform to simplex-valued
+        inputs and fits a Mat\'ern-$\nu=2.5$ ARD covariance in the transformed
+        coordinates. Posterior optimization is then automatically constrained
+        to the simplex.
     name : str, default="BoTorchRegressor"
         Name identifier for the extrapolator.
     
@@ -530,6 +536,7 @@ class BoTorchRegressor(Extrapolator):
         posterior_optimize: bool = False,
         posterior_optimize_restarts: int = 10,
         posterior_optimize_raw_samples: int = 128,
+        is_simplex: bool = False,
         name: str = "BoTorchRegressor",
     ) -> None:
         super().__init__(
@@ -547,6 +554,7 @@ class BoTorchRegressor(Extrapolator):
         self.posterior_optimize = posterior_optimize
         self.posterior_optimize_restarts = posterior_optimize_restarts
         self.posterior_optimize_raw_samples = posterior_optimize_raw_samples
+        self.is_simplex = is_simplex
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         train_x, train_y = dataset_to_botorch_training_data(
@@ -565,8 +573,12 @@ class BoTorchRegressor(Extrapolator):
             train_x=train_x,
             train_y=train_y,
             standardize=self.standardize,
+            is_simplex=self.is_simplex,
         )
-        posterior = model.posterior(candidate_x)
+        posterior_inputs = getattr(model, "_simplex_input_transform", None)
+        posterior = model.posterior(
+            posterior_inputs(candidate_x) if posterior_inputs is not None else candidate_x
+        )
         self.grid = dataset[self.grid_variable]
         self.output.update(
             posterior_to_xarray(
@@ -582,6 +594,9 @@ class BoTorchRegressor(Extrapolator):
             objective_direction=self.objective_direction,
         )
         best_x = None
+        inequality_constraints = (
+            make_simplex_constraints(candidate_x.shape[-1]) if self.is_simplex else None
+        )
         if self.posterior_optimize:
             best_x, best_f = optimize_posterior_mean(
                 model=model,
@@ -590,9 +605,11 @@ class BoTorchRegressor(Extrapolator):
                 num_restarts=self.posterior_optimize_restarts,
                 raw_samples=self.posterior_optimize_raw_samples,
                 objective_direction=self.objective_direction,
+                inequality_constraints=inequality_constraints,
             )
 
         self.output[self._prefix_output("best_f")] = xr.DataArray(best_f)
+        self.output[self._prefix_output("is_simplex")] = xr.DataArray(bool(self.is_simplex))
         if best_x is not None:
             self.output[self._prefix_output("best_x")] = xr.DataArray(
                 best_x.squeeze(0).detach().cpu().numpy(),
