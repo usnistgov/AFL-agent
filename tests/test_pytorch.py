@@ -46,15 +46,19 @@ def test_calculate_single_class_branch():
     )
     result = extrap.calculate(dataset)
 
+    mean_key = extrap._prefix_output("mean")
+    entropy_key = extrap._prefix_output("entropy")
+    prob_key = extrap._prefix_output("y_prob")
+
     # Check outputs exist
-    assert f"out_mean" in result.output
-    assert f"out_entropy" in result.output
-    assert f"out_y_prob" in result.output
+    assert mean_key in result.output
+    assert entropy_key in result.output
+    assert prob_key in result.output
 
     # Shapes match grid
     n_grid = dataset["grid"].shape[0]
-    assert result.output["out_mean"].shape[0] == n_grid
-    assert result.output["out_y_prob"].shape[0] == n_grid
+    assert result.output[mean_key].shape[0] == n_grid
+    assert result.output[prob_key].shape[0] == n_grid
 
 
 def test_predict_mll_with_dummy_model():

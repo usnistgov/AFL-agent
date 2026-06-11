@@ -207,15 +207,16 @@ class DirichletGPExtrapolator(Extrapolator):
         self.grid = dataset[self.grid_variable]
 
         if len(np.unique(y)) == 1:
-            # Handle degenerate case where all samples have the same label
+            # Handle degenerate case where all samples have the same label.
+            n_grid = self.grid.sizes[self.grid_dim]
             self.output[self._prefix_output("mean")] = xr.DataArray(
-                np.ones(dataset.grid.shape), dims=[self.grid_dim]
+                np.ones(n_grid), dims=[self.grid_dim]
             )
             self.output[self._prefix_output("entropy")] = xr.DataArray(
-                np.ones(dataset.grid.shape), dims=[self.grid_dim]
+                np.ones(n_grid), dims=[self.grid_dim]
             )
             self.output[self._prefix_output("y_prob")] = xr.DataArray(
-                np.ones(dataset.grid.shape), dims=[self.grid_dim]
+                np.ones(n_grid), dims=[self.grid_dim]
             )
 
         else:
@@ -285,14 +286,20 @@ class DirichletGPExtrapolator(Extrapolator):
         pred_labels = probabilities.argmax(dim=0) # shape (N,)
         entropy = torch.special.entr(probabilities).sum(dim=0) # shape (N,)
 
-        gradient = torch.autograd.grad(
-            outputs=entropy,
-            inputs=xt,
-            grad_outputs=torch.ones_like(entropy),
-            create_graph=False,
-            retain_graph=False,
-            only_inputs=True
-        )[0]  # (N, sample_dim)
+        if entropy.requires_grad:
+            gradient = torch.autograd.grad(
+                outputs=entropy,
+                inputs=xt,
+                grad_outputs=torch.ones_like(entropy),
+                create_graph=False,
+                retain_graph=False,
+                only_inputs=True,
+                allow_unused=True,
+            )[0]
+            if gradient is None:
+                gradient = torch.zeros_like(xt)
+        else:
+            gradient = torch.zeros_like(xt)
 
         return pred_labels, probabilities.T, entropy, gradient
 
