@@ -1,6 +1,7 @@
 from .Pipeline import *
 from .AcquisitionFunction import *
 from .Extrapolator import *
+from .PyTorchExtrapolator import *
 from .PairMetric import *
 from .Labeler import *
 from .Preprocessor import *

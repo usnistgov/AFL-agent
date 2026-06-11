@@ -71,14 +71,21 @@ graph = [
 ]
 
 tensorflow = [
-    "tensorflow>=2.18",
-    "gpflow",
+    "tensorflow>=2.18; python_version < '3.13'",
+    "gpflow; python_version < '3.13'",
 ]
 
 pytorch = [
     "torch",
     "torchvision",
     "gpytorch"
+]
+
+botorch = [
+    "torch",
+    "torchvision",
+    "gpytorch",
+    "botorch"
 ]
 
 apdist = [
@@ -96,15 +103,19 @@ automation = [
     "requests",
 ]
 
+mlmodels = [
+    "TreeHierarchy @ git+https://github.com/grahamRobertsW/TreeHierarchy"
+]
+
 dev = [
     "black",
     "mypy",
-    "sphinx",
+    "sphinx<8",
     "sphinx-rtd-theme",
     "sphinxcontrib-apidoc",
     "sphinxcontrib-napoleon",
     "sphinx-copybutton",
-    "pydata-sphinx-theme",
+    "pydata-sphinx-theme<0.16",
     "sphinx-autosummary-accessors",
     "pytest",
     "pytest-cov",
@@ -113,6 +124,10 @@ dev = [
     "hypothesis",
     "coverage",
     "nbsphinx",
+    "torch",
+    "torchvision",
+    "gpytorch",
+    "botorch"
 ]
 
 all = [
@@ -122,8 +137,8 @@ all = [
     "ipympl",
     "nodejs",
     # "pygraphviz", #leave out, breaks documentation build
-    "tensorflow>=2.18",
-    "gpflow",
+    "tensorflow>=2.18; python_version < '3.13'",
+    "gpflow; python_version < '3.13'",
     "torch",
     "torchvision",
     "flask<2.3",
@@ -136,12 +151,12 @@ all = [
     "requests",
     "black",
     "mypy",
-    "sphinx",
+    "sphinx<9",
     "sphinx-rtd-theme",
     "sphinxcontrib-apidoc",
     "sphinxcontrib-napoleon",
     "sphinx-copybutton",
-    "pydata-sphinx-theme",
+    "pydata-sphinx-theme<0.16",
     "sphinx-autosummary-accessors",
     "pytest",
     "pytest-cov",
@@ -157,6 +172,10 @@ packages = ["AFL"]
 include-package-data = true
 include = [
     "AFL/double_agent/prefab/*.json",
+    "AFL/double_agent/apps/**/*.html",
+    "AFL/double_agent/apps/**/*.css",
+    "AFL/double_agent/apps/**/*.js",
+    "AFL/double_agent/apps/**/*.svg",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -209,8 +228,8 @@ markers = [
 
 # Configure test timing
 minversion = 6.0
-xvs_time = 10
-xvs_trials = 5
+# xvs_time = 10
+# xvs_trials = 5
 
 # Log configuration
 log_cli = false

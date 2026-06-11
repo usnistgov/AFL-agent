@@ -15,6 +15,7 @@ Key features:
 """
 
 import copy
+import warnings
 from typing import List, Optional
 
 import numpy as np
@@ -23,8 +24,17 @@ from typing_extensions import Self
 
 from AFL.double_agent.Generator import GaussianPoints
 from AFL.double_agent.PipelineOp import PipelineOp
-from AFL.double_agent.util import listify
-
+from AFL.double_agent.util import (
+    dataset_to_botorch_candidates,
+    dataset_to_botorch_training_data,
+    evaluate_log_expected_improvement,
+    evaluate_qlog_expected_improvement,
+    fit_single_task_gp,
+    get_observed_best_f,
+    listify,
+    make_simplex_constraints,
+    optimize_acquisition_function,
+)
 
 class AcquisitionError(Exception):
     """Exception raised when an error in the acquisition decision occurs"""
@@ -87,6 +97,7 @@ class AcquisitionFunction(PipelineOp):
         output_prefix: Optional[str] = None,
         output_variable: str = "next_compositions",
         decision_rtol: float = 0.05,
+        random_fraction: float = 0.0,
         excluded_comps_variables: Optional[List[str]] = None,
         excluded_comps_dim: Optional[str] = None,
         exclusion_radius: float = 1e-3,
@@ -108,6 +119,11 @@ class AcquisitionFunction(PipelineOp):
         self.grid_variable = grid_variable
         self.grid_dim = grid_dim
         self.decision_rtol = decision_rtol
+        if random_fraction < 0.0 or random_fraction > 1.0:
+            raise ValueError(
+                f"random_fraction must be within [0, 1], got {random_fraction}."
+            )
+        self.random_fraction = random_fraction
         self.exclusion_radius = exclusion_radius
 
     def calculate(self, dataset: xr.Dataset) -> Self:
@@ -225,8 +241,9 @@ class AcquisitionFunction(PipelineOp):
         """Choose the next compositions by evaluating the decision surface.
 
         This method finds all compositions that are within decision_rtol of the maximum values
-        of the decision surface. From this set of compositions, it randomly chooses count
-        compositions as the next sample compositions.
+        of the decision surface, then performs epsilon-greedy sampling for each requested pick:
+        with probability random_fraction, pick from all valid points; otherwise pick from the
+        top decision_rtol set.
 
         Parameters
         ----------
@@ -252,28 +269,60 @@ class AcquisitionFunction(PipelineOp):
             {self.grid_dim: np.arange(dataset.sizes[self.grid_dim])}
         )
 
-        # find indices of all samples within self.decision_rtol of the maximum
-        close_mask = np.isclose(
-            dataset.decision_surface,
-            dataset.decision_surface.max(),
-            rtol=self.decision_rtol,
-            atol=0,
-        )
-        indices = dataset.sel({self.grid_dim: close_mask})[self.grid_dim].values
+        decision_values = dataset["decision_surface"].values
+        valid_mask = np.isfinite(decision_values)
+        if not np.any(valid_mask):
+            raise AcquisitionError(
+                "Decision surface does not contain any finite values."
+            )
 
-        if len(indices) < self.count:
+        all_indices = dataset[self.grid_dim].values
+        valid_indices = all_indices[valid_mask]
+        if len(valid_indices) < self.count:
             raise AcquisitionError(
                 (
-                    """Unable to find gridpoint in decision surface that satisfies all constraints. """
-                    f"""This often occurs when acquisition_rtol (currently {self.decision_rtol}) """
-                    f"""is too low or when the exclusion_radius (currently {self.exclusion_radius}) """
-                    """is too high for the current problem state."""
+                    "Unable to find enough valid gridpoints in decision surface to "
+                    f"sample {self.count} points."
                 )
             )
 
-        # randomly shuffle and gather the requested number of indices and compositions
-        np.random.shuffle(indices)
-        next_indices = indices[: self.count]
+        # find indices of all samples within self.decision_rtol of the maximum
+        close_mask = np.isclose(
+            decision_values,
+            np.max(decision_values[valid_mask]),
+            rtol=self.decision_rtol,
+            atol=0,
+        )
+        close_mask &= valid_mask
+        close_indices = all_indices[close_mask]
+
+        all_pool = set(valid_indices.tolist())
+        top_pool = set(close_indices.tolist())
+
+        next_indices = []
+        for _ in range(self.count):
+            if not all_pool:
+                raise AcquisitionError(
+                    "Unable to find enough valid gridpoints to satisfy requested sample count."
+                )
+
+            choose_random = np.random.random() < self.random_fraction
+            pool = all_pool if choose_random else top_pool
+            if not pool:
+                pool = all_pool if all_pool else top_pool
+            if not pool:
+                raise AcquisitionError(
+                    (
+                        "Unable to find gridpoint in decision surface that satisfies all constraints. "
+                        f"This can occur when acquisition_rtol (currently {self.decision_rtol}) is "
+                        f"too low or exclusion_radius (currently {self.exclusion_radius}) is too high."
+                    )
+                )
+
+            selected_index = int(np.random.choice(list(pool)))
+            next_indices.append(selected_index)
+            all_pool.discard(selected_index)
+            top_pool.discard(selected_index)
 
         next_samples = dataset.sel({self.grid_dim: next_indices}).comp_grid
         next_samples = next_samples.rename({self.grid_dim: "AF_sample"})
@@ -335,6 +384,7 @@ class RandomAF(AcquisitionFunction):
         output_prefix: Optional[str] = None,
         output_variable: str = "next_samples",
         decision_rtol: float = 0.05,
+        random_fraction: float = 0.0,
         excluded_comps_variables: Optional[str] = None,
         excluded_comps_dim: Optional[str] = None,
         exclusion_radius: float = 1e-3,
@@ -348,6 +398,7 @@ class RandomAF(AcquisitionFunction):
             output_prefix=output_prefix,
             output_variable=output_variable,
             decision_rtol=decision_rtol,
+            random_fraction=random_fraction,
             excluded_comps_variables=excluded_comps_variables,
             excluded_comps_dim=excluded_comps_dim,
             exclusion_radius=exclusion_radius,
@@ -400,6 +451,7 @@ class RandomAF(AcquisitionFunction):
         self.get_next_samples(self.acquisition)
 
         return self
+
 
 class MultimodalMask_MaxValueAF(AcquisitionFunction):
     """Acquisition function that selects points based on maximum values within specific phase regions.
@@ -465,6 +517,7 @@ class MultimodalMask_MaxValueAF(AcquisitionFunction):
             output_prefix: Optional[str] = None,
             output_variable: str = "next_samples",
             decision_rtol: float = 0.05,
+            random_fraction: float = 0.0,
             excluded_comps_variables: Optional[List[str]] = None,
             excluded_comps_dim: Optional[str] = None,
             exclusion_radius: float = 1e-3,
@@ -478,6 +531,7 @@ class MultimodalMask_MaxValueAF(AcquisitionFunction):
             output_prefix=output_prefix,
             output_variable=output_variable,
             decision_rtol=decision_rtol,
+            random_fraction=random_fraction,
             excluded_comps_variables=excluded_comps_variables,
             excluded_comps_dim=excluded_comps_dim,
             exclusion_radius=exclusion_radius,
@@ -610,6 +664,7 @@ class MaxValueAF(AcquisitionFunction):
         output_prefix: Optional[str] = None,
         output_variable: str = "next_samples",
         decision_rtol: float = 0.05,
+        random_fraction: float = 0.0,
         excluded_comps_variables: Optional[List[str]] = None,
         excluded_comps_dim: Optional[str] = None,
         exclusion_radius: float = 1e-3,
@@ -623,6 +678,7 @@ class MaxValueAF(AcquisitionFunction):
             output_prefix=output_prefix,
             output_variable=output_variable,
             decision_rtol=decision_rtol,
+            random_fraction=random_fraction,
             excluded_comps_variables=excluded_comps_variables,
             excluded_comps_dim=excluded_comps_dim,
             exclusion_radius=exclusion_radius,
@@ -753,6 +809,7 @@ class PseudoUCB(AcquisitionFunction):
         output_prefix: Optional[str] = None,
         output_variable: str = "next_samples",
         decision_rtol: float = 0.05,
+        random_fraction: float = 0.0,
         excluded_comps_variables: Optional[List[str]] = None,
         excluded_comps_dim: Optional[str] = None,
         exclusion_radius: float = 1e-3,
@@ -767,6 +824,7 @@ class PseudoUCB(AcquisitionFunction):
             output_prefix=output_prefix,
             output_variable=output_variable,
             decision_rtol=decision_rtol,
+            random_fraction=random_fraction,
             excluded_comps_variables=excluded_comps_variables,
             excluded_comps_dim=excluded_comps_dim,
             exclusion_radius=exclusion_radius,
@@ -836,5 +894,223 @@ class PseudoUCB(AcquisitionFunction):
         ] = "The final acquisition surface that is evaluated to determine the next_sample"
 
         self.get_next_samples(self.acquisition)
+        return self
 
+
+class BoTorchAcquisition(AcquisitionFunction):
+    """BoTorch-based acquisition optimization with optional simplex constraints.
+
+    Parameters
+    ----------
+    feature_input_variable : str
+        Name of the feature variable used to fit the surrogate model.
+    predictor_input_variable : str
+        Name of the scalar objective variable.
+    grid_variable : str
+        Name of the candidate grid variable.
+    grid_dim : str, default="grid"
+        Dimension indexing candidate grid points.
+    sample_dim : str, default="sample"
+        Dimension indexing observed samples.
+    objective_direction : str, default="maximize"
+        Whether the objective is maximized or minimized.
+    standardize : bool, default=True
+        Whether to standardize the GP outputs.
+    output_prefix : str, optional
+        Prefix applied to generated outputs.
+    output_variable : str, default="next_samples"
+        Name of the selected next-sample output variable.
+    decision_rtol : float, default=0.05
+        Relative tolerance used by the base acquisition class.
+    excluded_comps_variables : list[str], optional
+        Previously sampled compositions to exclude.
+    excluded_comps_dim : str, optional
+        Component dimension for excluded compositions.
+    exclusion_radius : float, default=1e-3
+        Radius used for exclusion masking.
+    count : int, default=1
+        Number of points to optimize jointly.
+    acquisition_kind : str, default="auto"
+        Acquisition function family. "auto" selects logEI or qLogEI from `count`.
+    best_f_variable : str, optional
+        Dataset variable containing the incumbent objective value.
+    is_simplex : bool, default=False
+        When True, the acquisition surrogate applies an ilr transform to
+        simplex-valued inputs, fits a Mat\'ern-$\nu=2.5$ ARD covariance in the
+        transformed coordinates, and automatically constrains optimization to
+        the simplex.
+
+        Notes
+        -----
+        The simplex is mathematically defined by the equality
+        :math:`\sum_i x_i = 1` together with non-negativity. BoTorch's optimizer
+        interface consumes linear inequality constraints, so the equality is
+        represented as the equivalent pair
+        :math:`\sum_i x_i \ge 1` and :math:`-\sum_i x_i \ge -1`.
+    name : str, default="BoTorchAcquisition"
+        Pipeline operation name.
+    """
+
+    def __init__(
+        self,
+        feature_input_variable: str,
+        predictor_input_variable: str,
+        grid_variable: str,
+        grid_dim: str = "grid",
+        sample_dim: str = "sample",
+        objective_direction: str = "maximize",
+        standardize: bool = True,
+        output_prefix: Optional[str] = None,
+        output_variable: str = "next_samples",
+        decision_rtol: float = 0.05,
+        excluded_comps_variables: Optional[List[str]] = None,
+        excluded_comps_dim: Optional[str] = None,
+        exclusion_radius: float = 1e-3,
+        count: int = 1,
+        acquisition_kind: str = "auto",
+        best_f_variable: Optional[str] = None,
+        is_simplex: bool = False,
+        name: str = "BoTorchAcquisition",
+    ) -> None:
+        super().__init__(
+            input_variables=[feature_input_variable, predictor_input_variable],
+            grid_variable=grid_variable,
+            grid_dim=grid_dim,
+            output_prefix=output_prefix,
+            output_variable=output_variable,
+            decision_rtol=decision_rtol,
+            excluded_comps_variables=excluded_comps_variables,
+            excluded_comps_dim=excluded_comps_dim,
+            exclusion_radius=exclusion_radius,
+            count=count,
+            name=name,
+        )
+        self.feature_input_variable = feature_input_variable
+        self.predictor_input_variable = predictor_input_variable
+        self.sample_dim = sample_dim
+        self.objective_direction = objective_direction
+        self.standardize = standardize
+        self.acquisition_kind = acquisition_kind
+        self.best_f_variable = best_f_variable
+        self.is_simplex = is_simplex
+        self.acquisition = None
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        train_x, train_y = dataset_to_botorch_training_data(
+            dataset=dataset,
+            feature_input_variable=self.feature_input_variable,
+            predictor_input_variable=self.predictor_input_variable,
+            sample_dim=self.sample_dim,
+            objective_direction=self.objective_direction,
+        )
+        candidate_x = dataset_to_botorch_candidates(
+            dataset=dataset,
+            grid_variable=self.grid_variable,
+            grid_dim=self.grid_dim,
+        )
+        model = fit_single_task_gp(
+            train_x=train_x,
+            train_y=train_y,
+            standardize=self.standardize,
+            is_simplex=self.is_simplex,
+        )
+
+        if self.best_f_variable is not None and self.best_f_variable in dataset:
+            best_f = float(dataset[self.best_f_variable].values[()])
+        else:
+            best_f = get_observed_best_f(
+                train_y,
+                objective_direction=self.objective_direction,
+            )
+
+        internal_best_f = -best_f if self.objective_direction == "minimize" else best_f
+
+        regressor_is_simplex = None
+        if f"{self.output_prefix}_is_simplex" in dataset:
+            regressor_is_simplex = bool(dataset[f"{self.output_prefix}_is_simplex"].item())
+
+        if regressor_is_simplex and not self.is_simplex:
+            warnings.warn(
+                "The regressor used simplex-aware geometry but the acquisition model does not. "
+                "This can make the acquisition geometry inconsistent with the fitted surrogate.",
+                stacklevel=2,
+            )
+        inequality_constraints = (
+            make_simplex_constraints(candidate_x.shape[-1]) if self.is_simplex else None
+        )
+
+        acquisition_kind = self.acquisition_kind
+        if acquisition_kind == "auto":
+            acquisition_kind = "qlogei" if self.count > 1 else "logei"
+
+        # Evaluate acquisition function on the grid for decision surface
+        if acquisition_kind == "logei":
+            acq_values = evaluate_log_expected_improvement(
+                model=model,
+                candidate_x=candidate_x,
+                best_f=internal_best_f,
+            )
+        else:  # qlogei
+            acq_values = evaluate_qlog_expected_improvement(
+                model=model,
+                candidate_x=candidate_x,
+                best_f=internal_best_f,
+                q=self.count,
+            )
+        
+        # Create decision_surface by reshaping acquisition values to grid structure
+        grid_variable_data = dataset[self.grid_variable]
+        acq_numpy = acq_values.detach().cpu().numpy().reshape(-1)
+        
+        # Reshape to match the grid structure (all dims except the sample dimension)
+        grid_shape = grid_variable_data.shape
+        decision_surface = xr.DataArray(
+            acq_numpy.reshape(grid_shape[:-1]) if len(grid_shape) > 1 else acq_numpy,
+            dims=grid_variable_data.dims[:-1],
+            coords={dim: grid_variable_data.coords[dim] for dim in grid_variable_data.dims[:-1]},
+        )
+        
+        self.output[self._prefix_output("decision_surface")] = decision_surface
+        self.output[self._prefix_output("decision_surface")].attrs["description"] = (
+            "Acquisition function values evaluated on the grid"
+        )
+
+        # Use BoTorch's optimize_acqf to find optimal points
+        optimized_x, _ = optimize_acquisition_function(
+            model=model,
+            candidate_x=candidate_x,
+            best_f=internal_best_f,
+            acquisition_kind=acquisition_kind,
+            q=self.count,
+            num_restarts=10,
+            raw_samples=128,
+            inequality_constraints=inequality_constraints,
+        )
+        
+        # Convert optimized points to numpy array and create output
+        optimized_points = optimized_x.detach().cpu().numpy()
+        
+        # Handle single vs. batch optimization
+        if optimized_points.ndim == 1:
+            optimized_points = optimized_points[np.newaxis, :]
+        
+        # Get component names from the feature input variable
+        component_coords = dataset[self.feature_input_variable].coords.get(
+            "component", None
+        )
+        
+        # Create output for next samples
+        next_samples = xr.DataArray(
+            optimized_points,
+            dims=("next_sample", "component"),
+            coords={
+                "component": component_coords.values if component_coords is not None else range(optimized_points.shape[1])
+            },
+        )
+        
+        self.output[self.output_variable] = next_samples
+        self.output[self.output_variable].attrs["description"] = (
+            "Next sample point(s) optimized using BoTorch acquisition function"
+        )
+        
         return self
