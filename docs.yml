@@ -8,3 +8,4 @@ dependencies:
   - pandoc
   - pip:
     - .[all]
+    - sphinx<8

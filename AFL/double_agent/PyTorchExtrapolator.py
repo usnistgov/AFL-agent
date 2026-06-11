@@ -17,6 +17,16 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 torch.set_default_dtype(torch.double)
 
 from AFL.double_agent.Extrapolator import Extrapolator
+from AFL.double_agent.util import (
+    bounds_from_tensor,
+    dataset_to_botorch_candidates,
+    dataset_to_botorch_training_data,
+    fit_single_task_gp,
+    get_observed_best_f,
+    make_simplex_constraints,
+    optimize_posterior_mean,
+    posterior_to_xarray,
+)
 
 class DirichletGPExtrapolator(Extrapolator):
     """Gaussian Process classifier for extrapolating class labels using Dirichlet likelihood.

@@ -1,0 +1,65 @@
+name: Integration Tests
+
+# TODO: remove the add-docker branch before merging to main
+on:
+  push:
+    branches: [ main, add-docker ]
+  pull_request:
+    branches: [ main, add-docker ]
+  workflow_dispatch: {}
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and start stack
+        run: |
+          set -euo pipefail
+          if ! docker compose up -d --build --wait --wait-timeout 240; then
+            docker compose ps
+            docker compose logs tiled
+            docker compose logs agent
+            exit 1
+          fi
+
+      - name: Smoke test Tiled API
+        run: |
+          set -euo pipefail
+          code=$(curl -s -o /dev/null -w "%{http_code}" -H "X-Tiled-Api-Key: devkey" http://localhost:8000/api/v1/metadata/)
+          if [ "$code" != "200" ] && [ "$code" != "401" ]; then
+            echo "Unexpected Tiled status: $code" >&2
+            docker compose ps
+            docker compose logs tiled
+            exit 1
+          fi
+
+      - name: Wait for Agent driver status
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 24); do
+            code=$(curl -s -o /tmp/agent_status.txt -w "%{http_code}" http://localhost:5003/driver_status || true)
+            if [ "$code" = "200" ]; then
+              cat /tmp/agent_status.txt
+              exit 0
+            fi
+            echo "Attempt $attempt: agent status returned ${code:-curl_failed}"
+            docker compose ps
+            sleep 5
+          done
+          echo "Agent driver did not become ready in time" >&2
+          docker compose logs agent
+          exit 1
+
+      - name: Smoke test Agent driver status
+        run: |
+          set -euo pipefail
+          body=$(curl -fsS http://localhost:5003/driver_status)
+          echo "$body"
+          echo "$body" | grep -q "mock_mode"
+
+      - name: Teardown
+        if: always()
+        run: docker compose down -v

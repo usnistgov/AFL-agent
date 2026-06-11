@@ -25,8 +25,6 @@ import matplotlib.pyplot as plt
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
 
-
-
 class Extrapolator(PipelineOp):
     """Base class for extrapolating discrete sample data onto continuous spaces.
 
