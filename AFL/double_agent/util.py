@@ -184,7 +184,7 @@ def dataset_to_botorch_candidates(
 
 
 def make_simplex_constraints(n_dim: int) -> list[tuple[torch.Tensor, torch.Tensor, float]]:
-    """Return BoTorch-compatible simplex constraints.
+    r"""Return BoTorch-compatible simplex constraints.
 
     BoTorch's `optimize_acqf` accepts linear inequality constraints of the form
 
@@ -257,6 +257,11 @@ def posterior_to_xarray(
     if objective_direction == "minimize":
         mean = -mean
     variance = posterior.variance.detach().cpu().numpy().reshape(-1)
+    if mean.shape[0] != grid_index.shape[0] or variance.shape[0] != grid_index.shape[0]:
+        raise ValueError(
+            "Posterior outputs must match the candidate grid length: "
+            f"got mean={mean.shape[0]}, variance={variance.shape[0]}, grid={grid_index.shape[0]}."
+        )
     return xr.Dataset(
         data_vars={
             f"{output_prefix}_mean": ((grid_index.dims[0],), mean),

@@ -898,7 +898,7 @@ class PseudoUCB(AcquisitionFunction):
 
 
 class BoTorchAcquisition(AcquisitionFunction):
-    """BoTorch-based acquisition optimization with optional simplex constraints.
+    r"""BoTorch-based acquisition optimization with optional simplex constraints.
 
     Parameters
     ----------
