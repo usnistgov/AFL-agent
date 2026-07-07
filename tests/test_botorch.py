@@ -249,6 +249,37 @@ class TestBoTorchRegressor:
         assert list(result.output["bayesopt_best_x"].coords["component"].values) == ["red", "green", "blue"]
         assert result.output["bayesopt_best_f"].item() == pytest.approx(0.12)
 
+    def test_botorch_regressor_falls_back_to_best_grid_point_when_posterior_optimization_fails(self):
+        dataset = _make_single_sample_botorch_dataset()
+        fake_model = _FakeModel(
+            posterior_mean=[[0.9], [0.4], [0.2]],
+            posterior_variance=[[0.05], [0.03], [0.01]],
+        )
+
+        regressor = BoTorchRegressor(
+            feature_input_variable="composition",
+            predictor_input_variable="score",
+            output_prefix="bayesopt",
+            grid_variable="composition_grid",
+            grid_dim="grid",
+            sample_dim="sample",
+            objective_direction="minimize",
+            standardize=False,
+            posterior_optimize=True,
+        )
+
+        with patch("AFL.double_agent.PyTorchExtrapolator.fit_single_task_gp", return_value=fake_model), patch(
+            "AFL.double_agent.PyTorchExtrapolator.optimize_posterior_mean",
+            side_effect=RuntimeError("probability tensor contains either `inf`, `nan` or element < 0"),
+        ):
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                result = regressor.calculate(dataset)
+
+        assert any("falling back to the best evaluated grid point" in str(item.message) for item in caught)
+        np.testing.assert_allclose(result.output["bayesopt_best_x"].values, [0.10, 0.30, 0.60])
+        assert result.output["bayesopt_best_f"].item() == pytest.approx(-0.2)
+
 
 @pytest.mark.unit
 class TestBoTorchAcquisition:
@@ -414,3 +445,39 @@ class TestBoTorchAcquisition:
         mock_constraints.assert_called_once_with(3)
         assert mock_optimize.call_args.kwargs["inequality_constraints"] == [("simplex",)]
         np.testing.assert_allclose(result.output["next_sample"].values, [[0.34, 0.33, 0.33]])
+
+    def test_botorch_acquisition_falls_back_to_best_grid_point_when_optimization_fails(self):
+        dataset = _make_single_sample_botorch_dataset()
+        fake_model = _FakeModel(
+            posterior_mean=[[0.0], [0.0], [0.0]],
+            posterior_variance=[[0.01], [0.01], [0.01]],
+        )
+        acq_values = torch.tensor([0.3, 0.2, 0.1], dtype=torch.double)
+
+        acquisition = BoTorchAcquisition(
+            feature_input_variable="composition",
+            predictor_input_variable="score",
+            grid_variable="composition_grid",
+            grid_dim="grid",
+            sample_dim="sample",
+            objective_direction="minimize",
+            standardize=False,
+            output_prefix="bayesopt",
+            output_variable="next_sample",
+            count=1,
+        )
+
+        with patch("AFL.double_agent.AcquisitionFunction.fit_single_task_gp", return_value=fake_model), patch(
+            "AFL.double_agent.AcquisitionFunction.evaluate_log_expected_improvement",
+            return_value=acq_values,
+        ), patch(
+            "AFL.double_agent.AcquisitionFunction.optimize_acquisition_function",
+            side_effect=RuntimeError("probability tensor contains either `inf`, `nan` or element < 0"),
+        ):
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                result = acquisition.calculate(dataset)
+
+        assert any("falling back to the best evaluated grid point" in str(item.message) for item in caught)
+        np.testing.assert_allclose(result.output["bayesopt_decision_surface"].values, [0.3, 0.2, 0.1])
+        np.testing.assert_allclose(result.output["next_sample"].values, [[0.70, 0.20, 0.10]])

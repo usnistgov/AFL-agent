@@ -2,6 +2,7 @@ import numpy as np
 import xarray as xr
 from typing_extensions import Self
 from typing import Optional, Dict, Any
+import warnings
 import gpytorch
 import torch
 from gpytorch.models import ExactGP
@@ -598,15 +599,25 @@ class BoTorchRegressor(Extrapolator):
             make_simplex_constraints(candidate_x.shape[-1]) if self.is_simplex else None
         )
         if self.posterior_optimize:
-            best_x, best_f = optimize_posterior_mean(
-                model=model,
-                bounds=bounds_from_tensor(candidate_x),
-                q=1,
-                num_restarts=self.posterior_optimize_restarts,
-                raw_samples=self.posterior_optimize_raw_samples,
-                objective_direction=self.objective_direction,
-                inequality_constraints=inequality_constraints,
-            )
+            try:
+                best_x, best_f = optimize_posterior_mean(
+                    model=model,
+                    bounds=bounds_from_tensor(candidate_x),
+                    q=1,
+                    num_restarts=self.posterior_optimize_restarts,
+                    raw_samples=self.posterior_optimize_raw_samples,
+                    objective_direction=self.objective_direction,
+                    inequality_constraints=inequality_constraints,
+                )
+            except RuntimeError as exc:
+                warnings.warn(
+                    "BoTorch posterior optimization failed; falling back to the best evaluated grid point.",
+                    stacklevel=2,
+                )
+                mean_values = self.output[self._prefix_output("mean")].values
+                best_index = int(np.nanargmax(mean_values))
+                best_x = candidate_x[best_index].unsqueeze(0).detach()
+                best_f = float(mean_values[best_index])
 
         self.output[self._prefix_output("best_f")] = xr.DataArray(best_f)
         self.output[self._prefix_output("is_simplex")] = xr.DataArray(bool(self.is_simplex))
