@@ -898,7 +898,7 @@ class PseudoUCB(AcquisitionFunction):
 
 
 class BoTorchAcquisition(AcquisitionFunction):
-    """BoTorch-based acquisition optimization with optional simplex constraints.
+    r"""BoTorch-based acquisition optimization with optional simplex constraints.
 
     Parameters
     ----------
@@ -1076,19 +1076,40 @@ class BoTorchAcquisition(AcquisitionFunction):
         )
 
         # Use BoTorch's optimize_acqf to find optimal points
-        optimized_x, _ = optimize_acquisition_function(
-            model=model,
-            candidate_x=candidate_x,
-            best_f=internal_best_f,
-            acquisition_kind=acquisition_kind,
-            q=self.count,
-            num_restarts=10,
-            raw_samples=128,
-            inequality_constraints=inequality_constraints,
-        )
+        try:
+            optimized_x, _ = optimize_acquisition_function(
+                model=model,
+                candidate_x=candidate_x,
+                best_f=internal_best_f,
+                acquisition_kind=acquisition_kind,
+                q=self.count,
+                num_restarts=10,
+                raw_samples=128,
+                inequality_constraints=inequality_constraints,
+            )
+            optimized_points = optimized_x.detach().cpu().numpy()
+        except RuntimeError:
+            warnings.warn(
+                "BoTorch acquisition optimization failed; falling back to the best evaluated grid point(s).",
+                stacklevel=2,
+            )
+            acquisition_dataset = xr.Dataset(
+                {
+                    "decision_surface": decision_surface,
+                    "comp_grid": dataset[self.grid_variable].transpose(self.grid_dim, ...),
+                }
+            )
+            excluded_comps = self._get_excluded_comps(dataset)
+            if excluded_comps is not None:
+                acquisition_dataset["excluded_comps"] = excluded_comps
+                self.exclude_previous_samples(acquisition_dataset)
+                self.output[self._prefix_output("decision_surface")] = acquisition_dataset[
+                    "decision_surface"
+                ]
+            self.get_next_samples(acquisition_dataset)
+            return self
         
         # Convert optimized points to numpy array and create output
-        optimized_points = optimized_x.detach().cpu().numpy()
         
         # Handle single vs. batch optimization
         if optimized_points.ndim == 1:
