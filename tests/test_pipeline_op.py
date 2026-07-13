@@ -6,6 +6,7 @@ import pytest
 import numpy as np
 import xarray as xr
 
+from AFL.double_agent.Generator import BarycentricGrid
 from tests.utils import MockPipelineOp
 
 
@@ -82,3 +83,46 @@ class TestPipelineOp:
         assert op.calculated
         assert "labels" in result.output
         np.testing.assert_array_equal(result.output["labels"].values, data)
+
+    def test_barycentric_grid_defaults_to_unit_bounds(self):
+        grid = BarycentricGrid(
+            output_variable="composition_grid",
+            components=["A", "B", "C"],
+            sample_dim="grid",
+            pts_per_row=5,
+            dim=3,
+        )
+
+        result = grid.calculate(xr.Dataset())
+        values = result.output["composition_grid"].values
+
+        assert values.shape[1] == 3
+        np.testing.assert_allclose(values.sum(axis=1), 1.0)
+        assert np.all(values >= -1e-9)
+        assert np.all(values <= 1.0 + 1e-9)
+
+    def test_barycentric_grid_respects_grid_spec_bounds(self):
+        grid = BarycentricGrid(
+            output_variable="composition_grid",
+            components=["A", "B", "C"],
+            sample_dim="grid",
+            grid_spec={
+                "A": {"min": 0.25, "max": 0.75},
+                "B": {"min": 0.0, "max": 0.5},
+                "C": {"min": 0.25, "max": 0.75},
+            },
+            pts_per_row=5,
+            dim=3,
+        )
+
+        result = grid.calculate(xr.Dataset())
+        values = result.output["composition_grid"].values
+
+        assert len(values) > 0
+        np.testing.assert_allclose(values.sum(axis=1), 1.0)
+        assert np.all(values[:, 0] >= 0.25 - 1e-9)
+        assert np.all(values[:, 0] <= 0.75 + 1e-9)
+        assert np.all(values[:, 1] >= 0.0 - 1e-9)
+        assert np.all(values[:, 1] <= 0.5 + 1e-9)
+        assert np.all(values[:, 2] >= 0.25 - 1e-9)
+        assert np.all(values[:, 2] <= 0.75 + 1e-9)

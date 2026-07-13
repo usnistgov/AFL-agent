@@ -14,6 +14,18 @@ from AFL.double_agent.AcquisitionFunction import BoTorchAcquisition
 from AFL.double_agent.PyTorchExtrapolator import BoTorchRegressor
 
 
+def _make_explicit_bounds():
+    return {
+        "red": {"min": 0.0, "max": 1.0},
+        "green": {"min": 0.0, "max": 1.0},
+        "blue": {"min": 0.0, "max": 1.0},
+    }
+
+
+def _expected_bounds_array():
+    return np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]])
+
+
 def _make_botorch_dataset() -> xr.Dataset:
     component = ["red", "green", "blue"]
     composition = xr.DataArray(
@@ -112,6 +124,7 @@ class TestBoTorchRegressor:
             sample_dim="sample",
             objective_direction="minimize",
             standardize=False,
+            bounds=_make_explicit_bounds(),
         )
 
         with patch("AFL.double_agent.PyTorchExtrapolator.fit_single_task_gp", return_value=fake_model) as mock_fit:
@@ -122,6 +135,8 @@ class TestBoTorchRegressor:
         np.testing.assert_allclose(result.output["bayesopt_variance"].values, [0.05, 0.04, 0.03, 0.02])
         assert result.output["bayesopt_best_f"].item() == pytest.approx(0.15)
         assert result.output["bayesopt_is_simplex"].item() is False
+        np.testing.assert_allclose(result.output["bayesopt_bounds"].values, _expected_bounds_array())
+        assert result.output["bayesopt_bounds"].dims == ("bound", "component")
         assert "bayesopt_best_x" not in result.output
 
     def test_botorch_regressor_single_sample(self):
@@ -192,6 +207,7 @@ class TestBoTorchRegressor:
             objective_direction="minimize",
             standardize=False,
             posterior_optimize=True,
+            bounds=_make_explicit_bounds(),
         )
 
         with patch("AFL.double_agent.PyTorchExtrapolator.fit_single_task_gp", return_value=fake_model), patch(
@@ -227,6 +243,7 @@ class TestBoTorchRegressor:
             posterior_optimize=True,
             posterior_optimize_restarts=4,
             posterior_optimize_raw_samples=16,
+            bounds=_make_explicit_bounds(),
             is_simplex=True,
         )
 
@@ -241,6 +258,8 @@ class TestBoTorchRegressor:
 
         mock_constraints.assert_called_once_with(3)
         optimize_kwargs = mock_optimize.call_args.kwargs
+        expected_bounds = torch.tensor([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]], dtype=torch.double)
+        assert torch.equal(optimize_kwargs["bounds"], expected_bounds)
         assert optimize_kwargs["inequality_constraints"] == [("simplex",)]
         assert optimize_kwargs["num_restarts"] == 4
         assert optimize_kwargs["raw_samples"] == 16
@@ -266,6 +285,7 @@ class TestBoTorchRegressor:
             objective_direction="minimize",
             standardize=False,
             posterior_optimize=True,
+            bounds=_make_explicit_bounds(),
         )
 
         with patch("AFL.double_agent.PyTorchExtrapolator.fit_single_task_gp", return_value=fake_model), patch(
@@ -279,6 +299,29 @@ class TestBoTorchRegressor:
         assert any("falling back to the best evaluated grid point" in str(item.message) for item in caught)
         np.testing.assert_allclose(result.output["bayesopt_best_x"].values, [0.10, 0.30, 0.60])
         assert result.output["bayesopt_best_f"].item() == pytest.approx(-0.2)
+
+    def test_botorch_regressor_requires_explicit_bounds_for_posterior_optimization(self):
+        dataset = _make_single_sample_botorch_dataset()
+        fake_model = _FakeModel(
+            posterior_mean=[[0.9], [0.4], [0.2]],
+            posterior_variance=[[0.05], [0.03], [0.01]],
+        )
+
+        regressor = BoTorchRegressor(
+            feature_input_variable="composition",
+            predictor_input_variable="score",
+            output_prefix="bayesopt",
+            grid_variable="composition_grid",
+            grid_dim="grid",
+            sample_dim="sample",
+            objective_direction="minimize",
+            standardize=False,
+            posterior_optimize=True,
+        )
+
+        with patch("AFL.double_agent.PyTorchExtrapolator.fit_single_task_gp", return_value=fake_model):
+            with pytest.raises(ValueError, match="requires explicit `bounds`"):
+                regressor.calculate(dataset)
 
 
 @pytest.mark.unit
@@ -305,6 +348,7 @@ class TestBoTorchAcquisition:
             output_variable="next_sample",
             best_f_variable="bayesopt_best_f",
             count=1,
+            bounds=_make_explicit_bounds(),
         )
 
         with patch("AFL.double_agent.AcquisitionFunction.fit_single_task_gp", return_value=fake_model), patch(
@@ -318,7 +362,11 @@ class TestBoTorchAcquisition:
 
         assert mock_eval.call_args.kwargs["best_f"] == pytest.approx(-0.22)
         assert mock_optimize.call_args.kwargs["acquisition_kind"] == "logei"
+        expected_bounds = torch.tensor([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]], dtype=torch.double)
+        assert torch.equal(mock_optimize.call_args.kwargs["bounds"], expected_bounds)
         np.testing.assert_allclose(result.output["bayesopt_decision_surface"].values, [0.1, 0.4, 0.2, 0.3])
+        np.testing.assert_allclose(result.output["bayesopt_bounds"].values, _expected_bounds_array())
+        assert result.output["bayesopt_bounds"].dims == ("bound", "component")
         np.testing.assert_allclose(result.output["next_sample"].values, [[0.25, 0.50, 0.25]])
         assert list(result.output["next_sample"].coords["component"].values) == ["red", "green", "blue"]
 
@@ -342,6 +390,7 @@ class TestBoTorchAcquisition:
             output_prefix="bayesopt",
             output_variable="next_sample",
             count=1,
+            bounds=_make_explicit_bounds(),
         )
 
         with patch("AFL.double_agent.AcquisitionFunction.fit_single_task_gp", return_value=fake_model), patch(
@@ -386,6 +435,7 @@ class TestBoTorchAcquisition:
             output_variable="next_sample",
             count=2,
             acquisition_kind="auto",
+            bounds=_make_explicit_bounds(),
             is_simplex=False,
         )
 
@@ -427,6 +477,7 @@ class TestBoTorchAcquisition:
             output_variable="next_sample",
             count=1,
             acquisition_kind="logei",
+            bounds=_make_explicit_bounds(),
             is_simplex=True,
         )
 
@@ -465,6 +516,7 @@ class TestBoTorchAcquisition:
             output_prefix="bayesopt",
             output_variable="next_sample",
             count=1,
+            bounds=_make_explicit_bounds(),
         )
 
         with patch("AFL.double_agent.AcquisitionFunction.fit_single_task_gp", return_value=fake_model), patch(
@@ -481,3 +533,31 @@ class TestBoTorchAcquisition:
         assert any("falling back to the best evaluated grid point" in str(item.message) for item in caught)
         np.testing.assert_allclose(result.output["bayesopt_decision_surface"].values, [0.3, 0.2, 0.1])
         np.testing.assert_allclose(result.output["next_sample"].values, [[0.70, 0.20, 0.10]])
+
+    def test_botorch_acquisition_requires_explicit_bounds(self):
+        dataset = _make_botorch_dataset()
+        fake_model = _FakeModel(
+            posterior_mean=[[0.0], [0.0], [0.0], [0.0]],
+            posterior_variance=[[0.01], [0.01], [0.01], [0.01]],
+        )
+        acq_values = torch.tensor([0.1, 0.4, 0.2, 0.3], dtype=torch.double)
+
+        acquisition = BoTorchAcquisition(
+            feature_input_variable="composition",
+            predictor_input_variable="score",
+            grid_variable="composition_grid",
+            grid_dim="grid",
+            sample_dim="sample",
+            objective_direction="minimize",
+            standardize=False,
+            output_prefix="bayesopt",
+            output_variable="next_sample",
+            count=1,
+        )
+
+        with patch("AFL.double_agent.AcquisitionFunction.fit_single_task_gp", return_value=fake_model), patch(
+            "AFL.double_agent.AcquisitionFunction.evaluate_log_expected_improvement",
+            return_value=acq_values,
+        ):
+            with pytest.raises(ValueError, match="requires explicit `bounds`"):
+                acquisition.calculate(dataset)

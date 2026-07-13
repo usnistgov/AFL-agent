@@ -33,6 +33,8 @@ from AFL.double_agent.util import (
     get_observed_best_f,
     listify,
     make_simplex_constraints,
+    optimization_bounds_to_xarray,
+    optimization_bounds_to_tensor,
     optimize_acquisition_function,
 )
 
@@ -934,6 +936,13 @@ class BoTorchAcquisition(AcquisitionFunction):
         Acquisition function family. "auto" selects logEI or qLogEI from `count`.
     best_f_variable : str, optional
         Dataset variable containing the incumbent objective value.
+    bounds : dict | list[tuple[float, float]] | None, default=None
+        Explicit optimization bounds passed through to BoTorch's optimizer.
+        This may be supplied in the same per-component format used by
+        `BarycentricGrid` and `CartesianGrid`, i.e.
+        ``{component: {"min": lower, "max": upper}}``, or as ordered
+        ``(lower, upper)`` pairs. Bounds must be expressed in the same feature
+        space as `feature_input_variable` and `grid_variable`.
     is_simplex : bool, default=False
         When True, the acquisition surrogate applies an ilr transform to
         simplex-valued inputs, fits a Mat\'ern-$\nu=2.5$ ARD covariance in the
@@ -969,6 +978,7 @@ class BoTorchAcquisition(AcquisitionFunction):
         count: int = 1,
         acquisition_kind: str = "auto",
         best_f_variable: Optional[str] = None,
+        bounds: Optional[dict] = None,
         is_simplex: bool = False,
         name: str = "BoTorchAcquisition",
     ) -> None:
@@ -992,6 +1002,7 @@ class BoTorchAcquisition(AcquisitionFunction):
         self.standardize = standardize
         self.acquisition_kind = acquisition_kind
         self.best_f_variable = best_f_variable
+        self.bounds = bounds
         self.is_simplex = is_simplex
         self.acquisition = None
 
@@ -1075,11 +1086,26 @@ class BoTorchAcquisition(AcquisitionFunction):
             "Acquisition function values evaluated on the grid"
         )
 
+        if self.bounds is None:
+            raise ValueError("BoTorchAcquisition requires explicit `bounds` for optimize_acqf.")
+        component_dim = dataset[self.grid_variable].dims[-1]
+        component_names = dataset[self.grid_variable].coords.get(component_dim)
+        optimization_bounds = optimization_bounds_to_tensor(
+            self.bounds,
+            component_names=component_names.values if component_names is not None else None,
+        )
+        if component_names is not None:
+            self.output[self._prefix_output("bounds")] = optimization_bounds_to_xarray(
+                optimization_bounds,
+                component_names=component_names.values,
+                variable_name=self._prefix_output("bounds"),
+            )
+
         # Use BoTorch's optimize_acqf to find optimal points
         try:
             optimized_x, _ = optimize_acquisition_function(
                 model=model,
-                candidate_x=candidate_x,
+                bounds=optimization_bounds,
                 best_f=internal_best_f,
                 acquisition_kind=acquisition_kind,
                 q=self.count,

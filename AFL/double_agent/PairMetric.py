@@ -413,3 +413,72 @@ class CombineMetric(PairMetric):
         self.output[self.output_variable] = xr.DataArray(self.W, dims=dims)  # type: ignore
 
         return self
+
+class TargetScore(PipelineOp):
+    def __init__(
+        self,
+        input_variable: str,
+        output_variable: str,
+        target: list[float],
+        sample_dim: str = "sample",
+        feature_dim: str | None = None,
+        metric: str = "mean_squared_error",
+        name: str = "TargetScore",
+    ) -> None:
+        super().__init__(
+            name=name,
+            input_variable=input_variable,
+            output_variable=output_variable,
+        )
+        self.target = target
+        self.sample_dim = sample_dim
+        self.feature_dim = feature_dim
+        self.metric = metric
+
+    def calculate(self, dataset: xr.Dataset):
+        data = self._get_variable(dataset)
+        if self.sample_dim not in data.dims:
+            raise ValueError(f"Input variable must include sample_dim={self.sample_dim!r}")
+
+        feature_dims = [dim for dim in data.dims if dim != self.sample_dim]
+        if self.feature_dim is not None:
+            if self.feature_dim not in feature_dims:
+                raise ValueError(
+                    f"Input variable does not include feature_dim={self.feature_dim!r}"
+                )
+            feature_dims = [self.feature_dim] + [dim for dim in feature_dims if dim != self.feature_dim]
+
+        if not feature_dims:
+            raise ValueError("Input variable must have at least one non-sample dimension")
+
+        ordered = data.transpose(self.sample_dim, *feature_dims)
+        values = np.asarray(ordered.values, dtype=float)
+        flat_values = values.reshape(values.shape[0], -1)
+
+        target = np.asarray(self.target, dtype=float).reshape(-1)
+        if flat_values.shape[1] != target.shape[0]:
+            raise ValueError(
+                f"Target length {target.shape[0]} does not match flattened feature size {flat_values.shape[1]}"
+            )
+
+        diff = flat_values - target[None, :]
+        if self.metric == "mean_squared_error":
+            score = np.mean(diff**2, axis=1)
+        elif self.metric == "mean_absolute_error":
+            score = np.mean(np.abs(diff), axis=1)
+        elif self.metric == "sum_squared_error":
+            score = np.sum(diff**2, axis=1)
+        else:
+            raise ValueError(f"Unsupported metric: {self.metric}")
+
+        self.output[self.output_variable] = xr.DataArray(
+            score,
+            dims=[self.sample_dim],
+            coords={self.sample_dim: ordered.coords[self.sample_dim].values},
+        )
+        self.output[self.output_variable].attrs["description"] = (
+            "Optimization score for each sample relative to a fixed target"
+        )
+        self.output[self.output_variable].attrs["metric"] = self.metric
+        self.output[self.output_variable].attrs["target"] = list(target)
+        return self
