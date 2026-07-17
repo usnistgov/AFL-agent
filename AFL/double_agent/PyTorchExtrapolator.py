@@ -710,10 +710,8 @@ class BoTorchRegressor(Extrapolator):
         ``(lower, upper)`` pairs. Bounds must be expressed in the same feature
         space as `feature_input_variable` and `grid_variable`.
     is_simplex : bool, default=False
-        When True, the regressor applies an ilr transform to simplex-valued
-        inputs and fits a Mat\'ern-$\nu=2.5$ ARD covariance in the transformed
-        coordinates. Posterior optimization is then automatically constrained
-        to the simplex.
+        When True, posterior optimization is constrained to the simplex.
+        The GP surrogate is still fit directly in the original feature space.
     name : str, default="BoTorchRegressor"
         Name identifier for the extrapolator.
     
@@ -781,12 +779,8 @@ class BoTorchRegressor(Extrapolator):
             train_x=train_x,
             train_y=train_y,
             standardize=self.standardize,
-            is_simplex=self.is_simplex,
         )
-        posterior_inputs = getattr(model, "_simplex_input_transform", None)
-        posterior = model.posterior(
-            posterior_inputs(candidate_x) if posterior_inputs is not None else candidate_x
-        )
+        posterior = model.posterior(candidate_x)
         self.grid = dataset[self.grid_variable]
         component_dim = dataset[self.grid_variable].dims[-1]
         component_names = dataset[self.grid_variable].coords.get(component_dim)

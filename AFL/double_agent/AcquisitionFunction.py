@@ -944,10 +944,8 @@ class BoTorchAcquisition(AcquisitionFunction):
         ``(lower, upper)`` pairs. Bounds must be expressed in the same feature
         space as `feature_input_variable` and `grid_variable`.
     is_simplex : bool, default=False
-        When True, the acquisition surrogate applies an ilr transform to
-        simplex-valued inputs, fits a Mat\'ern-$\nu=2.5$ ARD covariance in the
-        transformed coordinates, and automatically constrains optimization to
-        the simplex.
+        When True, acquisition optimization is constrained to the simplex.
+        The GP surrogate is still fit directly in the original feature space.
 
         Notes
         -----
@@ -1023,7 +1021,6 @@ class BoTorchAcquisition(AcquisitionFunction):
             train_x=train_x,
             train_y=train_y,
             standardize=self.standardize,
-            is_simplex=self.is_simplex,
         )
 
         if self.best_f_variable is not None and self.best_f_variable in dataset:
@@ -1036,16 +1033,6 @@ class BoTorchAcquisition(AcquisitionFunction):
 
         internal_best_f = -best_f if self.objective_direction == "minimize" else best_f
 
-        regressor_is_simplex = None
-        if f"{self.output_prefix}_is_simplex" in dataset:
-            regressor_is_simplex = bool(dataset[f"{self.output_prefix}_is_simplex"].item())
-
-        if regressor_is_simplex and not self.is_simplex:
-            warnings.warn(
-                "The regressor used simplex-aware geometry but the acquisition model does not. "
-                "This can make the acquisition geometry inconsistent with the fitted surrogate.",
-                stacklevel=2,
-            )
         inequality_constraints = (
             make_simplex_constraints(candidate_x.shape[-1]) if self.is_simplex else None
         )

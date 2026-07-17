@@ -97,10 +97,9 @@ class _FakePosterior:
 
 
 class _FakeModel:
-    def __init__(self, posterior_mean, posterior_variance, simplex_transform=None):
+    def __init__(self, posterior_mean, posterior_variance):
         self._posterior_mean = torch.as_tensor(posterior_mean, dtype=torch.double)
         self._posterior_variance = torch.as_tensor(posterior_variance, dtype=torch.double)
-        self._simplex_input_transform = simplex_transform
 
     def posterior(self, x):
         return _FakePosterior(self._posterior_mean, self._posterior_variance)
@@ -227,7 +226,6 @@ class TestBoTorchRegressor:
         fake_model = _FakeModel(
             posterior_mean=[[0.8], [0.5], [0.3], [0.1]],
             posterior_variance=[[0.02], [0.02], [0.02], [0.02]],
-            simplex_transform=lambda x: x + 0.01,
         )
         optimized_x = torch.tensor([[0.2, 0.3, 0.5]], dtype=torch.double)
 
@@ -407,7 +405,7 @@ class TestBoTorchAcquisition:
         assert result.output["next_sample"].shape == (1, 3)
         np.testing.assert_allclose(result.output["next_sample"].values, [[0.25, 0.50, 0.25]])
 
-    def test_botorch_acquisition_simplex_qlogei_warns_on_geometry_mismatch(self):
+    def test_botorch_acquisition_uses_dataset_simplex_flag_without_warning(self):
         dataset = _make_botorch_dataset()
         dataset["bayesopt_is_simplex"] = xr.DataArray(True)
         fake_model = _FakeModel(
@@ -450,7 +448,7 @@ class TestBoTorchAcquisition:
                 warnings.simplefilter("always")
                 result = acquisition.calculate(dataset)
 
-        assert any("simplex-aware geometry" in str(item.message) for item in caught)
+        assert not caught
         assert mock_eval.call_args.kwargs["q"] == 2
         assert mock_optimize.call_args.kwargs["acquisition_kind"] == "qlogei"
         assert mock_optimize.call_args.kwargs["inequality_constraints"] is None
