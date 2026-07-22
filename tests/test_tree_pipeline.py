@@ -2,18 +2,35 @@
 Tests for TreePipeline PipelineOps.
 """
 
+import warnings
+
 import numpy as np
 import pytest
 import xarray as xr
 
 from AFL.double_agent.Pipeline import Pipeline
-from AFL.double_agent.TreePipeline import (
-    ClassificationPipeline,
-    IntEncoding,
-    RegressionPipeline,
-    ThresholdClassificationPipeline,
-    TrimQ,
-)
+
+try:
+    from TreeHierarchy import json_decoder as _treehierarchy_json_decoder  # noqa: F401
+    from AFL.double_agent.TreePipeline import (
+        ClassificationPipeline,
+        IntEncoding,
+        RegressionPipeline,
+        ThresholdClassificationPipeline,
+        TrimQ,
+    )
+    TREEHIERARCHY_AVAILABLE = True
+except ModuleNotFoundError:
+    TREEHIERARCHY_AVAILABLE = False
+    warnings.warn(
+        "TreeHierarchy module not available; skipping tree pipeline tests.",
+        RuntimeWarning,
+        stacklevel=2,
+    )
+    pytestmark = pytest.mark.skipif(
+        True,
+        reason="TreeHierarchy module not available",
+    )
 
 
 class DummyClassifier:

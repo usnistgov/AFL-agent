@@ -10,7 +10,6 @@ import os
 import warnings
 
 from tests.utils import MockPipelineOp
-from AFL.double_agent import TreePipeline as tp
 from AFL.double_agent import (Pipeline, LogLogTransform)
 from sklearn.svm import SVC
 from AFL.double_agent.data import (
@@ -21,6 +20,7 @@ from AFL.double_agent.data import (
 )
 try:
     from TreeHierarchy import TreeHierarchy, json_decoder
+    from AFL.double_agent import TreePipeline as tp
     TREEHIERARCHY_AVAILABLE = True
 except ModuleNotFoundError:
     TREEHIERARCHY_AVAILABLE = False
