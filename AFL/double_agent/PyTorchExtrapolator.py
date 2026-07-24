@@ -19,12 +19,13 @@ torch.set_default_dtype(torch.double)
 
 from AFL.double_agent.Extrapolator import Extrapolator
 from AFL.double_agent.util import (
-    bounds_from_tensor,
     dataset_to_botorch_candidates,
     dataset_to_botorch_training_data,
     fit_single_task_gp,
     get_observed_best_f,
     make_simplex_constraints,
+    optimization_bounds_to_xarray,
+    optimization_bounds_to_tensor,
     optimize_posterior_mean,
     posterior_to_xarray,
 )
@@ -701,11 +702,16 @@ class BoTorchRegressor(Extrapolator):
         Number of restarts for posterior optimization.
     posterior_optimize_raw_samples : int, default=128
         Number of raw samples for posterior optimization.
+    bounds : dict | list[tuple[float, float]] | None, default=None
+        Explicit optimization bounds passed through to BoTorch's optimizer.
+        This may be supplied in the same per-component format used by
+        `BarycentricGrid` and `CartesianGrid`, i.e.
+        ``{component: {"min": lower, "max": upper}}``, or as ordered
+        ``(lower, upper)`` pairs. Bounds must be expressed in the same feature
+        space as `feature_input_variable` and `grid_variable`.
     is_simplex : bool, default=False
-        When True, the regressor applies an ilr transform to simplex-valued
-        inputs and fits a Mat\'ern-$\nu=2.5$ ARD covariance in the transformed
-        coordinates. Posterior optimization is then automatically constrained
-        to the simplex.
+        When True, posterior optimization is constrained to the simplex.
+        The GP surrogate is still fit directly in the original feature space.
     name : str, default="BoTorchRegressor"
         Name identifier for the extrapolator.
     
@@ -734,6 +740,7 @@ class BoTorchRegressor(Extrapolator):
         posterior_optimize: bool = False,
         posterior_optimize_restarts: int = 10,
         posterior_optimize_raw_samples: int = 128,
+        bounds: Dict[str, Any] | None = None,
         is_simplex: bool = False,
         name: str = "BoTorchRegressor",
     ) -> None:
@@ -741,7 +748,7 @@ class BoTorchRegressor(Extrapolator):
             name=name,
             feature_input_variable=feature_input_variable,
             predictor_input_variable=predictor_input_variable,
-            output_variables=["mean", "variance", "best_f"],
+            output_variables=["mean", "variance", "best_f", "bounds"],
             output_prefix=output_prefix,
             grid_variable=grid_variable,
             grid_dim=grid_dim,
@@ -752,6 +759,7 @@ class BoTorchRegressor(Extrapolator):
         self.posterior_optimize = posterior_optimize
         self.posterior_optimize_restarts = posterior_optimize_restarts
         self.posterior_optimize_raw_samples = posterior_optimize_raw_samples
+        self.bounds = bounds
         self.is_simplex = is_simplex
 
     def calculate(self, dataset: xr.Dataset) -> Self:
@@ -771,13 +779,11 @@ class BoTorchRegressor(Extrapolator):
             train_x=train_x,
             train_y=train_y,
             standardize=self.standardize,
-            is_simplex=self.is_simplex,
         )
-        posterior_inputs = getattr(model, "_simplex_input_transform", None)
-        posterior = model.posterior(
-            posterior_inputs(candidate_x) if posterior_inputs is not None else candidate_x
-        )
+        posterior = model.posterior(candidate_x)
         self.grid = dataset[self.grid_variable]
+        component_dim = dataset[self.grid_variable].dims[-1]
+        component_names = dataset[self.grid_variable].coords.get(component_dim)
         self.output.update(
             posterior_to_xarray(
                 posterior=posterior,
@@ -786,6 +792,16 @@ class BoTorchRegressor(Extrapolator):
                 objective_direction=self.objective_direction,
             )
         )
+        if self.bounds is not None and component_names is not None:
+            optimization_bounds = optimization_bounds_to_tensor(
+                self.bounds,
+                component_names=component_names.values,
+            )
+            self.output[self._prefix_output("bounds")] = optimization_bounds_to_xarray(
+                optimization_bounds,
+                component_names=component_names.values,
+                variable_name=self._prefix_output("bounds"),
+            )
 
         best_f = get_observed_best_f(
             train_y,
@@ -796,10 +812,18 @@ class BoTorchRegressor(Extrapolator):
             make_simplex_constraints(candidate_x.shape[-1]) if self.is_simplex else None
         )
         if self.posterior_optimize:
+            if self.bounds is None:
+                raise ValueError(
+                    "BoTorchRegressor requires explicit `bounds` when posterior_optimize=True."
+                )
+            optimization_bounds = optimization_bounds_to_tensor(
+                self.bounds,
+                component_names=component_names.values if component_names is not None else None,
+            )
             try:
                 best_x, best_f = optimize_posterior_mean(
                     model=model,
-                    bounds=bounds_from_tensor(candidate_x),
+                    bounds=optimization_bounds,
                     q=1,
                     num_restarts=self.posterior_optimize_restarts,
                     raw_samples=self.posterior_optimize_raw_samples,

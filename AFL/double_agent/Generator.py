@@ -169,6 +169,10 @@ class BarycentricGrid(Generator):
     sample_dim : str
         Name of the dimension for different samples/points
 
+    grid_spec : Dict[str, Dict[str, int | float]] | None, default=None
+        Optional per-component bounds with keys min and max. When omitted, all
+        components default to [0.0, 1.0].
+
     pts_per_row : int, default=50
         Number of points to sample along each row of the simplex
 
@@ -190,6 +194,7 @@ class BarycentricGrid(Generator):
         output_variable: str,
         components: List[str],
         sample_dim: str,
+        grid_spec: Dict[str, Dict[str, int | float]] | None = None,
         pts_per_row: int = 50,
         basis: float = 1.0,
         dim: int = 3,
@@ -202,10 +207,20 @@ class BarycentricGrid(Generator):
         )
         self.components = components
         self.sample_dim = sample_dim
+        self.grid_spec = grid_spec or {
+            component: {"min": 0.0, "max": 1.0} for component in components
+        }
         self.pts_per_row = pts_per_row
         self.basis = basis
         self.dim = dim
         self.eps = eps
+
+        if self.dim != len(self.components):
+            raise ValueError("dim must match the number of components")
+
+        missing = [component for component in self.components if component not in self.grid_spec]
+        if missing:
+            raise ValueError(f"grid_spec missing components: {missing}")
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Generate the barycentric grid.
@@ -224,7 +239,16 @@ class BarycentricGrid(Generator):
             The generator instance with the created barycentric grid
         """
         grid_list = []
-        for i in product(*[np.linspace(0, 1.0, self.pts_per_row)] * (self.dim - 1)):
+        component_specs = [self.grid_spec[component] for component in self.components]
+        candidate_axes = [
+            np.linspace(spec.get("min", 0.0), spec.get("max", 1.0), self.pts_per_row)
+            for spec in component_specs[:-1]
+        ]
+        last_spec = component_specs[-1]
+        last_min = float(last_spec.get("min", 0.0))
+        last_max = float(last_spec.get("max", 1.0))
+
+        for i in product(*candidate_axes):
             if sum(i) > (1.0 + self.eps):
                 continue
 
@@ -232,6 +256,9 @@ class BarycentricGrid(Generator):
 
             if j < (0.0 - self.eps):
                 continue
+            if j < (last_min - self.eps) or j > (last_max + self.eps):
+                continue
+
             pt = [k * self.basis for k in [*i, j]]
             grid_list.append(pt)
 
@@ -240,6 +267,149 @@ class BarycentricGrid(Generator):
             pts,
             dims=[self.sample_dim, "component"],
             coords={"component": self.components},
+        )
+        return self
+
+
+def sample_bounded_simplex(
+    lower: np.ndarray,
+    upper: np.ndarray,
+    n_samples: int,
+    *,
+    basis: float = 1.0,
+    alpha: float = 1.0,
+    rng: np.random.Generator | None = None,
+    eps: float = 1e-9,
+) -> np.ndarray:
+    """Sample points inside a box-constrained simplex.
+
+    Each sampled point ``x`` satisfies ``lower <= x <= upper`` and
+    ``sum(x) == basis`` up to numerical tolerance.
+    """
+    lower = np.asarray(lower, dtype=float)
+    upper = np.asarray(upper, dtype=float)
+
+    if lower.ndim != 1 or upper.ndim != 1 or lower.shape != upper.shape:
+        raise ValueError("lower and upper must be one-dimensional arrays of equal length")
+    if n_samples <= 0:
+        raise ValueError("n_samples must be positive")
+    if alpha <= 0:
+        raise ValueError("alpha must be positive")
+    if np.any(lower > upper + eps):
+        raise ValueError("Box bounds are invalid: lower bounds exceed upper bounds")
+
+    lower_sum = float(lower.sum())
+    upper_sum = float(upper.sum())
+    if lower_sum > (basis + eps) or upper_sum < (basis - eps):
+        raise ValueError(
+            "Box bounds are infeasible: no point can satisfy the bounds and simplex sum"
+        )
+
+    rng = np.random.default_rng() if rng is None else rng
+    n_dim = lower.shape[0]
+    points = np.empty((n_samples, n_dim), dtype=float)
+
+    for sample_idx in range(n_samples):
+        remaining = float(basis)
+        point = np.empty(n_dim, dtype=float)
+        permutation = rng.permutation(n_dim)
+
+        for position, component_idx in enumerate(permutation):
+            future_indices = permutation[position + 1 :]
+            if future_indices.size == 0:
+                value = remaining
+            else:
+                future_lower = float(lower[future_indices].sum())
+                future_upper = float(upper[future_indices].sum())
+                min_value = max(float(lower[component_idx]), remaining - future_upper)
+                max_value = min(float(upper[component_idx]), remaining - future_lower)
+
+                if max_value < (min_value - eps):
+                    raise ValueError(
+                        "Box bounds are infeasible: no admissible interval remains while sampling"
+                    )
+
+                if (max_value - min_value) <= eps:
+                    value = min_value
+                else:
+                    value = min_value + rng.beta(alpha, alpha) * (max_value - min_value)
+
+            point[component_idx] = value
+            remaining -= value
+
+        if np.any(point < (lower - eps)) or np.any(point > (upper + eps)):
+            raise ValueError("Failed to sample a point inside the bounded simplex")
+        if not np.isclose(point.sum(), basis, atol=max(eps, 1e-12), rtol=0.0):
+            raise ValueError("Failed to sample a point that satisfies the simplex sum")
+
+        points[sample_idx] = point
+
+    return points
+
+
+class RandomBoundedSimplex(Generator):
+    """Generator that randomly samples points in a box-constrained simplex."""
+
+    def __init__(
+        self,
+        output_variable: str,
+        components: List[str],
+        n_samples: int,
+        sample_dim: str,
+        grid_spec: Dict[str, Dict[str, int | float]] | None = None,
+        basis: float = 1.0,
+        alpha: float = 1.0,
+        component_dim: str = "component",
+        random_seed: int | None = None,
+        eps: float = 1e-9,
+        name: str = "RandomBoundedSimplexGenerator",
+    ):
+        super().__init__(
+            name=name,
+            input_variable=name,
+            output_variable=output_variable,
+        )
+        self.components = components
+        self.n_samples = n_samples
+        self.sample_dim = sample_dim
+        self.grid_spec = grid_spec or {
+            component: {"min": 0.0, "max": basis} for component in components
+        }
+        self.basis = basis
+        self.alpha = alpha
+        self.component_dim = component_dim
+        self.random_seed = random_seed
+        self.eps = eps
+
+        missing = [component for component in self.components if component not in self.grid_spec]
+        if missing:
+            raise ValueError(f"grid_spec missing components: {missing}")
+        if self.n_samples <= 0:
+            raise ValueError("n_samples must be positive")
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        lower = np.asarray(
+            [float(self.grid_spec[component].get("min", 0.0)) for component in self.components],
+            dtype=float,
+        )
+        upper = np.asarray(
+            [float(self.grid_spec[component].get("max", self.basis)) for component in self.components],
+            dtype=float,
+        )
+        rng = np.random.default_rng(self.random_seed)
+        pts = sample_bounded_simplex(
+            lower=lower,
+            upper=upper,
+            n_samples=self.n_samples,
+            basis=self.basis,
+            alpha=self.alpha,
+            rng=rng,
+            eps=self.eps,
+        )
+        self.output[self.output_variable] = xr.DataArray(
+            pts,
+            dims=[self.sample_dim, self.component_dim],
+            coords={self.component_dim: self.components},
         )
         return self
 

@@ -76,6 +76,20 @@
     "posterior_optimize": true,
     "posterior_optimize_restarts": 16,
     "posterior_optimize_raw_samples": 128,
+    "bounds": {
+     "red": {
+      "min": 0.0,
+      "max": 1.0
+     },
+     "green": {
+      "min": 0.0,
+      "max": 1.0
+     },
+     "blue": {
+      "min": 0.0,
+      "max": 1.0
+     }
+    },
     "is_simplex": true,
     "name": "BoTorchRegressor"
    }
@@ -101,6 +115,20 @@
     "count": 1,
     "acquisition_kind": "auto",
     "best_f_variable": "bayesopt_best_f",
+    "bounds": {
+     "red": {
+      "min": 0.0,
+      "max": 1.0
+     },
+     "green": {
+      "min": 0.0,
+      "max": 1.0
+     },
+     "blue": {
+      "min": 0.0,
+      "max": 1.0
+     }
+    },
     "is_simplex": true,
     "name": "BoTorchAcquisition"
    }
