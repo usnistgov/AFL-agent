@@ -10,7 +10,6 @@ import os
 import warnings
 
 from tests.utils import MockPipelineOp
-from AFL.double_agent import TreePipeline as tp
 from AFL.double_agent import (Pipeline, LogLogTransform)
 from sklearn.svm import SVC
 from AFL.double_agent.data import (
@@ -29,6 +28,9 @@ except ModuleNotFoundError:
         RuntimeWarning,
         stacklevel=2,
     )
+
+if TREEHIERARCHY_AVAILABLE:
+    from AFL.double_agent import TreePipeline as tp
 
 @pytest.mark.unit
 @pytest.mark.skipif(
@@ -99,6 +101,5 @@ class TestClassificationPipelinePerformance:
             out = P.calculate(data)
             print(P[0].output_variable)
             np.testing.assert_array_equal(out["predicted_test_labels"].data, ref["reference_predictions"].data)
-
 
 
