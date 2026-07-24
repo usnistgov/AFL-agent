@@ -13,8 +13,13 @@ import xarray as xr
 from typing_extensions import Self
 
 from AFL.double_agent.PipelineOp import PipelineOp
-from TreeHierarchy import json_decoder
-
+try:
+    from TreeHierarchy import json_decoder
+except ImportError as e:
+    # Keep this pipeline optional and skip tests if TreeHierarchy is not installed.
+    _TreeHierarchy_IMPORT_ERROR = e
+else:
+    _TreeHierarchy_IMPORT_ERROR = None
 
 def _resolve_sample_dim(data: xr.DataArray, sample_dim: str, variable_name: str) -> str:
     if sample_dim in data.dims:
