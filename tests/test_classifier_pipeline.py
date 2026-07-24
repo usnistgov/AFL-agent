@@ -20,6 +20,7 @@ from AFL.double_agent.data import (
 )
 try:
     from TreeHierarchy import TreeHierarchy, json_decoder
+    from AFL.double_agent import TreePipeline as tp
     TREEHIERARCHY_AVAILABLE = True
 except ModuleNotFoundError:
     TREEHIERARCHY_AVAILABLE = False
