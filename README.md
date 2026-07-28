@@ -1,3 +1,11 @@
+> ## ⚠️ Warning:
+> 
+> This is a development branch. While it provides additional functionality, breaking changes, incomplete features, and interface changes should be expected.
+> 
+> If you are a previous AFL software user, please continue to use the `main` branch unless you require some of the updated functionality implemented in the `dev` branch.
+>
+> If you have questions or run into issues, please contact: **[Kiran Vaddi](mailto:kiran.vaddi@nist.gov)**.
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/usnistgov/AFL-agent/main/docs/source/_static/logo_text_large_light.svg" alt="AFL-Agent Logo" width="600">
 </p>
