@@ -292,6 +292,7 @@ def test_predict_sanitizes_object_dtype_datasets():
     driver.last_results = None
     driver.assemble_input_from_tiled = lambda: None
     driver.deposit_obj = lambda *args, **kwargs: None
+    driver.tiled_upload_dataset = lambda **kwargs: None
 
     result = driver.predict()
 
@@ -302,3 +303,147 @@ def test_predict_sanitizes_object_dtype_datasets():
     assert driver.last_results.coords["label"].dtype.kind != "O"
     assert result["raw_text"].values.tolist() == ["alpha", "beta"]
     assert result["result_text"].values.tolist() == ["left", "right"]
+
+
+def _collection_source_spec():
+    return {
+        "campaign_id": "color-campaign",
+        "sample_dim": "sample",
+        "sources": {
+            "composition": {
+                "driver_name": "OT2Prepare",
+                "task_name": "prepare",
+                "campaign_id_path": "AL_campaign_name",
+                "source": "metadata",
+                "path": "prepare.balanced_target.stock_volume_fractions",
+                "mapping_to_vector": True,
+                "dims": ["component"],
+            },
+            "avg_rgb": {
+                "driver_name": "RGBCamera",
+                "task_name": "capture_rgb",
+                "campaign_id_path": "attrs.AL_campaign_name",
+                "source": "dataset",
+                "path": "avg_rgb",
+            },
+        },
+    }
+
+
+def _paired_collection_items(sample_uuid, timestamp="2099-01-01T00:00:00+00:00"):
+    prepare = SimpleNamespace(
+        metadata={
+            "driver_name": "OT2Prepare",
+            "task_name": "prepare",
+            "sample_uuid": sample_uuid,
+            "AL_campaign_name": "color-campaign",
+            "meta": {"ended": timestamp},
+            "prepare": {
+                "balanced_target": {
+                    "stock_volume_fractions": {"stock_Red": 0.25, "stock_Blue": 0.75}
+                }
+            },
+        }
+    )
+    rgb = SimpleNamespace(
+        metadata={
+            "attrs": {
+                "driver_name": "RGBCamera",
+                "task_name": "capture_rgb",
+                "sample_uuid": sample_uuid,
+                "AL_campaign_name": "color-campaign",
+                "timestamp": timestamp,
+            }
+        },
+        dataset=xr.Dataset(
+            {"avg_rgb": ("channel", [10.0, 20.0, 30.0])},
+            coords={"channel": ["red", "green", "blue"]},
+        ),
+    )
+    return prepare, rgb
+
+
+def _collection_driver(items):
+    driver = agent_driver.DoubleAgentDriver.__new__(agent_driver.DoubleAgentDriver)
+    driver.name = "DoubleAgentDriver"
+    driver.config = {"data_collection": None, "tiled_input_groups": []}
+    driver.input = None
+    driver._get_tiled_item_by_id = lambda entry_id: (
+        f"run_documents/{entry_id}", items[entry_id]
+    )
+    driver._read_tiled_item = lambda item: item.dataset
+    return driver
+
+
+def test_setup_data_collection_requires_campaign_and_starts_collection():
+    driver = _collection_driver({})
+
+    result = driver.setup_data_collection(_collection_source_spec())
+
+    assert result["status"] == "success"
+    assert result["campaign_id"] == "color-campaign"
+    assert "baseline_entries" not in result
+    assert "started_at" in result
+    assert driver.input is None
+    assert driver.config["data_collection"]["campaign_id"] == "color-campaign"
+
+
+def test_append_dataset_creates_pipeline_input_from_exact_entries():
+    prepare, rgb = _paired_collection_items("SAM-001")
+    driver = _collection_driver({"prepare-001": prepare, "rgb-001": rgb})
+    driver.setup_data_collection(_collection_source_spec())
+
+    result = driver.append_dataset({"composition": "prepare-001", "avg_rgb": "rgb-001"})
+
+    assert result["status"] == "success"
+    assert result["samples"] == 1
+    assert list(driver.input.data_vars) == ["composition", "avg_rgb"]
+    assert driver.input["composition"].values.tolist() == [[0.25, 0.75]]
+    assert driver.input["avg_rgb"].values.tolist() == [[10.0, 20.0, 30.0]]
+    assert driver.input.coords["composition_entry_id"].values.tolist() == [
+        "run_documents/prepare-001"
+    ]
+    assert result["sample_id"] == "SAM-001"
+
+
+def test_append_dataset_rejects_source_key_mismatch():
+    driver = _collection_driver({})
+    driver.setup_data_collection(_collection_source_spec())
+
+    result = driver.append_dataset({"composition": "prepare-001"})
+
+    assert result["status"] == "error"
+    assert result["expected_keys"] == ["avg_rgb", "composition"]
+    assert result["received_keys"] == ["composition"]
+    assert driver.input is None
+
+
+def test_append_dataset_appends_new_sample_and_rejects_duplicate():
+    prepare_1, rgb_1 = _paired_collection_items("SAM-001")
+    prepare_2, rgb_2 = _paired_collection_items("SAM-002")
+    driver = _collection_driver(
+        {"prepare-001": prepare_1, "rgb-001": rgb_1, "prepare-002": prepare_2, "rgb-002": rgb_2}
+    )
+    driver.setup_data_collection(_collection_source_spec())
+
+    driver.append_dataset({"composition": "prepare-001", "avg_rgb": "rgb-001"})
+    result = driver.append_dataset({"composition": "prepare-002", "avg_rgb": "rgb-002"})
+    repeated = driver.append_dataset({"composition": "prepare-002", "avg_rgb": "rgb-002"})
+
+    assert result["status"] == "success"
+    assert driver.input.sizes["sample"] == 2
+    assert repeated["status"] == "error"
+
+
+def test_append_dataset_rejects_wrong_campaign():
+    in_campaign_prepare, in_campaign_rgb = _paired_collection_items("SAM-campaign")
+    other_prepare, other_rgb = _paired_collection_items("SAM-other")
+    other_prepare.metadata["AL_campaign_name"] = "other-campaign"
+    other_rgb.metadata["attrs"]["AL_campaign_name"] = "other-campaign"
+    driver = _collection_driver({"prepare": other_prepare, "rgb": other_rgb})
+    driver.setup_data_collection(_collection_source_spec())
+
+    result = driver.append_dataset({"composition": "prepare", "avg_rgb": "rgb"})
+
+    assert result["status"] == "error"
+    assert "does not match campaign" in result["message"]
