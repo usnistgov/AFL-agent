@@ -25,8 +25,6 @@ import matplotlib.pyplot as plt
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.util import listify
 
-
-
 class Extrapolator(PipelineOp):
     """Base class for extrapolating discrete sample data onto continuous spaces.
 
@@ -93,7 +91,7 @@ class Extrapolator(PipelineOp):
         self.grid_dim = grid_dim
         self.grid = None# store grid for plotting
 
-        self._banned_from_attrs.extend(["kernel"])
+        self._banned_from_attrs.extend(["kernel", "grid"])
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this extrapolator to the supplied dataset.

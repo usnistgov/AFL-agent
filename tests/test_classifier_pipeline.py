@@ -30,6 +30,9 @@ except ModuleNotFoundError:
         stacklevel=2,
     )
 
+if TREEHIERARCHY_AVAILABLE:
+    from AFL.double_agent import TreePipeline as tp
+
 @pytest.mark.unit
 @pytest.mark.skipif(
     not TREEHIERARCHY_AVAILABLE,
@@ -99,6 +102,5 @@ class TestClassificationPipelinePerformance:
             out = P.calculate(data)
             print(P[0].output_variable)
             np.testing.assert_array_equal(out["predicted_test_labels"].data, ref["reference_predictions"].data)
-
 
 

@@ -1,0 +1,137 @@
+{
+ "name": "color_matching",
+ "date": "06/04/26 00:00:00-000000",
+ "description": "A Bayesian optimization pipeline for RGB color matching using red, green, and blue volume fractions as inputs and camera-measured RGB color as the optimization target.",
+ "ops": [
+  {
+   "class": "AFL.double_agent.Generator.BarycentricGrid",
+   "args": {
+    "output_variable": "composition_grid",
+    "components": [
+     "red",
+     "green",
+     "blue"
+    ],
+    "sample_dim": "grid",
+    "pts_per_row": 41,
+    "basis": 1.0,
+    "dim": 3,
+    "eps": 1e-09,
+    "name": "BarycentricGridGenerator"
+   }
+  },
+  {
+   "class": "AFL.double_agent.Preprocessor.Standardize",
+   "args": {
+    "input_variable": "composition",
+    "output_variable": "normalized_composition",
+    "dim": "sample",
+    "component_dim": "component",
+    "scale_variable": null,
+    "min_val": {
+     "red": 0.0,
+     "green": 0.0,
+     "blue": 0.0
+    },
+    "max_val": {
+     "red": 1.0,
+     "green": 1.0,
+     "blue": 1.0
+    },
+    "name": "Standardize"
+   }
+  },
+  {
+   "class": "AFL.double_agent.Preprocessor.Standardize",
+   "args": {
+    "input_variable": "composition_grid",
+    "output_variable": "normalized_composition_grid",
+    "dim": "grid",
+    "component_dim": "component",
+    "scale_variable": null,
+    "min_val": {
+     "red": 0.0,
+     "green": 0.0,
+     "blue": 0.0
+    },
+    "max_val": {
+     "red": 1.0,
+     "green": 1.0,
+     "blue": 1.0
+    },
+    "name": "Standardize"
+   }
+  },
+  {
+   "class": "AFL.double_agent.PyTorchExtrapolator.BoTorchRegressor",
+   "args": {
+    "feature_input_variable": "normalized_composition",
+    "predictor_input_variable": "camera_rgb",
+    "output_prefix": "bayesopt",
+    "grid_variable": "normalized_composition_grid",
+    "grid_dim": "grid",
+    "sample_dim": "sample",
+    "objective_direction": "minimize",
+    "standardize": true,
+    "posterior_optimize": true,
+    "posterior_optimize_restarts": 16,
+    "posterior_optimize_raw_samples": 128,
+    "bounds": {
+     "red": {
+      "min": 0.0,
+      "max": 1.0
+     },
+     "green": {
+      "min": 0.0,
+      "max": 1.0
+     },
+     "blue": {
+      "min": 0.0,
+      "max": 1.0
+     }
+    },
+    "is_simplex": true,
+    "name": "BoTorchRegressor"
+   }
+  },
+  {
+   "class": "AFL.double_agent.AcquisitionFunction.BoTorchAcquisition",
+   "args": {
+    "feature_input_variable": "normalized_composition",
+    "predictor_input_variable": "camera_rgb",
+    "grid_variable": "normalized_composition_grid",
+    "grid_dim": "grid",
+    "sample_dim": "sample",
+    "objective_direction": "minimize",
+    "standardize": true,
+    "output_prefix": "bayesopt",
+    "output_variable": "next_sample",
+    "decision_rtol": 0.05,
+    "excluded_comps_variables": [
+     "normalized_composition"
+    ],
+    "excluded_comps_dim": "component",
+    "exclusion_radius": 0.02,
+    "count": 1,
+    "acquisition_kind": "auto",
+    "best_f_variable": "bayesopt_best_f",
+    "bounds": {
+     "red": {
+      "min": 0.0,
+      "max": 1.0
+     },
+     "green": {
+      "min": 0.0,
+      "max": 1.0
+     },
+     "blue": {
+      "min": 0.0,
+      "max": 1.0
+     }
+    },
+    "is_simplex": true,
+    "name": "BoTorchAcquisition"
+   }
+  }
+ ]
+}

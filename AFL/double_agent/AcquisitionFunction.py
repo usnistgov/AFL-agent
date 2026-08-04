@@ -15,6 +15,7 @@ Key features:
 """
 
 import copy
+import warnings
 from typing import List, Optional
 
 import numpy as np
@@ -23,8 +24,19 @@ from typing_extensions import Self
 
 from AFL.double_agent.Generator import GaussianPoints
 from AFL.double_agent.PipelineOp import PipelineOp
-from AFL.double_agent.util import listify
-
+from AFL.double_agent.util import (
+    dataset_to_botorch_candidates,
+    dataset_to_botorch_training_data,
+    evaluate_log_expected_improvement,
+    evaluate_qlog_expected_improvement,
+    fit_single_task_gp,
+    get_observed_best_f,
+    listify,
+    make_simplex_constraints,
+    optimization_bounds_to_xarray,
+    optimization_bounds_to_tensor,
+    optimize_acquisition_function,
+)
 
 class AcquisitionError(Exception):
     """Exception raised when an error in the acquisition decision occurs"""
@@ -441,6 +453,7 @@ class RandomAF(AcquisitionFunction):
         self.get_next_samples(self.acquisition)
 
         return self
+
 
 class MultimodalMask_MaxValueAF(AcquisitionFunction):
     """Acquisition function that selects points based on maximum values within specific phase regions.
@@ -883,5 +896,255 @@ class PseudoUCB(AcquisitionFunction):
         ] = "The final acquisition surface that is evaluated to determine the next_sample"
 
         self.get_next_samples(self.acquisition)
+        return self
 
+
+class BoTorchAcquisition(AcquisitionFunction):
+    r"""BoTorch-based acquisition optimization with optional simplex constraints.
+
+    Parameters
+    ----------
+    feature_input_variable : str
+        Name of the feature variable used to fit the surrogate model.
+    predictor_input_variable : str
+        Name of the scalar objective variable.
+    grid_variable : str
+        Name of the candidate grid variable.
+    grid_dim : str, default="grid"
+        Dimension indexing candidate grid points.
+    sample_dim : str, default="sample"
+        Dimension indexing observed samples.
+    objective_direction : str, default="maximize"
+        Whether the objective is maximized or minimized.
+    standardize : bool, default=True
+        Whether to standardize the GP outputs.
+    output_prefix : str, optional
+        Prefix applied to generated outputs.
+    output_variable : str, default="next_samples"
+        Name of the selected next-sample output variable.
+    decision_rtol : float, default=0.05
+        Relative tolerance used by the base acquisition class.
+    excluded_comps_variables : list[str], optional
+        Previously sampled compositions to exclude.
+    excluded_comps_dim : str, optional
+        Component dimension for excluded compositions.
+    exclusion_radius : float, default=1e-3
+        Radius used for exclusion masking.
+    count : int, default=1
+        Number of points to optimize jointly.
+    acquisition_kind : str, default="auto"
+        Acquisition function family. "auto" selects logEI or qLogEI from `count`.
+    best_f_variable : str, optional
+        Dataset variable containing the incumbent objective value.
+    bounds : dict | list[tuple[float, float]] | None, default=None
+        Explicit optimization bounds passed through to BoTorch's optimizer.
+        This may be supplied in the same per-component format used by
+        `BarycentricGrid` and `CartesianGrid`, i.e.
+        ``{component: {"min": lower, "max": upper}}``, or as ordered
+        ``(lower, upper)`` pairs. Bounds must be expressed in the same feature
+        space as `feature_input_variable` and `grid_variable`.
+    is_simplex : bool, default=False
+        When True, acquisition optimization is constrained to the simplex.
+        The GP surrogate is still fit directly in the original feature space.
+
+        Notes
+        -----
+        The simplex is mathematically defined by the equality
+        :math:`\sum_i x_i = 1` together with non-negativity. BoTorch's optimizer
+        interface consumes linear inequality constraints, so the equality is
+        represented as the equivalent pair
+        :math:`\sum_i x_i \ge 1` and :math:`-\sum_i x_i \ge -1`.
+    name : str, default="BoTorchAcquisition"
+        Pipeline operation name.
+    """
+
+    def __init__(
+        self,
+        feature_input_variable: str,
+        predictor_input_variable: str,
+        grid_variable: str,
+        grid_dim: str = "grid",
+        sample_dim: str = "sample",
+        objective_direction: str = "maximize",
+        standardize: bool = True,
+        output_prefix: Optional[str] = None,
+        output_variable: str = "next_samples",
+        decision_rtol: float = 0.05,
+        excluded_comps_variables: Optional[List[str]] = None,
+        excluded_comps_dim: Optional[str] = None,
+        exclusion_radius: float = 1e-3,
+        count: int = 1,
+        acquisition_kind: str = "auto",
+        best_f_variable: Optional[str] = None,
+        bounds: Optional[dict] = None,
+        is_simplex: bool = False,
+        name: str = "BoTorchAcquisition",
+    ) -> None:
+        super().__init__(
+            input_variables=[feature_input_variable, predictor_input_variable],
+            grid_variable=grid_variable,
+            grid_dim=grid_dim,
+            output_prefix=output_prefix,
+            output_variable=output_variable,
+            decision_rtol=decision_rtol,
+            excluded_comps_variables=excluded_comps_variables,
+            excluded_comps_dim=excluded_comps_dim,
+            exclusion_radius=exclusion_radius,
+            count=count,
+            name=name,
+        )
+        self.feature_input_variable = feature_input_variable
+        self.predictor_input_variable = predictor_input_variable
+        self.sample_dim = sample_dim
+        self.objective_direction = objective_direction
+        self.standardize = standardize
+        self.acquisition_kind = acquisition_kind
+        self.best_f_variable = best_f_variable
+        self.bounds = bounds
+        self.is_simplex = is_simplex
+        self.acquisition = None
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        train_x, train_y = dataset_to_botorch_training_data(
+            dataset=dataset,
+            feature_input_variable=self.feature_input_variable,
+            predictor_input_variable=self.predictor_input_variable,
+            sample_dim=self.sample_dim,
+            objective_direction=self.objective_direction,
+        )
+        candidate_x = dataset_to_botorch_candidates(
+            dataset=dataset,
+            grid_variable=self.grid_variable,
+            grid_dim=self.grid_dim,
+        )
+        model = fit_single_task_gp(
+            train_x=train_x,
+            train_y=train_y,
+            standardize=self.standardize,
+        )
+
+        if self.best_f_variable is not None and self.best_f_variable in dataset:
+            best_f = float(dataset[self.best_f_variable].values[()])
+        else:
+            best_f = get_observed_best_f(
+                train_y,
+                objective_direction=self.objective_direction,
+            )
+
+        internal_best_f = -best_f if self.objective_direction == "minimize" else best_f
+
+        inequality_constraints = (
+            make_simplex_constraints(candidate_x.shape[-1]) if self.is_simplex else None
+        )
+
+        acquisition_kind = self.acquisition_kind
+        if acquisition_kind == "auto":
+            acquisition_kind = "qlogei" if self.count > 1 else "logei"
+
+        # Evaluate acquisition function on the grid for decision surface
+        if acquisition_kind == "logei":
+            acq_values = evaluate_log_expected_improvement(
+                model=model,
+                candidate_x=candidate_x,
+                best_f=internal_best_f,
+            )
+        else:  # qlogei
+            acq_values = evaluate_qlog_expected_improvement(
+                model=model,
+                candidate_x=candidate_x,
+                best_f=internal_best_f,
+                q=self.count,
+            )
+        
+        # Create decision_surface by reshaping acquisition values to grid structure
+        grid_variable_data = dataset[self.grid_variable]
+        acq_numpy = acq_values.detach().cpu().numpy().reshape(-1)
+        
+        # Reshape to match the grid structure (all dims except the sample dimension)
+        grid_shape = grid_variable_data.shape
+        decision_surface = xr.DataArray(
+            acq_numpy.reshape(grid_shape[:-1]) if len(grid_shape) > 1 else acq_numpy,
+            dims=grid_variable_data.dims[:-1],
+            coords={dim: grid_variable_data.coords[dim] for dim in grid_variable_data.dims[:-1]},
+        )
+        
+        self.output[self._prefix_output("decision_surface")] = decision_surface
+        self.output[self._prefix_output("decision_surface")].attrs["description"] = (
+            "Acquisition function values evaluated on the grid"
+        )
+
+        if self.bounds is None:
+            raise ValueError("BoTorchAcquisition requires explicit `bounds` for optimize_acqf.")
+        component_dim = dataset[self.grid_variable].dims[-1]
+        component_names = dataset[self.grid_variable].coords.get(component_dim)
+        optimization_bounds = optimization_bounds_to_tensor(
+            self.bounds,
+            component_names=component_names.values if component_names is not None else None,
+        )
+        if component_names is not None:
+            self.output[self._prefix_output("bounds")] = optimization_bounds_to_xarray(
+                optimization_bounds,
+                component_names=component_names.values,
+                variable_name=self._prefix_output("bounds"),
+            )
+
+        # Use BoTorch's optimize_acqf to find optimal points
+        try:
+            optimized_x, _ = optimize_acquisition_function(
+                model=model,
+                bounds=optimization_bounds,
+                best_f=internal_best_f,
+                acquisition_kind=acquisition_kind,
+                q=self.count,
+                num_restarts=10,
+                raw_samples=128,
+                inequality_constraints=inequality_constraints,
+            )
+            optimized_points = optimized_x.detach().cpu().numpy()
+        except RuntimeError:
+            warnings.warn(
+                "BoTorch acquisition optimization failed; falling back to the best evaluated grid point(s).",
+                stacklevel=2,
+            )
+            acquisition_dataset = xr.Dataset(
+                {
+                    "decision_surface": decision_surface,
+                    "comp_grid": dataset[self.grid_variable].transpose(self.grid_dim, ...),
+                }
+            )
+            excluded_comps = self._get_excluded_comps(dataset)
+            if excluded_comps is not None:
+                acquisition_dataset["excluded_comps"] = excluded_comps
+                self.exclude_previous_samples(acquisition_dataset)
+                self.output[self._prefix_output("decision_surface")] = acquisition_dataset[
+                    "decision_surface"
+                ]
+            self.get_next_samples(acquisition_dataset)
+            return self
+        
+        # Convert optimized points to numpy array and create output
+        
+        # Handle single vs. batch optimization
+        if optimized_points.ndim == 1:
+            optimized_points = optimized_points[np.newaxis, :]
+        
+        # Get component names from the feature input variable
+        component_coords = dataset[self.feature_input_variable].coords.get(
+            "component", None
+        )
+        
+        # Create output for next samples
+        next_samples = xr.DataArray(
+            optimized_points,
+            dims=("next_sample", "component"),
+            coords={
+                "component": component_coords.values if component_coords is not None else range(optimized_points.shape[1])
+            },
+        )
+        
+        self.output[self.output_variable] = next_samples
+        self.output[self.output_variable].attrs["description"] = (
+            "Next sample point(s) optimized using BoTorch acquisition function"
+        )
+        
         return self

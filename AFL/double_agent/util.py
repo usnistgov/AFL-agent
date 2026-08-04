@@ -2,10 +2,19 @@
 A collection of helper methods/classes
 """
 
+from __future__ import annotations
+
 import inspect
-from typing import Any, Dict
+from typing import Any, Dict, Literal, Mapping, Sequence
+
+import numpy as np
+import torch
+import xarray as xr
 
 from AFL.double_agent.PipelineOp import PipelineOp
+
+
+ObjectiveDirection = Literal["maximize", "minimize"]
 
 
 def listify(obj):
@@ -64,3 +73,321 @@ def extract_parameters(op: PipelineOp, method: str = "__init__") -> Dict:
             parameters[k] = op.__dict__.get(k, v)
 
     return parameters
+
+
+def import_botorch():
+    try:
+        from botorch.acquisition import LogExpectedImprovement, PosteriorMean, qLogExpectedImprovement
+        from botorch.fit import fit_gpytorch_mll
+        from botorch.models import SingleTaskGP
+        from botorch.models.transforms.outcome import Standardize
+        from botorch.optim import optimize_acqf
+        from gpytorch.mlls import ExactMarginalLogLikelihood
+    except ImportError as exc:
+        raise ImportError(
+            "BoTorch support requires the optional botorch dependencies. Install with 'pip install -e .[botorch]'."
+        ) from exc
+
+    return {
+        "ExactMarginalLogLikelihood": ExactMarginalLogLikelihood,
+        "LogExpectedImprovement": LogExpectedImprovement,
+        "PosteriorMean": PosteriorMean,
+        "SingleTaskGP": SingleTaskGP,
+        "Standardize": Standardize,
+        "fit_gpytorch_mll": fit_gpytorch_mll,
+        "optimize_acqf": optimize_acqf,
+        "qLogExpectedImprovement": qLogExpectedImprovement,
+    }
+
+
+def _as_float_tensor(data: xr.DataArray, leading_dim: str) -> torch.Tensor:
+    values = data.transpose(leading_dim, ...).values
+    return torch.as_tensor(np.asarray(values), dtype=torch.double)
+
+
+def dataset_to_botorch_training_data(
+    dataset: xr.Dataset,
+    feature_input_variable: str,
+    predictor_input_variable: str,
+    sample_dim: str,
+    objective_direction: ObjectiveDirection = "minimize",
+) -> tuple[torch.Tensor, torch.Tensor]:
+    train_x = _as_float_tensor(dataset[feature_input_variable], sample_dim)
+    train_y = _as_float_tensor(dataset[predictor_input_variable], sample_dim)
+
+    if train_y.ndim == 1:
+        train_y = train_y.unsqueeze(-1)
+
+    if objective_direction == "minimize":
+        train_y = -train_y
+
+    return train_x, train_y
+
+
+def dataset_to_botorch_candidates(
+    dataset: xr.Dataset,
+    grid_variable: str,
+    grid_dim: str,
+) -> torch.Tensor:
+    return _as_float_tensor(dataset[grid_variable], grid_dim)
+
+
+def make_simplex_constraints(n_dim: int) -> list[tuple[torch.Tensor, torch.Tensor, float]]:
+    r"""Return BoTorch-compatible simplex constraints.
+
+    BoTorch's `optimize_acqf` accepts linear inequality constraints of the form
+
+    .. math::
+        \sum_i a_i x_i \ge b.
+
+    A simplex equality :math:`\sum_i x_i = 1` is therefore encoded as the pair
+
+    .. math::
+        \sum_i x_i \ge 1, \qquad -\sum_i x_i \ge -1,
+
+    which together are exactly equivalent to the equality constraint. This helper
+    returns that pair so the optimizer can enforce the simplex using the API it
+    already exposes.
+    """
+    indices = torch.arange(n_dim, dtype=torch.long)
+    coefficients = torch.ones(n_dim, dtype=torch.double)
+    return [(indices, coefficients, 1.0), (indices, -coefficients, -1.0)]
+
+
+def optimization_bounds_to_tensor(
+    bounds: Mapping[str, Mapping[str, float] | Sequence[float]] | Sequence[Sequence[float]],
+    component_names: Sequence[Any] | None = None,
+) -> torch.Tensor:
+    """Convert explicit constructor bounds into a BoTorch bounds tensor.
+
+    Parameters
+    ----------
+    bounds
+        Either a mapping from component name to ``{"min": lower, "max": upper}``
+        dictionaries, a mapping from component name to ``(lower, upper)`` pairs,
+        or an ordered sequence of ``(lower, upper)`` pairs.
+    component_names
+        Optional ordered component names used to align mapping-based bounds with
+        model inputs.
+    """
+    if isinstance(bounds, Mapping):
+        if component_names is None:
+            raise ValueError("component_names are required when bounds are provided as a mapping.")
+        missing = [str(name) for name in component_names if name not in bounds]
+        if missing:
+            raise ValueError(f"Optimization bounds are missing components: {missing}")
+        ordered_bounds = [bounds[name] for name in component_names]
+    else:
+        ordered_bounds = list(bounds)
+        if component_names is not None and len(ordered_bounds) != len(component_names):
+            raise ValueError(
+                "Optimization bounds length does not match the number of components: "
+                f"got {len(ordered_bounds)} bounds for {len(component_names)} components."
+            )
+
+    if not ordered_bounds:
+        raise ValueError("Optimization bounds cannot be empty.")
+
+    lower = []
+    upper = []
+    for index, pair in enumerate(ordered_bounds):
+        if isinstance(pair, Mapping):
+            if "min" not in pair or "max" not in pair:
+                raise ValueError(
+                    "Mapping-based optimization bounds must contain 'min' and 'max' keys: "
+                    f"received {pair!r} at position {index}."
+                )
+            lo = float(pair["min"])
+            hi = float(pair["max"])
+        else:
+            if len(pair) != 2:
+                raise ValueError(
+                    "Each optimization bound must contain exactly two values: "
+                    f"received {pair!r} at position {index}."
+                )
+            lo = float(pair[0])
+            hi = float(pair[1])
+        if lo > hi:
+            raise ValueError(
+                "Optimization bounds must satisfy lower <= upper: "
+                f"received ({lo}, {hi}) at position {index}."
+            )
+        lower.append(lo)
+        upper.append(hi)
+
+    return torch.tensor([lower, upper], dtype=torch.double)
+
+
+def optimization_bounds_to_xarray(
+    bounds: torch.Tensor,
+    component_names: Sequence[Any],
+    variable_name: str,
+) -> xr.DataArray:
+    """Represent optimization bounds as an xarray DataArray."""
+    return xr.DataArray(
+        bounds.detach().cpu().numpy(),
+        dims=("bound", "component"),
+        coords={"bound": ["min", "max"], "component": list(component_names)},
+        name=variable_name,
+    )
+
+
+def fit_single_task_gp(
+    train_x: torch.Tensor,
+    train_y: torch.Tensor,
+    standardize: bool = True,
+):
+    botorch = import_botorch()
+    outcome_transform = botorch["Standardize"](m=train_y.shape[-1]) if standardize else None
+    model_kwargs: dict[str, Any] = {
+        "train_X": train_x,
+        "train_Y": train_y,
+        "outcome_transform": outcome_transform,
+    }
+
+    model = botorch["SingleTaskGP"](**model_kwargs)
+    mll = botorch["ExactMarginalLogLikelihood"](model.likelihood, model)
+    botorch["fit_gpytorch_mll"](mll)
+    return model
+
+
+def posterior_to_xarray(
+    posterior,
+    grid_index: xr.DataArray,
+    output_prefix: str,
+    objective_direction: ObjectiveDirection = "maximize",
+) -> xr.Dataset:
+    mean = posterior.mean.detach().cpu().numpy().reshape(-1)
+    if objective_direction == "minimize":
+        mean = -mean
+    variance = posterior.variance.detach().cpu().numpy().reshape(-1)
+    if mean.shape[0] != grid_index.shape[0] or variance.shape[0] != grid_index.shape[0]:
+        raise ValueError(
+            "Posterior outputs must match the candidate grid length: "
+            f"got mean={mean.shape[0]}, variance={variance.shape[0]}, grid={grid_index.shape[0]}."
+        )
+    return xr.Dataset(
+        data_vars={
+            f"{output_prefix}_mean": ((grid_index.dims[0],), mean),
+            f"{output_prefix}_variance": ((grid_index.dims[0],), variance),
+        },
+        coords={grid_index.dims[0]: grid_index.values},
+    )
+
+
+def get_observed_best_f(
+    train_y: torch.Tensor,
+    objective_direction: ObjectiveDirection = "maximize",
+) -> float:
+    best_f = float(train_y.max().detach().cpu().item())
+    if objective_direction == "minimize":
+        return -best_f
+    return best_f
+
+
+def optimize_posterior_mean(
+    model,
+    bounds: torch.Tensor,
+    q: int = 1,
+    num_restarts: int = 10,
+    raw_samples: int = 128,
+    objective_direction: ObjectiveDirection = "maximize",
+    inequality_constraints: Sequence[tuple[torch.Tensor, torch.Tensor, float]] | None = None,
+    batch_initial_conditions: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, float]:
+    botorch = import_botorch()
+
+    class _TransformedPosteriorMean(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.posterior_mean = botorch["PosteriorMean"](model)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.posterior_mean(x)
+
+    candidates, values = botorch["optimize_acqf"](
+        acq_function=_TransformedPosteriorMean(),
+        bounds=bounds,
+        q=q,
+        num_restarts=num_restarts,
+        raw_samples=raw_samples,
+        inequality_constraints=inequality_constraints,
+        batch_initial_conditions=batch_initial_conditions,
+    )
+    best_f = float(values.max().detach().cpu().item())
+    if objective_direction == "minimize":
+        best_f = -best_f
+    return candidates.detach(), best_f
+
+
+def evaluate_log_expected_improvement(
+    model,
+    candidate_x: torch.Tensor,
+    best_f: float,
+) -> torch.Tensor:
+    botorch = import_botorch()
+    acquisition = botorch["LogExpectedImprovement"](model=model, best_f=best_f)
+    return acquisition(candidate_x.unsqueeze(-2)).detach()
+
+
+def evaluate_qlog_expected_improvement(
+    model,
+    candidate_x: torch.Tensor,
+    best_f: float,
+    q: int,
+) -> torch.Tensor:
+    botorch = import_botorch()
+    acquisition = botorch["qLogExpectedImprovement"](model=model, best_f=best_f)
+    if q <= 1:
+        return acquisition(candidate_x.unsqueeze(-2)).detach()
+
+    values = []
+    total = candidate_x.shape[0]
+    for start in range(0, total - q + 1):
+        batch = candidate_x[start : start + q]
+        values.append(acquisition(batch.unsqueeze(0)).reshape(()))
+
+    padded = torch.full((total,), float("-inf"), dtype=candidate_x.dtype)
+    if values:
+        padded[: len(values)] = torch.stack(values)
+    return padded
+
+
+def optimize_acquisition_function(
+    model,
+    bounds: torch.Tensor,
+    best_f: float,
+    acquisition_kind: str = "logei",
+    q: int = 1,
+    num_restarts: int = 10,
+    raw_samples: int = 128,
+    inequality_constraints: Sequence[tuple[torch.Tensor, torch.Tensor, float]] | None = None,
+    batch_initial_conditions: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    botorch = import_botorch()
+
+    class _TransformedAcquisition(torch.nn.Module):
+        def __init__(self, base_acquisition) -> None:
+            super().__init__()
+            self.base_acquisition = base_acquisition
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.base_acquisition(x)
+
+    if acquisition_kind == "qlogei":
+        base_acq_function = botorch["qLogExpectedImprovement"](model=model, best_f=best_f)
+    else:
+        base_acq_function = botorch["LogExpectedImprovement"](model=model, best_f=best_f)
+    acq_function = _TransformedAcquisition(base_acq_function)
+
+    candidates, values = botorch["optimize_acqf"](
+        acq_function=acq_function,
+        bounds=bounds,
+        q=q,
+        num_restarts=num_restarts,
+        raw_samples=raw_samples,
+        inequality_constraints=inequality_constraints,
+        batch_initial_conditions=batch_initial_conditions,
+    )
+
+    return candidates.detach(), values.detach()

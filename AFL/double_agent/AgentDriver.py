@@ -13,6 +13,7 @@ import time
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List, Tuple, get_type_hints, Union
 
+import numpy as np
 import xarray as xr
 
 from AFL.double_agent.Pipeline import Pipeline
@@ -238,17 +239,17 @@ def _collect_pipeline_ops(module_files: List[pathlib.Path], strict: bool = False
                     for k, v in sig.parameters.items()
                     if k != "self"
                 }
-                
+
                 # Detect required parameters (those without defaults)
                 required_params = []
                 for k, v in sig.parameters.items():
                     if k != "self" and v.default is inspect._empty:
                         required_params.append(k)
-                
+
                 # Detect input/output variable parameters
                 input_params = []
                 output_params = []
-                
+
                 for param_name in params.keys():
                     # Parameters that represent input variables
                     if (param_name.endswith('_variable') and 'input' in param_name) or \
@@ -259,7 +260,7 @@ def _collect_pipeline_ops(module_files: List[pathlib.Path], strict: bool = False
                          param_name == 'output_variable' or param_name == 'output_variables' or \
                          param_name == 'output_prefix':
                         output_params.append(param_name)
-                
+
                 # Extract parameter types from type annotations
                 param_types = _get_parameter_types(obj)
 
@@ -392,6 +393,9 @@ class DoubleAgentDriver(AgentWebAppMixin, Driver):
     defaults["save_path"] = "/home/AFL/"
     defaults["pipeline"] = {}
     defaults["tiled_input_groups"] = []  # List[Dict] with concat_dim, variable_prefix, entry_ids
+    # Configuration for the direct-entry data collection API.  The xarray
+    # dataset is kept in memory and populated by append_dataset.
+    defaults["data_collection"] = None
 
     def __init__(
         self,
@@ -488,6 +492,272 @@ class DoubleAgentDriver(AgentWebAppMixin, Driver):
             self.pipeline = Pipeline(name=name, ops=pipeline_ops)
             self.config["pipeline"] = self.pipeline.to_dict()
 
+    @staticmethod
+    def _metadata_path(metadata: Dict[str, Any], path: Optional[str]) -> Any:
+        """Return a dotted metadata path, or ``None`` when it is absent."""
+        if not path:
+            return None
+        value: Any = metadata
+        for part in path.split("."):
+            if not isinstance(value, dict) or part not in value:
+                return None
+            value = value[part]
+        return value
+
+    @classmethod
+    def _record_identifier(
+        cls, metadata: Dict[str, Any], kind: str, path: Optional[str] = None
+    ) -> Optional[str]:
+        """Resolve a campaign or sample identifier from run-document metadata."""
+        if path:
+            paths = [path]
+        elif kind == "campaign_id":
+            paths = [
+                "campaign_id",
+                "AL_campaign_name",
+                "attrs.campaign_id",
+                "attrs.AL_campaign_name",
+                "meta.campaign_id",
+            ]
+        elif kind == "sample_id":
+            # sample_uuid is the established AFL sample identifier. Accepting
+            # sample_id as well makes the collection API terminology explicit.
+            paths = [
+                "sample_id",
+                "sample_uuid",
+                "attrs.sample_id",
+                "attrs.sample_uuid",
+                "meta.sample_id",
+                "meta.sample_uuid",
+            ]
+        else:
+            raise ValueError(f"Unsupported identifier kind: {kind}")
+        for candidate in paths:
+            value = cls._metadata_path(metadata, candidate)
+            if value is not None:
+                return str(value)
+        return None
+
+    @staticmethod
+    def _source_matches(metadata: Dict[str, Any], source: Dict[str, Any]) -> bool:
+        """Match a run document against the driver/task selectors in a source."""
+        for selector, default_paths in (
+            ("driver_name", ("driver_name", "attrs.driver_name")),
+            ("task_name", ("task_name", "attrs.task_name")),
+        ):
+            expected = source.get(selector)
+            if expected is None:
+                continue
+            paths = source.get(f"{selector}_path")
+            if paths is None:
+                paths = default_paths
+            if isinstance(paths, str):
+                paths = [paths]
+            if not any(
+                DoubleAgentDriver._metadata_path(metadata, path) == expected
+                for path in paths
+            ):
+                return False
+        return True
+
+    @staticmethod
+    def _validate_input_spec(input_spec: Any) -> Dict[str, Any]:
+        if isinstance(input_spec, str):
+            input_spec = json.loads(input_spec)
+        if not isinstance(input_spec, dict):
+            raise ValueError("input_spec must be a dictionary")
+        if not input_spec.get("campaign_id"):
+            raise ValueError("input_spec.campaign_id is required")
+        sources = input_spec.get("sources")
+        if not isinstance(sources, dict) or not sources:
+            raise ValueError("input_spec.sources must be a non-empty dictionary keyed by source name")
+        for name, source in sources.items():
+            if not isinstance(name, str) or not name:
+                raise ValueError("input_spec.sources keys must be non-empty strings")
+            if not isinstance(source, dict):
+                raise ValueError(f"input_spec.sources[{name!r}] must be a dictionary")
+            required = ("driver_name", "task_name", "source", "path")
+            missing = [key for key in required if not source.get(key)]
+            if missing:
+                raise ValueError(
+                    f"input_spec.sources[{name!r}] missing required keys: {missing}"
+                )
+            if source["source"] not in {"dataset", "metadata"}:
+                raise ValueError("source must be either 'dataset' or 'metadata'")
+        return input_spec
+
+    @Driver.queued()
+    def setup_data_collection(self, input_spec: Dict[str, Any]) -> Dict[str, Any]:
+        """Configure direct Tiled-entry input collection.
+
+        The spec requires a ``campaign_id`` and a source-name-to-spec
+        dictionary. Each spec requires ``driver_name``,
+        ``task_name``, ``source`` (``dataset`` or ``metadata``), and ``path``.
+        append_dataset must receive exactly the same source names.
+        """
+        spec = self._validate_input_spec(input_spec)
+        collection = {
+            "input_spec": spec,
+            "campaign_id": str(spec["campaign_id"]),
+            "started_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        self.config["data_collection"] = collection
+        self.input = None
+        return {
+            "status": "success",
+            "campaign_id": collection["campaign_id"],
+            "sources": list(spec["sources"]),
+            "started_at": collection["started_at"],
+        }
+
+    def _get_tiled_item_by_id(self, entry_id: str) -> Tuple[str, Any]:
+        """Look up a run document by its exact path without catalog discovery."""
+        normalized = str(entry_id or "").strip().strip("/")
+        prefix = f"{self.TILED_RUN_DOCUMENTS_NODE}/"
+        if normalized.startswith(prefix):
+            normalized = normalized[len(prefix):]
+        if not normalized:
+            raise ValueError("Tiled entry ID cannot be empty")
+        client = self._get_tiled_client()
+        if isinstance(client, dict) and client.get("status") == "error":
+            raise RuntimeError(client["message"])
+        item = client[self.TILED_RUN_DOCUMENTS_NODE]
+        for part in normalized.split("/"):
+            item = item[part]
+        return f"{self.TILED_RUN_DOCUMENTS_NODE}/{normalized}", item
+
+    def _collection_value(
+        self, source: Dict[str, Any], record: Dict[str, Any], sample_dim: str
+    ) -> xr.DataArray:
+        if source["source"] == "dataset":
+            dataset = self._read_tiled_item(record["item"])
+            if not isinstance(dataset, xr.Dataset):
+                raise ValueError(f"{record['entry_id']} is not an xarray Dataset")
+            if source["path"] not in dataset:
+                raise ValueError(f"{record['entry_id']} has no variable {source['path']!r}")
+            return dataset[source["path"]].load().expand_dims({sample_dim: [record["sample_id"]]})
+
+        raw_value = self._metadata_path(record["metadata"], source["path"])
+        if raw_value is None:
+            raise ValueError(f"{record['entry_id']} has no metadata path {source['path']!r}")
+        dims = list(source.get("dims", []))
+        if source.get("mapping_to_vector", False):
+            if not isinstance(raw_value, dict) or len(dims) != 1:
+                raise ValueError("mapping_to_vector requires a mapping and exactly one dims value")
+            return xr.DataArray(
+                np.asarray(list(raw_value.values()), dtype=float)[None, :],
+                dims=[sample_dim, dims[0]],
+                coords={sample_dim: [record["sample_id"]], dims[0]: list(raw_value)},
+            )
+        array = np.asarray(raw_value)
+        if array.ndim != len(dims):
+            raise ValueError(
+                f"metadata {source['path']!r} has {array.ndim} dimensions; spec declares {len(dims)}"
+            )
+        return xr.DataArray(
+            array.reshape((1, *array.shape)), dims=[sample_dim, *dims], coords={sample_dim: [record["sample_id"]]}
+        )
+
+    def _post_dataset_to_tiled(self, dataset: xr.Dataset, kind: str) -> Any:
+        """Upload a generated dataset through AFL-automation's Tiled helper."""
+        uploader = getattr(self, "tiled_upload_dataset", None)
+        if not callable(uploader):
+            return None
+        metadata = {
+            "driver_name": getattr(self, "name", self.__class__.__name__),
+            "task_name": kind,
+            "AL_campaign_name": self.config.get("data_collection", {}).get("campaign_id"),
+        }
+        try:
+            return uploader(dataset=dataset, metadata=metadata)
+        except Exception as exc:
+            # Prediction has historically worked without a Tiled connection;
+            # retain that behavior while reporting an unavailable archive.
+            LOGGER.warning("Failed to upload %s dataset to Tiled: %s", kind, exc)
+            return {"status": "error", "message": str(exc)}
+
+    @Driver.queued()
+    def append_dataset(self, entries: Dict[str, str]) -> Dict[str, Any]:
+        """Append one sample using exact Tiled entry IDs keyed by source name.
+
+        ``entries`` must contain exactly the keys in
+        ``data_collection.input_spec.sources``. Each entry is read directly
+        from ``run_documents``; this method never searches the catalog.
+        """
+        collection = self.config.get("data_collection")
+        if not collection:
+            return {"status": "error", "message": "No data collection configured. Call setup_data_collection first."}
+        if isinstance(entries, str):
+            try:
+                entries = json.loads(entries)
+            except json.JSONDecodeError:
+                return {"status": "error", "message": "entries must be a dictionary of source names to Tiled entry IDs"}
+        if not isinstance(entries, dict):
+            return {"status": "error", "message": "entries must be a dictionary of source names to Tiled entry IDs"}
+
+        spec = collection["input_spec"]
+        sources = spec["sources"]
+        expected_keys = set(sources)
+        received_keys = set(entries)
+        if received_keys != expected_keys:
+            return {
+                "status": "error",
+                "message": "entries keys must exactly match input_spec.sources keys",
+                "expected_keys": sorted(expected_keys),
+                "received_keys": sorted(received_keys),
+            }
+
+        sample_dim = spec.get("sample_dim", "sample")
+        records: Dict[str, Dict[str, Any]] = {}
+        try:
+            for source_name, source in sources.items():
+                entry_id, item = self._get_tiled_item_by_id(entries[source_name])
+                metadata = dict(getattr(item, "metadata", {}) or {})
+                if not self._source_matches(metadata, source):
+                    raise ValueError(f"{source_name!r} entry {entry_id!r} does not match its driver_name/task_name")
+                campaign_id = self._record_identifier(metadata, "campaign_id", source.get("campaign_id_path"))
+                if campaign_id != collection["campaign_id"]:
+                    raise ValueError(f"{source_name!r} entry {entry_id!r} does not match campaign {collection['campaign_id']!r}")
+                sample_id = self._record_identifier(metadata, "sample_id", source.get("sample_id_path"))
+                if sample_id is None:
+                    raise ValueError(f"{source_name!r} entry {entry_id!r} has no sample ID")
+                records[source_name] = {"entry_id": entry_id, "item": item, "metadata": metadata, "sample_id": sample_id}
+        except Exception as exc:
+            return {"status": "error", "message": str(exc)}
+
+        sample_ids = {record["sample_id"] for record in records.values()}
+        if len(sample_ids) != 1:
+            return {"status": "error", "message": "All supplied Tiled entries must have the same sample ID"}
+        sample_id = sample_ids.pop()
+        if self.input is not None and sample_dim in self.input.coords:
+            if sample_id in set(map(str, self.input.coords[sample_dim].values)):
+                return {"status": "error", "message": f"Sample {sample_id!r} is already present in self.input"}
+
+        try:
+            row = xr.Dataset(
+                {
+                    name: self._collection_value(source, records[name], sample_dim)
+                    for name, source in sources.items()
+                },
+                coords={
+                    **{sample_dim: [sample_id]},
+                    **{f"{name}_entry_id": (sample_dim, [records[name]["entry_id"]]) for name in sources},
+                },
+            )
+            self.input = self._materialize_input_dataset(
+                row if self.input is None else xr.concat([self.input, row], dim=sample_dim, combine_attrs="drop_conflicts")
+            )
+        except Exception as exc:
+            return {"status": "error", "message": str(exc)}
+
+        return {
+            "status": "success",
+            "sample_id": sample_id,
+            "samples": self.input.sizes[sample_dim],
+            "data_vars": list(self.input.data_vars),
+        }
+
     def append(self, db_uuid: str, concat_dim: str) -> None:
         """
 
@@ -543,7 +813,10 @@ class DoubleAgentDriver(AgentWebAppMixin, Driver):
             Optionally provide an AL campaign name to tag the calculation with
 
         """
-        self.assemble_input_from_tiled()
+        # Preserve the legacy entry-ID input builder, while allowing the new
+        # collection API to provide self.input without an unnecessary rebuild.
+        if self.config.get("tiled_input_groups"):
+            self.assemble_input_from_tiled()
 
         if (self.pipeline is None) or (self.input is None):
             raise ValueError(
@@ -564,6 +837,7 @@ class DoubleAgentDriver(AgentWebAppMixin, Driver):
         self.last_results.attrs['sample_uuid'] = sample_uuid
         self.last_results.attrs['ag_uuid'] = ag_uid
         self.last_results.attrs['AL_campaign_name'] = AL_campaign_name
+        self._post_dataset_to_tiled(self.last_results, "predict")
 
         if save_to_disk:
             path = (
