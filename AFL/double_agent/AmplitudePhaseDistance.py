@@ -1,4 +1,6 @@
-from typing import Optional,  Dict, Any
+from typing import Optional, Dict, Any
+
+import numpy as np
 import scipy.spatial  # type: ignore
 import xarray as xr
 from typing_extensions import Self
@@ -151,3 +153,144 @@ class AmplitudePhaseDistance(PairMetric):
         
                         
         return alpha*amplitude + (1-alpha)*phase
+
+
+class AmplitudePhaseTargetScore(AmplitudePhaseDistance):
+    """Compute amplitude-phase distance from each curve to a fixed target.
+
+    This adapts :class:`AmplitudePhaseDistance`, which produces a complete
+    pairwise matrix, to the one-score-per-sample representation expected by
+    regression and optimization pipelines.
+
+    Parameters
+    ----------
+    input_variable : str, default="spline_spectrum"
+        Variable containing the preprocessed spectra.
+    output_variable : str, default="score"
+        Variable in which to store target distances.
+    target : list[float] or None
+        Fixed target curve. It must match the input feature length.
+    sample_dim : str, default="sample"
+        Dimension containing samples.
+    feature_dim : str, default="spline_wavelength"
+        Dimension containing the functional domain.
+    method : str, default="discrete"
+        Amplitude-phase alignment method: ``"discrete"`` or ``"continuous"``.
+    params : dict or None
+        Overrides for the selected solver. The discrete defaults are
+        ``alpha=0.5``, ``lam=0.0``, and ``grid_dim=7``. The continuous defaults
+        match :class:`AmplitudePhaseDistance` and also use ``alpha=0.5``.
+    """
+
+    def __init__(
+        self,
+        input_variable: str = "spline_spectrum",
+        output_variable: str = "score",
+        target: Optional[list[float]] = None,
+        sample_dim: str = "sample",
+        feature_dim: str = "spline_wavelength",
+        method: str = "discrete",
+        params: Optional[Dict[str, Any]] = None,
+        name: str = "AmplitudePhaseTargetScore",
+    ) -> None:
+        if method == "discrete":
+            default_params = {
+                "alpha": 0.5,
+                "lam": 0.0,
+                "grid_dim": 7,
+            }
+        elif method == "continuous":
+            default_params = {
+                "alpha": 0.5,
+                "n_iters": 50,
+                "n_basis": 20,
+                "n_layers": 15,
+                "domain_type": "linear",
+                "basis_type": "palais",
+                "n_restarts": 16,
+                "lr": 1e-1,
+                "verbose": False,
+            }
+        else:
+            raise ValueError(f"Unknown amplitude-phase method: {method!r}")
+        if params is not None:
+            default_params.update(params)
+        super().__init__(
+            input_variable=input_variable,
+            output_variable=output_variable,
+            sample_dim=sample_dim,
+            method=method,
+            params=default_params,
+            name=name,
+        )
+        self.target = target
+        self.feature_dim = feature_dim
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        """Calculate target distance for every sample in ``dataset``."""
+        self._ensure_apdist_available()
+        data = self._get_variable(dataset)
+        if self.sample_dim not in data.dims or self.feature_dim not in data.dims:
+            raise ValueError(
+                f"Input must include dimensions {self.sample_dim!r} and {self.feature_dim!r}"
+            )
+        unexpected_dims = set(data.dims) - {self.sample_dim, self.feature_dim}
+        if unexpected_dims:
+            raise ValueError(f"Unexpected input dimensions: {sorted(unexpected_dims)}")
+
+        ordered = data.transpose(self.sample_dim, self.feature_dim)
+        spectra = np.asarray(ordered.values, dtype=float)
+        if self.target is None:
+            raise ValueError("A target spectrum is required")
+        target = np.asarray(self.target, dtype=float)
+        if target.shape != (spectra.shape[1],):
+            raise ValueError(
+                f"Target shape {target.shape} does not match feature shape "
+                f"{(spectra.shape[1],)}"
+            )
+        if not np.isfinite(spectra).all() or not np.isfinite(target).all():
+            raise ValueError(
+                "Amplitude-phase distance requires finite spectra and target"
+            )
+        alpha = float(self.params.get("alpha", 0.5))
+        if not 0.0 <= alpha <= 1.0:
+            raise ValueError("Amplitude-phase alpha must be between 0 and 1")
+
+        domain = np.asarray(ordered.coords[self.feature_dim].values, dtype=float)
+        domain_span = float(domain[-1] - domain[0])
+        if not np.isfinite(domain).all() or domain_span <= 0:
+            raise ValueError(
+                "Amplitude-phase distance requires an increasing finite domain"
+            )
+        normalized_domain = (domain - domain[0]) / domain_span
+
+        optim_kwargs = dict(self.params)
+        if self.method == "continuous":
+            optim_kwargs.setdefault("n_domain", domain.size)
+        scores = np.asarray(
+            [
+                float(
+                    self._get_pairiwise_ap(
+                        self.method,
+                        normalized_domain,
+                        target,
+                        spectrum,
+                        **optim_kwargs,
+                    )
+                )
+                for spectrum in spectra
+            ],
+            dtype=float,
+        )
+        self.W = scores
+        self.output[self.output_variable] = xr.DataArray(
+            scores,
+            dims=(self.sample_dim,),
+            coords={self.sample_dim: ordered.coords[self.sample_dim].values},
+            attrs={
+                "description": "Amplitude-phase distance to the fixed target spectrum",
+                "method": self.method,
+                "alpha": alpha,
+            },
+        )
+        return self

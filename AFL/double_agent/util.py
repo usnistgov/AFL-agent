@@ -84,6 +84,7 @@ def import_botorch():
         from botorch.models import SingleTaskGP
         from botorch.models.transforms.outcome import Standardize
         from botorch.optim import optimize_acqf
+        from botorch.utils.sampling import draw_sobol_samples
         from gpytorch.mlls import ExactMarginalLogLikelihood
     except ImportError as exc:
         raise ImportError(
@@ -99,6 +100,7 @@ def import_botorch():
         "fit_gpytorch_mll": fit_gpytorch_mll,
         "optimize_acqf": optimize_acqf,
         "qLogExpectedImprovement": qLogExpectedImprovement,
+        "draw_sobol_samples": draw_sobol_samples,
     }
 
 

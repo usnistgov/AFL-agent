@@ -30,6 +30,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        # apdist cannot currently be built on GitHub-hosted runners. Its tests
+        # skip automatically when the optional dependency is unavailable.
         pip install -e ".[dev,pytorch,botorch]"
         
     - name: Run tests
@@ -42,4 +44,4 @@ jobs:
         COVERAGE=$(python -c "import xml.etree.ElementTree as ET; print(round(float(ET.parse('coverage.xml').getroot().get('line-rate')) * 100))")
         echo "::notice title=Code Coverage::Total coverage is $COVERAGE%"
         echo "## Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
-        echo "Total coverage: **$COVERAGE%**" >> $GITHUB_STEP_SUMMARY 
+        echo "Total coverage: **$COVERAGE%**" >> $GITHUB_STEP_SUMMARY

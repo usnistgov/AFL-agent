@@ -18,6 +18,7 @@ from typing import Union, Optional, List
 import numpy as np
 import sympy
 import xarray as xr
+from scipy.interpolate import UnivariateSpline
 from scipy.signal import savgol_filter  # type: ignore
 from typing_extensions import Self
 
@@ -48,6 +49,165 @@ class Preprocessor(PipelineOp):
     def calculate(self, dataset: xr.Dataset) -> Self:
         """Apply this `PipelineOp` to the supplied `xarray.dataset`"""
         return NotImplementedError(".calculate must be implemented in subclasses")  # type: ignore
+
+
+class SplinePreprocessor(Preprocessor):
+    """Resample one-dimensional spectra onto a common spline grid.
+
+    Defaults are appropriate for UV-Vis spectra: cubic interpolation on 201
+    evenly spaced points with no additional smoothing. Set ``smoothing_factor``
+    to a positive value for noisy measurements. The output uses a separate
+    dimension name so it can be merged with data on the original grid.
+
+    Parameters
+    ----------
+    input_variable : str, default="spectrum"
+        Variable containing one spectrum or a batch of spectra.
+    output_variable : str, default="spline_spectrum"
+        Variable in which to store the resampled spectra.
+    dim : str, default="wavelength"
+        Coordinate along the spectral domain.
+    output_dim : str, default="spline_wavelength"
+        Dimension name for the common output grid.
+    sample_dim : str, default="sample"
+        Optional batch dimension.
+    n_points : int, default=201
+        Number of evenly spaced output points.
+    spline_degree : int, default=3
+        Spline degree accepted by :class:`scipy.interpolate.UnivariateSpline`.
+    smoothing_factor : float or None, default=0.0
+        Spline smoothing parameter. Zero gives interpolation.
+    x_min, x_max : float or None
+        Output range. By default the full input domain is used.
+    """
+
+    def __init__(
+        self,
+        input_variable: str = "spectrum",
+        output_variable: str = "spline_spectrum",
+        dim: str = "wavelength",
+        output_dim: str = "spline_wavelength",
+        sample_dim: str = "sample",
+        n_points: int = 201,
+        spline_degree: int = 3,
+        smoothing_factor: float | None = 0.0,
+        x_min: float | None = None,
+        x_max: float | None = None,
+        name: str = "SplinePreprocessor",
+    ) -> None:
+        super().__init__(
+            name=name, input_variable=input_variable, output_variable=output_variable
+        )
+        if n_points < 2:
+            raise ValueError("n_points must be at least 2")
+        if not 1 <= spline_degree <= 5:
+            raise ValueError("spline_degree must be between 1 and 5")
+        if smoothing_factor is not None and smoothing_factor < 0:
+            raise ValueError("smoothing_factor must be non-negative or None")
+        if x_min is not None and x_max is not None and x_min >= x_max:
+            raise ValueError("x_min must be less than x_max")
+        if x_min is not None and not np.isfinite(x_min):
+            raise ValueError("x_min must be finite")
+        if x_max is not None and not np.isfinite(x_max):
+            raise ValueError("x_max must be finite")
+        self.dim = dim
+        self.output_dim = output_dim
+        self.sample_dim = sample_dim
+        self.n_points = n_points
+        self.spline_degree = spline_degree
+        self.smoothing_factor = smoothing_factor
+        self.x_min = x_min
+        self.x_max = x_max
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        """Spline-resample the configured variable in ``dataset``."""
+        data = self._get_variable(dataset)
+        if self.dim not in data.dims:
+            raise ValueError(
+                f"Input variable {self.input_variable!r} must include dim={self.dim!r}"
+            )
+        unexpected_dims = set(data.dims) - {self.sample_dim, self.dim}
+        if unexpected_dims:
+            raise ValueError(
+                "Expected 1D spectra with an optional sample dimension; "
+                f"unexpected dimensions: {sorted(unexpected_dims)}"
+            )
+
+        has_sample_dim = self.sample_dim in data.dims
+        if not has_sample_dim:
+            data = data.expand_dims({self.sample_dim: [0]})
+        data = data.transpose(self.sample_dim, self.dim)
+        domain = np.asarray(data.coords[self.dim].values, dtype=float)
+        if domain.ndim != 1 or not np.isfinite(domain).all():
+            raise ValueError(
+                f"Coordinate {self.dim!r} must be finite and one-dimensional"
+            )
+
+        order = np.argsort(domain)
+        domain = domain[order]
+        values = np.asarray(data.values, dtype=float)[:, order]
+        unique_domain, inverse = np.unique(domain, return_inverse=True)
+        if unique_domain.size <= self.spline_degree:
+            raise ValueError(
+                f"At least {self.spline_degree + 1} unique points are required"
+            )
+
+        x_min = unique_domain[0] if self.x_min is None else float(self.x_min)
+        x_max = unique_domain[-1] if self.x_max is None else float(self.x_max)
+        if x_min < unique_domain[0] or x_max > unique_domain[-1]:
+            raise ValueError(
+                "Requested spline range lies outside the measured domain "
+                f"[{unique_domain[0]}, {unique_domain[-1]}]"
+            )
+        output_domain = np.linspace(x_min, x_max, self.n_points)
+
+        resampled = np.empty((values.shape[0], self.n_points), dtype=float)
+        for sample_index, spectrum in enumerate(values):
+            sums = np.zeros(unique_domain.size, dtype=float)
+            counts = np.zeros(unique_domain.size, dtype=int)
+            finite = np.isfinite(spectrum)
+            np.add.at(sums, inverse[finite], spectrum[finite])
+            np.add.at(counts, inverse[finite], 1)
+            valid = counts > 0
+            if valid.sum() <= self.spline_degree:
+                raise ValueError(
+                    f"Sample {sample_index} has fewer than {self.spline_degree + 1} "
+                    "finite, unique spectral points"
+                )
+            sample_domain = unique_domain[valid]
+            sample_values = sums[valid] / counts[valid]
+            if (
+                output_domain[0] < sample_domain[0]
+                or output_domain[-1] > sample_domain[-1]
+            ):
+                raise ValueError(
+                    f"Sample {sample_index} does not cover the requested spline range"
+                )
+            spline = UnivariateSpline(
+                sample_domain,
+                sample_values,
+                k=self.spline_degree,
+                s=self.smoothing_factor,
+                ext="raise",
+            )
+            resampled[sample_index] = spline(output_domain)
+
+        output = xr.DataArray(
+            resampled,
+            dims=(self.sample_dim, self.output_dim),
+            coords={
+                self.sample_dim: data.coords[self.sample_dim].values,
+                self.output_dim: output_domain,
+            },
+            attrs={
+                "description": "Spectrum resampled with scipy.interpolate.UnivariateSpline",
+                "source_dimension": self.dim,
+            },
+        )
+        if not has_sample_dim:
+            output = output.isel({self.sample_dim: 0}, drop=True)
+        self.output[self.output_variable] = output
+        return self
 
 class LogLogTransform(Preprocessor):
     """Pre-processing class to transform SAXS data into log-log scale.

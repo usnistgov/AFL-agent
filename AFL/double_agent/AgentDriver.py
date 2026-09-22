@@ -687,69 +687,67 @@ class DoubleAgentDriver(AgentWebAppMixin, Driver):
         """
         collection = self.config.get("data_collection")
         if not collection:
-            return {"status": "error", "message": "No data collection configured. Call setup_data_collection first."}
+            raise RuntimeError(
+                "No data collection configured. Call setup_data_collection first."
+            )
         if isinstance(entries, str):
             try:
                 entries = json.loads(entries)
-            except json.JSONDecodeError:
-                return {"status": "error", "message": "entries must be a dictionary of source names to Tiled entry IDs"}
+            except json.JSONDecodeError as exc:
+                raise ValueError(
+                    "entries must be a dictionary of source names to Tiled entry IDs"
+                ) from exc
         if not isinstance(entries, dict):
-            return {"status": "error", "message": "entries must be a dictionary of source names to Tiled entry IDs"}
+            raise ValueError(
+                "entries must be a dictionary of source names to Tiled entry IDs"
+            )
 
         spec = collection["input_spec"]
         sources = spec["sources"]
         expected_keys = set(sources)
         received_keys = set(entries)
         if received_keys != expected_keys:
-            return {
-                "status": "error",
-                "message": "entries keys must exactly match input_spec.sources keys",
-                "expected_keys": sorted(expected_keys),
-                "received_keys": sorted(received_keys),
-            }
+            raise ValueError(
+                "entries keys must exactly match input_spec.sources keys; "
+                f"expected {sorted(expected_keys)}, received {sorted(received_keys)}"
+            )
 
         sample_dim = spec.get("sample_dim", "sample")
         records: Dict[str, Dict[str, Any]] = {}
-        try:
-            for source_name, source in sources.items():
-                entry_id, item = self._get_tiled_item_by_id(entries[source_name])
-                metadata = dict(getattr(item, "metadata", {}) or {})
-                if not self._source_matches(metadata, source):
-                    raise ValueError(f"{source_name!r} entry {entry_id!r} does not match its driver_name/task_name")
-                campaign_id = self._record_identifier(metadata, "campaign_id", source.get("campaign_id_path"))
-                if campaign_id != collection["campaign_id"]:
-                    raise ValueError(f"{source_name!r} entry {entry_id!r} does not match campaign {collection['campaign_id']!r}")
-                sample_id = self._record_identifier(metadata, "sample_id", source.get("sample_id_path"))
-                if sample_id is None:
-                    raise ValueError(f"{source_name!r} entry {entry_id!r} has no sample ID")
-                records[source_name] = {"entry_id": entry_id, "item": item, "metadata": metadata, "sample_id": sample_id}
-        except Exception as exc:
-            return {"status": "error", "message": str(exc)}
+        for source_name, source in sources.items():
+            entry_id, item = self._get_tiled_item_by_id(entries[source_name])
+            metadata = dict(getattr(item, "metadata", {}) or {})
+            if not self._source_matches(metadata, source):
+                raise ValueError(f"{source_name!r} entry {entry_id!r} does not match its driver_name/task_name")
+            campaign_id = self._record_identifier(metadata, "campaign_id", source.get("campaign_id_path"))
+            if campaign_id != collection["campaign_id"]:
+                raise ValueError(f"{source_name!r} entry {entry_id!r} does not match campaign {collection['campaign_id']!r}")
+            sample_id = self._record_identifier(metadata, "sample_id", source.get("sample_id_path"))
+            if sample_id is None:
+                raise ValueError(f"{source_name!r} entry {entry_id!r} has no sample ID")
+            records[source_name] = {"entry_id": entry_id, "item": item, "metadata": metadata, "sample_id": sample_id}
 
         sample_ids = {record["sample_id"] for record in records.values()}
         if len(sample_ids) != 1:
-            return {"status": "error", "message": "All supplied Tiled entries must have the same sample ID"}
+            raise ValueError("All supplied Tiled entries must have the same sample ID")
         sample_id = sample_ids.pop()
         if self.input is not None and sample_dim in self.input.coords:
             if sample_id in set(map(str, self.input.coords[sample_dim].values)):
-                return {"status": "error", "message": f"Sample {sample_id!r} is already present in self.input"}
+                raise ValueError(f"Sample {sample_id!r} is already present in self.input")
 
-        try:
-            row = xr.Dataset(
-                {
-                    name: self._collection_value(source, records[name], sample_dim)
-                    for name, source in sources.items()
-                },
-                coords={
-                    **{sample_dim: [sample_id]},
-                    **{f"{name}_entry_id": (sample_dim, [records[name]["entry_id"]]) for name in sources},
-                },
-            )
-            self.input = self._materialize_input_dataset(
-                row if self.input is None else xr.concat([self.input, row], dim=sample_dim, combine_attrs="drop_conflicts")
-            )
-        except Exception as exc:
-            return {"status": "error", "message": str(exc)}
+        row = xr.Dataset(
+            {
+                name: self._collection_value(source, records[name], sample_dim)
+                for name, source in sources.items()
+            },
+            coords={
+                **{sample_dim: [sample_id]},
+                **{f"{name}_entry_id": (sample_dim, [records[name]["entry_id"]]) for name in sources},
+            },
+        )
+        self.input = self._materialize_input_dataset(
+            row if self.input is None else xr.concat([self.input, row], dim=sample_dim, combine_attrs="drop_conflicts")
+        )
 
         return {
             "status": "success",

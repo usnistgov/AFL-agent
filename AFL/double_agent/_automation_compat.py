@@ -5,7 +5,7 @@ from typing import Any
 
 
 class FallbackDriver:
-    """Minimal AFL.automation Driver compatibility layer for unit tests."""
+    """Minimal AFL.automation Driver compatibility layer for standalone use."""
 
     TILED_RUN_DOCUMENTS_NODE = "run_documents"
 
@@ -229,4 +229,3 @@ except ModuleNotFoundError as exc:
         xarray_to_bytes = _fallback_xarray_to_bytes
     else:
         raise
-
