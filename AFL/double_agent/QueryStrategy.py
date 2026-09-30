@@ -83,8 +83,8 @@ class ArgMax(PipelineOp):
 
 class FullWidthHalfMaximum1D(PipelineOp):
     """
-    Find peaks in a 1D utility and compute points at left, middle and right of 
-    their full-width-half-maximum.
+    Find peaks in a 1D utility and compute their locations and
+    full-width-half-maximum points, optionally including the global maximum.
 
     Parameters
     ----------
@@ -96,6 +96,8 @@ class FullWidthHalfMaximum1D(PipelineOp):
         Name of the variable in the dataset to store the optimal points.
     params : dict, optional
         Extra keyword arguments to pass to `scipy.signal.find_peaks`.
+    include_global_maximum : bool, default=True
+        Include the location of the global utility maximum in the output.
     output_prefix : str, default="temperature"
         Prefix for the output variable.
     name : str, default="FullWidthHalfMaximum1D"
@@ -113,7 +115,8 @@ class FullWidthHalfMaximum1D(PipelineOp):
         input_variable: str = "utility",
         grid_variable:str="temperature_marginal_domain",
         output_variable: str = "next_sample",
-        params: Optional[Dict[str, Any]] = {},
+        params: Optional[Dict[str, Any]] = None,
+        include_global_maximum: bool = True,
         output_prefix:str="temperature",
         name: str = "FullWidthHalfMaximum1D",
     ) -> None:
@@ -123,7 +126,8 @@ class FullWidthHalfMaximum1D(PipelineOp):
             input_variable=[input_variable], 
             output_variable=output_variable
         )
-        self.params = params
+        self.params = params or {}
+        self.include_global_maximum = include_global_maximum
         self.grid_variable = grid_variable
     
     def calculate(self, dataset: xr.Dataset) -> Self:
@@ -140,27 +144,34 @@ class FullWidthHalfMaximum1D(PipelineOp):
         self : FullWidthHalfMaximum1D
             Returns self with `output` containing:
             
-            - `output_variable`: Locations corresponding to FWHM points of each peak.
+            - `output_variable`: Peak and FWHM locations for each peak and,
+              by default, the global maximum location.
         """
         u = dataset[self.input_variable]
         x = dataset[self.grid_variable]
 
-        x_opt = self.optimize(x.values, u.values, **self.params)
+        x_opt = self.optimize(
+            x.values,
+            u.values,
+            include_global_maximum=self.include_global_maximum,
+            **self.params,
+        )
         output = xr.DataArray(np.atleast_1d(x_opt.squeeze()),
                               dims=self._prefix_output("next_n"),
                             )
         self.output[self.output_variable] = output
         self.output[self.output_variable].attrs["description"] = textwrap.dedent("""
-        Optimal 1D locations that are the full-width-half-maximum points of the
-        peaks in the utility.
+        Optimal 1D locations at utility peaks and their full-width-half-maximum
+        points, optionally including the global maximum.
         """).strip()
         return self
 
-    def optimize(self, x, f, **kwargs):
+    def optimize(self, x, f, include_global_maximum=True, **kwargs):
         """
         Find peaks in `f(x)` and compute their full width at half maximum (FWHM).
 
-        If no peaks are found, returns the global maximum location.
+        The global maximum location is included by default, even when it is not
+        detected as a peak (for example, when it occurs at a domain boundary).
 
         Parameters
         ----------
@@ -168,15 +179,18 @@ class FullWidthHalfMaximum1D(PipelineOp):
             1D array of x values.
         f : array-like
             1D array of function values.
+        include_global_maximum : bool, default=True
+            Whether to include the location of the global maximum.
         **kwargs : dict
             Extra keyword arguments for `scipy.signal.find_peaks`, e.g., height, distance, prominence.
 
         Returns
         -------
         xb : np.ndarray
-            Sorted array of x values. For each peak, three values are returned:
-            [left_half_max, peak_max, right_half_max]. If no peaks are found,
-            returns [x[argmax(f)]].
+            Sorted array of x values, rounded to two decimal places and unique
+            at that precision. For each peak, its left half-maximum, peak, and
+            right half-maximum locations are returned. The global maximum
+            location is also returned when ``include_global_maximum`` is True.
         """
         x = np.asarray(x)
         f = np.asarray(f).squeeze()
@@ -200,11 +214,14 @@ class FullWidthHalfMaximum1D(PipelineOp):
                 right_x = np.interp(right_ips[i], np.arange(len(x)), x)
                 xb.extend([left_x, peak_x, right_x])
 
-            xb = np.sort(np.array(xb))
+            xb = np.array(xb)
         else:
-            xb = np.array([x[np.argmax(f)]])  # fallback to global max
+            xb = np.array([])
 
-        return xb 
+        if include_global_maximum:
+            xb = np.append(xb, x[np.argmax(f)])
+
+        return np.unique(np.round(xb, decimals=2))
     
 class MinMax1DLineSampler(PipelineOp):
     """
