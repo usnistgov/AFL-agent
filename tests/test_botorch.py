@@ -12,6 +12,7 @@ import xarray as xr
 
 from AFL.double_agent.AcquisitionFunction import BoTorchAcquisition
 from AFL.double_agent.PyTorchExtrapolator import BoTorchRegressor
+from AFL.double_agent.util import fit_single_task_gp
 
 
 def _make_explicit_bounds():
@@ -103,6 +104,28 @@ class _FakeModel:
 
     def posterior(self, x):
         return _FakePosterior(self._posterior_mean, self._posterior_variance)
+
+
+def test_fit_single_task_gp_logs_inputs_when_botorch_rejects_nans(caplog):
+    class _InputDataError(Exception):
+        pass
+
+    def reject_nan_inputs(**kwargs):
+        raise _InputDataError("Input data contains NaN values.")
+
+    fake_botorch = {
+        "Standardize": lambda m: object(),
+        "SingleTaskGP": reject_nan_inputs,
+    }
+    train_x = torch.tensor([[0.1], [float("nan")]], dtype=torch.double)
+    train_y = torch.tensor([[1.0], [2.0]], dtype=torch.double)
+
+    with patch("AFL.double_agent.util.import_botorch", return_value=fake_botorch), pytest.raises(_InputDataError):
+        fit_single_task_gp(train_x, train_y, standardize=False)
+
+    assert "train_x=tensor([[0.1000],\n        [   nan]]" in caplog.text
+    assert "train_y=tensor([[1." in caplog.text
+    assert "standardize=False" in caplog.text
 
 
 @pytest.mark.unit

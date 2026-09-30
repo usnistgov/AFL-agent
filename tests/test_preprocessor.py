@@ -5,7 +5,57 @@ Unit tests for AFL.double_agent preprocessor operations.
 import pytest
 import numpy as np
 import xarray as xr
-from AFL.double_agent.Preprocessor import SavgolFilter
+from AFL.double_agent.Preprocessor import SavgolFilter, SplinePreprocessor
+
+
+def test_spline_preprocessor_defaults_and_batch_coordinates():
+    wavelength = np.linspace(0.0, 1.0, 11)
+    dataset = xr.Dataset(
+        {
+            "spectrum": (
+                ("sample", "wavelength"),
+                np.stack((wavelength**2, (wavelength - 0.1) ** 2)),
+            )
+        },
+        coords={"sample": [4, 7], "wavelength": wavelength},
+    )
+
+    operation = SplinePreprocessor()
+    operation.calculate(dataset)
+    result = operation.output["spline_spectrum"]
+
+    assert result.dims == ("sample", "spline_wavelength")
+    assert result.shape == (2, 201)
+    np.testing.assert_array_equal(result.coords["sample"], [4, 7])
+    np.testing.assert_allclose(
+        result.isel(sample=0), result.spline_wavelength**2, atol=1e-12
+    )
+
+
+def test_spline_preprocessor_handles_unsorted_duplicates_and_missing_values():
+    dataset = xr.Dataset(
+        {
+            "signal": (
+                "energy",
+                [1.0, 0.25, 0.0, 0.25, np.nan, 1.0],
+            )
+        },
+        coords={"energy": [1.0, 0.5, 0.0, 0.5, 0.75, 1.0]},
+    )
+    operation = SplinePreprocessor(
+        input_variable="signal",
+        output_variable="interpolated",
+        dim="energy",
+        output_dim="spline_energy",
+        n_points=5,
+        spline_degree=2,
+    )
+
+    operation.calculate(dataset)
+    result = operation.output["interpolated"]
+
+    assert result.dims == ("spline_energy",)
+    np.testing.assert_allclose(result, result.spline_energy**2, atol=1e-12)
 
 
 def test_savgol_filter_basic(example_dataset2):

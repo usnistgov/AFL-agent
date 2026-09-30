@@ -410,11 +410,9 @@ def test_append_dataset_rejects_source_key_mismatch():
     driver = _collection_driver({})
     driver.setup_data_collection(_collection_source_spec())
 
-    result = driver.append_dataset({"composition": "prepare-001"})
+    with pytest.raises(ValueError, match="entries keys must exactly match"):
+        driver.append_dataset({"composition": "prepare-001"})
 
-    assert result["status"] == "error"
-    assert result["expected_keys"] == ["avg_rgb", "composition"]
-    assert result["received_keys"] == ["composition"]
     assert driver.input is None
 
 
@@ -428,11 +426,11 @@ def test_append_dataset_appends_new_sample_and_rejects_duplicate():
 
     driver.append_dataset({"composition": "prepare-001", "avg_rgb": "rgb-001"})
     result = driver.append_dataset({"composition": "prepare-002", "avg_rgb": "rgb-002"})
-    repeated = driver.append_dataset({"composition": "prepare-002", "avg_rgb": "rgb-002"})
+    with pytest.raises(ValueError, match="already present"):
+        driver.append_dataset({"composition": "prepare-002", "avg_rgb": "rgb-002"})
 
     assert result["status"] == "success"
     assert driver.input.sizes["sample"] == 2
-    assert repeated["status"] == "error"
 
 
 def test_append_dataset_rejects_wrong_campaign():
@@ -443,7 +441,5 @@ def test_append_dataset_rejects_wrong_campaign():
     driver = _collection_driver({"prepare": other_prepare, "rgb": other_rgb})
     driver.setup_data_collection(_collection_source_spec())
 
-    result = driver.append_dataset({"composition": "prepare", "avg_rgb": "rgb"})
-
-    assert result["status"] == "error"
-    assert "does not match campaign" in result["message"]
+    with pytest.raises(ValueError, match="does not match campaign"):
+        driver.append_dataset({"composition": "prepare", "avg_rgb": "rgb"})

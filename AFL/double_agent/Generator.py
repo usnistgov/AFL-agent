@@ -18,10 +18,11 @@ from typing import Dict, List
 import numpy as np
 import xarray as xr
 from itertools import product
-from scipy.stats import multivariate_normal  # type: ignore
+from scipy.stats import multivariate_normal, qmc  # type: ignore
 from typing_extensions import Self
 
 from AFL.double_agent.PipelineOp import PipelineOp
+from AFL.double_agent.util import import_botorch, optimization_bounds_to_tensor
 
 
 class Generator(PipelineOp):
@@ -147,6 +148,110 @@ class CartesianGrid(Generator):
             pts,
             dims=[self.sample_dim, self.component_dim],
             coords={self.component_dim: self.components},
+        )
+        return self
+
+
+class RandomBoundedDesign(Generator):
+    """Generate a reproducible random design within named box bounds.
+
+    Parameters
+    ----------
+    output_variable : str
+        Name of the generated parameter array.
+    bounds : dict
+        Per-component bounds in ``{name: {"min": lower, "max": upper}}`` form.
+    count : int
+        Number of design points to generate.
+    seed : int or None
+        Random seed passed to the selected sampler.
+    method : str, default="latin_hypercube"
+        Sampling method. Supported values are ``"latin_hypercube"`` and
+        ``"sobol"``. ``"lhs"`` and ``"lhc"`` are accepted as aliases for
+        Latin-hypercube sampling.
+    sample_dim : str, default="initial_sample"
+        Dimension indexing the generated design points.
+    component_dim : str, default="component"
+        Dimension indexing parameter names.
+    name : str, default="RandomBoundedDesign"
+        Pipeline operation name.
+    """
+
+    def __init__(
+        self,
+        output_variable: str,
+        bounds: Dict[str, Dict[str, int | float]],
+        count: int,
+        seed: int | None = None,
+        method: str = "latin_hypercube",
+        sample_dim: str = "initial_sample",
+        component_dim: str = "component",
+        name: str = "RandomBoundedDesign",
+    ) -> None:
+        super().__init__(output_variable=output_variable, name=name)
+        if count <= 0:
+            raise ValueError("count must be positive")
+        if not bounds:
+            raise ValueError("bounds must contain at least one component")
+
+        method_aliases = {
+            "latin_hypercube": "latin_hypercube",
+            "lhs": "latin_hypercube",
+            "lhc": "latin_hypercube",
+            "sobol": "sobol",
+        }
+        normalized_method = method.lower()
+        if normalized_method not in method_aliases:
+            raise ValueError("method must be one of 'latin_hypercube', 'lhs', 'lhc', or 'sobol'")
+
+        for component, limits in bounds.items():
+            if "min" not in limits or "max" not in limits:
+                raise ValueError(f"Bounds for component {component!r} must define 'min' and 'max'")
+            lower = float(limits["min"])
+            upper = float(limits["max"])
+            if not np.isfinite(lower) or not np.isfinite(upper):
+                raise ValueError(f"Bounds for component {component!r} must be finite")
+            if lower > upper:
+                raise ValueError(f"Lower bound exceeds upper bound for component {component!r}")
+
+        self.bounds = bounds
+        self.count = count
+        self.seed = seed
+        self.method = method_aliases[normalized_method]
+        self.sample_dim = sample_dim
+        self.component_dim = component_dim
+
+    def calculate(self, dataset: xr.Dataset) -> Self:
+        components = list(self.bounds)
+        if self.method == "latin_hypercube":
+            sampler = qmc.LatinHypercube(d=len(components), seed=self.seed)
+            unit_points = sampler.random(n=self.count)
+            lower = [float(self.bounds[component]["min"]) for component in components]
+            upper = [float(self.bounds[component]["max"]) for component in components]
+            parameters = qmc.scale(unit_points, lower, upper)
+        else:
+            bounds = optimization_bounds_to_tensor(
+                self.bounds,
+                component_names=components,
+            )
+            draw_sobol_samples = import_botorch()["draw_sobol_samples"]
+            parameters = (
+                draw_sobol_samples(
+                    bounds=bounds,
+                    n=self.count,
+                    q=1,
+                    seed=self.seed,
+                )
+                .squeeze(1)
+                .detach()
+                .cpu()
+                .numpy()
+            )
+
+        self.output[self.output_variable] = xr.DataArray(
+            parameters,
+            dims=(self.sample_dim, self.component_dim),
+            coords={self.component_dim: components},
         )
         return self
 

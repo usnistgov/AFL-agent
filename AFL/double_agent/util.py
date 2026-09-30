@@ -5,6 +5,7 @@ A collection of helper methods/classes
 from __future__ import annotations
 
 import inspect
+import logging
 from typing import Any, Dict, Literal, Mapping, Sequence
 
 import numpy as np
@@ -15,6 +16,7 @@ from AFL.double_agent.PipelineOp import PipelineOp
 
 
 ObjectiveDirection = Literal["maximize", "minimize"]
+logger = logging.getLogger(__name__)
 
 
 def listify(obj):
@@ -82,6 +84,7 @@ def import_botorch():
         from botorch.models import SingleTaskGP
         from botorch.models.transforms.outcome import Standardize
         from botorch.optim import optimize_acqf
+        from botorch.utils.sampling import draw_sobol_samples
         from gpytorch.mlls import ExactMarginalLogLikelihood
     except ImportError as exc:
         raise ImportError(
@@ -97,6 +100,7 @@ def import_botorch():
         "fit_gpytorch_mll": fit_gpytorch_mll,
         "optimize_acqf": optimize_acqf,
         "qLogExpectedImprovement": qLogExpectedImprovement,
+        "draw_sobol_samples": draw_sobol_samples,
     }
 
 
@@ -245,7 +249,21 @@ def fit_single_task_gp(
         "outcome_transform": outcome_transform,
     }
 
-    model = botorch["SingleTaskGP"](**model_kwargs)
+    try:
+        model = botorch["SingleTaskGP"](**model_kwargs)
+    except Exception as exc:
+        # BoTorch's validation errors otherwise provide no indication of which
+        # observations were supplied to the model.  Log the tensors in their
+        # entirety so a queued task failure can be diagnosed from its log.
+        if "Input data contains NaN values." in str(exc):
+            logger.error(
+                "SingleTaskGP rejected inputs with NaN values: "
+                "train_x=%s, train_y=%s, standardize=%s",
+                train_x,
+                train_y,
+                standardize,
+            )
+        raise
     mll = botorch["ExactMarginalLogLikelihood"](model.likelihood, model)
     botorch["fit_gpytorch_mll"](mll)
     return model
