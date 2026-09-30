@@ -961,8 +961,8 @@ Total: 3 prefabricated pipeline(s)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load the &quot;preprocess&quot; prefabricated pipeline</span>
-<span class="n">pipeline</span> <span class="o">=</span> <span class="n">load_prefab</span><span class="p">(</span><span class="s2">&quot;preprocess&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load the "preprocess" prefabricated pipeline</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">load_prefab</span><span class="p">(</span><span class="s2">"preprocess"</span><span class="p">)</span>
 <span class="n">pipeline</span><span class="o">.</span><span class="n">print</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -1050,41 +1050,41 @@ Pipeline code has been prepared in a new cell below.
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;preprocess&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s2">"preprocess"</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
     <span class="n">CartesianGrid</span><span class="p">(</span>
-        <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;composition_grid&quot;</span><span class="p">,</span>
-        <span class="n">grid_spec</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s1">&#39;steps&#39;</span><span class="p">:</span> <span class="mi">50</span><span class="p">},</span> <span class="s1">&#39;B&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="mf">25.0</span><span class="p">,</span> <span class="s1">&#39;steps&#39;</span><span class="p">:</span> <span class="mi">50</span><span class="p">}},</span>
-        <span class="n">sample_dim</span><span class="o">=</span><span class="s2">&quot;grid&quot;</span><span class="p">,</span>
-        <span class="n">component_dim</span><span class="o">=</span><span class="s2">&quot;component&quot;</span><span class="p">,</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;CartesianGridGenerator&quot;</span><span class="p">,</span>
+        <span class="n">output_variable</span><span class="o">=</span><span class="s2">"composition_grid"</span><span class="p">,</span>
+        <span class="n">grid_spec</span><span class="o">=</span><span class="p">{</span><span class="s1">'A'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'min'</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">'max'</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s1">'steps'</span><span class="p">:</span> <span class="mi">50</span><span class="p">},</span> <span class="s1">'B'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'min'</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">'max'</span><span class="p">:</span> <span class="mf">25.0</span><span class="p">,</span> <span class="s1">'steps'</span><span class="p">:</span> <span class="mi">50</span><span class="p">}},</span>
+        <span class="n">sample_dim</span><span class="o">=</span><span class="s2">"grid"</span><span class="p">,</span>
+        <span class="n">component_dim</span><span class="o">=</span><span class="s2">"component"</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"CartesianGridGenerator"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">Standardize</span><span class="p">(</span>
-        <span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;composition_grid&quot;</span><span class="p">,</span>
-        <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;normalized_composition_grid&quot;</span><span class="p">,</span>
-        <span class="n">dim</span><span class="o">=</span><span class="s2">&quot;grid&quot;</span><span class="p">,</span>
-        <span class="n">component_dim</span><span class="o">=</span><span class="s2">&quot;component&quot;</span><span class="p">,</span>
+        <span class="n">input_variable</span><span class="o">=</span><span class="s2">"composition_grid"</span><span class="p">,</span>
+        <span class="n">output_variable</span><span class="o">=</span><span class="s2">"normalized_composition_grid"</span><span class="p">,</span>
+        <span class="n">dim</span><span class="o">=</span><span class="s2">"grid"</span><span class="p">,</span>
+        <span class="n">component_dim</span><span class="o">=</span><span class="s2">"component"</span><span class="p">,</span>
         <span class="n">scale_variable</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">min_val</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
-        <span class="n">max_val</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">:</span> <span class="mf">25.0</span><span class="p">},</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Standardize&quot;</span><span class="p">,</span>
+        <span class="n">min_val</span><span class="o">=</span><span class="p">{</span><span class="s1">'A'</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">'B'</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
+        <span class="n">max_val</span><span class="o">=</span><span class="p">{</span><span class="s1">'A'</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s1">'B'</span><span class="p">:</span> <span class="mf">25.0</span><span class="p">},</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"Standardize"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">Standardize</span><span class="p">(</span>
-        <span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;composition&quot;</span><span class="p">,</span>
-        <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;normalized_composition&quot;</span><span class="p">,</span>
-        <span class="n">dim</span><span class="o">=</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span>
-        <span class="n">component_dim</span><span class="o">=</span><span class="s2">&quot;component&quot;</span><span class="p">,</span>
+        <span class="n">input_variable</span><span class="o">=</span><span class="s2">"composition"</span><span class="p">,</span>
+        <span class="n">output_variable</span><span class="o">=</span><span class="s2">"normalized_composition"</span><span class="p">,</span>
+        <span class="n">dim</span><span class="o">=</span><span class="s2">"sample"</span><span class="p">,</span>
+        <span class="n">component_dim</span><span class="o">=</span><span class="s2">"component"</span><span class="p">,</span>
         <span class="n">scale_variable</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">min_val</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
-        <span class="n">max_val</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">:</span> <span class="mf">25.0</span><span class="p">},</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Standardize&quot;</span><span class="p">,</span>
+        <span class="n">min_val</span><span class="o">=</span><span class="p">{</span><span class="s1">'A'</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">'B'</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
+        <span class="n">max_val</span><span class="o">=</span><span class="p">{</span><span class="s1">'A'</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s1">'B'</span><span class="p">:</span> <span class="mf">25.0</span><span class="p">},</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"Standardize"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">SavgolFilter</span><span class="p">(</span>
-        <span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;measurement&quot;</span><span class="p">,</span>
-        <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;measurement_derivative0&quot;</span><span class="p">,</span>
-        <span class="n">dim</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span>
+        <span class="n">input_variable</span><span class="o">=</span><span class="s2">"measurement"</span><span class="p">,</span>
+        <span class="n">output_variable</span><span class="o">=</span><span class="s2">"measurement_derivative0"</span><span class="p">,</span>
+        <span class="n">dim</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span>
         <span class="n">xlo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">xhi</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">xlo_isel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -1095,13 +1095,13 @@ Pipeline code has been prepared in a new cell below.
         <span class="n">window_length</span><span class="o">=</span><span class="mi">31</span><span class="p">,</span>
         <span class="n">polyorder</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="n">apply_log_scale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;SavgolFilter&quot;</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"SavgolFilter"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">SavgolFilter</span><span class="p">(</span>
-        <span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;measurement&quot;</span><span class="p">,</span>
-        <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;measurement_derivative1&quot;</span><span class="p">,</span>
-        <span class="n">dim</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span>
+        <span class="n">input_variable</span><span class="o">=</span><span class="s2">"measurement"</span><span class="p">,</span>
+        <span class="n">output_variable</span><span class="o">=</span><span class="s2">"measurement_derivative1"</span><span class="p">,</span>
+        <span class="n">dim</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span>
         <span class="n">xlo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">xhi</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">xlo_isel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -1112,13 +1112,13 @@ Pipeline code has been prepared in a new cell below.
         <span class="n">window_length</span><span class="o">=</span><span class="mi">31</span><span class="p">,</span>
         <span class="n">polyorder</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="n">apply_log_scale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;SavgolFilter&quot;</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"SavgolFilter"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">SavgolFilter</span><span class="p">(</span>
-        <span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;measurement&quot;</span><span class="p">,</span>
-        <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;measurement_derivative2&quot;</span><span class="p">,</span>
-        <span class="n">dim</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span>
+        <span class="n">input_variable</span><span class="o">=</span><span class="s2">"measurement"</span><span class="p">,</span>
+        <span class="n">output_variable</span><span class="o">=</span><span class="s2">"measurement_derivative2"</span><span class="p">,</span>
+        <span class="n">dim</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span>
         <span class="n">xlo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">xhi</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">xlo_isel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -1129,7 +1129,7 @@ Pipeline code has been prepared in a new cell below.
         <span class="n">window_length</span><span class="o">=</span><span class="mi">31</span><span class="p">,</span>
         <span class="n">polyorder</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="n">apply_log_scale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;SavgolFilter&quot;</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"SavgolFilter"</span><span class="p">,</span>
     <span class="p">)</span>
 <br/><br/></pre></div>
 </div>
@@ -1684,8 +1684,8 @@ Data variables:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span><span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
-<span class="n">result</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="s1">&#39;component&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">,</span><span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-<span class="n">result</span><span class="o">.</span><span class="n">normalized_composition</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="s1">&#39;component&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">,</span><span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">result</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="s1">'component'</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">'A'</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="s1">'B'</span><span class="p">,</span><span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">result</span><span class="o">.</span><span class="n">normalized_composition</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="s1">'component'</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">'A'</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="s1">'B'</span><span class="p">,</span><span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
@@ -1715,7 +1715,7 @@ Data variables:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Combine multiple prefabs if you have more than one available</span>
-<span class="n">combined_pipeline</span> <span class="o">=</span> <span class="n">combine_prefabs</span><span class="p">([</span><span class="s2">&quot;preprocess&quot;</span><span class="p">,</span> <span class="s2">&quot;similarity_clustering&quot;</span><span class="p">],</span> <span class="n">new_name</span><span class="o">=</span><span class="s2">&quot;CombinedPipeline&quot;</span><span class="p">)</span>
+<span class="n">combined_pipeline</span> <span class="o">=</span> <span class="n">combine_prefabs</span><span class="p">([</span><span class="s2">"preprocess"</span><span class="p">,</span> <span class="s2">"similarity_clustering"</span><span class="p">],</span> <span class="n">new_name</span><span class="o">=</span><span class="s2">"CombinedPipeline"</span><span class="p">)</span>
 <span class="n">combined_pipeline</span><span class="o">.</span><span class="n">draw</span><span class="p">();</span>
 </pre></div>
 </div>

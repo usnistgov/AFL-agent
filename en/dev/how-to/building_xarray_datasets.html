@@ -976,8 +976,8 @@ array([[ 1.93506959,  4.33877746],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;composition&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span><span class="s1">&#39;component&#39;</span><span class="p">],</span><span class="n">compositions</span><span class="p">)</span>
-<span class="n">ds</span><span class="p">[</span><span class="s1">&#39;component&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;component&#39;</span><span class="p">,[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="s1">&#39;B&#39;</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="p">[</span><span class="s1">'composition'</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">'sample'</span><span class="p">,</span><span class="s1">'component'</span><span class="p">],</span><span class="n">compositions</span><span class="p">)</span>
+<span class="n">ds</span><span class="p">[</span><span class="s1">'component'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'component'</span><span class="p">,[</span><span class="s1">'A'</span><span class="p">,</span><span class="s1">'B'</span><span class="p">])</span>
 <span class="n">ds</span>
 </pre></div>
 </div>
@@ -1412,7 +1412,7 @@ Data variables:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">labels</span> <span class="o">=</span> <span class="p">(</span><span class="n">A</span><span class="o">&gt;</span><span class="p">(</span><span class="mf">0.25</span><span class="o">*</span><span class="n">B</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-<span class="n">ds</span><span class="p">[</span><span class="s1">&#39;ground_truth_labels&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span><span class="n">labels</span><span class="p">)</span>
+<span class="n">ds</span><span class="p">[</span><span class="s1">'ground_truth_labels'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'sample'</span><span class="p">,</span><span class="n">labels</span><span class="p">)</span>
 <span class="n">ds</span>
 </pre></div>
 </div>
@@ -1850,7 +1850,7 @@ Data variables:
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="s1">&#39;component&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">,</span><span class="n">c</span><span class="o">=</span><span class="n">ds</span><span class="o">.</span><span class="n">ground_truth_labels</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="s1">'component'</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">'A'</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="s1">'B'</span><span class="p">,</span><span class="n">c</span><span class="o">=</span><span class="n">ds</span><span class="o">.</span><span class="n">ground_truth_labels</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -1879,7 +1879,7 @@ Data variables:
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">measure</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">label</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate one of two signals with noise&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Generate one of two signals with noise"""</span>
 
     <span class="k">if</span> <span class="n">label</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
         <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="c1">#flat background</span>
@@ -1908,9 +1908,9 @@ Data variables:
 <span class="n">measurements</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">measure</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">label</span><span class="p">)</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">])</span>
 
 <span class="c1"># add the measurement data to the dataset</span>
-<span class="n">ds</span><span class="p">[</span><span class="s1">&#39;measurement&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span><span class="s1">&#39;x&#39;</span><span class="p">],</span><span class="n">measurements</span><span class="p">)</span>
-<span class="n">ds</span><span class="p">[</span><span class="s1">&#39;ground_truth_labels&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;sample&#39;</span><span class="p">],</span><span class="n">labels</span><span class="p">)</span>
-<span class="n">ds</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span><span class="n">x</span><span class="p">)</span>
+<span class="n">ds</span><span class="p">[</span><span class="s1">'measurement'</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">'sample'</span><span class="p">,</span><span class="s1">'x'</span><span class="p">],</span><span class="n">measurements</span><span class="p">)</span>
+<span class="n">ds</span><span class="p">[</span><span class="s1">'ground_truth_labels'</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">'sample'</span><span class="p">],</span><span class="n">labels</span><span class="p">)</span>
+<span class="n">ds</span><span class="p">[</span><span class="s1">'x'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'x'</span><span class="p">,</span><span class="n">x</span><span class="p">)</span>
 <span class="n">ds</span>
 </pre></div>
 </div>
@@ -2392,10 +2392,10 @@ Data variables:
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">sub_ds</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;ground_truth_labels&#39;</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">sub_ds</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">'ground_truth_labels'</span><span class="p">):</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
-    <span class="n">sub_ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span><span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="n">ls</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">,</span><span class="n">xscale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span><span class="n">yscale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span><span class="n">add_legend</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Group </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">sub_ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">'x'</span><span class="p">,</span><span class="n">marker</span><span class="o">=</span><span class="s1">'.'</span><span class="p">,</span><span class="n">ls</span><span class="o">=</span><span class="s1">'None'</span><span class="p">,</span><span class="n">xscale</span><span class="o">=</span><span class="s1">'log'</span><span class="p">,</span><span class="n">yscale</span><span class="o">=</span><span class="s1">'log'</span><span class="p">,</span><span class="n">add_legend</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Group </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
@@ -2429,7 +2429,7 @@ Data variables:
 <span class="n">composition_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">A_grid</span><span class="p">,</span><span class="n">B_grid</span><span class="p">)</span>
 <span class="n">composition_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">composition_grid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span><span class="n">composition_grid</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()])</span><span class="o">.</span><span class="n">T</span>
 
-<span class="n">ds</span><span class="p">[</span><span class="s1">&#39;composition_grid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;grid&#39;</span><span class="p">,</span><span class="s1">&#39;component&#39;</span><span class="p">],</span><span class="n">composition_grid</span><span class="p">)</span>
+<span class="n">ds</span><span class="p">[</span><span class="s1">'composition_grid'</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">'grid'</span><span class="p">,</span><span class="s1">'component'</span><span class="p">],</span><span class="n">composition_grid</span><span class="p">)</span>
 <span class="n">ds</span>
 </pre></div>
 </div>
@@ -2918,7 +2918,7 @@ Data variables:
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">composition_grid</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="s1">&#39;component&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">,</span><span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">composition_grid</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="s1">'component'</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">'A'</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="s1">'B'</span><span class="p">,</span><span class="n">edgecolor</span><span class="o">=</span><span class="s1">'None'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -2939,7 +2939,7 @@ Data variables:
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="n">ds</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span><span class="s1">&#39;../data/example_dataset.nc&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="n">ds</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span><span class="s1">'../data/example_dataset.nc'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

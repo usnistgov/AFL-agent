@@ -472,9 +472,9 @@ stack, making it available to operations created within that context.</p>
 <p>This pattern enables a more intuitive API where operations can automatically
 associate with the currently active pipeline without explicit references.</p>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_pipeline&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipe</span><span class="p">:</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"my_pipeline"</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipe</span><span class="p">:</span>
 <span class="gp">... </span>    <span class="c1"># Operations created here can access the pipeline via get_context()</span>
-<span class="gp">... </span>    <span class="n">op</span> <span class="o">=</span> <span class="n">SomeOperation</span><span class="p">(</span><span class="n">input_var</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_var</span><span class="o">=</span><span class="s2">&quot;result&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">op</span> <span class="o">=</span> <span class="n">SomeOperation</span><span class="p">(</span><span class="n">input_var</span><span class="o">=</span><span class="s2">"data"</span><span class="p">,</span> <span class="n">output_var</span><span class="o">=</span><span class="s2">"result"</span><span class="p">)</span>
 <span class="gp">... </span>    <span class="c1"># op can now reference the pipeline context</span>
 </pre></div>
 </div>

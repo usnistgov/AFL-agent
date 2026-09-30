@@ -482,8 +482,8 @@ document.write(`
 <span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">example_dataset1</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">plotly.io</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pio</span>
-<span class="n">pio</span><span class="o">.</span><span class="n">renderers</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="s2">&quot;iframe_connected&quot;</span>
-<span class="c1"># pio.renderers.default = &quot;plotly_mimetype&quot;</span>
+<span class="n">pio</span><span class="o">.</span><span class="n">renderers</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="s2">"iframe_connected"</span>
+<span class="c1"># pio.renderers.default = "plotly_mimetype"</span>
 
 <span class="c1"># Load the dataset</span>
 <span class="n">ds</span> <span class="o">=</span> <span class="n">example_dataset1</span><span class="p">()</span>
@@ -925,11 +925,11 @@ Data variables:
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">artists</span> <span class="o">=</span> <span class="n">plot_scatter_mpl</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">component_variable</span><span class="o">=</span><span class="s1">&#39;composition&#39;</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;ground_truth_labels&#39;</span><span class="p">,</span>
+    <span class="n">component_variable</span><span class="o">=</span><span class="s1">'composition'</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">'ground_truth_labels'</span><span class="p">,</span>
     <span class="n">discrete_labels</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Composition Scatter Plot (Matplotlib)&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Composition Scatter Plot (Matplotlib)'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <br/></pre></div>
 </div>
@@ -958,13 +958,13 @@ Data variables:
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">artists</span> <span class="o">=</span> <span class="n">plot</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;scatter&#39;</span><span class="p">,</span>
-    <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;mpl&#39;</span><span class="p">,</span>
-    <span class="n">component_variable</span><span class="o">=</span><span class="s1">&#39;composition&#39;</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;ground_truth_labels&#39;</span><span class="p">,</span>
+    <span class="n">kind</span><span class="o">=</span><span class="s1">'scatter'</span><span class="p">,</span>
+    <span class="n">backend</span><span class="o">=</span><span class="s1">'mpl'</span><span class="p">,</span>
+    <span class="n">component_variable</span><span class="o">=</span><span class="s1">'composition'</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">'ground_truth_labels'</span><span class="p">,</span>
     <span class="n">discrete_labels</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Composition Scatter Plot (Unified API)&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Composition Scatter Plot (Unified API)'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <br/></pre></div>
 </div>
@@ -992,11 +992,11 @@ Data variables:
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a scatter plot using Plotly</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_scatter_plotly</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">component_variable</span><span class="o">=</span><span class="s1">&#39;composition&#39;</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;ground_truth_labels&#39;</span><span class="p">,</span>
+    <span class="n">component_variable</span><span class="o">=</span><span class="s1">'composition'</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">'ground_truth_labels'</span><span class="p">,</span>
     <span class="n">discrete_labels</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Composition Scatter Plot (Plotly)&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Composition Scatter Plot (Plotly)'</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -1027,11 +1027,11 @@ Data variables:
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">artists</span> <span class="o">=</span> <span class="n">plot_surface_mpl</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">component_variable</span><span class="o">=</span><span class="s1">&#39;composition&#39;</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;ground_truth_labels&#39;</span>
+    <span class="n">component_variable</span><span class="o">=</span><span class="s1">'composition'</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">'ground_truth_labels'</span>
 <span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">artists</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Composition Surface Plot (Matplotlib)&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Composition Surface Plot (Matplotlib)'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -1059,10 +1059,10 @@ Data variables:
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a surface plot using Plotly</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_surface_plotly</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">component_variable</span><span class="o">=</span><span class="s1">&#39;composition&#39;</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;ground_truth_labels&#39;</span>
+    <span class="n">component_variable</span><span class="o">=</span><span class="s1">'composition'</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">'ground_truth_labels'</span>
 <span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Composition Surface Plot (Plotly)&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Composition Surface Plot (Plotly)'</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -1095,14 +1095,14 @@ Data variables:
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">artists</span> <span class="o">=</span> <span class="n">plot_sas_mpl</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;loglog&#39;</span><span class="p">,</span>
-    <span class="n">x</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
-    <span class="n">y</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
-    <span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;q (Å⁻¹)&#39;</span><span class="p">,</span>
-    <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;Intensity (a.u.)&#39;</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">'loglog'</span><span class="p">,</span>
+    <span class="n">x</span><span class="o">=</span><span class="s1">'x'</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="s1">'measurement'</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="s1">'q (Å⁻¹)'</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="s1">'Intensity (a.u.)'</span><span class="p">,</span>
     <span class="n">legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Scattering Data Log-Log Plot (Matplotlib)&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Scattering Data Log-Log Plot (Matplotlib)'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <br/></pre></div>
 </div>
@@ -1122,13 +1122,13 @@ Data variables:
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a log-log plot using Plotly</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_sas_plotly</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;loglog&#39;</span><span class="p">,</span>
-    <span class="n">x</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
-    <span class="n">y</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
-    <span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;q (Å⁻¹)&#39;</span><span class="p">,</span>
-    <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;Intensity (a.u.)&#39;</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">'loglog'</span><span class="p">,</span>
+    <span class="n">x</span><span class="o">=</span><span class="s1">'x'</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="s1">'measurement'</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="s1">'q (Å⁻¹)'</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="s1">'Intensity (a.u.)'</span>
 <span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Scattering Data Log-Log Plot (Plotly)&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Scattering Data Log-Log Plot (Plotly)'</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <br/></pre></div>
 </div>
@@ -1158,15 +1158,15 @@ Data variables:
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
 <span class="n">artists</span> <span class="o">=</span> <span class="n">plot_sas_mpl</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;logwaterfall&#39;</span><span class="p">,</span>
-    <span class="n">x</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
-    <span class="n">y</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
-    <span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;q (Å⁻¹)&#39;</span><span class="p">,</span>
-    <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;Intensity (a.u.)&#39;</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">'logwaterfall'</span><span class="p">,</span>
+    <span class="n">x</span><span class="o">=</span><span class="s1">'x'</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="s1">'measurement'</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="s1">'q (Å⁻¹)'</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="s1">'Intensity (a.u.)'</span><span class="p">,</span>
     <span class="n">base</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="c1"># Separation factor between curves</span>
     <span class="n">legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Scattering Data Log Waterfall Plot (Matplotlib)&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Scattering Data Log Waterfall Plot (Matplotlib)'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <br/></pre></div>
 </div>
@@ -1186,14 +1186,14 @@ Data variables:
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a log waterfall plot using Plotly</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_sas_plotly</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;logwaterfall&#39;</span><span class="p">,</span>
-    <span class="n">x</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
-    <span class="n">y</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
-    <span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;q (Å⁻¹)&#39;</span><span class="p">,</span>
-    <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;Intensity (a.u.)&#39;</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">'logwaterfall'</span><span class="p">,</span>
+    <span class="n">x</span><span class="o">=</span><span class="s1">'x'</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="s1">'measurement'</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="s1">'q (Å⁻¹)'</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="s1">'Intensity (a.u.)'</span><span class="p">,</span>
     <span class="n">base</span><span class="o">=</span><span class="mi">5</span>  <span class="c1"># Separation factor between curves</span>
 <span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Scattering Data Log Waterfall Plot (Plotly)&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Scattering Data Log Waterfall Plot (Plotly)'</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <br/></pre></div>
 </div>
@@ -1224,13 +1224,13 @@ Data variables:
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">artists</span> <span class="o">=</span> <span class="n">plot_sas_mpl</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;linlin&#39;</span><span class="p">,</span>
-    <span class="n">x</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
-    <span class="n">y</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
-    <span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;q (Å⁻¹)&#39;</span><span class="p">,</span>
-    <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;Intensity (a.u.)&#39;</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">'linlin'</span><span class="p">,</span>
+    <span class="n">x</span><span class="o">=</span><span class="s1">'x'</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="s1">'measurement'</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="s1">'q (Å⁻¹)'</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="s1">'Intensity (a.u.)'</span>
 <span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Scattering Data Linear Plot (Matplotlib)&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Scattering Data Linear Plot (Matplotlib)'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <br/></pre></div>
 </div>
@@ -1267,23 +1267,23 @@ Data variables:
 <span class="c1"># Create the dataset</span>
 <span class="n">three_comp_ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
     <span class="n">data_vars</span><span class="o">=</span><span class="p">{</span>
-        <span class="s1">&#39;compositions&#39;</span><span class="p">:</span> <span class="p">([</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;component&#39;</span><span class="p">],</span> <span class="n">components</span><span class="p">)</span>
+        <span class="s1">'compositions'</span><span class="p">:</span> <span class="p">([</span><span class="s1">'sample'</span><span class="p">,</span> <span class="s1">'component'</span><span class="p">],</span> <span class="n">components</span><span class="p">)</span>
     <span class="p">},</span>
     <span class="n">coords</span><span class="o">=</span><span class="p">{</span>
-        <span class="s1">&#39;component&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">],</span>
-        <span class="s1">&#39;labels&#39;</span><span class="p">:</span> <span class="p">([</span><span class="s1">&#39;sample&#39;</span><span class="p">],</span> <span class="n">labels</span><span class="p">)</span>
+        <span class="s1">'component'</span><span class="p">:</span> <span class="p">[</span><span class="s1">'A'</span><span class="p">,</span> <span class="s1">'B'</span><span class="p">,</span> <span class="s1">'C'</span><span class="p">],</span>
+        <span class="s1">'labels'</span><span class="p">:</span> <span class="p">([</span><span class="s1">'sample'</span><span class="p">],</span> <span class="n">labels</span><span class="p">)</span>
     <span class="p">}</span>
 <span class="p">)</span>
 
 <span class="c1"># Create a 3D scatter plot (non-ternary)</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_scatter_plotly</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">three_comp_ds</span><span class="p">,</span>
-    <span class="n">component_variable</span><span class="o">=</span><span class="s1">&#39;compositions&#39;</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;labels&#39;</span><span class="p">,</span>
+    <span class="n">component_variable</span><span class="o">=</span><span class="s1">'compositions'</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">'labels'</span><span class="p">,</span>
     <span class="n">discrete_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">ternary</span><span class="o">=</span><span class="kc">False</span>  <span class="c1"># Use 3D Cartesian plot instead of ternary</span>
 <span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Three-Component Scatter Plot (3D)&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Three-Component Scatter Plot (3D)'</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <br/></pre></div>
 </div>
@@ -1311,12 +1311,12 @@ Data variables:
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plot_scatter_plotly</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">three_comp_ds</span><span class="p">,</span>
-    <span class="n">component_variable</span><span class="o">=</span><span class="s1">&#39;compositions&#39;</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;labels&#39;</span><span class="p">,</span>
+    <span class="n">component_variable</span><span class="o">=</span><span class="s1">'compositions'</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">'labels'</span><span class="p">,</span>
     <span class="n">discrete_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">ternary</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># Use ternary plot</span>
 <span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Three-Component Scatter Plot (Ternary)&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Three-Component Scatter Plot (Ternary)'</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>

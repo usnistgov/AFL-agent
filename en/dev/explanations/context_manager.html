@@ -440,15 +440,15 @@ document.write(`
 <p>In the AFL pipeline system, we leverage the second aspect - creating a temporary “context” in which operations are automatically associated with the current pipeline. This design creates a more readable, intuitive API that reduces boilerplate code and makes pipeline construction feel natural in Python.</p>
 <p>Here’s a simple example of how this pattern improves code readability:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Using context manager approach</span>
-<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;MyPipeline&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
-    <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;processed_data&quot;</span><span class="p">)</span>
-    <span class="n">AnotherOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;processed_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;final_result&quot;</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"MyPipeline"</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
+    <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"processed_data"</span><span class="p">)</span>
+    <span class="n">AnotherOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"processed_data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"final_result"</span><span class="p">)</span>
 
 <span class="c1"># Without context manager - more verbose and error-prone</span>
-<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;MyPipeline&quot;</span><span class="p">)</span>
-<span class="n">op1</span> <span class="o">=</span> <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;processed_data&quot;</span><span class="p">)</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"MyPipeline"</span><span class="p">)</span>
+<span class="n">op1</span> <span class="o">=</span> <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"processed_data"</span><span class="p">)</span>
 <span class="n">pipeline</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">op1</span><span class="p">)</span>
-<span class="n">op2</span> <span class="o">=</span> <span class="n">AnotherOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;processed_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;final_result&quot;</span><span class="p">)</span>
+<span class="n">op2</span> <span class="o">=</span> <span class="n">AnotherOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"processed_data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"final_result"</span><span class="p">)</span>
 <span class="n">pipeline</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">op2</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -461,7 +461,7 @@ document.write(`
 </div>
 <p>The implementation in <cite>PipelineContext.py</cite> shows how this stack is managed:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">PipelineContext</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inherited by Pipeline to allow for context manager abuse&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Inherited by Pipeline to allow for context manager abuse"""</span>
 
     <span class="n">contexts</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">local</span><span class="p">()</span>
 
@@ -474,17 +474,17 @@ document.write(`
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_contexts</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">contexts</span><span class="p">,</span> <span class="s2">&quot;stack&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">contexts</span><span class="p">,</span> <span class="s2">"stack"</span><span class="p">):</span>
             <span class="bp">cls</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">stack</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_context</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the deepest context on the stack.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Return the deepest context on the stack."""</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get_contexts</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">NoContextException</span><span class="p">(</span><span class="s2">&quot;No context on context stack&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">NoContextException</span><span class="p">(</span><span class="s2">"No context on context stack"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>This design:</p>
@@ -556,12 +556,12 @@ document.write(`
 </dd>
 </dl>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Using context manager</span>
-<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;pipeline1&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">p1</span><span class="p">:</span>
-    <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"pipeline1"</span><span class="p">)</span> <span class="k">as</span> <span class="n">p1</span><span class="p">:</span>
+    <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"y"</span><span class="p">)</span>
 
 <span class="c1"># Using manual construction</span>
-<span class="n">p2</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;pipeline2&quot;</span><span class="p">)</span>
-<span class="n">op</span> <span class="o">=</span> <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+<span class="n">p2</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"pipeline2"</span><span class="p">)</span>
+<span class="n">op</span> <span class="o">=</span> <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"y"</span><span class="p">)</span>
 <span class="n">p2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -574,32 +574,32 @@ document.write(`
 </dd>
 </dl>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_processing_pipeline</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Factory function to create standardized processing pipelines&quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">_processing&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Factory function to create standardized processing pipelines"""</span>
+    <span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">_processing"</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
         <span class="c1"># Common operations for all data types</span>
-        <span class="n">Normalize</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;normalized_data&quot;</span><span class="p">)</span>
+        <span class="n">Normalize</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"raw_data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"normalized_data"</span><span class="p">)</span>
 
         <span class="c1"># Conditional operations based on data_type</span>
-        <span class="k">if</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">&quot;image&quot;</span><span class="p">:</span>
-            <span class="n">ImageFilter</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;normalized_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;filtered_data&quot;</span><span class="p">,</span>
-                        <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;gaussian&quot;</span><span class="p">)</span>
-            <span class="n">threshold_var</span> <span class="o">=</span> <span class="s2">&quot;filtered_data&quot;</span>
-        <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">&quot;signal&quot;</span><span class="p">:</span>
-            <span class="n">SignalFilter</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;normalized_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;filtered_data&quot;</span><span class="p">,</span>
-                         <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;lowpass&quot;</span><span class="p">)</span>
-            <span class="n">threshold_var</span> <span class="o">=</span> <span class="s2">&quot;filtered_data&quot;</span>
+        <span class="k">if</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">"image"</span><span class="p">:</span>
+            <span class="n">ImageFilter</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"normalized_data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"filtered_data"</span><span class="p">,</span>
+                        <span class="n">filter_type</span><span class="o">=</span><span class="s2">"gaussian"</span><span class="p">)</span>
+            <span class="n">threshold_var</span> <span class="o">=</span> <span class="s2">"filtered_data"</span>
+        <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">"signal"</span><span class="p">:</span>
+            <span class="n">SignalFilter</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"normalized_data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"filtered_data"</span><span class="p">,</span>
+                         <span class="n">filter_type</span><span class="o">=</span><span class="s2">"lowpass"</span><span class="p">)</span>
+            <span class="n">threshold_var</span> <span class="o">=</span> <span class="s2">"filtered_data"</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">threshold_var</span> <span class="o">=</span> <span class="s2">&quot;normalized_data&quot;</span>
+            <span class="n">threshold_var</span> <span class="o">=</span> <span class="s2">"normalized_data"</span>
 
         <span class="c1"># Final thresholding operation with configurable threshold</span>
-        <span class="n">Threshold</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">threshold_var</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;thresholded_data&quot;</span><span class="p">,</span>
+        <span class="n">Threshold</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">threshold_var</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"thresholded_data"</span><span class="p">,</span>
                   <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">pipeline</span>
 
 <span class="c1"># Usage</span>
-<span class="n">image_pipeline</span> <span class="o">=</span> <span class="n">create_processing_pipeline</span><span class="p">(</span><span class="s2">&quot;image&quot;</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)</span>
-<span class="n">signal_pipeline</span> <span class="o">=</span> <span class="n">create_processing_pipeline</span><span class="p">(</span><span class="s2">&quot;signal&quot;</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="n">image_pipeline</span> <span class="o">=</span> <span class="n">create_processing_pipeline</span><span class="p">(</span><span class="s2">"image"</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)</span>
+<span class="n">signal_pipeline</span> <span class="o">=</span> <span class="n">create_processing_pipeline</span><span class="p">(</span><span class="s2">"signal"</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="simple">
@@ -607,19 +607,19 @@ document.write(`
 </dd>
 </dl>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Conceptual example of how nested pipelines might work</span>
-<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;master_pipeline&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">master</span><span class="p">:</span>
+<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"master_pipeline"</span><span class="p">)</span> <span class="k">as</span> <span class="n">master</span><span class="p">:</span>
     <span class="c1"># Some operations in the master pipeline</span>
-    <span class="n">DataLoader</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;file_path&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">)</span>
+    <span class="n">DataLoader</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"file_path"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"raw_data"</span><span class="p">)</span>
 
     <span class="c1"># Create a nested pipeline for preprocessing</span>
-    <span class="k">with</span> <span class="n">NestedPipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;preprocessing&quot;</span><span class="p">,</span> <span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">,</span>
-                         <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;preprocessed_data&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">preprocess</span><span class="p">:</span>
-        <span class="n">Normalize</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;normalized&quot;</span><span class="p">)</span>
-        <span class="n">RemoveOutliers</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;normalized&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;cleaned&quot;</span><span class="p">)</span>
-        <span class="c1"># The last output becomes the nested pipeline&#39;s output</span>
+    <span class="k">with</span> <span class="n">NestedPipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"preprocessing"</span><span class="p">,</span> <span class="n">input_variable</span><span class="o">=</span><span class="s2">"raw_data"</span><span class="p">,</span>
+                         <span class="n">output_variable</span><span class="o">=</span><span class="s2">"preprocessed_data"</span><span class="p">)</span> <span class="k">as</span> <span class="n">preprocess</span><span class="p">:</span>
+        <span class="n">Normalize</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"raw_data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"normalized"</span><span class="p">)</span>
+        <span class="n">RemoveOutliers</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"normalized"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"cleaned"</span><span class="p">)</span>
+        <span class="c1"># The last output becomes the nested pipeline's output</span>
 
     <span class="c1"># Continue with operations in the master pipeline</span>
-    <span class="n">ModelPredictor</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;preprocessed_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;predictions&quot;</span><span class="p">)</span>
+    <span class="n">ModelPredictor</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"preprocessed_data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"predictions"</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="simple">
@@ -627,39 +627,39 @@ document.write(`
 </dd>
 </dl>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_adaptive_pipeline</span><span class="p">(</span><span class="n">data_properties</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Builds a pipeline that adapts to properties of the data&quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;adaptive_pipeline&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Builds a pipeline that adapts to properties of the data"""</span>
+    <span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"adaptive_pipeline"</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
         <span class="c1"># Basic operations for all cases</span>
-        <span class="n">LoadData</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data_path&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">)</span>
+        <span class="n">LoadData</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"data_path"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"raw_data"</span><span class="p">)</span>
 
         <span class="c1"># Add preprocessing operations based on data properties</span>
-        <span class="k">if</span> <span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;has_missing_values&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
-            <span class="n">ImputeMissingValues</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;imputed_data&quot;</span><span class="p">)</span>
-            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">&quot;imputed_data&quot;</span>
+        <span class="k">if</span> <span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"has_missing_values"</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="n">ImputeMissingValues</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"raw_data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"imputed_data"</span><span class="p">)</span>
+            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">"imputed_data"</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">&quot;raw_data&quot;</span>
+            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">"raw_data"</span>
 
-        <span class="k">if</span> <span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;needs_normalization&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
-            <span class="n">Normalize</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">current_data</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;normalized_data&quot;</span><span class="p">)</span>
-            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">&quot;normalized_data&quot;</span>
+        <span class="k">if</span> <span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"needs_normalization"</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+            <span class="n">Normalize</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">current_data</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"normalized_data"</span><span class="p">)</span>
+            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">"normalized_data"</span>
 
         <span class="c1"># Add dimensionality reduction if data has high dimensions</span>
-        <span class="k">if</span> <span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dimensions&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
-            <span class="n">PCA</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">current_data</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;reduced_data&quot;</span><span class="p">,</span>
-                <span class="n">n_components</span><span class="o">=</span><span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target_dimensions&quot;</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
-            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">&quot;reduced_data&quot;</span>
+        <span class="k">if</span> <span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"dimensions"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
+            <span class="n">PCA</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">current_data</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"reduced_data"</span><span class="p">,</span>
+                <span class="n">n_components</span><span class="o">=</span><span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"target_dimensions"</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">"reduced_data"</span>
 
         <span class="c1"># Final output operation</span>
-        <span class="n">Analyze</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">current_data</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;results&quot;</span><span class="p">)</span>
+        <span class="n">Analyze</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">current_data</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"results"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">pipeline</span>
 
 <span class="c1"># Usage</span>
 <span class="n">data_props</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;has_missing_values&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="s2">&quot;needs_normalization&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
-    <span class="s2">&quot;target_dimensions&quot;</span><span class="p">:</span> <span class="mi">50</span>
+    <span class="s2">"has_missing_values"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">"needs_normalization"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">"dimensions"</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+    <span class="s2">"target_dimensions"</span><span class="p">:</span> <span class="mi">50</span>
 <span class="p">}</span>
 <span class="n">my_pipeline</span> <span class="o">=</span> <span class="n">build_adaptive_pipeline</span><span class="p">(</span><span class="n">data_props</span><span class="p">)</span>
 </pre></div>
@@ -673,9 +673,9 @@ document.write(`
 </dd>
 </dl>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Hypothetical fluent builder approach</span>
-<span class="n">pipeline</span> <span class="o">=</span> <span class="p">(</span><span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;MyPipeline&quot;</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;path&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">))</span>
-            <span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Process</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;processed&quot;</span><span class="p">)))</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="p">(</span><span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"MyPipeline"</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"path"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"data"</span><span class="p">))</span>
+            <span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Process</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"processed"</span><span class="p">)))</span>
 </pre></div>
 </div>
 <dl class="simple">
@@ -683,9 +683,9 @@ document.write(`
 </dd>
 </dl>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Explicit registration approach</span>
-<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;MyPipeline&quot;</span><span class="p">)</span>
-<span class="n">loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;path&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">)</span>
-<span class="n">processor</span> <span class="o">=</span> <span class="n">Process</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;processed&quot;</span><span class="p">)</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"MyPipeline"</span><span class="p">)</span>
+<span class="n">loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"path"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"data"</span><span class="p">)</span>
+<span class="n">processor</span> <span class="o">=</span> <span class="n">Process</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"processed"</span><span class="p">)</span>
 <span class="n">pipeline</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">loader</span><span class="p">)</span>
 <span class="n">pipeline</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">processor</span><span class="p">)</span>
 </pre></div>
@@ -695,14 +695,14 @@ document.write(`
 </dd>
 </dl>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Hypothetical decorator-based approach</span>
-<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;MyPipeline&quot;</span><span class="p">)</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"MyPipeline"</span><span class="p">)</span>
 
-<span class="nd">@pipeline</span><span class="o">.</span><span class="n">operation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;path&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">)</span>
+<span class="nd">@pipeline</span><span class="o">.</span><span class="n">operation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"path"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"data"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">(</span><span class="n">dataset</span><span class="p">):</span>
     <span class="c1"># Load data implementation</span>
     <span class="k">return</span> <span class="n">loaded_data</span>
 
-<span class="nd">@pipeline</span><span class="o">.</span><span class="n">operation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;processed&quot;</span><span class="p">)</span>
+<span class="nd">@pipeline</span><span class="o">.</span><span class="n">operation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"processed"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">process_data</span><span class="p">(</span><span class="n">dataset</span><span class="p">):</span>
     <span class="c1"># Processing implementation</span>
     <span class="k">return</span> <span class="n">processed_data</span>

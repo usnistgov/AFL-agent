@@ -445,9 +445,9 @@ document.write(`
 <span class="n">ds</span> <span class="o">=</span> <span class="n">example_dataset1</span><span class="p">()</span>
 
 <span class="c1"># Print information about the dataset</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataset dimensions: </span><span class="si">{</span><span class="nb">dict</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataset variables: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataset coordinates: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Dataset dimensions: </span><span class="si">{</span><span class="nb">dict</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Dataset variables: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Dataset coordinates: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -474,7 +474,7 @@ document.write(`
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dataset</span>
 
 <span class="c1"># Load a dataset by name</span>
-<span class="n">ds</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="s2">&quot;example_dataset&quot;</span><span class="p">)</span>
+<span class="n">ds</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="s2">"example_dataset"</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -494,21 +494,21 @@ document.write(`
 <span class="c1"># Create a pipeline</span>
 <span class="k">with</span> <span class="n">Pipeline</span><span class="p">()</span> <span class="k">as</span> <span class="n">clustering_pipeline</span><span class="p">:</span>
     <span class="n">SavgolFilter</span><span class="p">(</span>
-        <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
-        <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;derivative&#39;</span><span class="p">,</span>
-        <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
+        <span class="n">input_variable</span><span class="o">=</span><span class="s1">'measurement'</span><span class="p">,</span>
+        <span class="n">output_variable</span><span class="o">=</span><span class="s1">'derivative'</span><span class="p">,</span>
+        <span class="n">dim</span><span class="o">=</span><span class="s1">'x'</span><span class="p">,</span>
         <span class="n">derivative</span><span class="o">=</span><span class="mi">1</span>
     <span class="p">)</span>
 
     <span class="n">Similarity</span><span class="p">(</span>
-        <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;derivative&#39;</span><span class="p">,</span>
-        <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;similarity&#39;</span><span class="p">,</span>
-        <span class="n">sample_dim</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span>
+        <span class="n">input_variable</span><span class="o">=</span><span class="s1">'derivative'</span><span class="p">,</span>
+        <span class="n">output_variable</span><span class="o">=</span><span class="s1">'similarity'</span><span class="p">,</span>
+        <span class="n">sample_dim</span><span class="o">=</span><span class="s1">'sample'</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">SpectralClustering</span><span class="p">(</span>
-        <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;similarity&#39;</span><span class="p">,</span>
-        <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;labels&#39;</span><span class="p">,</span>
+        <span class="n">input_variable</span><span class="o">=</span><span class="s1">'similarity'</span><span class="p">,</span>
+        <span class="n">output_variable</span><span class="o">=</span><span class="s1">'labels'</span><span class="p">,</span>
         <span class="n">n_clusters</span><span class="o">=</span><span class="mi">2</span>
     <span class="p">)</span>
 
@@ -516,8 +516,8 @@ document.write(`
 <span class="n">result</span> <span class="o">=</span> <span class="n">clustering_pipeline</span><span class="o">.</span><span class="n">calculate</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
 
 <span class="c1"># Compare the predicted labels with the ground truth</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Predicted labels:&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ground truth labels:&quot;</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">ground_truth_labels</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Predicted labels:"</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Ground truth labels:"</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">ground_truth_labels</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>

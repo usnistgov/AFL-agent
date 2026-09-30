@@ -465,27 +465,27 @@ document.write(`
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
 
-<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="s1">&#39;MyPipeline&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">my_important_pipeline</span><span class="p">:</span>
+<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="s1">'MyPipeline'</span><span class="p">)</span> <span class="k">as</span> <span class="n">my_important_pipeline</span><span class="p">:</span>
 
         <span class="n">SavgolFilter</span><span class="p">(</span>
-            <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
-            <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;derivative&#39;</span><span class="p">,</span>
-            <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
+            <span class="n">input_variable</span><span class="o">=</span><span class="s1">'measurement'</span><span class="p">,</span>
+            <span class="n">output_variable</span><span class="o">=</span><span class="s1">'derivative'</span><span class="p">,</span>
+            <span class="n">dim</span><span class="o">=</span><span class="s1">'x'</span><span class="p">,</span>
             <span class="n">derivative</span><span class="o">=</span><span class="mi">1</span>
             <span class="p">)</span>
 
         <span class="n">Similarity</span><span class="p">(</span>
-            <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;derivative&#39;</span><span class="p">,</span>
-            <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;similarity&#39;</span><span class="p">,</span>
-            <span class="n">sample_dim</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span>
-            <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;metric&#39;</span><span class="p">:</span> <span class="s1">&#39;laplacian&#39;</span><span class="p">,</span><span class="s1">&#39;gamma&#39;</span><span class="p">:</span><span class="mf">1e-4</span><span class="p">}</span>
+            <span class="n">input_variable</span><span class="o">=</span><span class="s1">'derivative'</span><span class="p">,</span>
+            <span class="n">output_variable</span><span class="o">=</span><span class="s1">'similarity'</span><span class="p">,</span>
+            <span class="n">sample_dim</span><span class="o">=</span><span class="s1">'sample'</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">'metric'</span><span class="p">:</span> <span class="s1">'laplacian'</span><span class="p">,</span><span class="s1">'gamma'</span><span class="p">:</span><span class="mf">1e-4</span><span class="p">}</span>
             <span class="p">)</span>
 
         <span class="n">SpectralClustering</span><span class="p">(</span>
-            <span class="n">input_variable</span><span class="o">=</span><span class="s1">&#39;similarity&#39;</span><span class="p">,</span>
-            <span class="n">output_variable</span><span class="o">=</span><span class="s1">&#39;labels&#39;</span><span class="p">,</span>
-            <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span>
-            <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;n_phases&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+            <span class="n">input_variable</span><span class="o">=</span><span class="s1">'similarity'</span><span class="p">,</span>
+            <span class="n">output_variable</span><span class="o">=</span><span class="s1">'labels'</span><span class="p">,</span>
+            <span class="n">dim</span><span class="o">=</span><span class="s1">'sample'</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">'n_phases'</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
             <span class="p">)</span>
 
 <span class="n">my_important_pipeline</span><span class="o">.</span><span class="n">print</span><span class="p">()</span>
@@ -517,7 +517,7 @@ Output Variables
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">my_important_pipeline</span><span class="o">.</span><span class="n">write_json</span><span class="p">(</span><span class="s1">&#39;pipeline.json&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">my_important_pipeline</span><span class="o">.</span><span class="n">write_json</span><span class="p">(</span><span class="s1">'pipeline.json'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -536,7 +536,7 @@ Pipeline successfully written to pipeline.json.
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;pipeline.json&#39;</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'pipeline.json'</span><span class="p">,</span><span class="s1">'r'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">display</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -589,7 +589,7 @@ Pipeline successfully written to pipeline.json.
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">loaded_pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="o">.</span><span class="n">read_json</span><span class="p">(</span><span class="s1">&#39;pipeline.json&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">loaded_pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="o">.</span><span class="n">read_json</span><span class="p">(</span><span class="s1">'pipeline.json'</span><span class="p">)</span>
 <span class="n">loaded_pipeline</span><span class="o">.</span><span class="n">print</span><span class="p">()</span>
 </pre></div>
 </div>

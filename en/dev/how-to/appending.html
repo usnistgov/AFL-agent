@@ -460,7 +460,7 @@ document.write(`
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;xarray version: </span><span class="si">{</span><span class="n">xr</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"xarray version: </span><span class="si">{</span><span class="n">xr</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 <span class="c1"># Import the example dataset from AFL.double_agent.data</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">example_dataset1</span>
@@ -469,9 +469,9 @@ document.write(`
 <span class="n">ds</span> <span class="o">=</span> <span class="n">example_dataset1</span><span class="p">()</span>
 
 <span class="c1"># Print basic information about the dataset</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataset dimensions: </span><span class="si">{</span><span class="nb">dict</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataset variables: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataset coordinates: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Dataset dimensions: </span><span class="si">{</span><span class="nb">dict</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Dataset variables: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Dataset coordinates: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -495,8 +495,8 @@ Dataset coordinates: [&#39;component&#39;, &#39;x&#39;]
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Look at the composition data</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Composition data shape:&quot;</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sample of composition data:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Composition data shape:"</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Sample of composition data:"</span><span class="p">)</span>
 <span class="n">ds</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -897,8 +897,8 @@ Dimensions without coordinates: sample</pre><div class='xr-wrap' style='display:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Look at the measurement data</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Measurement data shape:&quot;</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sample of measurement data:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Measurement data shape:"</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Sample of measurement data:"</span><span class="p">)</span>
 <span class="n">ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -1300,10 +1300,10 @@ Dimensions without coordinates: sample</pre><div class='xr-wrap' style='display:
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot measurements for the first 3 samples using xarray&#39;s built-in plotting</span>
-<span class="n">ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="n">xscale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span><span class="n">yscale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot measurements for the first 3 samples using xarray's built-in plotting</span>
+<span class="n">ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">'x'</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="s1">'sample'</span><span class="p">,</span> <span class="n">xscale</span><span class="o">=</span><span class="s1">'log'</span><span class="p">,</span><span class="n">yscale</span><span class="o">=</span><span class="s1">'log'</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Measurement Data for First 3 Samples&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Measurement Data for First 3 Samples'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1335,8 +1335,8 @@ Text(0.5, 1.0, &#39;Measurement Data for First 3 Samples&#39;)
 <span class="n">ds_batch1</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>  <span class="c1"># First 50 samples</span>
 <span class="n">ds_batch2</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>  <span class="c1"># Last 50 samples</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Batch 1: </span><span class="si">{</span><span class="n">ds_batch1</span><span class="o">.</span><span class="n">sizes</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Batch 2: </span><span class="si">{</span><span class="n">ds_batch2</span><span class="o">.</span><span class="n">sizes</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Batch 1: </span><span class="si">{</span><span class="n">ds_batch1</span><span class="o">.</span><span class="n">sizes</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Batch 2: </span><span class="si">{</span><span class="n">ds_batch2</span><span class="o">.</span><span class="n">sizes</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1358,16 +1358,16 @@ Batch 2: Frozen({&#39;sample&#39;: 50, &#39;component&#39;: 2, &#39;x&#39;: 150,
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Concatenate along the sample dimension</span>
-<span class="n">combined_ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">ds_batch1</span><span class="p">,</span> <span class="n">ds_batch2</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">)</span>
+<span class="n">combined_ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">ds_batch1</span><span class="p">,</span> <span class="n">ds_batch2</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="s1">'sample'</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Combined dataset dimensions:&quot;</span><span class="p">,</span> <span class="n">combined_ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Combined dataset dimensions:"</span><span class="p">,</span> <span class="n">combined_ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span>
 
 <span class="c1"># Verify that the combined dataset has the same number of samples as the original</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Original samples: </span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Combined samples: </span><span class="si">{</span><span class="n">combined_ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Original samples: </span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s1">'sample'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Combined samples: </span><span class="si">{</span><span class="n">combined_ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s1">'sample'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 <span class="c1"># Check if the data is the same</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Data is identical:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">combined_ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Data is identical:"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">combined_ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -1388,11 +1388,11 @@ Data is identical: True
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot using xarray&#39;s built-in plotting functionality</span>
-<span class="n">combined_ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;First sample (Batch 1)&quot;</span><span class="p">,</span><span class="n">xscale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span><span class="n">yscale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
-<span class="n">combined_ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;First sample (Batch 2)&quot;</span><span class="p">,</span><span class="n">xscale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span><span class="n">yscale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot using xarray's built-in plotting functionality</span>
+<span class="n">combined_ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="n">label</span><span class="o">=</span><span class="s2">"First sample (Batch 1)"</span><span class="p">,</span><span class="n">xscale</span><span class="o">=</span><span class="s1">'log'</span><span class="p">,</span><span class="n">yscale</span><span class="o">=</span><span class="s1">'log'</span><span class="p">)</span>
+<span class="n">combined_ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="n">label</span><span class="o">=</span><span class="s2">"First sample (Batch 2)"</span><span class="p">,</span><span class="n">xscale</span><span class="o">=</span><span class="s1">'log'</span><span class="p">,</span><span class="n">yscale</span><span class="o">=</span><span class="s1">'log'</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Samples from Combined Dataset&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Samples from Combined Dataset'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1422,12 +1422,12 @@ Text(0.5, 1.0, &#39;Samples from Combined Dataset&#39;)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Calculate the mean of each measurement</span>
-<span class="n">measurement_mean</span> <span class="o">=</span> <span class="n">ds_batch1</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+<span class="n">measurement_mean</span> <span class="o">=</span> <span class="n">ds_batch1</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="s1">'x'</span><span class="p">)</span>
 
 
 <span class="c1"># Create a new dataset with this information</span>
 <span class="n">mean_ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
-<span class="n">mean_ds</span><span class="p">[</span><span class="s1">&#39;measurement_mean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="n">measurement_mean</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">mean_ds</span><span class="p">[</span><span class="s1">'measurement_mean'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'sample'</span><span class="p">,</span> <span class="n">measurement_mean</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
 <span class="n">mean_ds</span>
 <br/></pre></div>
 </div>
@@ -1833,14 +1833,14 @@ Data variables:
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Merge the mean dataset with batch1</span>
 <span class="n">merged_ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">merge</span><span class="p">([</span><span class="n">ds_batch1</span><span class="p">,</span> <span class="n">mean_ds</span><span class="p">])</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Merged dataset variables:&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">merged_ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Merged dataset variables:"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">merged_ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">))</span>
 
 <span class="c1"># Plot the original measurements and their means</span>
-<span class="n">merged_ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="n">xscale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span><span class="n">yscale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+<span class="n">merged_ds</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">'x'</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="s1">'sample'</span><span class="p">,</span> <span class="n">xscale</span><span class="o">=</span><span class="s1">'log'</span><span class="p">,</span><span class="n">yscale</span><span class="o">=</span><span class="s1">'log'</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">merged_ds</span><span class="o">.</span><span class="n">measurement_mean</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">i</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;C</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Mean of Sample </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">merged_ds</span><span class="o">.</span><span class="n">measurement_mean</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">i</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">'--'</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="sa">f</span><span class="s1">'C</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Mean of Sample </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Measurements and Their Means&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Measurements and Their Means'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1895,18 +1895,18 @@ Text(0.5, 1.0, &#39;Measurements and Their Means&#39;)
 <span class="c1"># Create the new dataset</span>
 <span class="n">ds_different_x</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
     <span class="n">data_vars</span><span class="o">=</span><span class="p">{</span>
-        <span class="s1">&#39;measurement&#39;</span><span class="p">:</span> <span class="p">((</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">),</span> <span class="n">new_measurement</span><span class="p">),</span>
-        <span class="s1">&#39;composition&#39;</span><span class="p">:</span> <span class="n">ds_subset_x</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+        <span class="s1">'measurement'</span><span class="p">:</span> <span class="p">((</span><span class="s1">'sample'</span><span class="p">,</span> <span class="s1">'x'</span><span class="p">),</span> <span class="n">new_measurement</span><span class="p">),</span>
+        <span class="s1">'composition'</span><span class="p">:</span> <span class="n">ds_subset_x</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
     <span class="p">},</span>
     <span class="n">coords</span><span class="o">=</span><span class="p">{</span>
-        <span class="s1">&#39;sample&#39;</span><span class="p">:</span> <span class="n">ds_subset_x</span><span class="o">.</span><span class="n">sample</span><span class="p">,</span>
-        <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">x_subset</span><span class="p">,</span>
-        <span class="s1">&#39;component&#39;</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">component</span><span class="p">,</span>
+        <span class="s1">'sample'</span><span class="p">:</span> <span class="n">ds_subset_x</span><span class="o">.</span><span class="n">sample</span><span class="p">,</span>
+        <span class="s1">'x'</span><span class="p">:</span> <span class="n">x_subset</span><span class="p">,</span>
+        <span class="s1">'component'</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">component</span><span class="p">,</span>
     <span class="p">}</span>
 <span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Original x length:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">x</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;New x length:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ds_different_x</span><span class="o">.</span><span class="n">x</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Original x length:"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">x</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"New x length:"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ds_different_x</span><span class="o">.</span><span class="n">x</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -1923,13 +1923,13 @@ Text(0.5, 1.0, &#39;Measurements and Their Means&#39;)
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sample_original</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">sample_original</span><span class="o">.</span><span class="n">measurement</span><span class="p">,</span>
-         <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Original x grid&quot;</span><span class="p">)</span>
+         <span class="s1">'o-'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Original x grid"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sample_different_x</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">sample_different_x</span><span class="o">.</span><span class="n">measurement</span><span class="p">,</span>
-         <span class="s1">&#39;x-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Different x grid&quot;</span><span class="p">)</span>
+         <span class="s1">'x-'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Different x grid"</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Measurement&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Comparison of Different X Grids&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'x'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Measurement'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Comparison of Different X Grids'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -1948,7 +1948,7 @@ Text(0.5, 1.0, &#39;Measurements and Their Means&#39;)
 <span class="p">])))</span>
 
 <span class="c1"># Interpolate both datasets to this new grid</span>
-<span class="c1"># For demonstration, we&#39;ll just use one sample from each</span>
+<span class="c1"># For demonstration, we'll just use one sample from each</span>
 
 <span class="c1"># Interpolate original data</span>
 <span class="n">original_interp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span>
@@ -1967,27 +1967,27 @@ Text(0.5, 1.0, &#39;Measurements and Their Means&#39;)
 <span class="c1"># Create a new dataset with the combined x grid</span>
 <span class="n">combined_x_ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
     <span class="n">data_vars</span><span class="o">=</span><span class="p">{</span>
-        <span class="s1">&#39;measurement_original&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">original_interp</span><span class="p">),</span>
-        <span class="s1">&#39;measurement_different_x&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">different_x_interp</span><span class="p">),</span>
+        <span class="s1">'measurement_original'</span><span class="p">:</span> <span class="p">(</span><span class="s1">'x'</span><span class="p">,</span> <span class="n">original_interp</span><span class="p">),</span>
+        <span class="s1">'measurement_different_x'</span><span class="p">:</span> <span class="p">(</span><span class="s1">'x'</span><span class="p">,</span> <span class="n">different_x_interp</span><span class="p">),</span>
     <span class="p">},</span>
     <span class="n">coords</span><span class="o">=</span><span class="p">{</span>
-        <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">combined_x</span><span class="p">,</span>
+        <span class="s1">'x'</span><span class="p">:</span> <span class="n">combined_x</span><span class="p">,</span>
     <span class="p">}</span>
 <span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Combined x grid length:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">combined_x_ds</span><span class="o">.</span><span class="n">x</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Combined x grid length:"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">combined_x_ds</span><span class="o">.</span><span class="n">x</span><span class="p">))</span>
 
 <span class="c1"># Plot the interpolated data</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">combined_x_ds</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">combined_x_ds</span><span class="o">.</span><span class="n">measurement_original</span><span class="p">,</span>
-         <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Original data (interpolated)&quot;</span><span class="p">)</span>
+         <span class="n">label</span><span class="o">=</span><span class="s2">"Original data (interpolated)"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">combined_x_ds</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">combined_x_ds</span><span class="o">.</span><span class="n">measurement_different_x</span><span class="p">,</span>
-         <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Different x data (interpolated)&quot;</span><span class="p">)</span>
+         <span class="n">label</span><span class="o">=</span><span class="s2">"Different x data (interpolated)"</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Measurement&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Data Interpolated to Common X Grid&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'x'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Measurement'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Data Interpolated to Common X Grid'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -2009,18 +2009,18 @@ Text(0.5, 1.0, &#39;Measurements and Their Means&#39;)
 <span class="n">measurement_with_nans</span> <span class="o">=</span> <span class="n">ds_with_nans</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 <span class="n">measurement_with_nans</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="mi">30</span><span class="p">:</span><span class="mi">60</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>  <span class="c1"># Set a block to NaN</span>
 
-<span class="n">ds_with_nans</span><span class="p">[</span><span class="s1">&#39;measurement&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">),</span> <span class="n">measurement_with_nans</span><span class="p">)</span>
+<span class="n">ds_with_nans</span><span class="p">[</span><span class="s1">'measurement'</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="s1">'sample'</span><span class="p">,</span> <span class="s1">'x'</span><span class="p">),</span> <span class="n">measurement_with_nans</span><span class="p">)</span>
 
 <span class="c1"># Visualize the dataset with missing values</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ds_with_nans</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">ds_with_nans</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">i</span><span class="p">),</span>
-             <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Sample </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+             <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Sample </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Measurement&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Dataset with Missing Values&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'x'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Measurement'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Dataset with Missing Values'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -2033,31 +2033,31 @@ Text(0.5, 1.0, &#39;Measurements and Their Means&#39;)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a dataset to fill the missing values</span>
-<span class="c1"># We&#39;ll use the original dataset for this</span>
+<span class="c1"># We'll use the original dataset for this</span>
 <span class="n">ds_fill</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
 
 <span class="c1"># Fill the missing values</span>
 <span class="n">ds_filled</span> <span class="o">=</span> <span class="n">ds_with_nans</span><span class="o">.</span><span class="n">combine_first</span><span class="p">(</span><span class="n">ds_fill</span><span class="p">)</span>
 
 <span class="c1"># Check if all NaNs are filled</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NaNs in original:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ds_with_nans</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NaNs after filling:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ds_filled</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"NaNs in original:"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ds_with_nans</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"NaNs after filling:"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ds_filled</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
 
 <span class="c1"># Visualize the filled dataset</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ds_filled</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">ds_filled</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">i</span><span class="p">),</span>
-             <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Sample </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> (filled)&quot;</span><span class="p">)</span>
+             <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Sample </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> (filled)"</span><span class="p">)</span>
 
     <span class="c1"># Also plot the original data with NaNs for comparison</span>
     <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># Sample 2 had NaNs</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ds_with_nans</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">ds_with_nans</span><span class="o">.</span><span class="n">measurement</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">i</span><span class="p">),</span>
-                 <span class="s1">&#39;r--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Sample </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> (with NaNs)&quot;</span><span class="p">)</span>
+                 <span class="s1">'r--'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Sample </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> (with NaNs)"</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Measurement&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Dataset After Filling Missing Values&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'x'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Measurement'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Dataset After Filling Missing Values'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -2073,20 +2073,20 @@ Text(0.5, 1.0, &#39;Measurements and Their Means&#39;)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Combine datasets and update attributes</span>
-<span class="n">combined_ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">ds_batch1</span><span class="p">,</span> <span class="n">ds_batch2</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">)</span>
+<span class="n">combined_ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">ds_batch1</span><span class="p">,</span> <span class="n">ds_batch2</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="s1">'sample'</span><span class="p">)</span>
 
 <span class="c1"># Update attributes</span>
 <span class="n">combined_ds</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;Combined dataset from two batches&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">combined_ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> samples&quot;</span><span class="p">,</span>
-    <span class="s1">&#39;x_range&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">combined_ds</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">combined_ds</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-    <span class="s1">&#39;components&#39;</span><span class="p">:</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">combined_ds</span><span class="o">.</span><span class="n">component</span><span class="p">]),</span>
-    <span class="s1">&#39;created_date&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">),</span>
+    <span class="s1">'description'</span><span class="p">:</span> <span class="s1">'Combined dataset from two batches'</span><span class="p">,</span>
+    <span class="s1">'samples'</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">combined_ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s1">'sample'</span><span class="p">]</span><span class="si">}</span><span class="s2"> samples"</span><span class="p">,</span>
+    <span class="s1">'x_range'</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">combined_ds</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">combined_ds</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+    <span class="s1">'components'</span><span class="p">:</span> <span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">combined_ds</span><span class="o">.</span><span class="n">component</span><span class="p">]),</span>
+    <span class="s1">'created_date'</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1">'</span><span class="p">),</span>
 <span class="p">}</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Combined Dataset Attributes:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Combined Dataset Attributes:"</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">combined_ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
