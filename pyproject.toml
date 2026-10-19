@@ -58,6 +58,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+virtual-sas = [
+    "alphashape",
+    "trimesh",
+]
 jupyter = [
     "jupyter",
     "jupyterlab",
@@ -173,6 +177,8 @@ packages = ["AFL"]
 include-package-data = true
 include = [
     "AFL/double_agent/prefab/*.json",
+    "AFL/double_agent/data/*.nc",
+    "AFL/double_agent/data/SANS/*.ABS",
     "AFL/double_agent/apps/**/*.html",
     "AFL/double_agent/apps/**/*.css",
     "AFL/double_agent/apps/**/*.js",

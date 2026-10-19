@@ -236,12 +236,15 @@ def optimization_bounds_to_xarray(
     )
 
 
-def fit_single_task_gp(
+def build_single_task_gp(
     train_x: torch.Tensor,
     train_y: torch.Tensor,
     standardize: bool = True,
 ):
+    """Construct an *unfitted* SingleTaskGP. Used to rebuild saved models."""
     botorch = import_botorch()
+    train_x = torch.as_tensor(train_x)
+    train_y = torch.as_tensor(train_y)
     outcome_transform = botorch["Standardize"](m=train_y.shape[-1]) if standardize else None
     model_kwargs: dict[str, Any] = {
         "train_X": train_x,
@@ -250,7 +253,7 @@ def fit_single_task_gp(
     }
 
     try:
-        model = botorch["SingleTaskGP"](**model_kwargs)
+        return botorch["SingleTaskGP"](**model_kwargs)
     except Exception as exc:
         # BoTorch's validation errors otherwise provide no indication of which
         # observations were supplied to the model.  Log the tensors in their
@@ -264,6 +267,15 @@ def fit_single_task_gp(
                 standardize,
             )
         raise
+
+
+def fit_single_task_gp(
+    train_x: torch.Tensor,
+    train_y: torch.Tensor,
+    standardize: bool = True,
+):
+    botorch = import_botorch()
+    model = build_single_task_gp(train_x, train_y, standardize=standardize)
     mll = botorch["ExactMarginalLogLikelihood"](model.likelihood, model)
     botorch["fit_gpytorch_mll"](mll)
     return model
@@ -338,65 +350,156 @@ def optimize_posterior_mean(
     return candidates.detach(), best_f
 
 
-def evaluate_log_expected_improvement(
-    model,
-    candidate_x: torch.Tensor,
-    best_f: float,
-) -> torch.Tensor:
-    botorch = import_botorch()
-    acquisition = botorch["LogExpectedImprovement"](model=model, best_f=best_f)
-    return acquisition(candidate_x.unsqueeze(-2)).detach()
+def call_with_supported_kwargs(function, *args, **context):
+    """Call ``function(*args, **kw)`` passing only the ``context`` keys its signature accepts.
+
+    A function declaring ``**kwargs`` receives the whole context.
+    """
+    try:
+        parameters = inspect.signature(function).parameters
+    except (TypeError, ValueError):  # builtins / C callables: pass positional args only
+        return function(*args)
+    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in parameters.values()):
+        return function(*args, **context)
+    positional = {name for name, _ in zip(parameters, args)}
+    accepted = {k: v for k, v in context.items() if k in parameters and k not in positional}
+    return function(*args, **accepted)
 
 
-def evaluate_qlog_expected_improvement(
-    model,
-    candidate_x: torch.Tensor,
-    best_f: float,
-    q: int,
-) -> torch.Tensor:
+def accepted_context_keys(function, candidates: Sequence[str]) -> set[str]:
+    """Subset of ``candidates`` that ``function`` accepts as keyword arguments."""
+    try:
+        parameters = inspect.signature(function).parameters
+    except (TypeError, ValueError):
+        return set()
+    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in parameters.values()):
+        return set(candidates)
+    return {k for k in candidates if k in parameters}
+
+
+class ScoreFunctionAcquisition(torch.nn.Module):
+    """Adapt a user score function to BoTorch's acquisition interface.
+
+    The wrapped function scores one candidate set: it receives ``X`` with shape
+    ``(q, d)`` (``q`` jointly proposed design points, no batch dimension) and returns a
+    single scalar, higher being better. This module adds BoTorch's batch handling: a
+    ``(b, q, d)`` input is scored one candidate set at a time and returned as ``(b,)``.
+
+    ``X`` is a ``torch.Tensor`` so that torch-based functions are optimized with exact
+    gradients. Functions that work on NumPy arrays also work: if the function cannot
+    handle a tensor that requires gradients, or returns something without autograd
+    history, it is called on a detached tensor (which NumPy accepts as an array) and
+    :attr:`differentiable` is set to ``False`` so that the optimizer switches to
+    finite differences.
+
+    Extra keyword arguments the function declares in its signature are filled from
+    ``context`` (runtime objects such as ``model`` and ``best_f``) and ``kwargs``
+    (static user settings); everything else in those mappings is ignored.
+    """
+
+    def __init__(
+        self,
+        function,
+        context: Mapping[str, Any] | None = None,
+        kwargs: Mapping[str, Any] | None = None,
+    ) -> None:
+        super().__init__()
+        if not callable(function):
+            raise TypeError(f"score function must be callable, got {type(function).__name__}")
+        self.function = function
+        self.context = dict(kwargs or {})
+        self.context.update(context or {})
+        self.differentiable: bool | None = None
+
+    def _call(self, X: torch.Tensor):
+        return call_with_supported_kwargs(self.function, X, **self.context)
+
+    def _scalar(self, result, X: torch.Tensor) -> torch.Tensor:
+        value = torch.as_tensor(result if isinstance(result, torch.Tensor) else np.asarray(result))
+        if value.numel() != 1:
+            raise ValueError(
+                f"score function must return a single scalar per candidate set of shape {tuple(X.shape)}, "
+                f"got {value.numel()} values"
+            )
+        return value.reshape(()).to(dtype=X.dtype, device=X.device)
+
+    def score(self, X: torch.Tensor) -> torch.Tensor:
+        """Score one ``(q, d)`` candidate set, returning a scalar tensor."""
+        X = torch.as_tensor(X)
+        if X.ndim != 2:
+            raise ValueError(f"score expects a (q, d) tensor, got shape {tuple(X.shape)}")
+        if self.differentiable is not False and torch.is_grad_enabled() and X.requires_grad:
+            try:
+                result = self._call(X)
+            except (RuntimeError, TypeError):
+                result = None
+            if isinstance(result, torch.Tensor) and result.grad_fn is not None:
+                self.differentiable = True
+                return self._scalar(result, X)
+            self.differentiable = False
+        return self._scalar(self._call(X.detach()), X)
+
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
+        if X.ndim == 2:  # a single (q, d) candidate set
+            return self.score(X)
+        batch_shape, q, d = X.shape[:-2], X.shape[-2], X.shape[-1]
+        values = [self.score(x) for x in X.reshape(-1, q, d)]
+        return torch.stack(values).reshape(batch_shape)
+
+
+def build_acquisition(acquisition_kind: str, model, best_f: float):
+    """Instantiate one of the built-in BoTorch acquisition functions.
+
+    ``acquisition_kind`` is ``"logei"`` (analytic LogEI) or ``"qlogei"`` (Monte Carlo
+    qLogEI for joint batches).
+    """
     botorch = import_botorch()
-    acquisition = botorch["qLogExpectedImprovement"](model=model, best_f=best_f)
+    if acquisition_kind == "qlogei":
+        return botorch["qLogExpectedImprovement"](model=model, best_f=best_f)
+    if acquisition_kind == "logei":
+        return botorch["LogExpectedImprovement"](model=model, best_f=best_f)
+    raise ValueError(f"Unknown acquisition_kind {acquisition_kind!r}; expected 'logei' or 'qlogei'")
+
+
+def evaluate_acquisition_on_grid(acq_function, candidate_x: torch.Tensor, q: int = 1) -> torch.Tensor:
+    """Evaluate an acquisition function at every row of ``candidate_x`` ``(n, d)``.
+
+    Points are evaluated individually when ``q <= 1``. For joint acquisitions with
+    ``q > 1`` the grid is scanned with a sliding window of ``q`` consecutive points;
+    windows that do not fit are padded with ``-inf``.
+    """
     if q <= 1:
-        return acquisition(candidate_x.unsqueeze(-2)).detach()
+        return acq_function(candidate_x.unsqueeze(-2)).detach()
 
     values = []
     total = candidate_x.shape[0]
     for start in range(0, total - q + 1):
         batch = candidate_x[start : start + q]
-        values.append(acquisition(batch.unsqueeze(0)).reshape(()))
+        values.append(acq_function(batch.unsqueeze(0)).reshape(()))
 
     padded = torch.full((total,), float("-inf"), dtype=candidate_x.dtype)
     if values:
-        padded[: len(values)] = torch.stack(values)
+        padded[: len(values)] = torch.stack(values).detach()
     return padded
 
 
 def optimize_acquisition_function(
-    model,
+    acq_function,
     bounds: torch.Tensor,
-    best_f: float,
-    acquisition_kind: str = "logei",
     q: int = 1,
     num_restarts: int = 10,
     raw_samples: int = 128,
     inequality_constraints: Sequence[tuple[torch.Tensor, torch.Tensor, float]] | None = None,
     batch_initial_conditions: torch.Tensor | None = None,
+    with_grad: bool = True,
 ) -> tuple[torch.Tensor, torch.Tensor]:
+    """Maximize ``acq_function`` over ``bounds`` with BoTorch's ``optimize_acqf``.
+
+    ``with_grad=False`` makes the L-BFGS-B optimizer use finite-difference gradients,
+    which is required for score functions that are not differentiable by autograd.
+    """
     botorch = import_botorch()
-
-    class _TransformedAcquisition(torch.nn.Module):
-        def __init__(self, base_acquisition) -> None:
-            super().__init__()
-            self.base_acquisition = base_acquisition
-
-        def forward(self, x: torch.Tensor) -> torch.Tensor:
-            return self.base_acquisition(x)
-
-    if acquisition_kind == "qlogei":
-        base_acq_function = botorch["qLogExpectedImprovement"](model=model, best_f=best_f)
-    else:
-        base_acq_function = botorch["LogExpectedImprovement"](model=model, best_f=best_f)
-    acq_function = _TransformedAcquisition(base_acq_function)
+    options = {} if with_grad else {"with_grad": False}
 
     candidates, values = botorch["optimize_acqf"](
         acq_function=acq_function,
@@ -404,6 +507,7 @@ def optimize_acquisition_function(
         q=q,
         num_restarts=num_restarts,
         raw_samples=raw_samples,
+        options=options,
         inequality_constraints=inequality_constraints,
         batch_initial_conditions=batch_initial_conditions,
     )

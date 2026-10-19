@@ -12,6 +12,7 @@ import xarray as xr
 from typing_extensions import Self
 
 from AFL.double_agent.PipelineContext import PipelineContext, NoContextException
+from AFL.double_agent.spec import encode_spec
 
 
 class PipelineOp(ABC):
@@ -91,10 +92,11 @@ class PipelineOp(ABC):
             args_info = inspect.getargvalues(final_frame)
 
         # Build _stored_args by checking JSON serializability of each constructor argument.
+        # Python classes are first converted to import-path specs (see AFL.double_agent.spec).
         stored_args = {}
         for arg in args_info.args:
             if arg != "self":
-                value = args_info.locals[arg]
+                value = encode_spec(args_info.locals[arg])
                 try:
                     json.dumps(value)
                 except (TypeError, OverflowError) as e:
@@ -129,6 +131,7 @@ class PipelineOp(ABC):
             stored_args = None
 
         if stored_args is not None and name in stored_args:
+            value = encode_spec(value)
             try:
                 json.dumps(value)
             except (TypeError, OverflowError) as e:
