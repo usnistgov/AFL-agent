@@ -19,6 +19,12 @@ rather than instantiate::
 :func:`resolve_function` imports it back. Functions defined in ``__main__``
 (a notebook or script) are accepted: they resolve within the same process, but
 a pipeline saved from that process cannot be reloaded elsewhere.
+
+Values that have no JSON form at all (lambdas, closures, live instances) are kept
+in memory by the op and exported as *references*, ``{"ref": "<op name>.<arg>"}``;
+see :class:`~AFL.double_agent.PipelineOp.PipelineOp` for how they are supplied
+again when a pipeline is loaded. :class:`~AFL.double_agent.variables.Variable`
+placeholders encode as ``{"variable": name}``.
 """
 
 from __future__ import annotations
@@ -92,8 +98,13 @@ def encode_spec(value: Any) -> Any:
     * module-level function -> ``{"function": "mod.name"}``
     * ``{"class": SomeClass, "args": {...}}`` -> ``{"class": "mod.Name", "args": {...}}``
     * ``{"function": some_function}`` -> ``{"function": "mod.name"}``
+    * ``Variable`` placeholder -> ``{"variable": name}``
     * anything else -> unchanged
     """
+    from AFL.double_agent.variables import Variable
+
+    if isinstance(value, Variable):
+        return value.to_json()
     if isinstance(value, type):
         return {SPEC_CLASS_KEY: class_path(value)}
     if isinstance(value, types.FunctionType):

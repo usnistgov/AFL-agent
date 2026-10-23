@@ -15,8 +15,7 @@ else:
 
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.spec import resolve_spec, resolve_function
-from AFL.double_agent.util import accepted_context_keys
-from AFL.double_agent.torch_io import load_model, is_model_ref
+from AFL.double_agent.variables import bind_dataset, resolve_variables
 
 class SRSFHilbertSphere(geoopt.Manifold):
     """
@@ -579,39 +578,36 @@ class SRSFHilbertSphereAcquisitionFunction(PipelineOp):
     profile at the composition picked upstream (typically by
     :class:`~AFL.double_agent.AcquisitionFunction.BoTorchAcquisition`).
 
-    The classification model is loaded at calculate time from a ref written to the
-    dataset by an upstream extrapolator (see :mod:`AFL.double_agent.torch_io`), so
-    the constructor holds only JSON-serializable values and the op round-trips
-    through ``Pipeline.write_json`` / ``Pipeline.read_json``.
+    The score is ordinary Python: a lambda, closure or module-level function that
+    closes over whatever objects and settings it needs, and uses
+    :class:`~AFL.double_agent.variables.Variable` placeholders for values that only
+    exist in the dataset at calculate time (the phase model, the composition picked
+    upstream). The op binds the dataset while it runs so the placeholders resolve.
 
     Parameters
     ----------
-    model_variable : str
-        Name of the dataset variable holding the model ref, e.g. ``"phase_model"``
-        written by :class:`~AFL.double_agent.PyTorchExtrapolator.DirichletGPExtrapolator`
-        with ``model_uri`` set. A ref string (``"file://..."``, ``"tiled+http://..."``)
-        may be passed directly instead to use a frozen, previously saved model.
-    manifold : dict | str | type
-        Spec of the manifold, e.g.
+    manifold : SRSFHilbertSphere | dict | str | type
+        The manifold to optimise on: an instance, or a spec such as
         ``{"class": SRSFHilbertSphere, "args": {"n_sampling_points": 128}}``.
     acquisition : callable | str | dict
-        Score to maximise. Called as ``acquisition(q, **kwargs)`` where ``q`` is a
+        Score to maximise, called as ``acquisition(q)`` where ``q`` is a
         ``torch.Tensor`` of shape ``(n_restarts, n_sampling_points, ambient_dim)`` on the
         sphere. It must return one value per restart (shape ``(n_restarts,)``; extra
         trailing dimensions are averaged), higher being better, and be differentiable
-        w.r.t. ``q``. The function may declare the keyword arguments ``model`` (the
-        loaded model), ``manifold``, ``composition`` (see ``composition_variable``),
-        ``bounds_t`` or ``dataset`` to receive them. Pass static settings with
-        ``{"function": my_function, "args": {...}}``. For pipeline serialization the
-        function must be defined at module level; it is stored as
-        ``{"function": "module.name"}`` and an import path string may be passed instead.
-    composition_variable : str, optional
-        Dataset variable whose (squeezed) values are handed to ``acquisition`` as the
-        ``composition`` tensor, e.g. the ``next_samples`` output of a composition
-        acquisition. ``None`` passes no composition.
+        w.r.t. ``q``. ``Variable("manifold")`` resolves to this op's manifold and
+        ``Variable("dataset")`` to the input dataset; any other ``Variable`` is looked
+        up in the dataset (a model ref is loaded into the model, numeric data becomes a
+        tensor on ``device``) and recorded in the op's ``input_variable``.
+
+        Lambdas and closures are kept in memory and exported as ``{"ref": ...}`` in the
+        pipeline JSON (see :class:`~AFL.double_agent.PipelineOp.PipelineOp`); a
+        module-level function is stored by import path and may be given as a string.
+        ``{"function": f, "args": {...}}`` is accepted too, with ``args`` passed as
+        keyword arguments after resolving any ``Variable`` values.
     bounds_t : list[float] | None
-        ``[low, high]`` the function values are mapped onto; handed to ``acquisition``
-        as a tensor and recorded in the output attrs. Defaults to ``[0, 1]``.
+        ``[low, high]`` the function values are mapped onto, recorded in the output
+        attrs for downstream use. Defaults to ``[0, 1]``. Close over it in the score if
+        the score needs it.
     output_prefix : str
         Outputs are ``{prefix}_function`` and ``{prefix}_srsf`` (dims ``{prefix}_t``,
         ``{prefix}_dim``) and ``{prefix}_loss`` (dims ``{prefix}_restart``,
@@ -619,16 +615,34 @@ class SRSFHilbertSphereAcquisitionFunction(PipelineOp):
     n_restarts, n_iterations, learning_rate
         Riemannian Adam settings.
     device : str
+
+    Examples
+    --------
+    Mean classifier entropy along the profile at the composition chosen upstream::
+
+        from AFL.double_agent.variables import Variable
+
+        manifold = SRSFHilbertSphere(n_sampling_points=100)
+        model = Variable("phase_model")            # model ref written by the extrapolator
+        composition = Variable("composition_next")  # output of the stage-1 acquisition
+
+        def profile_score(q, composition, model, manifold, bounds_t, power=1.0):
+            fx = manifold.srsf_to_function(q)  # (n_restarts, n_t, 1) in [0, 1]
+            ...
+            return entropy.pow(power).mean(dim=1)
+
+        op = SRSFHilbertSphereAcquisitionFunction(
+            manifold=manifold,
+            acquisition=lambda q: profile_score(q, composition, model, manifold, [0.5, 45.0], power=2.0),
+        )
     """
 
-    CONTEXT_KEYS = ("model", "manifold", "composition", "bounds_t", "dataset")
+    PROVIDED_KEYS = ("manifold", "dataset")  # Variable names the op itself provides
 
     def __init__(
         self,
-        model_variable: str,
-        manifold: Union[dict, str, type],
+        manifold: Union["SRSFHilbertSphere", dict, str, type],
         acquisition: Union[Callable, str, dict],
-        composition_variable: Optional[str] = None,
         bounds_t: Optional[List[float]] = None,
         output_prefix: str = "srsf",
         n_restarts: int = 16,
@@ -637,65 +651,54 @@ class SRSFHilbertSphereAcquisitionFunction(PipelineOp):
         device: str = "cpu",
         name: str = "SRSFHilbertSphereAcquisitionFunction",
     ):
-        inputs = [] if is_model_ref(model_variable) else [model_variable]
-        if composition_variable is not None:
-            inputs.append(composition_variable)
         super().__init__(
             name=name,
-            input_variable=inputs or None,
+            input_variable=None,
             output_variable=f"{output_prefix}_function",
             output_prefix=output_prefix,
         )
-        self.model_variable = model_variable
         self.manifold = manifold
         self.acquisition = acquisition
-        self.composition_variable = composition_variable
         self.bounds_t = list(bounds_t or [0.0, 1.0])
         self.n_restarts = n_restarts
         self.n_iterations = n_iterations
         self.learning_rate = learning_rate
         self.device = device
+        # Populated by calculate(): the score built from ``self.acquisition`` (which only
+        # holds the JSON spec), kept for inspection.
+        self.acquisition_function = None
 
-    def load_model(self, dataset: xr.Dataset):
-        """Resolve ``model_variable`` to a model: dataset variable first, raw ref second."""
-        if self.model_variable in dataset:
-            ref = str(dataset[self.model_variable].values[()])
-        elif is_model_ref(self.model_variable):
-            ref = self.model_variable
-        else:
-            raise KeyError(
-                f"{self.name}: model variable {self.model_variable!r} not found in dataset and it "
-                "is not a model ref. Did the upstream extrapolator run with model_uri set?"
-            )
-        return load_model(ref)
+    def resolve_manifold(self):
+        """The manifold instance: ``self.manifold`` itself or built from its spec."""
+        if geoopt is not None and isinstance(self.manifold, geoopt.Manifold):
+            return self.manifold
+        return resolve_spec(self.manifold)
 
-    def load_composition(self, dataset: xr.Dataset) -> Optional[torch.Tensor]:
-        """Values of ``composition_variable`` as a flat tensor, or ``None``."""
-        if self.composition_variable is None:
-            return None
-        values = np.asarray(dataset[self.composition_variable].values, dtype=float).reshape(-1)
-        return torch.as_tensor(values, dtype=torch.get_default_dtype(), device=self.device)
+    def build_acquisition(self, dataset: xr.Dataset, manifold):
+        """Return ``score(q) -> (n_restarts,)`` built from ``self.acquisition``.
 
-    def build_acquisition(self, dataset: xr.Dataset, model, manifold):
-        """Return ``score(q) -> (n_restarts,)`` with the context the user function asked for."""
+        Must run inside :func:`bind_dataset` (``calculate`` takes care of this) so that
+        ``Variable`` values in a ``{"function", "args"}`` spec resolve.
+        """
         spec = self.acquisition
         if isinstance(spec, dict):
-            function = resolve_function(spec["function"])
-            args = dict(spec.get("args") or {})
+            if "function" not in spec:
+                raise ValueError(
+                    f"{self.name}: acquisition spec must be a callable, an import path or "
+                    f"{{'function': ..., 'args': {{...}}}}, got keys {sorted(spec)}"
+                )
+            target = spec["function"]
+            function = target if callable(target) else resolve_function(target)
+            kwargs = resolve_variables(dict(spec.get("args") or {}))
         else:
-            function, args = resolve_function(spec), {}
-        context = {
-            "model": model,
-            "manifold": manifold,
-            "composition": self.load_composition(dataset),
-            "bounds_t": torch.as_tensor(self.bounds_t, dtype=torch.get_default_dtype(), device=self.device),
-            "dataset": dataset,
-        }
-        wanted = accepted_context_keys(function, self.CONTEXT_KEYS)
-        context = {k: v for k, v in context.items() if k in wanted}
+            function, kwargs = resolve_function(spec), {}
+        if isinstance(function, type):
+            raise TypeError(
+                f"{self.name}: acquisition must be a score function; classes are not supported."
+            )
 
         def score(q: torch.Tensor) -> torch.Tensor:
-            value = torch.as_tensor(function(q, **context, **args))
+            value = torch.as_tensor(function(q, **kwargs))
             if value.ndim > 1:
                 value = value.reshape(value.shape[0], -1).mean(dim=1)
             if value.numel() != q.shape[0]:
@@ -708,16 +711,25 @@ class SRSFHilbertSphereAcquisitionFunction(PipelineOp):
         return score
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        model = self.load_model(dataset)
-        manifold = resolve_spec(self.manifold)
-        score = self.build_acquisition(dataset, model, manifold)
-
-        q_star, f_star, _, loss_traj, _ = self.optimize(score, manifold)
+        manifold = self.resolve_manifold()
+        with bind_dataset(dataset, {"manifold": manifold}):
+            self.acquisition_function = self.build_acquisition(dataset, manifold)
+            q_star, f_star, traj, loss_traj, ind_star = self.optimize(self.acquisition_function, manifold)
 
         p = self.output_prefix
         t = np.linspace(0, 1, manifold.n_sampling_points)
         f_star = f_star.reshape(manifold.n_sampling_points, -1)
         q_star = q_star.reshape(manifold.n_sampling_points, -1)
+        # function values along the optimisation path of the winning restart: (n_steps, n_t, dim)
+        traj_star = traj[ind_star]  # (n_iterations + 1, n_t * dim) SRSFs
+        f_traj = manifold.srsf_to_function(traj_star.reshape(traj_star.shape[0], manifold.n_sampling_points, -1))
+        self.output[f"{p}_trajectory"] = xr.DataArray(
+            f_traj.detach().cpu().numpy().reshape(traj_star.shape[0], manifold.n_sampling_points, -1),
+            dims=[f"{p}_step", f"{p}_t", f"{p}_dim"],
+            coords={f"{p}_t": t},
+            attrs={"description": "Function (values in [0, 1]) at every optimiser step of the best restart"},
+        )
+        self.output[f"{p}_restart_star"] = xr.DataArray(int(ind_star))
         self.output[f"{p}_function"] = xr.DataArray(
             f_star.detach().cpu().numpy(),
             dims=[f"{p}_t", f"{p}_dim"],

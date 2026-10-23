@@ -94,3 +94,28 @@ def test_mll_runs_on_tiny_dataset():
 
     assert isinstance(model, GPModel)
     assert model.training is True
+
+
+@pytest.mark.parametrize("kernel,expected", [
+    ("matern", "MaternKernel"),
+    ("rbf", "RBFKernel"),
+])
+def test_gpmodel_kernel_option(kernel, expected):
+    X = torch.rand(4, 2)
+    y = torch.tensor([0, 1, 0, 1])
+    extrap = DirichletGPExtrapolator(
+        "features", "labels", "out_", "grid", "grid", "sample", "feature",
+        params={"n_iterations": 1, "kernel": kernel},
+    )
+    model, _ = extrap.mll(X, y, **extrap.params)
+    assert type(model.covar_module.base_kernel).__name__ == expected
+    assert model.kernel == kernel
+
+
+def test_gpmodel_unknown_kernel_raises():
+    from gpytorch.likelihoods import DirichletClassificationLikelihood
+
+    likelihood = DirichletClassificationLikelihood(torch.tensor([0, 1, 0]), learn_additional_noise=True)
+    with pytest.raises(ValueError, match="Unknown kernel"):
+        GPModel(torch.rand(3, 2), likelihood.transformed_targets, likelihood,
+                num_classes=likelihood.num_classes, kernel="laplace")

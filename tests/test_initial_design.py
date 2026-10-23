@@ -4,7 +4,7 @@ import xarray as xr
 from botorch.utils.sampling import draw_sobol_samples
 
 from AFL.double_agent.Generator import RandomBoundedDesign
-from AFL.double_agent.util import optimization_bounds_to_tensor
+from AFL.double_agent.BoTorchMixin import BoTorchMixin
 
 BOUNDS = {
     "mu": {"min": 0.15, "max": 0.85},
@@ -44,7 +44,7 @@ def test_random_bounded_design_sobol_uses_botorch_sampling():
         method="sobol",
     ).calculate(xr.Dataset())
 
-    bounds = optimization_bounds_to_tensor(BOUNDS, component_names=["mu", "sigma"])
+    bounds = BoTorchMixin.optimization_bounds_to_tensor(BOUNDS, component_names=["mu", "sigma"])
     expected = draw_sobol_samples(bounds=bounds, n=6, q=1, seed=7).squeeze(1)
     np.testing.assert_allclose(operation.output["parameters"], expected.cpu().numpy())
     assert operation.output["parameters"].dims == ("initial_sample", "component")

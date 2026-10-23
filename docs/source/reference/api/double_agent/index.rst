@@ -27,6 +27,7 @@ Utilities
 
    xarray_extensions
    util
+   BoTorchMixin
    plotting
 
 Core Components

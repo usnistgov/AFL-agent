@@ -90,11 +90,25 @@ botorch = [
     "torch",
     "torchvision",
     "gpytorch",
-    "botorch"
+    "botorch",
+    "geoopt",  # SRSFHilbertSphere manifold in representations/functions.py
 ]
 
 apdist = [
     "apdist @ git+https://github.com/kiranvad/Amplitude-Phase-Distance"
+]
+
+# everything the manifold active learning examples need: Dirichlet GP classifier
+# (torch, gpytorch, pyro-ppl), BoTorch acquisition, SRSF Hilbert sphere (geoopt) and
+# the virtual SAS instrument (alphashape, trimesh)
+manifold = [
+    "torch",
+    "gpytorch",
+    "pyro-ppl",
+    "botorch",
+    "geoopt",
+    "alphashape",
+    "trimesh",
 ]
 
 automation = [
@@ -132,7 +146,9 @@ dev = [
     "torch",
     "torchvision",
     "gpytorch",
-    "botorch"
+    "pyro-ppl",
+    "botorch",
+    "geoopt",
 ]
 
 all = [

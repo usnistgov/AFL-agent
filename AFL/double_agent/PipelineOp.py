@@ -13,6 +13,36 @@ from typing_extensions import Self
 
 from AFL.double_agent.PipelineContext import PipelineContext, NoContextException
 from AFL.double_agent.spec import encode_spec
+from AFL.double_agent.variables import (
+    REF_KEY,
+    UnresolvedReferenceError,
+    decode_variables,
+    find_variables,
+    is_ref,
+)
+
+
+def _encode_deep(value):
+    """Apply :func:`encode_spec` through dicts and lists."""
+    value = encode_spec(value)
+    if isinstance(value, dict):
+        return {k: _encode_deep(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_encode_deep(v) for v in value]
+    return value
+
+
+_NOT_JSON = object()  # sentinel: value has no JSON form and is kept live
+
+
+def _json_safe(value):
+    """Encode ``value`` (recursively) if the result is JSON serializable, else ``_NOT_JSON``."""
+    try:
+        encoded = _encode_deep(value)
+        json.dumps(encoded)
+    except (TypeError, OverflowError, ValueError):
+        return _NOT_JSON
+    return encoded
 
 
 class PipelineOp(ABC):
@@ -91,21 +121,47 @@ class PipelineOp(ABC):
             final_frame = inspect.currentframe().f_back
             args_info = inspect.getargvalues(final_frame)
 
-        # Build _stored_args by checking JSON serializability of each constructor argument.
-        # Python classes are first converted to import-path specs (see AFL.double_agent.spec).
+        # Build _stored_args from the constructor arguments. Values with a JSON form are
+        # stored encoded (classes and functions become import-path specs, see
+        # AFL.double_agent.spec). Anything else (lambdas, closures, live instances) is
+        # stored as the live object and exported by to_json() as a reference.
         stored_args = {}
         for arg in args_info.args:
             if arg != "self":
-                value = encode_spec(args_info.locals[arg])
-                try:
-                    json.dumps(value)
-                except (TypeError, OverflowError) as e:
-                    raise TypeError(
-                        f"Constructor argument '{arg}' with value {value!r} of type {type(value).__name__} "
-                        f"is not JSON serializable: {e}"
-                    )
-                stored_args[arg] = value
+                raw = args_info.locals[arg]
+                encoded = _json_safe(raw)
+                stored_args[arg] = raw if encoded is _NOT_JSON else encoded
         self._stored_args = stored_args
+        self._register_variable_inputs()
+
+    # Names that ops hand to Variables themselves (not dataset variables); subclasses override.
+    PROVIDED_KEYS: tuple = ()
+
+    def _register_variable_inputs(self) -> None:
+        """Add dataset variables referenced by ``Variable`` placeholders to ``input_variable``."""
+        names = [
+            n for n in find_variables(object.__getattribute__(self, "_stored_args"))
+            if n not in self.PROVIDED_KEYS
+        ]
+        if not names:
+            return
+        current = self.input_variable
+        if current is None:
+            current = []
+        elif isinstance(current, str):
+            current = [current]
+        else:
+            current = list(current)
+        # Goes through __setattr__ so a stored "input_variable" constructor argument is updated too.
+        self.input_variable = current + [n for n in names if n not in current]
+
+    def live_objects(self) -> Dict[str, object]:
+        """Constructor arguments kept in memory (no JSON form), keyed by their export reference."""
+        return {
+            f"{self.name}.{arg}": value
+            for arg, value in object.__getattribute__(self, "_stored_args").items()
+            if _json_safe(value) is _NOT_JSON
+        }
 
     def __getattribute__(self, name):
         if name == "_stored_args":
@@ -131,50 +187,86 @@ class PipelineOp(ABC):
             stored_args = None
 
         if stored_args is not None and name in stored_args:
-            value = encode_spec(value)
-            try:
-                json.dumps(value)
-            except (TypeError, OverflowError) as e:
-                raise TypeError(
-                    f"New value for attribute '{name}' with value {value!r} of type {type(value).__name__} "
-                    f"is not JSON serializable: {e}"
-                )
-            stored_args[name] = value
+            encoded = _json_safe(value)
+            stored_args[name] = value if encoded is _NOT_JSON else encoded
         else:
             object.__setattr__(self, name, value)
 
     def to_json(self):
-        """
-        Serializes the fully qualified class name and the constructor arguments
-        stored in _stored_args into a JSON string.
+        """Serialize the class path and constructor arguments to a JSON-safe dict.
+
+        Arguments without a JSON form are written as ``{"ref": "<name>.<arg>"}``; the
+        live objects are available from :meth:`live_objects` and must be passed back to
+        :meth:`from_json` (``objects=``) when the pipeline is reloaded.
         """
         cls = self.__class__
         module = cls.__module__
         qualname = cls.__qualname__
+        args = {}
+        for arg, value in self._stored_args.items():
+            encoded = _json_safe(value)
+            if encoded is _NOT_JSON:
+                encoded = {
+                    REF_KEY: f"{self.name}.{arg}",
+                    "type": type(value).__name__,
+                    "variables": sorted(find_variables(value)),
+                }
+            args[arg] = encoded
         data = {
             "class": f"{module}.{qualname}",
-            "args": self._stored_args,
+            "args": args,
             "docstring": inspect.getdoc(cls) or "",
         }
         return data
 
     @classmethod
-    def from_json(cls, json_data):
-        """
-        Deserializes the JSON string back to an object.
-        Dynamically imports the module, gets the class, and instantiates it
-        using the stored constructor arguments.
+    def from_json(cls, json_data, objects: Optional[Dict[str, object]] = None):
+        """Rebuild an op from :meth:`to_json` output.
+
+        Parameters
+        ----------
+        json_data : dict
+            ``{"class": ..., "args": {...}}``.
+        objects : dict, optional
+            Live objects for ``{"ref": ...}`` arguments, keyed by reference
+            (``"<op name>.<arg>"``), e.g. ``pipeline.objects`` of the pipeline that was
+            exported or :func:`AFL.double_agent.Pipeline.load_environment` of a module
+            that defines it.
+
+        Raises
+        ------
+        UnresolvedReferenceError
+            If an argument is a reference and ``objects`` does not contain it.
         """
         fqcn = json_data["class"]  # e.g. "module.ClassName"
         args = json_data["args"]
-        
+
         # Coerce string 'null' values to Python None (can happen from GUI inputs)
         args = cls._coerce_json_values(args)
-        
+        args = decode_variables(args)
+
+        objects = objects or {}
+        resolved = {}
+        missing = []
+        for arg, value in args.items():
+            if is_ref(value):
+                if value[REF_KEY] in objects:
+                    resolved[arg] = objects[value[REF_KEY]]
+                else:
+                    missing.append(value[REF_KEY])
+            else:
+                resolved[arg] = value
+        if missing:
+            raise UnresolvedReferenceError(
+                f"{fqcn} refers to live Python objects that were not supplied: {missing}. "
+                "Pass them with `objects=` (e.g. `pipeline.objects` of the defining pipeline, or "
+                "`load_environment('my_module')` for a module that builds it)."
+            )
+
         mod_name, class_name = fqcn.rsplit(".", 1)
         module = importlib.import_module(mod_name)
         klass = getattr(module, class_name)
-        return klass(**args)
+        return klass(**resolved)
 
     @staticmethod
     def _coerce_json_values(obj):

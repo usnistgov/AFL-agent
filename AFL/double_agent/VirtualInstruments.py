@@ -459,7 +459,9 @@ class ProteinGlycerolTemperaturePhaseMap(VirtualSASInstrument):
     ``polymer_excl_volume`` SasView models for phases 0 (solid-liquid), 1 (single
     phase) and 2 (liquid-liquid).
 
-    ``measure`` expects composition rows ordered ``(protein, temperature, glycerol)``.
+    ``measure`` exposes one ``(protein, glycerol)`` composition at several temperatures
+    and returns the rows in the layout used by the active learning pipelines (see
+    ``examples/afl-agent_pipelines/afl-agent_manifold.py`` in AFL-bioformulations).
     """
 
     instrument_name = "Virtual SAS Instrument (protein/glycerol/temperature)"
@@ -487,3 +489,37 @@ class ProteinGlycerolTemperaturePhaseMap(VirtualSASInstrument):
             },
         },
     }
+
+    def measure(self, protein: float, glycerol: float, temperatures, batch_id: int | None = None) -> xr.Dataset:
+        """Expose one composition at several temperatures.
+
+        Parameters
+        ----------
+        protein, glycerol : float
+            Composition held fixed across the temperature sweep.
+        temperatures : float or array-like
+            Temperatures at which the composition is measured; one sample per value.
+        batch_id : int, optional
+            Written to ``batch_sample_id`` on every row when given.
+
+        Returns
+        -------
+        xarray.Dataset
+            One sample per temperature with the scattering variables of
+            :meth:`VirtualSASInstrument.measure` plus ``design_space`` (``protein``,
+            ``temperature``, ``glycerol`` over ``ds_dim``), ``composition`` (``protein``,
+            ``glycerol`` over ``component``) and the integer phase labels in ``phases``.
+            The ``sample`` coordinate is dropped so successive measurements can be
+            concatenated along ``sample`` directly.
+        """
+        temperatures = np.atleast_1d(np.asarray(temperatures, dtype=float)).reshape(-1)
+        values = {"protein": float(protein), "glycerol": float(glycerol)}
+        rows = [[values.get(c, t) for c in self.components] for t in temperatures]
+        ds = super().measure(rows)
+        ds = ds.rename({"composition": "design_space", "component": "ds_dim", "labels": "phases"})
+        xy = [c for c in self.components if c != "temperature"]
+        ds["composition"] = ds["design_space"].sel(ds_dim=xy).rename({"ds_dim": "component"})
+        if batch_id is not None:
+            ds["batch_sample_id"] = ("sample", np.full(len(temperatures), int(batch_id)))
+        ds.attrs.update({"components": xy, "components_dim": "component", "labels": "phases"})
+        return ds.drop_vars("sample")

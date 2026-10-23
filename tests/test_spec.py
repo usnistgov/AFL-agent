@@ -68,9 +68,24 @@ def test_pipelineop_accepts_class_argument():
     assert op.factory["class"] == "xarray.core.dataarray.DataArray"
 
 
-def test_pipelineop_still_rejects_non_json():
-    with pytest.raises(TypeError):
-        ClassArgOp("a", "b", factory=xr.Dataset())
+def test_pipelineop_keeps_non_json_values_as_live_refs():
+    from AFL.double_agent.variables import UnresolvedReferenceError
+
+    live = xr.Dataset()
+    op = ClassArgOp("a", "b", factory=live, name="Op")
+    assert op.factory is live  # kept in memory, usable as normal Python
+    payload = op.to_json()
+    assert payload["args"]["factory"] == {"ref": "Op.factory", "type": "Dataset", "variables": []}
+    json.dumps(payload)
+    assert op.live_objects() == {"Op.factory": live}
+
+    with pytest.raises(UnresolvedReferenceError, match="Op.factory"):
+        ClassArgOp.from_json(payload)
+    restored = ClassArgOp.from_json(payload, objects=op.live_objects())
+    assert restored.factory is live
+
+    op.factory = lambda: 1  # reassignment follows the same rule
+    assert callable(op.factory) and "ref" in op.to_json()["args"]["factory"]
 
 
 def test_pipeline_json_roundtrip_with_class_argument(tmp_path):

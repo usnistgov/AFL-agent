@@ -18,19 +18,9 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 torch.set_default_dtype(torch.double)
 
 from AFL.double_agent.Extrapolator import Extrapolator
-from AFL.double_agent.torch_io import save_model
-from AFL.double_agent.util import (
-    dataset_to_botorch_candidates,
-    dataset_to_botorch_training_data,
-    fit_single_task_gp,
-    get_observed_best_f,
-    optimization_bounds_to_xarray,
-    optimization_bounds_to_tensor,
-    posterior_to_xarray,
-    build_single_task_gp,
-)
+from AFL.double_agent.BoTorchMixin import BoTorchMixin, Bounds
 
-class DirichletGPExtrapolator(Extrapolator):
+class DirichletGPExtrapolator(BoTorchMixin, Extrapolator):
     """Gaussian Process classifier for extrapolating class labels using Dirichlet likelihood.
     
     This extrapolator uses Dirichlet-based Gaussian Processes to transform classification
@@ -178,11 +168,8 @@ class DirichletGPExtrapolator(Extrapolator):
         self.output_prefix = output_prefix
         self.params = params
         self.component_dim = component_dim
-        self.model_uri = model_uri
         self.standardize = standardize
-        self.bounds = bounds
-        self.model: Optional["DirichletGP"] = None  # trained model from the last calculate()
-        self._banned_from_attrs.append("model")
+        self._init_botorch(bounds=bounds, model_uri=model_uri)
 
     def _feature_bounds(self, dataset: xr.Dataset) -> Optional[torch.Tensor]:
         """``(2, n_features)`` min/max used to scale the features, or ``None`` when not standardizing."""
@@ -190,10 +177,7 @@ class DirichletGPExtrapolator(Extrapolator):
             return None
         grid = dataset[self.grid_variable]
         if self.bounds is not None:
-            names = grid.coords.get(self.component_dim)
-            return optimization_bounds_to_tensor(
-                self.bounds, component_names=names.values if names is not None else None
-            ).to(torch.get_default_dtype())
+            return self.bounds_tensor(dataset, write_output=False).to(torch.get_default_dtype())
         grid = grid.transpose(self.grid_dim, self.component_dim)
         return torch.tensor(
             np.stack([grid.min(self.grid_dim).values, grid.max(self.grid_dim).values]),
@@ -270,10 +254,10 @@ class DirichletGPExtrapolator(Extrapolator):
             scaled_x = DirichletGP.scale(train_x, bounds)
             if params.get("method", "mcmc") == "mcmc":
                 samples = self.mcmc(scaled_x, train_y, **params)  # type: ignore
-                model = DirichletGP(train_x, train_y, samples=samples, bounds=bounds)
+                model = DirichletGP(train_x, train_y, samples=samples, bounds=bounds, kernel=params.get("kernel", "matern"))
             else:
                 gp, _ = self.mll(scaled_x, train_y, **params)  # type: ignore
-                model = DirichletGP(train_x, train_y, bounds=bounds)
+                model = DirichletGP(train_x, train_y, bounds=bounds, kernel=params.get("kernel", "matern"))
                 model.gp.load_state_dict(gp.state_dict())
             model.eval()
             self.model = model
@@ -283,12 +267,10 @@ class DirichletGPExtrapolator(Extrapolator):
                 verbose=params.get("verbose", False),
             )
 
-            if self.model_uri is not None:
-                args = {"train_x": X.to_numpy(), "train_y": y.to_numpy()}
-                if bounds is not None:
-                    args["bounds"] = bounds.cpu().numpy()
-                ref = save_model(model, self.model_uri, args=args, name=self.name)
-                self.output[self._prefix_output("model")] = xr.DataArray(ref)
+            args = {"train_x": X.to_numpy(), "train_y": y.to_numpy(), "kernel": model.kernel}
+            if bounds is not None:
+                args["bounds"] = bounds.cpu().numpy()
+            self.save_model(model, args=args)
 
             self.output[self._prefix_output("mean")] = xr.DataArray(
                 pred_means.detach().numpy(), dims=self.grid_dim
@@ -411,7 +393,8 @@ class DirichletGPExtrapolator(Extrapolator):
             train_x, 
             likelihood.transformed_targets, 
             likelihood, 
-            num_classes=likelihood.num_classes
+            num_classes=likelihood.num_classes,
+            kernel=kwargs.get("kernel", "matern"),
         )
         model.train()
         likelihood.train()
@@ -490,7 +473,8 @@ class DirichletGPExtrapolator(Extrapolator):
             train_x,
             likelihood.transformed_targets,
             likelihood,
-            num_classes=num_classes
+            num_classes=num_classes,
+            kernel=kwargs.get("kernel", "matern"),
         )
 
         model.mean_module.register_prior(
@@ -589,7 +573,8 @@ class DirichletGPExtrapolator(Extrapolator):
                     train_x, 
                     likelihood.transformed_targets, 
                     likelihood, 
-                    num_classes=likelihood.num_classes
+                    num_classes=likelihood.num_classes,
+                    kernel=kwargs.get("kernel", "matern"),
                 )
                 
                 model.eval()
@@ -659,12 +644,21 @@ class GPModel(ExactGP):
         num_classes (int): Number of output classes or dimensions.
     """
     
-    def __init__(self, train_x, train_y, likelihood, num_classes):
+    KERNELS = {
+        "matern": lambda **kw: gpytorch.kernels.MaternKernel(nu=2.5, **kw),
+        "matern12": lambda **kw: gpytorch.kernels.MaternKernel(nu=0.5, **kw),
+        "matern32": lambda **kw: gpytorch.kernels.MaternKernel(nu=1.5, **kw),
+        "matern52": lambda **kw: gpytorch.kernels.MaternKernel(nu=2.5, **kw),
+        "rbf": lambda **kw: gpytorch.kernels.RBFKernel(**kw),
+    }
+
+    def __init__(self, train_x, train_y, likelihood, num_classes, kernel: str = "matern"):
         """
         Initialize the Gaussian Process model.
         
-        Sets up the GP with a constant mean function and scaled RBF kernel,
-        both configured for batch processing across multiple classes.
+        Sets up the GP with a constant mean function and a scaled stationary kernel
+        (``kernel``: one of ``GPModel.KERNELS``, default Matern-5/2), both configured
+        for batch processing across multiple classes.
         
         Args:
             train_x (torch.Tensor): Training input data of shape (n_samples, n_features).
@@ -673,6 +667,7 @@ class GPModel(ExactGP):
             likelihood (Likelihood): GPyTorch likelihood function that defines the
                 observation model (e.g., noise characteristics).
             num_classes (int): Number of output classes or dimensions. Must be positive.
+            kernel (str): Base kernel name, one of ``GPModel.KERNELS``.
         
         Raises:
             ValueError: If num_classes is not a positive integer.
@@ -684,8 +679,10 @@ class GPModel(ExactGP):
             batch_shape=torch.Size((num_classes,)),
         )
         ard = train_x.shape[-1]
-        base_kernel = gpytorch.kernels.MaternKernel(
-            nu=2.5,
+        if kernel not in self.KERNELS:
+            raise ValueError(f"Unknown kernel {kernel!r}; choose from {sorted(self.KERNELS)}")
+        self.kernel = kernel
+        base_kernel = self.KERNELS[kernel](
             ard_num_dims=ard,
             batch_shape=torch.Size((num_classes,))
         )
@@ -746,6 +743,8 @@ class DirichletGP(torch.nn.Module):
         ``[min, max]`` per feature. If given, inputs are min-max scaled to ``[0, 1]``
         before reaching the GP, so ``train_x``, :meth:`predict` and the saved model
         all work in original feature units.
+    kernel : str, default="matern"
+        Base kernel of the GP, see :attr:`GPModel.KERNELS`.
     """
 
     _SAMPLE_PREFIX = "sample__"
@@ -756,8 +755,10 @@ class DirichletGP(torch.nn.Module):
         train_y,
         samples: Optional[Dict[str, torch.Tensor]] = None,
         bounds=None,
+        kernel: str = "matern",
     ):
         super().__init__()
+        self.kernel = kernel
         train_x = torch.as_tensor(np.asarray(train_x) if not torch.is_tensor(train_x) else train_x)
         train_x = train_x.to(torch.get_default_dtype())
         train_y = torch.as_tensor(np.asarray(train_y) if not torch.is_tensor(train_y) else train_y)
@@ -774,6 +775,7 @@ class DirichletGP(torch.nn.Module):
             likelihood.transformed_targets,
             likelihood,
             num_classes=likelihood.num_classes,
+            kernel=kernel,
         )
         if samples:
             self.set_samples(samples)
@@ -892,15 +894,16 @@ class DirichletGP(torch.nn.Module):
         return self.gp(x)
 
 
-class BoTorchRegressor(Extrapolator):
+class BoTorchRegressor(BoTorchMixin, Extrapolator):
     """Bayesian optimization regressor using BoTorch for Gaussian Process modeling.
-    
+
     This extrapolator fits BoTorch's SingleTaskGP to training data and predicts the posterior
-    mean and variance on a grid. To optimize the posterior mean and locate the best predicted
-    point, follow this op with
-    :class:`~AFL.double_agent.AcquisitionFunction.BoTorchPosteriorAcquisition` (pass
-    ``model_uri`` here and ``model_variable`` there so it reuses the fitted surrogate).
-    
+    mean and variance on a grid. It is the only place a SingleTaskGP is fit: downstream
+    acquisition ops (:class:`~AFL.double_agent.AcquisitionFunction.BoTorchAcquisition`,
+    :class:`~AFL.double_agent.AcquisitionFunction.BoTorchPosteriorAcquisition`) reuse the
+    fitted surrogate. Pass ``model_uri`` here and point their ``model_variable`` at the
+    ``"{output_prefix}_model"`` ref and ``best_f_variable`` at ``"{output_prefix}_best_f"``.
+
     Parameters
     ----------
     feature_input_variable : str
@@ -916,16 +919,16 @@ class BoTorchRegressor(Extrapolator):
     sample_dim : str
         Dimension name for training samples.
     objective_direction : str, default="minimize"
-        Whether to minimize or maximize the objective ("minimize" or "maximize").
+        Whether to minimize or maximize the objective ("minimize" or "maximize"). The GP
+        is fit to negated targets when minimizing.
     standardize : bool, default=True
-        Whether to standardize the training data.
-    bounds : dict | list[tuple[float, float]] | None, default=None
-        Optional bounds recorded in the ``bounds`` output for downstream ops.
-        This may be supplied in the same per-component format used by
-        `BarycentricGrid` and `CartesianGrid`, i.e.
-        ``{component: {"min": lower, "max": upper}}``, or as ordered
-        ``(lower, upper)`` pairs. Bounds must be expressed in the same feature
-        space as `feature_input_variable` and `grid_variable`.
+        Whether to standardize the GP outputs.
+    bounds : Bounds, optional
+        Optional bounds recorded in the ``bounds`` output for downstream ops, in the
+        per-component format used by `BarycentricGrid` and `CartesianGrid`,
+        ``{component: {"min": lower, "max": upper}}``, or as ordered ``(lower, upper)``
+        pairs. Bounds must be expressed in the same feature space as
+        `feature_input_variable` and `grid_variable`.
     is_simplex : bool, default=False
         Recorded in the ``is_simplex`` output for downstream ops.
     model_uri : str, optional
@@ -933,19 +936,19 @@ class BoTorchRegressor(Extrapolator):
         the ref is written to ``"{output_prefix}_model"``.
     name : str, default="BoTorchRegressor"
         Name identifier for the extrapolator.
-    
+
     Outputs
     -------
     mean : xr.DataArray
-        Predicted mean at each grid point.
+        Predicted mean at each grid point, in original objective units.
     variance : xr.DataArray
         Predicted variance at each grid point.
     best_f : xr.DataArray
-        Best observed objective value.
+        Best observed objective value, in original objective units.
     bounds, is_simplex, model : xr.DataArray
         Metadata for downstream ops.
     """
-    
+
     def __init__(
         self,
         feature_input_variable: str,
@@ -956,7 +959,7 @@ class BoTorchRegressor(Extrapolator):
         sample_dim: str,
         objective_direction: str = "minimize",
         standardize: bool = True,
-        bounds: Dict[str, Any] | None = None,
+        bounds: Optional[Bounds] = None,
         is_simplex: bool = False,
         model_uri: Optional[str] = None,
         name: str = "BoTorchRegressor",
@@ -973,67 +976,32 @@ class BoTorchRegressor(Extrapolator):
         )
         self.objective_direction = objective_direction
         self.standardize = standardize
-        self.bounds = bounds
-        self.is_simplex = is_simplex
-        self.model_uri = model_uri
-        self.model = None  # trained model from the last calculate()
-        self._banned_from_attrs.append("model")
+        self._init_botorch(bounds=bounds, is_simplex=is_simplex, model_uri=model_uri)
 
     def calculate(self, dataset: xr.Dataset) -> Self:
-        train_x, train_y = dataset_to_botorch_training_data(
-            dataset=dataset,
-            feature_input_variable=self.feature_input_variable,
-            predictor_input_variable=self.predictor_input_variable,
-            sample_dim=self.sample_dim,
-            objective_direction=self.objective_direction,
-        )
-        candidate_x = dataset_to_botorch_candidates(
-            dataset=dataset,
-            grid_variable=self.grid_variable,
-            grid_dim=self.grid_dim,
-        )
-        model = fit_single_task_gp(
-            train_x=train_x,
-            train_y=train_y,
-            standardize=self.standardize,
-        )
+        train_x, train_y = self.training_data(dataset)
+        candidate_x = self.candidates(dataset)
+        model = self.fit_single_task_gp(train_x=train_x, train_y=train_y, standardize=self.standardize)
         self.model = model
-        if self.model_uri is not None:
-            ref = save_model(
-                model,
-                self.model_uri,
-                args={"train_x": train_x, "train_y": train_y, "standardize": self.standardize},
-                builder=build_single_task_gp,
-                name=self.name,
-            )
-            self.output[self._prefix_output("model")] = xr.DataArray(ref)
-        posterior = model.posterior(candidate_x)
+        self.save_model(
+            model,
+            args={"train_x": train_x, "train_y": train_y, "standardize": self.standardize},
+            builder=self.build_single_task_gp,
+        )
+
         self.grid = dataset[self.grid_variable]
-        component_dim = dataset[self.grid_variable].dims[-1]
-        component_names = dataset[self.grid_variable].coords.get(component_dim)
         self.output.update(
-            posterior_to_xarray(
-                posterior=posterior,
+            self.posterior_to_xarray(
+                posterior=model.posterior(candidate_x),
                 grid_index=dataset[self.grid_variable][self.grid_dim],
                 output_prefix=self.output_prefix,
                 objective_direction=self.objective_direction,
             )
         )
-        if self.bounds is not None and component_names is not None:
-            optimization_bounds = optimization_bounds_to_tensor(
-                self.bounds,
-                component_names=component_names.values,
-            )
-            self.output[self._prefix_output("bounds")] = optimization_bounds_to_xarray(
-                optimization_bounds,
-                component_names=component_names.values,
-                variable_name=self._prefix_output("bounds"),
-            )
+        if self.bounds is not None and self.component_names(dataset) is not None:
+            self.bounds_tensor(dataset)  # writes the "bounds" output
 
-        best_f = get_observed_best_f(
-            train_y,
-            objective_direction=self.objective_direction,
-        )
+        best_f = self.get_observed_best_f(train_y, objective_direction=self.objective_direction)
         self.output[self._prefix_output("best_f")] = xr.DataArray(best_f)
         self.output[self._prefix_output("is_simplex")] = xr.DataArray(bool(self.is_simplex))
         return self

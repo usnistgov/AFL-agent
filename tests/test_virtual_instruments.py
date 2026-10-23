@@ -93,14 +93,19 @@ def test_virtual_sas_instrument_setup(sas_instrument):
 
 
 def test_virtual_sas_instrument_measures_batches(sas_instrument):
-    result = sas_instrument.measure([[20.0, 20.0, 5.0], [60.0, 5.0, 2.0]])
+    result = sas_instrument.measure(protein=20.0, glycerol=5.0, temperatures=[20.0, 5.0], batch_id=3)
     assert result["I"].dims == ("sample", "q")
     assert result["I"].shape[0] == 2
     assert result["I"].shape[1] == len(result["q"])
     assert np.all(np.diff(result["q"].values) >= 0)
     assert np.isfinite(result["I"].values).all()
-    assert set(result["labels"].values.tolist()) <= {0, 1, 2}
-    np.testing.assert_array_equal(result["component"], ["protein", "temperature", "glycerol"])
+    assert set(result["phases"].values.tolist()) <= {0, 1, 2}
+    np.testing.assert_array_equal(result["ds_dim"], ["protein", "temperature", "glycerol"])
+    np.testing.assert_array_equal(result["component"], ["protein", "glycerol"])
+    np.testing.assert_array_equal(result["design_space"].sel(ds_dim="temperature"), [20.0, 5.0])
+    np.testing.assert_array_equal(result["composition"].values, [[20.0, 5.0], [20.0, 5.0]])
+    assert result["batch_sample_id"].values.tolist() == [3, 3]
+    assert "sample" not in result.coords  # concatenable along "sample"
     # noiseless by default
     np.testing.assert_allclose(result["I"].values, result["I_noiseless"].values)
 
@@ -148,10 +153,8 @@ def test_virtual_sas_instrument_models_differ_by_phase(sas_instrument):
 
 
 def test_virtual_sas_instrument_rejects_bad_shapes(sas_instrument):
-    with pytest.raises(ValueError, match="shape"):
-        sas_instrument.measure([[1.0, 2.0]])
     with pytest.raises(ValueError, match="finite"):
-        sas_instrument.measure([[np.nan, 2.0, 3.0]])
+        sas_instrument.measure(protein=np.nan, glycerol=3.0, temperatures=[2.0])
 
 
 def test_virtual_sas_instrument_noise_is_reproducible(tmp_path):
@@ -161,8 +164,8 @@ def test_virtual_sas_instrument_noise_is_reproducible(tmp_path):
 
     a = ProteinGlycerolTemperaturePhaseMap(overrides={"noise": 0.5, "random_seed": 3}, afl_home=tmp_path)
     b = ProteinGlycerolTemperaturePhaseMap(overrides={"noise": 0.5, "random_seed": 3}, afl_home=tmp_path)
-    ra = a.measure([[30.0, 25.0, 4.0]])
-    rb = b.measure([[30.0, 25.0, 4.0]])
+    ra = a.measure(protein=30.0, glycerol=4.0, temperatures=25.0)
+    rb = b.measure(protein=30.0, glycerol=4.0, temperatures=25.0)
     np.testing.assert_allclose(ra["I"].values, rb["I"].values)
     assert not np.allclose(ra["I"].values, ra["I_noiseless"].values)
     assert (ra["dI"].values > 0).all()
