@@ -80,3 +80,69 @@ def test_marginal_entropy_along_dimension(sample_dataset):
     entropy_values = result.output["temperature"].values
     assert entropy_values.ndim == 1
     assert np.all(entropy_values >= 0)  # entropy must be non-negative
+
+
+def test_marginal_entropy_over_dimension_reports_sampled_points(sample_dataset):
+    # three measurements at two distinct (comp1, comp2) points
+    sample_dataset["design_space"] = (
+        ("sample", "ds_dim"),
+        np.array([[300.0, 0.2, 0.8], [310.0, 0.2, 0.8], [300.0, 0.8, 0.2]]),
+    )
+    op = MarginalEntropyOverDimension(
+        input_variable="probability",
+        coordinate_dims=["temperature"],
+        component_dim="ds_dim",
+        grid_variable="design_space_grid",
+        sample_variable="design_space",
+        output_variable="composition_utility",
+    )
+    sampled = op.calculate(sample_dataset).output["comp1_comp2_sampled"]
+    assert sampled.dims == ("comp1_comp2_s", "comp1_comp2_d")
+    assert list(sampled["comp1_comp2_d"].values) == ["comp1", "comp2"]
+    assert np.allclose(np.sort(sampled.values, axis=0), [[0.2, 0.2], [0.8, 0.8]])
+
+
+def test_marginal_entropy_over_dimension_without_sample_variable(sample_dataset):
+    op = MarginalEntropyOverDimension(
+        input_variable="probability",
+        coordinate_dims=["temperature"],
+        component_dim="ds_dim",
+        grid_variable="design_space_grid",
+        output_variable="composition_utility",
+    )
+    assert "comp1_comp2_sampled" not in op.calculate(sample_dataset).output
+
+
+def test_marginal_entropy_along_dimension_reports_sampled_points(sample_dataset):
+    # two temperatures at the conditioning point, one at another composition
+    sample_dataset["design_space"] = (
+        ("sample", "ds_dim"),
+        np.array([[300.0, 0.5, 0.5], [310.0, 0.5, 0.5], [300.0, 0.8, 0.2]]),
+    )
+    op = MarginalEntropyAlongDimension(
+        input_variable="probability",
+        conditioning_point="next_composition",
+        coordinate_dim="temperature",
+        grid_variable="design_space_grid",
+        sample_variable="design_space",
+        component_dim="ds_dim",
+        output_variable="temperature_utility",
+    )
+    sampled = op.calculate(sample_dataset).output["temperature_sampled"]
+    assert sampled.dims == ("temperature_s", "temperature_d")
+    assert np.allclose(sampled.values, [[300.0], [310.0]])
+
+
+def test_marginal_entropy_along_dimension_sampled_is_empty_at_new_point(sample_dataset):
+    sample_dataset["design_space"] = (("sample", "ds_dim"), np.array([[300.0, 0.8, 0.2]]))
+    op = MarginalEntropyAlongDimension(
+        input_variable="probability",
+        conditioning_point="next_composition",
+        coordinate_dim="temperature",
+        grid_variable="design_space_grid",
+        sample_variable="design_space",
+        component_dim="ds_dim",
+        output_variable="temperature_utility",
+    )
+    sampled = op.calculate(sample_dataset).output["temperature_sampled"]
+    assert sampled.shape == (0, 1)
