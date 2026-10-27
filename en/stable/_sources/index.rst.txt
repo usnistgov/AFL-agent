@@ -70,6 +70,7 @@ This documentation is organized according to the philosphy described by Daniele 
 * :doc:`How-to <how-to/index>`: Guides for specific tasks
 * :doc:`Explanations <explanations/index>`: Discussions of underlying principles and concepts
 * :doc:`Reference <reference/index>`: Detailed technical reference 
+* :doc:`Case Studies <casestudies/index>`: Complete active learning campaigns on virtual instruments
 
 
 Table of Contents
@@ -82,3 +83,4 @@ Table of Contents
    how-to/index
    explanations/index
    reference/index
+   casestudies/index

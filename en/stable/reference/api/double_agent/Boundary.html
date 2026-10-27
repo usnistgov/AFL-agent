@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 
 
-<html lang="en" data-content_root="" >
+<html lang="en" data-content_root="../../../" >
 
   <head>
     <meta charset="utf-8" />
@@ -16,33 +16,30 @@
     document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
     document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
   </script>
-  <!--
-    this give us a css class that will be invisible only if js is disabled
-  -->
-  <noscript>
-    <style>
-      .pst-js-only { display: none !important; }
-
-    </style>
-  </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/ntd2d.css?v=525a25f0" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
   
-  <!-- So that users can add custom icons -->
-  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
 
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=b3ba4146"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../../_static/copybutton.js?v=f281be69"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -51,11 +48,10 @@
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="AFL.double_agent.Extrapolator module" href="Extrapolator.html" />
-    <link rel="prev" title="AFL.double_agent.AutoSAS module" href="AutoSAS.html" />
+    <link rel="prev" title="AFL.double_agent.benchmarking module" href="benchmarking.html" />
   
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="" />
 
   <link rel="stylesheet" href="https://pages.nist.gov/nist-header-footer/css/nist-combined.css">
   <script src="https://code.jquery.com/jquery-3.6.2.min.js" type="text/javascript" defer="defer"></script>
@@ -77,8 +73,19 @@
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
 
   
-  <dialog id="pst-search-dialog">
-    
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
 <form class="bd-search d-flex align-items-center"
       action="../../../search.html"
       method="get">
@@ -86,6 +93,7 @@
   <input type="search"
          class="form-control"
          name="q"
+         id="search-input"
          placeholder="Search the docs ..."
          aria-label="Search the docs ..."
          autocomplete="off"
@@ -93,8 +101,8 @@
          autocapitalize="off"
          spellcheck="false"/>
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
-</form>
-  </dialog>
+</form></div>
+  </div>
 
   <div class="pst-async-banner-revealer d-none">
   <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
@@ -128,7 +136,7 @@
     
     
     <img src="../../../_static/logo_text_large_light.svg" class="logo__image only-light" alt="AFL-agent  documentation - Home"/>
-    <img src="../../../_static/logo_text_large_dark.svg" class="logo__image only-dark pst-js-only" alt="AFL-agent  documentation - Home"/>
+    <script>document.write(`<img src="../../../_static/logo_text_large_dark.svg" class="logo__image only-dark" alt="AFL-agent  documentation - Home"/>`);</script>
   
   
 </a></div>
@@ -177,6 +185,13 @@
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
   </ul>
 </nav></div>
       
@@ -188,21 +203,29 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
- <i class="fa-solid fa-magnifying-glass"></i>
- <span class="search-button__default-text">Search</span>
- <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-</button>
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
         </div>
       
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -227,11 +250,15 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
- <i class="fa-solid fa-magnifying-glass"></i>
- <span class="search-button__default-text">Search</span>
- <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-</button>
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
     </div>
   
 
@@ -250,8 +277,7 @@
       
       
       
-      <dialog id="pst-primary-sidebar-modal"></dialog>
-      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+      <div class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -300,6 +326,13 @@
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
   </ul>
 </nav></div>
           
@@ -312,11 +345,15 @@
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -347,6 +384,7 @@
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">AFL.double_agent Package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="AcquisitionFunction.html">AFL.double_agent.AcquisitionFunction module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="AutoSAS.html">AFL.double_agent.AutoSAS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking.html">AFL.double_agent.benchmarking module</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">AFL.double_agent.Boundary module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Extrapolator.html">AFL.double_agent.Extrapolator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Generator.html">AFL.double_agent.Generator module</a></li>
@@ -357,6 +395,7 @@
 <li class="toctree-l2"><a class="reference internal" href="TensorFlowExtrapolator.html">AFL.double_agent.TensorFlowExtrapolator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="util.html">AFL.double_agent.util module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BoTorchMixin.html">AFL.double_agent.BoTorchMixin module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="plotting.html">AFL.double_agent.plotting module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Pipeline.html">AFL.double_agent.Pipeline module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PipelineOp.html">AFL.double_agent.PipelineOp module</a></li>
@@ -364,6 +403,7 @@
 <li class="toctree-l2"><a class="reference internal" href="AutoSAS_Driver.html">AFL.double_agent.AutoSAS_Driver module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="AgentDriver.html">AFL.double_agent.AgentDriver module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="AgentClient.html">AFL.double_agent.AgentClient module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VirtualInstrumentDriver.html">AFL.double_agent.VirtualInstrumentDriver module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -376,14 +416,9 @@
   
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
-      <div class="sidebar-primary-item">
-<div id="ethical-ad-placement"
-      class="flat"
-      data-ea-publisher="readthedocs"
-      data-ea-type="readthedocs-sidebar"
-      data-ea-manual="true">
-</div></div>
   </div>
+  
+  <div id="rtd-footer-container"></div>
 
 
       </div>
@@ -401,6 +436,8 @@
       
         <div class="header-article-item">
 
+
+
 <nav aria-label="Breadcrumb" class="d-print-none">
   <ul class="bd-breadcrumbs">
     
@@ -415,7 +452,7 @@
     
     <li class="breadcrumb-item"><a href="index.html" class="nav-link">AFL.double_agent Package</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">AFL.double_agent.Boundary module</span></li>
+    <li class="breadcrumb-item active" aria-current="page">AFL.double_a...</li>
   </ul>
 </nav>
 </div>
@@ -432,107 +469,8 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-AFL.double_agent.Boundary">
-<span id="afl-double-agent-boundary-module"></span><h1>AFL.double_agent.Boundary module<a class="headerlink" href="#module-AFL.double_agent.Boundary" title="Permalink to this heading">#</a></h1>
-<p>Boundary analysis tools for phase diagram and compositional spaces.</p>
-<p>This module provides tools for analyzing and comparing boundaries in phase diagrams
-and compositional spaces. It includes functionality for creating concave hulls around
-phase regions and computing similarity scores between different boundary sets.</p>
-<p>Key features:
-- Concave hull generation for phase regions
-- Boundary comparison metrics
-- Support for 2D compositional spaces
-- Visualization tools for boundary analysis
-- Handling of multi-phase systems</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="AFL.double_agent.Boundary.BoundaryScore">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Boundary.</span></span><span class="sig-name descname"><span class="pre">BoundaryScore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gt_hull_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">al_hull_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'boundary_score'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'BoundaryScore'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Boundary.BoundaryScore" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp" title="AFL.double_agent.PipelineOp.PipelineOp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineOp</span></code></a></p>
-<p>Computes similarity scores between two sets of phase boundaries.</p>
-<p>This class calculates metrics comparing the boundaries of phase regions
-between two different datasets (e.g., ground truth vs. predicted phases).
-It provides both numerical scores and optional visualization.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>gt_hull_variable</strong> (<em>str</em>) – Name of variable containing ground truth hull data</p></li>
-<li><p><strong>al_hull_variable</strong> (<em>str</em>) – Name of variable containing comparison hull data</p></li>
-<li><p><strong>output_prefix</strong> (<em>str</em><em>, </em><em>default=&quot;boundary_score&quot;</em>) – Prefix to use for output variable names</p></li>
-<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;BoundaryScore&quot;</em>) – Name to use when added to a Pipeline</p></li>
-<li><p><strong>plot</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to create visualizations of the boundary comparisons</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="AFL.double_agent.Boundary.BoundaryScore.calculate">
-<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Boundary.BoundaryScore.calculate" title="Permalink to this definition">#</a></dt>
-<dd><p>Calculate boundary similarity scores between hull sets.</p>
-<p>Computes mean and standard deviation of distances between corresponding
-points on hull boundaries. Optionally creates visualizations of the
-comparison.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – Dataset containing both sets of hulls to compare</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The BoundaryScore instance with computed scores</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Self</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="AFL.double_agent.Boundary.ConcaveHull">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Boundary.</span></span><span class="sig-name descname"><span class="pre">ConcaveHull</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hull_tracing_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_phases</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'components'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segmentize_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.025</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_holes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ConcaveHull'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Boundary.ConcaveHull" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp" title="AFL.double_agent.PipelineOp.PipelineOp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineOp</span></code></a></p>
-<p>Creates concave hulls around points in 2D space.</p>
-<p>This class generates concave hulls (alpha shapes) around sets of points,
-useful for identifying phase boundaries in compositional spaces. It can
-handle multiple phases and provides options for hull generation parameters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input_variable</strong> (<em>str</em>) – The name of the variable containing the points to create hulls around</p></li>
-<li><p><strong>output_prefix</strong> (<em>str</em>) – Prefix to use for output variable names</p></li>
-<li><p><strong>hull_tracing_ratio</strong> (<em>float</em><em>, </em><em>default=0.2</em>) – Controls the concavity of the hull. Lower values create tighter hulls</p></li>
-<li><p><strong>drop_phases</strong> (<em>Optional</em><em>[</em><em>List</em><em>]</em><em>, </em><em>default=None</em>) – List of phase labels to exclude from hull generation</p></li>
-<li><p><strong>component_dim</strong> (<em>str</em><em>, </em><em>default=&quot;components&quot;</em>) – Name of the dimension containing component coordinates</p></li>
-<li><p><strong>label_variable</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Name of variable containing phase labels. If None, all points are treated
-as one phase</p></li>
-<li><p><strong>segmentize_length</strong> (<em>float</em><em>, </em><em>default=0.025</em>) – Length to use when segmenting hull boundaries for smoother visualization</p></li>
-<li><p><strong>allow_holes</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to allow holes in the generated hulls</p></li>
-<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default=&quot;ConcaveHull&quot;</em>) – Name to use when added to a Pipeline</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="AFL.double_agent.Boundary.ConcaveHull.calculate">
-<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#AFL.double_agent.Boundary.ConcaveHull.calculate" title="Permalink to this definition">#</a></dt>
-<dd><p>Generate concave hulls for each phase in the dataset.</p>
-<p>Creates concave hulls around points grouped by their phase labels.
-Handles 2D data only and includes options for hull parameters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dataset</strong> (<em>xr.Dataset</em>) – The input dataset containing points and optional phase labels</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The ConcaveHull instance with generated hulls</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Self</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the input data is not 2D</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
+  <section id="afl-double-agent-boundary-module">
+<h1>AFL.double_agent.Boundary module<a class="headerlink" href="#afl-double-agent-boundary-module" title="Link to this heading">#</a></h1>
 </section>
 
 
@@ -546,12 +484,12 @@ Handles 2D data only and includes options for hull parameters.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="AutoSAS.html"
+       href="benchmarking.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">AFL.double_agent.AutoSAS module</p>
+        <p class="prev-next-title">AFL.double_agent.benchmarking module</p>
       </div>
     </a>
     <a class="right-next"
@@ -570,37 +508,17 @@ Handles 2D data only and includes options for hull parameters.</p>
             
             
               
-                <dialog id="pst-secondary-sidebar-modal"></dialog>
-                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
 
   <div class="sidebar-secondary-item">
-<div
-    id="pst-page-navigation-heading-2"
-    class="page-toc tocsection onthispage">
-    <i class="fa-solid fa-list"></i> On this page
+
+  <div class="tocsection sourcelink">
+    <a href="../../../_sources/reference/api/double_agent/Boundary.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
   </div>
-  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
-    <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Boundary.BoundaryScore"><code class="docutils literal notranslate"><span class="pre">BoundaryScore</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Boundary.BoundaryScore.calculate"><code class="docutils literal notranslate"><span class="pre">BoundaryScore.calculate()</span></code></a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Boundary.ConcaveHull"><code class="docutils literal notranslate"><span class="pre">ConcaveHull</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Boundary.ConcaveHull.calculate"><code class="docutils literal notranslate"><span class="pre">ConcaveHull.calculate()</span></code></a></li>
-</ul>
-</li>
-</ul>
-  </nav></div>
-
-  <div class="sidebar-secondary-item">
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../../../_sources/reference/api/double_agent/Boundary.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div></div>
+</div>
 
 </div></div>
               
@@ -615,8 +533,8 @@ Handles 2D data only and includes options for hull parameters.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
 
 
   
@@ -638,7 +556,7 @@ Handles 2D data only and includes options for hull parameters.</p>
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
     <br/>
   </p>
 </div>
@@ -651,8 +569,7 @@ Handles 2D data only and includes options for hull parameters.</p>
       
         <div class="footer-item">
 <p class="theme-version">
-  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
 </p></div>
       
     </div>

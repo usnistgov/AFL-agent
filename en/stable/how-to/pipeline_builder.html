@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 
 
-<html lang="en" data-content_root="" >
+<html lang="en" data-content_root="../" >
 
   <head>
     <meta charset="utf-8" />
@@ -16,33 +16,30 @@
     document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
     document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
   </script>
-  <!--
-    this give us a css class that will be invisible only if js is disabled
-  -->
-  <noscript>
-    <style>
-      .pst-js-only { display: none !important; }
-
-    </style>
-  </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/ntd2d.css?v=525a25f0" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
   
-  <!-- So that users can add custom icons -->
-  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
 
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=b3ba4146"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -55,7 +52,6 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="" />
 
   <link rel="stylesheet" href="https://pages.nist.gov/nist-header-footer/css/nist-combined.css">
   <script src="https://code.jquery.com/jquery-3.6.2.min.js" type="text/javascript" defer="defer"></script>
@@ -77,8 +73,19 @@
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
 
   
-  <dialog id="pst-search-dialog">
-    
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
 <form class="bd-search d-flex align-items-center"
       action="../search.html"
       method="get">
@@ -86,6 +93,7 @@
   <input type="search"
          class="form-control"
          name="q"
+         id="search-input"
          placeholder="Search the docs ..."
          aria-label="Search the docs ..."
          autocomplete="off"
@@ -93,8 +101,8 @@
          autocapitalize="off"
          spellcheck="false"/>
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
-</form>
-  </dialog>
+</form></div>
+  </div>
 
   <div class="pst-async-banner-revealer d-none">
   <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
@@ -128,7 +136,7 @@
     
     
     <img src="../_static/logo_text_large_light.svg" class="logo__image only-light" alt="AFL-agent  documentation - Home"/>
-    <img src="../_static/logo_text_large_dark.svg" class="logo__image only-dark pst-js-only" alt="AFL-agent  documentation - Home"/>
+    <script>document.write(`<img src="../_static/logo_text_large_dark.svg" class="logo__image only-dark" alt="AFL-agent  documentation - Home"/>`);</script>
   
   
 </a></div>
@@ -177,6 +185,13 @@
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
   </ul>
 </nav></div>
       
@@ -188,21 +203,29 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
- <i class="fa-solid fa-magnifying-glass"></i>
- <span class="search-button__default-text">Search</span>
- <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-</button>
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
         </div>
       
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -227,11 +250,15 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
- <i class="fa-solid fa-magnifying-glass"></i>
- <span class="search-button__default-text">Search</span>
- <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-</button>
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
     </div>
   
 
@@ -250,8 +277,7 @@
       
       
       
-      <dialog id="pst-primary-sidebar-modal"></dialog>
-      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+      <div class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -300,6 +326,13 @@
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
   </ul>
 </nav></div>
           
@@ -312,11 +345,15 @@
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -357,14 +394,9 @@
   
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
-      <div class="sidebar-primary-item">
-<div id="ethical-ad-placement"
-      class="flat"
-      data-ea-publisher="readthedocs"
-      data-ea-type="readthedocs-sidebar"
-      data-ea-manual="true">
-</div></div>
   </div>
+  
+  <div id="rtd-footer-container"></div>
 
 
       </div>
@@ -382,6 +414,8 @@
       
         <div class="header-article-item">
 
+
+
 <nav aria-label="Breadcrumb" class="d-print-none">
   <ul class="bd-breadcrumbs">
     
@@ -393,7 +427,7 @@
     
     <li class="breadcrumb-item"><a href="index.html" class="nav-link">How-To Guides</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Using the Pipeline Builder App</span></li>
+    <li class="breadcrumb-item active" aria-current="page">Using the...</li>
   </ul>
 </nav>
 </div>
@@ -411,10 +445,10 @@
                 <article class="bd-article">
                   
   <section id="using-the-pipeline-builder-app">
-<h1>Using the Pipeline Builder App<a class="headerlink" href="#using-the-pipeline-builder-app" title="Permalink to this heading">#</a></h1>
+<h1>Using the Pipeline Builder App<a class="headerlink" href="#using-the-pipeline-builder-app" title="Link to this heading">#</a></h1>
 <p>The Pipeline Builder is a web-based graphical user interface for creating, editing, and managing data processing pipelines in AFL. This interactive tool allows you to drag and drop pipeline operations, connect them visually, and configure their parameters through an intuitive interface.</p>
 <section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading">#</a></h2>
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
 <p>The Pipeline Builder provides a visual way to construct complex data processing workflows without writing code. Key features include:</p>
 <ul class="simple">
 <li><p><strong>Drag-and-drop interface</strong>: Add operations by dragging from the sidebar</p></li>
@@ -425,17 +459,18 @@
 <li><p><strong>Export functionality</strong>: Generate pipeline JSON for use in code</p></li>
 </ul>
 <figure class="align-center" id="id1">
-<a class="reference internal image-reference" href="../_images/pipeline_builder_gui.png"><img alt="Pipeline Builder Interface" src="../_images/pipeline_builder_gui.png" style="width: 100%;" /></a>
+<a class="reference internal image-reference" href="../_images/pipeline_builder_gui.png"><img alt="Pipeline Builder Interface" src="../_images/pipeline_builder_gui.png" style="width: 100%;" />
+</a>
 <figcaption>
-<p><span class="caption-text">The Pipeline Builder interface showing the main components: operation sidebar (left), canvas (center), and parameter pane (right)</span><a class="headerlink" href="#id1" title="Permalink to this image">#</a></p>
+<p><span class="caption-text">The Pipeline Builder interface showing the main components: operation sidebar (left), canvas (center), and parameter pane (right)</span><a class="headerlink" href="#id1" title="Link to this image">#</a></p>
 </figcaption>
 </figure>
 </section>
 <section id="launching-the-pipeline-builder">
-<h2>Launching the Pipeline Builder<a class="headerlink" href="#launching-the-pipeline-builder" title="Permalink to this heading">#</a></h2>
+<h2>Launching the Pipeline Builder<a class="headerlink" href="#launching-the-pipeline-builder" title="Link to this heading">#</a></h2>
 <p>The Pipeline Builder is accessed through the DoubleAgentDriver APIServer. Follow these steps to launch it:</p>
 <section id="step-1-start-the-doubleagentdriver-apiserver">
-<h3>Step 1: Start the DoubleAgentDriver APIServer<a class="headerlink" href="#step-1-start-the-doubleagentdriver-apiserver" title="Permalink to this heading">#</a></h3>
+<h3>Step 1: Start the DoubleAgentDriver APIServer<a class="headerlink" href="#step-1-start-the-doubleagentdriver-apiserver" title="Link to this heading">#</a></h3>
 <p>First, you need to have a running DoubleAgentDriver APIServer. You can start one programmatically:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>AFL.double_agent.AgentDriver
 </pre></div>
@@ -443,20 +478,20 @@
 <p>or by using the AFL-andon application</p>
 </section>
 <section id="step-2-access-the-web-interface">
-<h3>Step 2: Access the Web Interface<a class="headerlink" href="#step-2-access-the-web-interface" title="Permalink to this heading">#</a></h3>
+<h3>Step 2: Access the Web Interface<a class="headerlink" href="#step-2-access-the-web-interface" title="Link to this heading">#</a></h3>
 <p>Once the server is running, open your web browser and navigate to the server URL (typically <code class="docutils literal notranslate"><span class="pre">http://localhost:5051</span></code>). You’ll see the APIServer web interface.</p>
 </section>
 <section id="step-3-open-the-pipeline-builder">
-<h3>Step 3: Open the Pipeline Builder<a class="headerlink" href="#step-3-open-the-pipeline-builder" title="Permalink to this heading">#</a></h3>
+<h3>Step 3: Open the Pipeline Builder<a class="headerlink" href="#step-3-open-the-pipeline-builder" title="Link to this heading">#</a></h3>
 <p>In the APIServer web interface, you’ll find a “Pipeline Builder” link in the useful links section. Click this link to open the Pipeline Builder application in a new tab or window.</p>
 <p>Alternatively, you can access it directly at: <code class="docutils literal notranslate"><span class="pre">http://localhost:5051/pipeline_builder</span></code></p>
 </section>
 </section>
 <section id="interface-components">
-<h2>Interface Components<a class="headerlink" href="#interface-components" title="Permalink to this heading">#</a></h2>
+<h2>Interface Components<a class="headerlink" href="#interface-components" title="Link to this heading">#</a></h2>
 <p>The Pipeline Builder interface consists of three main areas:</p>
 <section id="operations-sidebar-left">
-<h3>1. Operations Sidebar (Left)<a class="headerlink" href="#operations-sidebar-left" title="Permalink to this heading">#</a></h3>
+<h3>1. Operations Sidebar (Left)<a class="headerlink" href="#operations-sidebar-left" title="Link to this heading">#</a></h3>
 <p>The left sidebar contains all available pipeline operations organized by category. Each operation is displayed as a draggable tile showing:</p>
 <ul class="simple">
 <li><p>Operation name</p></li>
@@ -465,7 +500,7 @@
 </ul>
 </section>
 <section id="canvas-center">
-<h3>2. Canvas (Center)<a class="headerlink" href="#canvas-center" title="Permalink to this heading">#</a></h3>
+<h3>2. Canvas (Center)<a class="headerlink" href="#canvas-center" title="Link to this heading">#</a></h3>
 <p>The main canvas is where you build your pipeline by:</p>
 <ul class="simple">
 <li><p>Dragging operations from the sidebar</p></li>
@@ -475,7 +510,7 @@
 </ul>
 </section>
 <section id="parameters-pane-right">
-<h3>3. Parameters Pane (Right)<a class="headerlink" href="#parameters-pane-right" title="Permalink to this heading">#</a></h3>
+<h3>3. Parameters Pane (Right)<a class="headerlink" href="#parameters-pane-right" title="Link to this heading">#</a></h3>
 <p>The right pane shows detailed parameters for the currently selected operation, allowing you to:</p>
 <ul class="simple">
 <li><p>Edit operation parameters</p></li>
@@ -485,10 +520,10 @@
 </section>
 </section>
 <section id="building-your-first-pipeline">
-<h2>Building Your First Pipeline<a class="headerlink" href="#building-your-first-pipeline" title="Permalink to this heading">#</a></h2>
+<h2>Building Your First Pipeline<a class="headerlink" href="#building-your-first-pipeline" title="Link to this heading">#</a></h2>
 <p>Let’s walk through creating a simple data processing pipeline:</p>
 <section id="step-1-add-operations">
-<h3>Step 1: Add Operations<a class="headerlink" href="#step-1-add-operations" title="Permalink to this heading">#</a></h3>
+<h3>Step 1: Add Operations<a class="headerlink" href="#step-1-add-operations" title="Link to this heading">#</a></h3>
 <ol class="arabic simple">
 <li><p><strong>Drag an operation</strong> from the sidebar to the canvas</p></li>
 <li><p><strong>Position it</strong> where you want it in your workflow</p></li>
@@ -496,7 +531,7 @@
 </ol>
 </section>
 <section id="step-2-connect-operations">
-<h3>Step 2: Connect Operations<a class="headerlink" href="#step-2-connect-operations" title="Permalink to this heading">#</a></h3>
+<h3>Step 2: Connect Operations<a class="headerlink" href="#step-2-connect-operations" title="Link to this heading">#</a></h3>
 <p>Operations have input (top) and output (bottom) connectors:</p>
 <ol class="arabic simple">
 <li><p><strong>Click and drag</strong> from an output connector (bottom circle) of one operation</p></li>
@@ -506,7 +541,7 @@
 <p>The system will automatically match operations based on variable names.</p>
 </section>
 <section id="step-3-configure-parameters">
-<h3>Step 3: Configure Parameters<a class="headerlink" href="#step-3-configure-parameters" title="Permalink to this heading">#</a></h3>
+<h3>Step 3: Configure Parameters<a class="headerlink" href="#step-3-configure-parameters" title="Link to this heading">#</a></h3>
 <ol class="arabic simple">
 <li><p><strong>Click on an operation</strong> to select it (it will be highlighted in blue)</p></li>
 <li><p><strong>View parameters</strong> in the right pane</p></li>
@@ -516,9 +551,9 @@
 </section>
 </section>
 <section id="key-features-and-tools">
-<h2>Key Features and Tools<a class="headerlink" href="#key-features-and-tools" title="Permalink to this heading">#</a></h2>
+<h2>Key Features and Tools<a class="headerlink" href="#key-features-and-tools" title="Link to this heading">#</a></h2>
 <section id="canvas-navigation">
-<h3>Canvas Navigation<a class="headerlink" href="#canvas-navigation" title="Permalink to this heading">#</a></h3>
+<h3>Canvas Navigation<a class="headerlink" href="#canvas-navigation" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><strong>Pan</strong>: Click and drag on empty canvas space to move around</p></li>
 <li><p><strong>Zoom</strong>: Use mouse wheel to zoom in/out</p></li>
@@ -527,7 +562,7 @@
 </ul>
 </section>
 <section id="bottom-action-buttons">
-<h3>Bottom Action Buttons<a class="headerlink" href="#bottom-action-buttons" title="Permalink to this heading">#</a></h3>
+<h3>Bottom Action Buttons<a class="headerlink" href="#bottom-action-buttons" title="Link to this heading">#</a></h3>
 <p>The bottom of the interface contains several action buttons:</p>
 <ul class="simple">
 <li><p><strong>Copy</strong>: Copy selected operations to clipboard</p></li>
@@ -538,7 +573,7 @@
 </ul>
 </section>
 <section id="operation-management">
-<h3>Operation Management<a class="headerlink" href="#operation-management" title="Permalink to this heading">#</a></h3>
+<h3>Operation Management<a class="headerlink" href="#operation-management" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><strong>Delete</strong>: Click the red ‘X’ button on any operation to remove it</p></li>
 <li><p><strong>Move</strong>: Drag operations around the canvas to reorganize</p></li>
@@ -547,10 +582,10 @@
 </section>
 </section>
 <section id="working-with-prefabs">
-<h2>Working with Prefabs<a class="headerlink" href="#working-with-prefabs" title="Permalink to this heading">#</a></h2>
+<h2>Working with Prefabs<a class="headerlink" href="#working-with-prefabs" title="Link to this heading">#</a></h2>
 <p>Prefabs are pre-built pipeline templates that can save time for common workflows:</p>
 <section id="loading-a-prefab">
-<h3>Loading a Prefab<a class="headerlink" href="#loading-a-prefab" title="Permalink to this heading">#</a></h3>
+<h3>Loading a Prefab<a class="headerlink" href="#loading-a-prefab" title="Link to this heading">#</a></h3>
 <ol class="arabic simple">
 <li><p><strong>Click “Load Prefab”</strong> button at the bottom</p></li>
 <li><p><strong>Select</strong> from available prefab templates</p></li>
@@ -559,7 +594,7 @@
 <p>The prefab will be loaded with all operations and connections pre-configured.</p>
 </section>
 <section id="saving-a-prefab">
-<h3>Saving a Prefab<a class="headerlink" href="#saving-a-prefab" title="Permalink to this heading">#</a></h3>
+<h3>Saving a Prefab<a class="headerlink" href="#saving-a-prefab" title="Link to this heading">#</a></h3>
 <ol class="arabic simple">
 <li><p><strong>Build your pipeline</strong> on the canvas</p></li>
 <li><p><strong>Click “Submit”</strong> and choose the save option</p></li>
@@ -569,10 +604,10 @@
 </section>
 </section>
 <section id="exporting-and-using-pipelines">
-<h2>Exporting and Using Pipelines<a class="headerlink" href="#exporting-and-using-pipelines" title="Permalink to this heading">#</a></h2>
+<h2>Exporting and Using Pipelines<a class="headerlink" href="#exporting-and-using-pipelines" title="Link to this heading">#</a></h2>
 <p>Once you’ve built your pipeline in the visual interface, you can export it for use in your code:</p>
 <section id="export-pipeline-json">
-<h3>Export Pipeline JSON<a class="headerlink" href="#export-pipeline-json" title="Permalink to this heading">#</a></h3>
+<h3>Export Pipeline JSON<a class="headerlink" href="#export-pipeline-json" title="Link to this heading">#</a></h3>
 <ol class="arabic simple">
 <li><p><strong>Complete your pipeline</strong> design</p></li>
 <li><p><strong>Click “Submit”</strong> at the bottom</p></li>
@@ -581,9 +616,9 @@
 </section>
 </section>
 <section id="tips-and-best-practices">
-<h2>Tips and Best Practices<a class="headerlink" href="#tips-and-best-practices" title="Permalink to this heading">#</a></h2>
+<h2>Tips and Best Practices<a class="headerlink" href="#tips-and-best-practices" title="Link to this heading">#</a></h2>
 <section id="variable-naming">
-<h3>Variable Naming<a class="headerlink" href="#variable-naming" title="Permalink to this heading">#</a></h3>
+<h3>Variable Naming<a class="headerlink" href="#variable-naming" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><strong>Use descriptive names</strong> for variables to make connections clear</p></li>
 <li><p><strong>Be consistent</strong> with naming conventions across operations</p></li>
@@ -592,7 +627,7 @@
 </section>
 </section>
 <section id="conclusion">
-<h2>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this heading">#</a></h2>
+<h2>Conclusion<a class="headerlink" href="#conclusion" title="Link to this heading">#</a></h2>
 <p>The Pipeline Builder provides a powerful visual interface for creating data processing workflows in AFL. By combining drag-and-drop simplicity with the full power of AFL’s pipeline operations, it enables both beginners and experts to rapidly prototype and deploy complex data analysis pipelines.</p>
 <p>For more advanced pipeline development, see the other how-to guides in this documentation, including:</p>
 <ul class="simple">
@@ -638,8 +673,7 @@
             
             
               
-                <dialog id="pst-secondary-sidebar-modal"></dialog>
-                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
 
   <div class="sidebar-secondary-item">
@@ -693,13 +727,13 @@
   </nav></div>
 
   <div class="sidebar-secondary-item">
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/how-to/pipeline_builder.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div></div>
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/how-to/pipeline_builder.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
 
 </div></div>
               
@@ -714,8 +748,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
 
 
   
@@ -737,7 +771,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
     <br/>
   </p>
 </div>
@@ -750,8 +784,7 @@
       
         <div class="footer-item">
 <p class="theme-version">
-  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
 </p></div>
       
     </div>

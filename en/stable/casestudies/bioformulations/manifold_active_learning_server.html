@@ -1,0 +1,1508 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Closed-Loop Manifold Active Learning with AFL Servers &#8212; AFL-agent  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/ntd2d.css?v=525a25f0" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'casestudies/bioformulations/manifold_active_learning_server';</script>
+    <link rel="icon" href="../../_static/logo_light.svg"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="prev" title="Manifold Active Learning of a Protein Formulation Phase Map" href="manifold_active_learning.html" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+
+  <link rel="stylesheet" href="https://pages.nist.gov/nist-header-footer/css/nist-combined.css">
+  <script src="https://code.jquery.com/jquery-3.6.2.min.js" type="text/javascript" defer="defer"></script>
+  <script src="https://pages.nist.gov/nist-header-footer/js/nist-header-footer.js" type="text/javascript" defer="defer"></script>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/logo_text_large_light.svg" class="logo__image only-light" alt="AFL-agent  documentation - Home"/>
+    <script>document.write(`<img src="../../_static/logo_text_large_dark.svg" class="logo__image only-dark" alt="AFL-agent  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../tutorials/installation.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../how-to/index.html">
+    How-To Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../explanations/index.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Case Studies
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/usnistgov/afl-agent" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../tutorials/installation.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../how-to/index.html">
+    How-To Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../explanations/index.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Case Studies
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/usnistgov/afl-agent" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="baseline_active_learning.html">Bayesian Active Learning of a Protein Formulation Phase Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manifold_active_learning.html">Manifold Active Learning of a Protein Formulation Phase Map</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Closed-Loop Manifold Active Learning with AFL Servers</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Case Studies</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Closed-Loop...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Closed-Loop-Manifold-Active-Learning-with-AFL-Servers">
+<h1>Closed-Loop Manifold Active Learning with AFL Servers<a class="headerlink" href="#Closed-Loop-Manifold-Active-Learning-with-AFL-Servers" title="Link to this heading">#</a></h1>
+<p>This case study runs the manifold active learning campaign in a format amenable with the usage of AFL’s microservice concept:</p>
+<ol class="arabic simple">
+<li><p>Connect to the services (Tiled, instrument, agent).</p></li>
+<li><p>Specify the problem (campaign ID, components, bounds, number of iterations).</p></li>
+<li><p>Configure data collection: tell the agent how to find each measurement in Tiled.</p></li>
+<li><p>Convert agent suggestions into measurement targets.</p></li>
+<li><p>Run one experiment: the instrument server measures and writes each exposure to Tiled, the agent appends the entry IDs to its dataset.</p></li>
+<li><p>Seed the campaign with the initial composition.</p></li>
+<li><p>Build the pipeline on the agent server.</p></li>
+<li><p>Close the loop: <code class="docutils literal notranslate"><span class="pre">predict</span></code>, measure the suggestion, append, repeat.</p></li>
+</ol>
+<ul class="simple">
+<li><p>The virtual instrument <code class="docutils literal notranslate"><span class="pre">ProteinGlycerolTemperaturePhaseMap</span></code> runs as an AFL-automation <code class="docutils literal notranslate"><span class="pre">APIServer</span></code>, exactly like a hardware driver. <code class="docutils literal notranslate"><span class="pre">AFL.double_agent.VirtualInstrumentDriver</span></code> serves whichever virtual instrument the <code class="docutils literal notranslate"><span class="pre">instrument</span></code> key of its <code class="docutils literal notranslate"><span class="pre">--config</span></code> file names (<code class="docutils literal notranslate"><span class="pre">phase_map_instrument.json</span></code> here, which also carries the instrument’s <code class="docutils literal notranslate"><span class="pre">instrument_overrides</span></code>), takes that instrument’s class name as the server and <code class="docutils literal notranslate"><span class="pre">driver_name</span></code>, and exposes every public method of the instrument as a
+task: this notebook assigns it a sample with <code class="docutils literal notranslate"><span class="pre">set_sample</span></code> and enqueues one <code class="docutils literal notranslate"><span class="pre">expose</span></code> task per temperature; the server writes the returned dataset to Tiled with the sample identity and campaign in its attributes and reports the Tiled entry ID.</p></li>
+<li><p>The agent, a <code class="docutils literal notranslate"><span class="pre">DoubleAgentDriver</span></code> server, reads the entries by ID, fits the pipeline and returns the next composition and temperature profile.</p></li>
+</ul>
+<section id="Prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#Prerequisites" title="Link to this heading">#</a></h2>
+<p>Three services must be running, all pointed at the same Tiled instance through <code class="docutils literal notranslate"><span class="pre">~/.afl/config.json</span></code> (<code class="docutils literal notranslate"><span class="pre">tiled_server</span></code>, <code class="docutils literal notranslate"><span class="pre">tiled_api_key</span></code> and the <code class="docutils literal notranslate"><span class="pre">&quot;ports&quot;</span></code> of the two drivers):</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Service</p></th>
+<th class="head"><p>Example address</p></th>
+<th class="head"><p>Launch</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Tiled</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">http://localhost:8000</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">tiled</span> <span class="pre">serve</span> <span class="pre">config</span> <span class="pre">config.yml</span></code> (AFL-automation <code class="docutils literal notranslate"><span class="pre">tiled/config.yml</span></code> with <code class="docutils literal notranslate"><span class="pre">single_user_api_key</span></code> set)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ProteinGlycerolTemperaturePhaseMap</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">localhost:5052</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">AFL.double_agent.VirtualInstrumentDriver</span> <span class="pre">--config</span> <span class="pre">phase_map_instrument.json</span></code> in this directory</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">DoubleAgentDriver</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">localhost:5050</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PYTHONPATH=.</span> <span class="pre">python</span> <span class="pre">&lt;AFL-agent&gt;/AFL/double_agent/AgentDriver.py</span></code> in this directory</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The agent server is launched from this directory because the pipeline holds lambdas, the SRSF manifold and the simulator, which have no JSON form.</p>
+<p>The settings, the acquisition scores and the <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> are defined in <code class="docutils literal notranslate"><span class="pre">helpers.py</span></code> in this directory, which this notebook and the companion notebook import. The notebook sends the JSON of the pipeline, in which those objects appear as references, and names the module as the pipeline’s <code class="docutils literal notranslate"><span class="pre">environment</span></code>; the agent server imports it to obtain the live objects behind the references.</p>
+<p>The analysis environment needs <code class="docutils literal notranslate"><span class="pre">AFL.double_agent</span></code> with the <code class="docutils literal notranslate"><span class="pre">manifold</span></code> extra, <code class="docutils literal notranslate"><span class="pre">AFL.automation</span></code> and the Tiled client.</p>
+</section>
+<section id="Set-Up-the-Environment">
+<h2>Set Up the Environment<a class="headerlink" href="#Set-Up-the-Environment" title="Link to this heading">#</a></h2>
+<p>Import the client of the AFL servers, the Tiled helper and, from <code class="docutils literal notranslate"><span class="pre">helpers.py</span></code>, the settings and functions of the campaign. Everything the pipeline needs lives in that module so that the notebook and the agent server agree on it.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Uncomment this cell if you need to install AFL-agent with the ``manifold`` extra</span>
+<span class="c1"># (torch, gpytorch, pyro-ppl, botorch, geoopt, alphashape, trimesh) and AFL-automation.</span>
+<span class="c1"># !pip install "AFL-agent[manifold] @ git+https://github.com/usnistgov/afl-agent"</span>
+<span class="c1"># !pip install "AFL-automation @ git+https://github.com/usnistgov/afl-automation"</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">AFL.automation.APIServer.Client</span><span class="w"> </span><span class="kn">import</span> <span class="n">Client</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">AFL.automation.shared.tiled</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_tiled_client</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">BOUNDS_T</span><span class="p">,</span> <span class="n">LIMITS</span><span class="p">,</span> <span class="n">XY</span><span class="p">,</span> <span class="n">pipeline</span><span class="p">,</span> <span class="n">xarray_to_target</span>  <span class="c1"># settings, scores and pipeline, see helpers.py in this folder</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">suppress</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/knv2/codebase/AFL-bioformulations/.venv/lib/python3.11/site-packages/torch/cuda/__init__.py:182: UserWarning: CUDA initialization: The NVIDIA driver on your system is too old (found version 11040). Please update your GPU driver by downloading and installing a new version from the URL: http://www.nvidia.com/Download/index.aspx Alternatively, go to: https://pytorch.org to install a PyTorch version that has been compiled with your version of the CUDA driver. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:119.)
+  return torch._C._cuda_getDeviceCount() &gt; 0
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># services</span>
+<span class="n">INSTRUMENT_HOST</span><span class="p">,</span> <span class="n">INSTRUMENT_PORT</span> <span class="o">=</span> <span class="s2">"localhost"</span><span class="p">,</span> <span class="mi">5052</span>  <span class="c1"># ProteinGlycerolTemperaturePhaseMap APIServer</span>
+<span class="n">AGENT_HOST</span><span class="p">,</span> <span class="n">AGENT_PORT</span> <span class="o">=</span> <span class="s2">"localhost"</span><span class="p">,</span> <span class="mi">5050</span>  <span class="c1"># DoubleAgentDriver APIServer</span>
+<span class="n">USERNAME</span> <span class="o">=</span> <span class="s2">"afl-agent"</span>
+
+<span class="c1"># campaign</span>
+<span class="n">N_ITERATIONS</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># compositions (one temperature profile each) acquired after the seed</span>
+<span class="n">INITIAL_COMPOSITION</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"protein"</span><span class="p">:</span> <span class="mf">40.0</span><span class="p">,</span> <span class="s2">"glycerol"</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">}</span>  <span class="c1"># the one composition measured before the campaign</span>
+<span class="n">INITIAL_TEMPERATURES</span> <span class="o">=</span> <span class="p">[</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">,</span> <span class="mf">45.0</span><span class="p">]</span>  <span class="c1"># ... and the temperatures it is measured at</span>
+<span class="n">SEED</span> <span class="o">=</span> <span class="mi">1000</span>
+
+<span class="c1"># how the instrument's entries are identified in Tiled</span>
+<span class="n">INSTRUMENT_NAME</span> <span class="o">=</span> <span class="s2">"ProteinGlycerolTemperaturePhaseMap"</span>  <span class="c1"># driver_name written to every Tiled entry</span>
+<span class="n">EXPOSE_TASK</span> <span class="o">=</span> <span class="s2">"expose"</span>  <span class="c1"># task_name written to every Tiled entry</span>
+<span class="n">SAMPLE_DIM</span> <span class="o">=</span> <span class="s2">"sample"</span>
+<span class="n">INPUT_VARIABLES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"design_space"</span><span class="p">,</span> <span class="s2">"phases"</span><span class="p">,</span> <span class="s2">"composition"</span><span class="p">]</span>  <span class="c1"># pulled from each entry into the agent dataset</span>
+<span class="n">PIPELINE_ENVIRONMENT</span> <span class="o">=</span> <span class="s2">"helpers"</span>  <span class="c1"># module importable on the agent server that defines ``pipeline``</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Connect-to-the-Services">
+<h2>Connect to the Services<a class="headerlink" href="#Connect-to-the-Services" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">get_tiled_client</span></code> reads the Tiled server and API key from <code class="docutils literal notranslate"><span class="pre">~/.afl/config.json</span></code>, the same configuration the servers use. Create a client for the instrument and the agent and log in to both.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tiled</span> <span class="o">=</span> <span class="n">get_tiled_client</span><span class="p">()</span>
+
+<span class="n">instrument</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">INSTRUMENT_HOST</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">INSTRUMENT_PORT</span><span class="p">)</span>
+<span class="n">agent</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">AGENT_HOST</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">AGENT_PORT</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">client</span> <span class="ow">in</span> <span class="p">(</span><span class="n">instrument</span><span class="p">,</span> <span class="n">agent</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">login</span><span class="p">(</span><span class="n">USERNAME</span><span class="p">)</span>
+
+<span class="n">instrument</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">task_name</span><span class="o">=</span><span class="s2">"status"</span><span class="p">,</span> <span class="n">interactive</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="s2">"return_val"</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;Idle&#39;, &#39;Configurations Loaded=3&#39;, &#39;Phases Traced=3&#39;, &#39;Noise Level=0.0&#39;]
+</pre></div></div>
+</div>
+</section>
+<section id="Specify-the-Optimization-Problem">
+<h2>Specify the Optimization Problem<a class="headerlink" href="#Specify-the-Optimization-Problem" title="Link to this heading">#</a></h2>
+<p>Use one campaign ID everywhere. A unique campaign ID prevents measurements from different runs from being combined. The composition components and their bounds are those of the instrument; the temperature range is the one the stage-2 profile is mapped onto.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">campaign_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"manifold-</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">components</span> <span class="o">=</span> <span class="n">XY</span>  <span class="c1"># composition components searched in stage 1: protein, glycerol</span>
+<span class="n">bounds</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">LIMITS</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">components</span><span class="p">}</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>
+<span class="n">campaign_id</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">BOUNDS_T</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&#39;manifold-95dad5a5&#39;,
+ {&#39;protein&#39;: (0.5, 75.0), &#39;glycerol&#39;: (0.5, 10.0)},
+ [0.5, 45.0])
+</pre></div></div>
+</div>
+</section>
+<section id="Configure-Data-Collection">
+<h2>Configure Data Collection<a class="headerlink" href="#Configure-Data-Collection" title="Link to this heading">#</a></h2>
+<p>Tell the agent how to find and align the measurements. Every Tiled entry written by the instrument server holds one exposure; <code class="docutils literal notranslate"><span class="pre">driver_name</span></code> and <code class="docutils literal notranslate"><span class="pre">task_name</span></code> select the instrument’s <code class="docutils literal notranslate"><span class="pre">expose</span></code> entries and <code class="docutils literal notranslate"><span class="pre">campaign_id_path</span></code> points at the campaign attribute that <code class="docutils literal notranslate"><span class="pre">set_sample</span></code> adds to each of them. The three variables are read from the entry’s dataset and stacked along <code class="docutils literal notranslate"><span class="pre">sample</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">input_spec</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"campaign_id"</span><span class="p">:</span> <span class="n">campaign_id</span><span class="p">,</span>
+    <span class="s2">"sample_dim"</span><span class="p">:</span> <span class="n">SAMPLE_DIM</span><span class="p">,</span>
+    <span class="s2">"sources"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">name</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"driver_name"</span><span class="p">:</span> <span class="n">INSTRUMENT_NAME</span><span class="p">,</span>
+            <span class="s2">"task_name"</span><span class="p">:</span> <span class="n">EXPOSE_TASK</span><span class="p">,</span>
+            <span class="s2">"campaign_id_path"</span><span class="p">:</span> <span class="s2">"attrs.AL_campaign_name"</span><span class="p">,</span>
+            <span class="s2">"source"</span><span class="p">:</span> <span class="s2">"dataset"</span><span class="p">,</span>
+            <span class="s2">"path"</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">INPUT_VARIABLES</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+<span class="n">agent</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">task_name</span><span class="o">=</span><span class="s2">"setup_data_collection"</span><span class="p">,</span> <span class="n">input_spec</span><span class="o">=</span><span class="n">input_spec</span><span class="p">,</span> <span class="n">interactive</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="s2">"return_val"</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;campaign_id&#39;: &#39;manifold-95dad5a5&#39;,
+ &#39;sources&#39;: [&#39;design_space&#39;, &#39;phases&#39;, &#39;composition&#39;],
+ &#39;started_at&#39;: &#39;2026-10-27T19:33:48.676258+00:00&#39;,
+ &#39;status&#39;: &#39;success&#39;}
+</pre></div></div>
+</div>
+</section>
+<section id="Run-One-Experiment">
+<h2>Run One Experiment<a class="headerlink" href="#Run-One-Experiment" title="Link to this heading">#</a></h2>
+<p>A target is one composition at several temperatures. Each temperature is one exposure of the instrument: assign the sample identity and campaign with <code class="docutils literal notranslate"><span class="pre">set_sample</span></code>, enqueue <code class="docutils literal notranslate"><span class="pre">expose</span></code>, and keep the Tiled entry ID the server reports. The agent then reads the entry by ID; since all three input variables come from the same entry, the same ID is given for each of them.</p>
+<p>The phase label of each exposure is read back from Tiled only for the progress report below.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">measure_sample</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+    <span class="n">entry_ids</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">temperature</span> <span class="ow">in</span> <span class="n">target</span><span class="p">[</span><span class="s2">"temperatures"</span><span class="p">]:</span>
+        <span class="n">temperature</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">temperature</span><span class="p">)</span>
+        <span class="n">instrument</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span>
+            <span class="n">task_name</span><span class="o">=</span><span class="s2">"set_sample"</span><span class="p">,</span>
+            <span class="n">sample_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">campaign_id</span><span class="si">}</span><span class="s2">-sample-</span><span class="si">{</span><span class="n">iteration</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">-T</span><span class="si">{</span><span class="n">temperature</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="n">sample_uuid</span><span class="o">=</span><span class="sa">f</span><span class="s2">"SAM-</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="n">AL_campaign_name</span><span class="o">=</span><span class="n">campaign_id</span><span class="p">,</span>
+            <span class="n">interactive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">exposure</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span>
+            <span class="n">task_name</span><span class="o">=</span><span class="n">EXPOSE_TASK</span><span class="p">,</span>
+            <span class="n">protein</span><span class="o">=</span><span class="n">target</span><span class="p">[</span><span class="s2">"protein"</span><span class="p">],</span>
+            <span class="n">glycerol</span><span class="o">=</span><span class="n">target</span><span class="p">[</span><span class="s2">"glycerol"</span><span class="p">],</span>
+            <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span>
+            <span class="n">interactive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">entry_id</span> <span class="o">=</span> <span class="n">exposure</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tiled_entry_id"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">entry_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"the instrument server did not write to Tiled (tiled_status=</span><span class="si">{</span><span class="n">exposure</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'tiled_status'</span><span class="p">)</span><span class="si">!r}</span><span class="s2">); "</span>
+                <span class="s2">"check tiled_server and tiled_api_key in ~/.afl/config.json"</span>
+            <span class="p">)</span>
+        <span class="n">agent</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span>
+            <span class="n">task_name</span><span class="o">=</span><span class="s2">"append_dataset"</span><span class="p">,</span>
+            <span class="n">entries</span><span class="o">=</span><span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">entry_id</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">INPUT_VARIABLES</span><span class="p">},</span>
+            <span class="n">interactive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">entry_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry_id</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">entry_ids</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">read_phases</span><span class="p">(</span><span class="n">entry_ids</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">tiled</span><span class="p">[</span><span class="s2">"run_documents"</span><span class="p">][</span><span class="n">entry_id</span><span class="p">][</span><span class="s2">"phases"</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">())</span> <span class="k">for</span> <span class="n">entry_id</span> <span class="ow">in</span> <span class="n">entry_ids</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Seed-the-Campaign">
+<h2>Seed the Campaign<a class="headerlink" href="#Seed-the-Campaign" title="Link to this heading">#</a></h2>
+<p>The campaign starts from a single composition measured at six temperatures.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">initial_target</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">INITIAL_COMPOSITION</span><span class="p">,</span> <span class="s2">"temperatures"</span><span class="p">:</span> <span class="n">INITIAL_TEMPERATURES</span><span class="p">}</span>
+<span class="n">initial_entry_ids</span> <span class="o">=</span> <span class="n">measure_sample</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">initial_target</span><span class="p">)</span>
+<span class="n">n_measurements</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">initial_entry_ids</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"seed: phases=</span><span class="si">{</span><span class="n">read_phases</span><span class="p">(</span><span class="n">initial_entry_ids</span><span class="p">)</span><span class="si">}</span><span class="s2"> (n_measurements=</span><span class="si">{</span><span class="n">n_measurements</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+seed: phases=[1, 1, 1, 0, 0, 0] (n_measurements=6)
+</pre></div></div>
+</div>
+</section>
+<section id="Build-the-Pipeline">
+<h2>Build the Pipeline<a class="headerlink" href="#Build-the-Pipeline" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">pipeline</span></code> is the manifold pipeline of <code class="docutils literal notranslate"><span class="pre">helpers.py</span></code>: the <code class="docutils literal notranslate"><span class="pre">DirichletGPExtrapolator</span></code> phase classifier, the <code class="docutils literal notranslate"><span class="pre">PhaseMapF1Score</span></code> benchmark against the simulator, <code class="docutils literal notranslate"><span class="pre">BoTorchAcquisition</span></code> over the composition with <code class="docutils literal notranslate"><span class="pre">composition_score</span></code> and <code class="docutils literal notranslate"><span class="pre">SRSFHilbertSphereAcquisitionFunction</span></code> over the temperature profile with <code class="docutils literal notranslate"><span class="pre">profile_score</span></code>. Its JSON form records the lambdas, the manifold and the simulator as references; <code class="docutils literal notranslate"><span class="pre">initialize_pipeline</span></code> receives the JSON together with <code class="docutils literal notranslate"><span class="pre">environment</span></code>, the module
+the agent server imports to obtain the live objects behind those references.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">op</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pipeline</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+<span class="n">agent</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span>
+    <span class="n">task_name</span><span class="o">=</span><span class="s2">"initialize_pipeline"</span><span class="p">,</span>
+    <span class="n">pipeline</span><span class="o">=</span><span class="n">pipeline</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()[</span><span class="s2">"ops"</span><span class="p">],</span>
+    <span class="n">name</span><span class="o">=</span><span class="n">pipeline</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+    <span class="n">environment</span><span class="o">=</span><span class="n">PIPELINE_ENVIRONMENT</span><span class="p">,</span>
+    <span class="n">interactive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)[</span><span class="s2">"exit_state"</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0 Grid-DesignSpace
+1 Grid-Composition
+2 DirichletGPExtrapolator-PhaseLabels
+3 PhaseMapF1Score
+4 BoTorchAcquisition-Composition
+5 SRSF-TemperatureProfile
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;Success!&#39;
+</pre></div></div>
+</div>
+</section>
+<section id="Close-the-Loop">
+<h2>Close the Loop<a class="headerlink" href="#Close-the-Loop" title="Link to this heading">#</a></h2>
+<p>Each call to <code class="docutils literal notranslate"><span class="pre">predict</span></code> evaluates the accumulated campaign data on the agent server. Retrieve <code class="docutils literal notranslate"><span class="pre">last_results</span></code>, turn its suggestion into a target, measure it and append the new exposures before requesting another prediction.</p>
+<p>The benchmark variables of a result belong to the model fitted <em>before</em> the new batch, so the F1 score reported at iteration <code class="docutils literal notranslate"><span class="pre">i</span></code> is that of a model trained on <code class="docutils literal notranslate"><span class="pre">i</span> <span class="pre">-</span> <span class="pre">1</span></code> acquired compositions.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">N_ITERATIONS</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="n">agent</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">task_name</span><span class="o">=</span><span class="s2">"predict"</span><span class="p">,</span> <span class="n">AL_campaign_name</span><span class="o">=</span><span class="n">campaign_id</span><span class="p">,</span> <span class="n">interactive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">get_driver_object</span><span class="p">(</span><span class="s2">"last_results"</span><span class="p">)</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">xarray_to_target</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+    <span class="n">entry_ids</span> <span class="o">=</span> <span class="n">measure_sample</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+    <span class="n">n_measurements</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">entry_ids</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">iteration</span><span class="si">:</span><span class="s2">3d</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">N_ITERATIONS</span><span class="si">}</span><span class="s2">] protein=</span><span class="si">{</span><span class="n">target</span><span class="p">[</span><span class="s1">'protein'</span><span class="p">]</span><span class="si">:</span><span class="s2">6.2f</span><span class="si">}</span><span class="s2"> glycerol=</span><span class="si">{</span><span class="n">target</span><span class="p">[</span><span class="s1">'glycerol'</span><span class="p">]</span><span class="si">:</span><span class="s2">5.2f</span><span class="si">}</span><span class="s2"> "</span>
+        <span class="sa">f</span><span class="s2">"temperatures=</span><span class="si">{</span><span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">t</span><span class="p">),</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">target</span><span class="p">[</span><span class="s1">'temperatures'</span><span class="p">]]</span><span class="si">}</span><span class="s2"> "</span>
+        <span class="sa">f</span><span class="s2">"phases=</span><span class="si">{</span><span class="n">read_phases</span><span class="p">(</span><span class="n">entry_ids</span><span class="p">)</span><span class="si">}</span><span class="s2"> "</span>
+        <span class="sa">f</span><span class="s2">"(n_measurements=</span><span class="si">{</span><span class="n">n_measurements</span><span class="si">}</span><span class="s2">) "</span>
+        <span class="sa">f</span><span class="s2">"f1=</span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">benchmark_f1</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> accuracy=</span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">benchmark_accuracy</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[  1/4] protein= 72.95 glycerol=10.00 temperatures=[0.5, 3.0, 27.0, 45.0] phases=[1, 1, 1, 0] (n_measurements=10) f1=0.495 accuracy=0.597
+[  2/4] protein=  6.29 glycerol= 0.80 temperatures=[0.5, 24.0, 27.0, 45.0] phases=[1, 0, 0, 0] (n_measurements=14) f1=0.505 accuracy=0.603
+[  3/4] protein=  4.72 glycerol=10.00 temperatures=[0.5, 21.0, 45.0] phases=[1, 1, 0] (n_measurements=17) f1=0.512 accuracy=0.620
+[  4/4] protein= 72.42 glycerol= 0.50 temperatures=[0.5, 18.0, 21.0, 45.0] phases=[2, 1, 1, 0] (n_measurements=21) f1=0.504 accuracy=0.607
+</pre></div></div>
+</div>
+<p>After the final iteration, refit on everything measured. <code class="docutils literal notranslate"><span class="pre">PhaseMapF1Score</span></code> scores the classifier against the simulator, and the agent archives the result dataset in Tiled next to the campaign’s entries.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">agent</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">task_name</span><span class="o">=</span><span class="s2">"predict"</span><span class="p">,</span> <span class="n">AL_campaign_name</span><span class="o">=</span><span class="n">campaign_id</span><span class="p">,</span> <span class="n">interactive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">get_driver_object</span><span class="p">(</span><span class="s2">"last_results"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">"score: campaign=</span><span class="si">{</span><span class="n">campaign_id</span><span class="si">}</span><span class="s2"> n_measurements=</span><span class="si">{</span><span class="n">n_measurements</span><span class="si">}</span><span class="s2"> "</span>
+    <span class="sa">f</span><span class="s2">"f1=</span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">benchmark_f1</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> accuracy=</span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">benchmark_accuracy</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+score: campaign=manifold-95dad5a5 n_measurements=21 f1=0.519 accuracy=0.627
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">results</span><span class="p">[[</span><span class="s2">"composition_next"</span><span class="p">,</span> <span class="s2">"profile_function"</span><span class="p">,</span> <span class="s2">"benchmark_f1"</span><span class="p">]]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div><svg style="position: absolute; width: 0; height: 0; overflow: hidden">
+<defs>
+<symbol id="icon-database" viewBox="0 0 32 32">
+<path d="M16 0c-8.837 0-16 2.239-16 5v4c0 2.761 7.163 5 16 5s16-2.239 16-5v-4c0-2.761-7.163-5-16-5z"></path>
+<path d="M16 17c-8.837 0-16-2.239-16-5v6c0 2.761 7.163 5 16 5s16-2.239 16-5v-6c0 2.761-7.163 5-16 5z"></path>
+<path d="M16 26c-8.837 0-16-2.239-16-5v6c0 2.761 7.163 5 16 5s16-2.239 16-5v-6c0 2.761-7.163 5-16 5z"></path>
+</symbol>
+<symbol id="icon-file-text2" viewBox="0 0 32 32">
+<path d="M28.681 7.159c-0.694-0.947-1.662-2.053-2.724-3.116s-2.169-2.030-3.116-2.724c-1.612-1.182-2.393-1.319-2.841-1.319h-15.5c-1.378 0-2.5 1.121-2.5 2.5v27c0 1.378 1.122 2.5 2.5 2.5h23c1.378 0 2.5-1.122 2.5-2.5v-19.5c0-0.448-0.137-1.23-1.319-2.841zM24.543 5.457c0.959 0.959 1.712 1.825 2.268 2.543h-4.811v-4.811c0.718 0.556 1.584 1.309 2.543 2.268zM28 29.5c0 0.271-0.229 0.5-0.5 0.5h-23c-0.271 0-0.5-0.229-0.5-0.5v-27c0-0.271 0.229-0.5 0.5-0.5 0 0 15.499-0 15.5 0v7c0 0.552 0.448 1 1 1h7v19.5z"></path>
+<path d="M23 26h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
+<path d="M23 22h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
+<path d="M23 18h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
+</symbol>
+</defs>
+</svg>
+<style>/* CSS stylesheet for displaying xarray objects in notebooks */
+
+:root {
+  --xr-font-color0: var(
+    --jp-content-font-color0,
+    var(--pst-color-text-base rgba(0, 0, 0, 1))
+  );
+  --xr-font-color2: var(
+    --jp-content-font-color2,
+    var(--pst-color-text-base, rgba(0, 0, 0, 0.54))
+  );
+  --xr-font-color3: var(
+    --jp-content-font-color3,
+    var(--pst-color-text-base, rgba(0, 0, 0, 0.38))
+  );
+  --xr-border-color: var(
+    --jp-border-color2,
+    hsl(from var(--pst-color-on-background, white) h s calc(l - 10))
+  );
+  --xr-disabled-color: var(
+    --jp-layout-color3,
+    hsl(from var(--pst-color-on-background, white) h s calc(l - 40))
+  );
+  --xr-background-color: var(
+    --jp-layout-color0,
+    var(--pst-color-on-background, white)
+  );
+  --xr-background-color-row-even: var(
+    --jp-layout-color1,
+    hsl(from var(--pst-color-on-background, white) h s calc(l - 5))
+  );
+  --xr-background-color-row-odd: var(
+    --jp-layout-color2,
+    hsl(from var(--pst-color-on-background, white) h s calc(l - 15))
+  );
+}
+
+html[theme="dark"],
+html[data-theme="dark"],
+body[data-theme="dark"],
+body.vscode-dark {
+  --xr-font-color0: var(
+    --jp-content-font-color0,
+    var(--pst-color-text-base, rgba(255, 255, 255, 1))
+  );
+  --xr-font-color2: var(
+    --jp-content-font-color2,
+    var(--pst-color-text-base, rgba(255, 255, 255, 0.54))
+  );
+  --xr-font-color3: var(
+    --jp-content-font-color3,
+    var(--pst-color-text-base, rgba(255, 255, 255, 0.38))
+  );
+  --xr-border-color: var(
+    --jp-border-color2,
+    hsl(from var(--pst-color-on-background, #111111) h s calc(l + 10))
+  );
+  --xr-disabled-color: var(
+    --jp-layout-color3,
+    hsl(from var(--pst-color-on-background, #111111) h s calc(l + 40))
+  );
+  --xr-background-color: var(
+    --jp-layout-color0,
+    var(--pst-color-on-background, #111111)
+  );
+  --xr-background-color-row-even: var(
+    --jp-layout-color1,
+    hsl(from var(--pst-color-on-background, #111111) h s calc(l + 5))
+  );
+  --xr-background-color-row-odd: var(
+    --jp-layout-color2,
+    hsl(from var(--pst-color-on-background, #111111) h s calc(l + 15))
+  );
+}
+
+.xr-wrap {
+  display: block !important;
+  min-width: 300px;
+  max-width: 700px;
+  line-height: 1.6;
+}
+
+.xr-text-repr-fallback {
+  /* fallback to plain text repr when CSS is not injected (untrusted notebook) */
+  display: none;
+}
+
+.xr-header {
+  padding-top: 6px;
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  border-bottom: solid 1px var(--xr-border-color);
+}
+
+.xr-header > div,
+.xr-header > ul {
+  display: inline;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.xr-obj-type,
+.xr-obj-name,
+.xr-group-name {
+  margin-left: 2px;
+  margin-right: 10px;
+}
+
+.xr-group-name::before {
+  content: "📁";
+  padding-right: 0.3em;
+}
+
+.xr-group-name,
+.xr-obj-type {
+  color: var(--xr-font-color2);
+}
+
+.xr-sections {
+  padding-left: 0 !important;
+  display: grid;
+  grid-template-columns: 150px auto auto 1fr 0 20px 0 20px;
+  margin-block-start: 0;
+  margin-block-end: 0;
+}
+
+.xr-section-item {
+  display: contents;
+}
+
+.xr-section-item input {
+  display: inline-block;
+  opacity: 0;
+  height: 0;
+  margin: 0;
+}
+
+.xr-section-item input + label {
+  color: var(--xr-disabled-color);
+  border: 2px solid transparent !important;
+}
+
+.xr-section-item input:enabled + label {
+  cursor: pointer;
+  color: var(--xr-font-color2);
+}
+
+.xr-section-item input:focus + label {
+  border: 2px solid var(--xr-font-color0) !important;
+}
+
+.xr-section-item input:enabled + label:hover {
+  color: var(--xr-font-color0);
+}
+
+.xr-section-summary {
+  grid-column: 1;
+  color: var(--xr-font-color2);
+  font-weight: 500;
+}
+
+.xr-section-summary > span {
+  display: inline-block;
+  padding-left: 0.5em;
+}
+
+.xr-section-summary-in:disabled + label {
+  color: var(--xr-font-color2);
+}
+
+.xr-section-summary-in + label:before {
+  display: inline-block;
+  content: "►";
+  font-size: 11px;
+  width: 15px;
+  text-align: center;
+}
+
+.xr-section-summary-in:disabled + label:before {
+  color: var(--xr-disabled-color);
+}
+
+.xr-section-summary-in:checked + label:before {
+  content: "▼";
+}
+
+.xr-section-summary-in:checked + label > span {
+  display: none;
+}
+
+.xr-section-summary,
+.xr-section-inline-details {
+  padding-top: 4px;
+}
+
+.xr-section-inline-details {
+  grid-column: 2 / -1;
+}
+
+.xr-section-details {
+  display: none;
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  margin-bottom: 5px;
+}
+
+.xr-section-summary-in:checked ~ .xr-section-details {
+  display: contents;
+}
+
+.xr-group-box {
+  display: inline-grid;
+  grid-template-columns: 0px 20px auto;
+  width: 100%;
+}
+
+.xr-group-box-vline {
+  grid-column-start: 1;
+  border-right: 0.2em solid;
+  border-color: var(--xr-border-color);
+  width: 0px;
+}
+
+.xr-group-box-hline {
+  grid-column-start: 2;
+  grid-row-start: 1;
+  height: 1em;
+  width: 20px;
+  border-bottom: 0.2em solid;
+  border-color: var(--xr-border-color);
+}
+
+.xr-group-box-contents {
+  grid-column-start: 3;
+}
+
+.xr-array-wrap {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 20px auto;
+}
+
+.xr-array-wrap > label {
+  grid-column: 1;
+  vertical-align: top;
+}
+
+.xr-preview {
+  color: var(--xr-font-color3);
+}
+
+.xr-array-preview,
+.xr-array-data {
+  padding: 0 5px !important;
+  grid-column: 2;
+}
+
+.xr-array-data,
+.xr-array-in:checked ~ .xr-array-preview {
+  display: none;
+}
+
+.xr-array-in:checked ~ .xr-array-data,
+.xr-array-preview {
+  display: inline-block;
+}
+
+.xr-dim-list {
+  display: inline-block !important;
+  list-style: none;
+  padding: 0 !important;
+  margin: 0;
+}
+
+.xr-dim-list li {
+  display: inline-block;
+  padding: 0;
+  margin: 0;
+}
+
+.xr-dim-list:before {
+  content: "(";
+}
+
+.xr-dim-list:after {
+  content: ")";
+}
+
+.xr-dim-list li:not(:last-child):after {
+  content: ",";
+  padding-right: 5px;
+}
+
+.xr-has-index {
+  font-weight: bold;
+}
+
+.xr-var-list,
+.xr-var-item {
+  display: contents;
+}
+
+.xr-var-item > div,
+.xr-var-item label,
+.xr-var-item > .xr-var-name span {
+  background-color: var(--xr-background-color-row-even);
+  border-color: var(--xr-background-color-row-odd);
+  margin-bottom: 0;
+  padding-top: 2px;
+}
+
+.xr-var-item > .xr-var-name:hover span {
+  padding-right: 5px;
+}
+
+.xr-var-list > li:nth-child(odd) > div,
+.xr-var-list > li:nth-child(odd) > label,
+.xr-var-list > li:nth-child(odd) > .xr-var-name span {
+  background-color: var(--xr-background-color-row-odd);
+  border-color: var(--xr-background-color-row-even);
+}
+
+.xr-var-name {
+  grid-column: 1;
+}
+
+.xr-var-dims {
+  grid-column: 2;
+}
+
+.xr-var-dtype {
+  grid-column: 3;
+  text-align: right;
+  color: var(--xr-font-color2);
+}
+
+.xr-var-preview {
+  grid-column: 4;
+}
+
+.xr-index-preview {
+  grid-column: 2 / 5;
+  color: var(--xr-font-color2);
+}
+
+.xr-var-name,
+.xr-var-dims,
+.xr-var-dtype,
+.xr-preview,
+.xr-attrs dt {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 10px;
+}
+
+.xr-var-name:hover,
+.xr-var-dims:hover,
+.xr-var-dtype:hover,
+.xr-attrs dt:hover {
+  overflow: visible;
+  width: auto;
+  z-index: 1;
+}
+
+.xr-var-attrs,
+.xr-var-data,
+.xr-index-data {
+  display: none;
+  border-top: 2px dotted var(--xr-background-color);
+  padding-bottom: 20px !important;
+  padding-top: 10px !important;
+}
+
+.xr-var-attrs-in + label,
+.xr-var-data-in + label,
+.xr-index-data-in + label {
+  padding: 0 1px;
+}
+
+.xr-var-attrs-in:checked ~ .xr-var-attrs,
+.xr-var-data-in:checked ~ .xr-var-data,
+.xr-index-data-in:checked ~ .xr-index-data {
+  display: block;
+}
+
+.xr-var-data > table {
+  float: right;
+}
+
+.xr-var-data > pre,
+.xr-index-data > pre,
+.xr-var-data > table > tbody > tr {
+  background-color: transparent !important;
+}
+
+.xr-var-name span,
+.xr-var-data,
+.xr-index-name div,
+.xr-index-data,
+.xr-attrs {
+  padding-left: 25px !important;
+}
+
+.xr-attrs,
+.xr-var-attrs,
+.xr-var-data,
+.xr-index-data {
+  grid-column: 1 / -1;
+}
+
+dl.xr-attrs {
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 125px auto;
+}
+
+.xr-attrs dt,
+.xr-attrs dd {
+  padding: 0;
+  margin: 0;
+  float: left;
+  padding-right: 10px;
+  width: auto;
+}
+
+.xr-attrs dt {
+  font-weight: normal;
+  grid-column: 1;
+}
+
+.xr-attrs dt:hover span {
+  display: inline-block;
+  background: var(--xr-background-color);
+  padding-right: 10px;
+}
+
+.xr-attrs dd {
+  grid-column: 2;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.xr-icon-database,
+.xr-icon-file-text2,
+.xr-no-icon {
+  display: inline-block;
+  vertical-align: middle;
+  width: 1em;
+  height: 1.5em !important;
+  stroke-width: 0;
+  stroke: currentColor;
+  fill: currentColor;
+}
+
+.xr-var-attrs-in:checked + label > .xr-icon-file-text2,
+.xr-var-data-in:checked + label > .xr-icon-database,
+.xr-index-data-in:checked + label > .xr-icon-database {
+  color: var(--xr-font-color0);
+  filter: drop-shadow(1px 1px 5px var(--xr-font-color2));
+  stroke-width: 0.8px;
+}
+</style><pre class='xr-text-repr-fallback'>&lt;xarray.Dataset&gt; Size: 2kB
+Dimensions:           (next_sample: 1, component: 2, profile_t: 100,
+                       profile_dim: 1)
+Coordinates:
+  * component         (component) &lt;U8 64B &#x27;protein&#x27; &#x27;glycerol&#x27;
+  * profile_t         (profile_t) float64 800B 0.0 0.0101 0.0202 ... 0.9899 1.0
+Dimensions without coordinates: next_sample, profile_dim
+Data variables:
+    composition_next  (next_sample, component) float64 16B 73.83 2.059
+    profile_function  (profile_t, profile_dim) float64 800B 0.0 4.79e-07 ... 1.0
+    benchmark_f1      float64 8B 0.5189
+Attributes:
+    sample_uuid:       SAM-9bd9e417-7c07-4a54-82de-120fa519b8f1
+    ag_uuid:           AG-e508f98e-2584-46c0-9fd2-010eb4f3ccd4
+    AL_campaign_name:  manifold-95dad5a5</pre><div class='xr-wrap' style='display:none'><div class='xr-header'><div class='xr-obj-type'>xarray.Dataset</div></div><ul class='xr-sections'><li class='xr-section-item'><input id='section-5f4ec314-5afa-4fae-acfe-ab90ad41b4da' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-5f4ec314-5afa-4fae-acfe-ab90ad41b4da' class='xr-section-summary'  title='Expand/collapse section'>Dimensions:</label><div class='xr-section-inline-details'><ul class='xr-dim-list'><li><span>next_sample</span>: 1</li><li><span class='xr-has-index'>component</span>: 2</li><li><span class='xr-has-index'>profile_t</span>: 100</li><li><span>profile_dim</span>: 1</li></ul></div><div class='xr-section-details'></div></li><li class='xr-section-item'><input id='section-c885179c-583c-4cf2-bfc7-5265b954d6b2' class='xr-section-summary-in' type='checkbox'  checked><label for='section-c885179c-583c-4cf2-bfc7-5265b954d6b2' class='xr-section-summary' >Coordinates: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>component</span></div><div class='xr-var-dims'>(component)</div><div class='xr-var-dtype'>&lt;U8</div><div class='xr-var-preview xr-preview'>&#x27;protein&#x27; &#x27;glycerol&#x27;</div><input id='attrs-d5776d20-5a7d-4678-bc81-aa19371b979f' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-d5776d20-5a7d-4678-bc81-aa19371b979f' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-a47c074f-0135-4a73-9074-1d450f8ccfe8' class='xr-var-data-in' type='checkbox'><label for='data-a47c074f-0135-4a73-9074-1d450f8ccfe8' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([&#x27;protein&#x27;, &#x27;glycerol&#x27;], dtype=&#x27;&lt;U8&#x27;)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>profile_t</span></div><div class='xr-var-dims'>(profile_t)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>0.0 0.0101 0.0202 ... 0.9899 1.0</div><input id='attrs-fa63c303-5293-4b1b-8ea6-972f4162a0dd' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-fa63c303-5293-4b1b-8ea6-972f4162a0dd' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-7c84a8ef-0b3f-48d1-a295-c9ca6c9d5efe' class='xr-var-data-in' type='checkbox'><label for='data-7c84a8ef-0b3f-48d1-a295-c9ca6c9d5efe' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([0.      , 0.010101, 0.020202, 0.030303, 0.040404, 0.050505, 0.060606,
+       0.070707, 0.080808, 0.090909, 0.10101 , 0.111111, 0.121212, 0.131313,
+       0.141414, 0.151515, 0.161616, 0.171717, 0.181818, 0.191919, 0.20202 ,
+       0.212121, 0.222222, 0.232323, 0.242424, 0.252525, 0.262626, 0.272727,
+       0.282828, 0.292929, 0.30303 , 0.313131, 0.323232, 0.333333, 0.343434,
+       0.353535, 0.363636, 0.373737, 0.383838, 0.393939, 0.40404 , 0.414141,
+       0.424242, 0.434343, 0.444444, 0.454545, 0.464646, 0.474747, 0.484848,
+       0.494949, 0.505051, 0.515152, 0.525253, 0.535354, 0.545455, 0.555556,
+       0.565657, 0.575758, 0.585859, 0.59596 , 0.606061, 0.616162, 0.626263,
+       0.636364, 0.646465, 0.656566, 0.666667, 0.676768, 0.686869, 0.69697 ,
+       0.707071, 0.717172, 0.727273, 0.737374, 0.747475, 0.757576, 0.767677,
+       0.777778, 0.787879, 0.79798 , 0.808081, 0.818182, 0.828283, 0.838384,
+       0.848485, 0.858586, 0.868687, 0.878788, 0.888889, 0.89899 , 0.909091,
+       0.919192, 0.929293, 0.939394, 0.949495, 0.959596, 0.969697, 0.979798,
+       0.989899, 1.      ])</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-6bef75d0-555f-406a-947d-7408ec0e1da1' class='xr-section-summary-in' type='checkbox'  checked><label for='section-6bef75d0-555f-406a-947d-7408ec0e1da1' class='xr-section-summary' >Data variables: <span>(3)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span>composition_next</span></div><div class='xr-var-dims'>(next_sample, component)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>73.83 2.059</div><input id='attrs-1b681b5a-3785-42dc-a3f9-d67f0bf6e47c' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-1b681b5a-3785-42dc-a3f9-d67f0bf6e47c' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-2beae997-fb5c-43ba-bb13-fba0712b3145' class='xr-var-data-in' type='checkbox'><label for='data-2beae997-fb5c-43ba-bb13-fba0712b3145' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>description :</span></dt><dd>Next sample point(s) found by maximizing the acquisition score with BoTorch</dd><dt><span>name :</span></dt><dd>BoTorchAcquisition-Composition</dd><dt><span>input_variable :</span></dt><dd>[&#x27;composition&#x27;, &#x27;composition_grid&#x27;, &#x27;phase_model&#x27;]</dd><dt><span>output_variable :</span></dt><dd>composition_next</dd><dt><span>input_prefix :</span></dt><dd>None</dd><dt><span>output_prefix :</span></dt><dd>composition</dd><dt><span>_stored_args :</span></dt><dd>{&#x27;feature_input_variable&#x27;: &#x27;composition&#x27;, &#x27;grid_variable&#x27;: &#x27;composition_grid&#x27;, &#x27;bounds&#x27;: {&#x27;protein&#x27;: [0.5, 75.0], &#x27;glycerol&#x27;: [0.5, 10.0]}, &#x27;grid_dim&#x27;: &#x27;comp_grid&#x27;, &#x27;model_variable&#x27;: None, &#x27;best_f_variable&#x27;: None, &#x27;objective_direction&#x27;: &#x27;maximize&#x27;, &#x27;output_prefix&#x27;: &#x27;composition&#x27;, &#x27;output_variable&#x27;: &#x27;composition_next&#x27;, &#x27;decision_rtol&#x27;: 0.05, &#x27;excluded_comps_variables&#x27;: None, &#x27;excluded_comps_dim&#x27;: None, &#x27;exclusion_radius&#x27;: 0.001, &#x27;count&#x27;: 1, &#x27;acquisition&#x27;: &lt;function &lt;lambda&gt; at 0x7fbc24d53ec0&gt;, &#x27;num_restarts&#x27;: 8, &#x27;raw_samples&#x27;: 64, &#x27;is_simplex&#x27;: False, &#x27;name&#x27;: &#x27;BoTorchAcquisition-Composition&#x27;}</dd><dt><span>input_variables :</span></dt><dd>[&#x27;composition&#x27;]</dd><dt><span>sample_dim :</span></dt><dd>AF_sample</dd><dt><span>random_fraction :</span></dt><dd>0.0</dd><dt><span>model_uri :</span></dt><dd>None</dd><dt><span>acquisition_function :</span></dt><dd>ScoreFunctionAcquisition()</dd><dt><span>_provided :</span></dt><dd>{}</dd></dl></div><div class='xr-var-data'><pre>array([[73.827,  2.059]])</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>profile_function</span></div><div class='xr-var-dims'>(profile_t, profile_dim)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>0.0 4.79e-07 ... 0.9351 1.0</div><input id='attrs-0827420e-58a1-4e09-9512-2701b9edea32' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-0827420e-58a1-4e09-9512-2701b9edea32' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-68d438f4-b36f-4c57-b432-2c7f64e8af5b' class='xr-var-data-in' type='checkbox'><label for='data-68d438f4-b36f-4c57-b432-2c7f64e8af5b' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>bounds_t :</span></dt><dd>[0.5, 45.0]</dd><dt><span>description :</span></dt><dd>Optimal function on [0, 1] (values in [0, 1])</dd><dt><span>name :</span></dt><dd>SRSF-TemperatureProfile</dd><dt><span>input_variable :</span></dt><dd>[&#x27;phase_model&#x27;, &#x27;composition_next&#x27;]</dd><dt><span>output_variable :</span></dt><dd>profile_function</dd><dt><span>input_prefix :</span></dt><dd>None</dd><dt><span>output_prefix :</span></dt><dd>profile</dd><dt><span>_stored_args :</span></dt><dd>{&#x27;manifold&#x27;: SRSF Hilbert Sphere manifold, &#x27;acquisition&#x27;: &lt;function &lt;lambda&gt; at 0x7fbc24cf1ee0&gt;, &#x27;bounds_t&#x27;: [0.5, 45.0], &#x27;output_prefix&#x27;: &#x27;profile&#x27;, &#x27;n_restarts&#x27;: 8, &#x27;n_iterations&#x27;: 100, &#x27;learning_rate&#x27;: 0.1, &#x27;device&#x27;: &#x27;cpu&#x27;, &#x27;name&#x27;: &#x27;SRSF-TemperatureProfile&#x27;}</dd><dt><span>acquisition_function :</span></dt><dd>&lt;function SRSFHilbertSphereAcquisitionFunction.build_acquisition.&lt;locals&gt;.score at 0x7fbc2490cc20&gt;</dd></dl></div><div class='xr-var-data'><pre>array([[0.   ],
+       [0.   ],
+       [0.   ],
+       [0.   ],
+       [0.   ],
+       [0.   ],
+       [0.   ],
+       [0.002],
+       [0.008],
+       [0.023],
+       [0.06 ],
+       [0.129],
+       [0.238],
+       [0.378],
+       [0.524],
+       [0.61 ],
+       [0.625],
+       [0.627],
+       [0.627],
+       [0.627],
+...
+       [0.628],
+       [0.628],
+       [0.628],
+       [0.628],
+       [0.628],
+       [0.628],
+       [0.628],
+       [0.628],
+       [0.628],
+       [0.628],
+       [0.628],
+       [0.631],
+       [0.638],
+       [0.657],
+       [0.691],
+       [0.742],
+       [0.803],
+       [0.869],
+       [0.935],
+       [1.   ]])</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>benchmark_f1</span></div><div class='xr-var-dims'>()</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>0.5189</div><input id='attrs-ff843bb8-4173-468c-b67e-85af7ea861fb' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-ff843bb8-4173-468c-b67e-85af7ea861fb' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-515a696e-f33e-4970-bc12-16b1578336f2' class='xr-var-data-in' type='checkbox'><label for='data-515a696e-f33e-4970-bc12-16b1578336f2' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>average :</span></dt><dd>weighted</dd><dt><span>description :</span></dt><dd>sklearn f1_score against the ground truth</dd><dt><span>name :</span></dt><dd>PhaseMapF1Score</dd><dt><span>input_variable :</span></dt><dd>phase_model</dd><dt><span>output_variable :</span></dt><dd>benchmark_f1</dd><dt><span>input_prefix :</span></dt><dd>None</dd><dt><span>output_prefix :</span></dt><dd>benchmark</dd><dt><span>_stored_args :</span></dt><dd>{&#x27;ground_truth&#x27;: &lt;AFL.double_agent.VirtualInstruments.ProteinGlycerolTemperaturePhaseMap object at 0x7fbc2c0f3c50&gt;, &#x27;bounds&#x27;: {&#x27;protein&#x27;: [0.5, 75.0], &#x27;temperature&#x27;: [0.5, 45.0], &#x27;glycerol&#x27;: [0.5, 10.0]}, &#x27;model_variable&#x27;: &#x27;phase_model&#x27;, &#x27;predict&#x27;: None, &#x27;average&#x27;: &#x27;weighted&#x27;, &#x27;n_per_phase&#x27;: 100, &#x27;n_pool&#x27;: 20000, &#x27;seed&#x27;: 1000, &#x27;output_prefix&#x27;: &#x27;benchmark&#x27;, &#x27;name&#x27;: &#x27;PhaseMapF1Score&#x27;}</dd></dl></div><div class='xr-var-data'><pre>array(0.519)</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-269c182a-4832-44d9-9089-fa449c733413' class='xr-section-summary-in' type='checkbox'  checked><label for='section-269c182a-4832-44d9-9089-fa449c733413' class='xr-section-summary' >Attributes: <span>(3)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><dl class='xr-attrs'><dt><span>sample_uuid :</span></dt><dd>SAM-9bd9e417-7c07-4a54-82de-120fa519b8f1</dd><dt><span>ag_uuid :</span></dt><dd>AG-e508f98e-2584-46c0-9fd2-010eb4f3ccd4</dd><dt><span>AL_campaign_name :</span></dt><dd>manifold-95dad5a5</dd></dl></div></li></ul></div></div></div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="manifold_active_learning.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Manifold Active Learning of a Protein Formulation Phase Map</p>
+      </div>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Prerequisites">Prerequisites</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Set-Up-the-Environment">Set Up the Environment</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Connect-to-the-Services">Connect to the Services</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Specify-the-Optimization-Problem">Specify the Optimization Problem</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Configure-Data-Collection">Configure Data Collection</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Run-One-Experiment">Run One Experiment</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Seed-the-Campaign">Seed the Campaign</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Build-the-Pipeline">Build the Pipeline</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Close-the-Loop">Close the Loop</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../../_sources/casestudies/bioformulations/manifold_active_learning_server.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+
+  
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright : Official Contribution of the US Government.  Not subject to copyright in the United States.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+
+  <!-- Taken from https://www.filamentgroup.com/lab/html-includes/#another-demo%3A-including-another-html-file -->
+  <iframe src="../../_static/ntd2d_menu.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
+  </body>
+</html>

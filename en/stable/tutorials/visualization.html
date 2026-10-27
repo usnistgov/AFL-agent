@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 
 
-<html lang="en" data-content_root="" >
+<html lang="en" data-content_root="../" >
 
   <head>
     <meta charset="utf-8" />
@@ -16,34 +16,31 @@
     document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
     document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
   </script>
-  <!--
-    this give us a css class that will be invisible only if js is disabled
-  -->
-  <noscript>
-    <style>
-      .pst-js-only { display: none !important; }
-
-    </style>
-  </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/ntd2d.css?v=525a25f0" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
   
-  <!-- So that users can add custom icons -->
-  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
 
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=b3ba4146"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -54,11 +51,10 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Basic Fitting with AutoSAS" href="autosas_fitting.html" />
-    <link rel="prev" title="Building Pipelines" href="building_pipelines.html" />
+    <link rel="prev" title="Bayesian Optimization with AFL Pipelines" href="bayesopt.html" />
   
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="" />
 
   <link rel="stylesheet" href="https://pages.nist.gov/nist-header-footer/css/nist-combined.css">
   <script src="https://code.jquery.com/jquery-3.6.2.min.js" type="text/javascript" defer="defer"></script>
@@ -80,8 +76,19 @@
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
 
   
-  <dialog id="pst-search-dialog">
-    
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
 <form class="bd-search d-flex align-items-center"
       action="../search.html"
       method="get">
@@ -89,6 +96,7 @@
   <input type="search"
          class="form-control"
          name="q"
+         id="search-input"
          placeholder="Search the docs ..."
          aria-label="Search the docs ..."
          autocomplete="off"
@@ -96,8 +104,8 @@
          autocapitalize="off"
          spellcheck="false"/>
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
-</form>
-  </dialog>
+</form></div>
+  </div>
 
   <div class="pst-async-banner-revealer d-none">
   <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
@@ -131,7 +139,7 @@
     
     
     <img src="../_static/logo_text_large_light.svg" class="logo__image only-light" alt="AFL-agent  documentation - Home"/>
-    <img src="../_static/logo_text_large_dark.svg" class="logo__image only-dark pst-js-only" alt="AFL-agent  documentation - Home"/>
+    <script>document.write(`<img src="../_static/logo_text_large_dark.svg" class="logo__image only-dark" alt="AFL-agent  documentation - Home"/>`);</script>
   
   
 </a></div>
@@ -180,6 +188,13 @@
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
   </ul>
 </nav></div>
       
@@ -191,21 +206,29 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
- <i class="fa-solid fa-magnifying-glass"></i>
- <span class="search-button__default-text">Search</span>
- <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-</button>
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
         </div>
       
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -230,11 +253,15 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
- <i class="fa-solid fa-magnifying-glass"></i>
- <span class="search-button__default-text">Search</span>
- <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-</button>
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
     </div>
   
 
@@ -253,8 +280,7 @@
       
       
       
-      <dialog id="pst-primary-sidebar-modal"></dialog>
-      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+      <div class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -303,6 +329,13 @@
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
   </ul>
 </nav></div>
           
@@ -315,11 +348,15 @@
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -350,6 +387,7 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Setup</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="building_pipelines.html">Building Pipelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesopt.html">Bayesian Optimization with AFL Pipelines</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Plotting Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="autosas_fitting.html">Basic Fitting with AutoSAS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="interactive.html">Interactive Tutorials</a></li>
@@ -362,14 +400,9 @@
   
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
-      <div class="sidebar-primary-item">
-<div id="ethical-ad-placement"
-      class="flat"
-      data-ea-publisher="readthedocs"
-      data-ea-type="readthedocs-sidebar"
-      data-ea-manual="true">
-</div></div>
   </div>
+  
+  <div id="rtd-footer-container"></div>
 
 
       </div>
@@ -387,6 +420,8 @@
       
         <div class="header-article-item">
 
+
+
 <nav aria-label="Breadcrumb" class="d-print-none">
   <ul class="bd-breadcrumbs">
     
@@ -398,7 +433,7 @@
     
     <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Plotting Tutorial</span></li>
+    <li class="breadcrumb-item active" aria-current="page">Plotting Tutorial</li>
   </ul>
 </nav>
 </div>
@@ -416,10 +451,10 @@
                 <article class="bd-article">
                   
   <section id="Plotting-Tutorial">
-<h1>Plotting Tutorial<a class="headerlink" href="#Plotting-Tutorial" title="Permalink to this heading">#</a></h1>
+<h1>Plotting Tutorial<a class="headerlink" href="#Plotting-Tutorial" title="Link to this heading">#</a></h1>
 <p>This tutorial demonstrates how to use the plotting capabilities of the <code class="docutils literal notranslate"><span class="pre">AFL.double_agent</span></code> package to visualize compositional and scattering data.</p>
 <section id="Introduction">
-<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading">#</a></h2>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Link to this heading">#</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">AFL.double_agent.plotting</span></code> module provides a variety of plotting functions for visualizing materials data. It supports:</p>
 <ul class="simple">
 <li><p>Compositional data visualization (scatter and surface plots)</p></li>
@@ -431,7 +466,7 @@
 <p>In this tutorial, we’ll explore these capabilities using example datasets.</p>
 </section>
 <section id="Google-Colab-Setup">
-<h2>Google Colab Setup<a class="headerlink" href="#Google-Colab-Setup" title="Permalink to this heading">#</a></h2>
+<h2>Google Colab Setup<a class="headerlink" href="#Google-Colab-Setup" title="Link to this heading">#</a></h2>
 <p>Only uncomment and run the next cell if you are running this notebook in Google Colab or if don’t already have the AFL-agent package installed.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -443,26 +478,26 @@
 </div>
 </section>
 <section id="General-Setup">
-<h2>General Setup<a class="headerlink" href="#General-Setup" title="Permalink to this heading">#</a></h2>
+<h2>General Setup<a class="headerlink" href="#General-Setup" title="Link to this heading">#</a></h2>
 <p>First, let’s import the necessary modules and load our example dataset:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
 
 <span class="c1"># Import the plotting module</span>
-<span class="kn">from</span> <span class="nn">AFL.double_agent.plotting</span> <span class="kn">import</span> <span class="n">plot</span><span class="p">,</span> <span class="n">plot_scatter_mpl</span><span class="p">,</span> <span class="n">plot_surface_mpl</span><span class="p">,</span> <span class="n">plot_sas_mpl</span>
-<span class="kn">from</span> <span class="nn">AFL.double_agent.plotting</span> <span class="kn">import</span> <span class="n">plot_scatter_plotly</span><span class="p">,</span> <span class="n">plot_surface_plotly</span><span class="p">,</span> <span class="n">plot_sas_plotly</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot</span><span class="p">,</span> <span class="n">plot_scatter_mpl</span><span class="p">,</span> <span class="n">plot_surface_mpl</span><span class="p">,</span> <span class="n">plot_sas_mpl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_scatter_plotly</span><span class="p">,</span> <span class="n">plot_surface_plotly</span><span class="p">,</span> <span class="n">plot_sas_plotly</span>
 
 <span class="c1"># Load the example dataset</span>
-<span class="kn">from</span> <span class="nn">AFL.double_agent.data</span> <span class="kn">import</span> <span class="n">example_dataset1</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">AFL.double_agent.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">example_dataset1</span>
 
-<span class="kn">import</span> <span class="nn">plotly.io</span> <span class="k">as</span> <span class="nn">pio</span>
-<span class="n">pio</span><span class="o">.</span><span class="n">renderers</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="s2">&quot;iframe_connected&quot;</span>
-<span class="c1"># pio.renderers.default = &quot;plotly_mimetype&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.io</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pio</span>
+<span class="n">pio</span><span class="o">.</span><span class="n">renderers</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="s2">"iframe_connected"</span>
+<span class="c1"># pio.renderers.default = "plotly_mimetype"</span>
 
 <span class="c1"># Load the dataset</span>
 <span class="n">ds</span> <span class="o">=</span> <span class="n">example_dataset1</span><span class="p">()</span>
@@ -892,9 +927,9 @@ Data variables:
 <p>The example dataset contains compositional data and measurements that we can use for our plots.</p>
 </section>
 <section id="Compositional-Data-Visualization">
-<h2>Compositional Data Visualization<a class="headerlink" href="#Compositional-Data-Visualization" title="Permalink to this heading">#</a></h2>
+<h2>Compositional Data Visualization<a class="headerlink" href="#Compositional-Data-Visualization" title="Link to this heading">#</a></h2>
 <section id="Scatter-Plots">
-<h3>Scatter Plots<a class="headerlink" href="#Scatter-Plots" title="Permalink to this heading">#</a></h3>
+<h3>Scatter Plots<a class="headerlink" href="#Scatter-Plots" title="Link to this heading">#</a></h3>
 <p>Let’s start with a simple scatter plot of our compositional data using Matplotlib:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -904,11 +939,11 @@ Data variables:
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">artists</span> <span class="o">=</span> <span class="n">plot_scatter_mpl</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">component_variable</span><span class="o">=</span><span class="s1">&#39;composition&#39;</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;ground_truth_labels&#39;</span><span class="p">,</span>
+    <span class="n">component_variable</span><span class="o">=</span><span class="s1">'composition'</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">'ground_truth_labels'</span><span class="p">,</span>
     <span class="n">discrete_labels</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Composition Scatter Plot (Matplotlib)&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Composition Scatter Plot (Matplotlib)'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <br/></pre></div>
 </div>
@@ -937,13 +972,13 @@ Data variables:
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">artists</span> <span class="o">=</span> <span class="n">plot</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;scatter&#39;</span><span class="p">,</span>
-    <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;mpl&#39;</span><span class="p">,</span>
-    <span class="n">component_variable</span><span class="o">=</span><span class="s1">&#39;composition&#39;</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;ground_truth_labels&#39;</span><span class="p">,</span>
+    <span class="n">kind</span><span class="o">=</span><span class="s1">'scatter'</span><span class="p">,</span>
+    <span class="n">backend</span><span class="o">=</span><span class="s1">'mpl'</span><span class="p">,</span>
+    <span class="n">component_variable</span><span class="o">=</span><span class="s1">'composition'</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">'ground_truth_labels'</span><span class="p">,</span>
     <span class="n">discrete_labels</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Composition Scatter Plot (Unified API)&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Composition Scatter Plot (Unified API)'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <br/></pre></div>
 </div>
@@ -971,11 +1006,11 @@ Data variables:
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a scatter plot using Plotly</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_scatter_plotly</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">component_variable</span><span class="o">=</span><span class="s1">&#39;composition&#39;</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;ground_truth_labels&#39;</span><span class="p">,</span>
+    <span class="n">component_variable</span><span class="o">=</span><span class="s1">'composition'</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">'ground_truth_labels'</span><span class="p">,</span>
     <span class="n">discrete_labels</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Composition Scatter Plot (Plotly)&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Composition Scatter Plot (Plotly)'</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -996,7 +1031,7 @@ Data variables:
 </section>
 </section>
 <section id="Surface-Plots">
-<h2>Surface Plots<a class="headerlink" href="#Surface-Plots" title="Permalink to this heading">#</a></h2>
+<h2>Surface Plots<a class="headerlink" href="#Surface-Plots" title="Link to this heading">#</a></h2>
 <p>Surface plots are useful for visualizing continuous fields over compositional space:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -1006,11 +1041,11 @@ Data variables:
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">artists</span> <span class="o">=</span> <span class="n">plot_surface_mpl</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">component_variable</span><span class="o">=</span><span class="s1">&#39;composition&#39;</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;ground_truth_labels&#39;</span>
+    <span class="n">component_variable</span><span class="o">=</span><span class="s1">'composition'</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">'ground_truth_labels'</span>
 <span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">artists</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Composition Surface Plot (Matplotlib)&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Composition Surface Plot (Matplotlib)'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -1038,10 +1073,10 @@ Data variables:
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a surface plot using Plotly</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_surface_plotly</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">component_variable</span><span class="o">=</span><span class="s1">&#39;composition&#39;</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;ground_truth_labels&#39;</span>
+    <span class="n">component_variable</span><span class="o">=</span><span class="s1">'composition'</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">'ground_truth_labels'</span>
 <span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Composition Surface Plot (Plotly)&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Composition Surface Plot (Plotly)'</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -1061,10 +1096,10 @@ Data variables:
 </div>
 </section>
 <section id="Small-Angle-Scattering-Data-Visualization">
-<h2>Small-Angle Scattering Data Visualization<a class="headerlink" href="#Small-Angle-Scattering-Data-Visualization" title="Permalink to this heading">#</a></h2>
+<h2>Small-Angle Scattering Data Visualization<a class="headerlink" href="#Small-Angle-Scattering-Data-Visualization" title="Link to this heading">#</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">measurement</span></code> variable in our dataset can be treated as scattering data for demonstration purposes.</p>
 <section id="Log-Log-Plots">
-<h3>Log-Log Plots<a class="headerlink" href="#Log-Log-Plots" title="Permalink to this heading">#</a></h3>
+<h3>Log-Log Plots<a class="headerlink" href="#Log-Log-Plots" title="Link to this heading">#</a></h3>
 <p>Log-log plots are commonly used for scattering data:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
@@ -1074,14 +1109,14 @@ Data variables:
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">artists</span> <span class="o">=</span> <span class="n">plot_sas_mpl</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;loglog&#39;</span><span class="p">,</span>
-    <span class="n">x</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
-    <span class="n">y</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
-    <span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;q (Å⁻¹)&#39;</span><span class="p">,</span>
-    <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;Intensity (a.u.)&#39;</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">'loglog'</span><span class="p">,</span>
+    <span class="n">x</span><span class="o">=</span><span class="s1">'x'</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="s1">'measurement'</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="s1">'q (Å⁻¹)'</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="s1">'Intensity (a.u.)'</span><span class="p">,</span>
     <span class="n">legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Scattering Data Log-Log Plot (Matplotlib)&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Scattering Data Log-Log Plot (Matplotlib)'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <br/></pre></div>
 </div>
@@ -1101,13 +1136,13 @@ Data variables:
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a log-log plot using Plotly</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_sas_plotly</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;loglog&#39;</span><span class="p">,</span>
-    <span class="n">x</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
-    <span class="n">y</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
-    <span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;q (Å⁻¹)&#39;</span><span class="p">,</span>
-    <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;Intensity (a.u.)&#39;</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">'loglog'</span><span class="p">,</span>
+    <span class="n">x</span><span class="o">=</span><span class="s1">'x'</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="s1">'measurement'</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="s1">'q (Å⁻¹)'</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="s1">'Intensity (a.u.)'</span>
 <span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Scattering Data Log-Log Plot (Plotly)&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Scattering Data Log-Log Plot (Plotly)'</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <br/></pre></div>
 </div>
@@ -1127,7 +1162,7 @@ Data variables:
 </div>
 </section>
 <section id="Waterfall-Plots">
-<h3>Waterfall Plots<a class="headerlink" href="#Waterfall-Plots" title="Permalink to this heading">#</a></h3>
+<h3>Waterfall Plots<a class="headerlink" href="#Waterfall-Plots" title="Link to this heading">#</a></h3>
 <p>Waterfall plots are useful for comparing multiple scattering curves:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
@@ -1137,15 +1172,15 @@ Data variables:
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
 <span class="n">artists</span> <span class="o">=</span> <span class="n">plot_sas_mpl</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;logwaterfall&#39;</span><span class="p">,</span>
-    <span class="n">x</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
-    <span class="n">y</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
-    <span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;q (Å⁻¹)&#39;</span><span class="p">,</span>
-    <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;Intensity (a.u.)&#39;</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">'logwaterfall'</span><span class="p">,</span>
+    <span class="n">x</span><span class="o">=</span><span class="s1">'x'</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="s1">'measurement'</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="s1">'q (Å⁻¹)'</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="s1">'Intensity (a.u.)'</span><span class="p">,</span>
     <span class="n">base</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="c1"># Separation factor between curves</span>
     <span class="n">legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Scattering Data Log Waterfall Plot (Matplotlib)&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Scattering Data Log Waterfall Plot (Matplotlib)'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <br/></pre></div>
 </div>
@@ -1165,14 +1200,14 @@ Data variables:
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a log waterfall plot using Plotly</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_sas_plotly</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;logwaterfall&#39;</span><span class="p">,</span>
-    <span class="n">x</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
-    <span class="n">y</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
-    <span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;q (Å⁻¹)&#39;</span><span class="p">,</span>
-    <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;Intensity (a.u.)&#39;</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">'logwaterfall'</span><span class="p">,</span>
+    <span class="n">x</span><span class="o">=</span><span class="s1">'x'</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="s1">'measurement'</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="s1">'q (Å⁻¹)'</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="s1">'Intensity (a.u.)'</span><span class="p">,</span>
     <span class="n">base</span><span class="o">=</span><span class="mi">5</span>  <span class="c1"># Separation factor between curves</span>
 <span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Scattering Data Log Waterfall Plot (Plotly)&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Scattering Data Log Waterfall Plot (Plotly)'</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <br/></pre></div>
 </div>
@@ -1192,7 +1227,7 @@ Data variables:
 </div>
 </section>
 <section id="Linear-Plots">
-<h3>Linear Plots<a class="headerlink" href="#Linear-Plots" title="Permalink to this heading">#</a></h3>
+<h3>Linear Plots<a class="headerlink" href="#Linear-Plots" title="Link to this heading">#</a></h3>
 <p>For some data, linear plots might be more appropriate. This is often used when the data has been log-scaled already.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
@@ -1203,13 +1238,13 @@ Data variables:
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">artists</span> <span class="o">=</span> <span class="n">plot_sas_mpl</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span>
-    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;linlin&#39;</span><span class="p">,</span>
-    <span class="n">x</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
-    <span class="n">y</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">,</span>
-    <span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;q (Å⁻¹)&#39;</span><span class="p">,</span>
-    <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;Intensity (a.u.)&#39;</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s1">'linlin'</span><span class="p">,</span>
+    <span class="n">x</span><span class="o">=</span><span class="s1">'x'</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="s1">'measurement'</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="s1">'q (Å⁻¹)'</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="s1">'Intensity (a.u.)'</span>
 <span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Scattering Data Linear Plot (Matplotlib)&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Scattering Data Linear Plot (Matplotlib)'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <br/></pre></div>
 </div>
@@ -1224,9 +1259,9 @@ Data variables:
 </section>
 </section>
 <section id="Advanced-Features">
-<h2>Advanced Features<a class="headerlink" href="#Advanced-Features" title="Permalink to this heading">#</a></h2>
+<h2>Advanced Features<a class="headerlink" href="#Advanced-Features" title="Link to this heading">#</a></h2>
 <section id="3D-Plots-for-Three-Component-Systems">
-<h3>3D Plots for Three-Component Systems<a class="headerlink" href="#3D-Plots-for-Three-Component-Systems" title="Permalink to this heading">#</a></h3>
+<h3>3D Plots for Three-Component Systems<a class="headerlink" href="#3D-Plots-for-Three-Component-Systems" title="Link to this heading">#</a></h3>
 <p>For three-component systems, we can create 3D plots:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
@@ -1246,23 +1281,23 @@ Data variables:
 <span class="c1"># Create the dataset</span>
 <span class="n">three_comp_ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
     <span class="n">data_vars</span><span class="o">=</span><span class="p">{</span>
-        <span class="s1">&#39;compositions&#39;</span><span class="p">:</span> <span class="p">([</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;component&#39;</span><span class="p">],</span> <span class="n">components</span><span class="p">)</span>
+        <span class="s1">'compositions'</span><span class="p">:</span> <span class="p">([</span><span class="s1">'sample'</span><span class="p">,</span> <span class="s1">'component'</span><span class="p">],</span> <span class="n">components</span><span class="p">)</span>
     <span class="p">},</span>
     <span class="n">coords</span><span class="o">=</span><span class="p">{</span>
-        <span class="s1">&#39;component&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">],</span>
-        <span class="s1">&#39;labels&#39;</span><span class="p">:</span> <span class="p">([</span><span class="s1">&#39;sample&#39;</span><span class="p">],</span> <span class="n">labels</span><span class="p">)</span>
+        <span class="s1">'component'</span><span class="p">:</span> <span class="p">[</span><span class="s1">'A'</span><span class="p">,</span> <span class="s1">'B'</span><span class="p">,</span> <span class="s1">'C'</span><span class="p">],</span>
+        <span class="s1">'labels'</span><span class="p">:</span> <span class="p">([</span><span class="s1">'sample'</span><span class="p">],</span> <span class="n">labels</span><span class="p">)</span>
     <span class="p">}</span>
 <span class="p">)</span>
 
 <span class="c1"># Create a 3D scatter plot (non-ternary)</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_scatter_plotly</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">three_comp_ds</span><span class="p">,</span>
-    <span class="n">component_variable</span><span class="o">=</span><span class="s1">&#39;compositions&#39;</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;labels&#39;</span><span class="p">,</span>
+    <span class="n">component_variable</span><span class="o">=</span><span class="s1">'compositions'</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">'labels'</span><span class="p">,</span>
     <span class="n">discrete_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">ternary</span><span class="o">=</span><span class="kc">False</span>  <span class="c1"># Use 3D Cartesian plot instead of ternary</span>
 <span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Three-Component Scatter Plot (3D)&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Three-Component Scatter Plot (3D)'</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <br/></pre></div>
 </div>
@@ -1282,7 +1317,7 @@ Data variables:
 </div>
 </section>
 <section id="Ternary-Plots">
-<h3>Ternary Plots<a class="headerlink" href="#Ternary-Plots" title="Permalink to this heading">#</a></h3>
+<h3>Ternary Plots<a class="headerlink" href="#Ternary-Plots" title="Link to this heading">#</a></h3>
 <p>For three-component systems, ternary plots are often more intuitive:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
@@ -1290,12 +1325,12 @@ Data variables:
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plot_scatter_plotly</span><span class="p">(</span>
     <span class="n">dataset</span><span class="o">=</span><span class="n">three_comp_ds</span><span class="p">,</span>
-    <span class="n">component_variable</span><span class="o">=</span><span class="s1">&#39;compositions&#39;</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;labels&#39;</span><span class="p">,</span>
+    <span class="n">component_variable</span><span class="o">=</span><span class="s1">'compositions'</span><span class="p">,</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">'labels'</span><span class="p">,</span>
     <span class="n">discrete_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">ternary</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># Use ternary plot</span>
 <span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Three-Component Scatter Plot (Ternary)&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Three-Component Scatter Plot (Ternary)'</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -1316,7 +1351,7 @@ Data variables:
 </section>
 </section>
 <section id="Conclusion">
-<h2>Conclusion<a class="headerlink" href="#Conclusion" title="Permalink to this heading">#</a></h2>
+<h2>Conclusion<a class="headerlink" href="#Conclusion" title="Link to this heading">#</a></h2>
 <p>In this tutorial, we’ve explored the plotting capabilities of the <code class="docutils literal notranslate"><span class="pre">AFL.double_agent</span></code> package. We’ve seen how to:</p>
 <ul class="simple">
 <li><p>Create scatter and surface plots for compositional data</p></li>
@@ -1342,12 +1377,12 @@ Data variables:
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="building_pipelines.html"
+       href="bayesopt.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Building Pipelines</p>
+        <p class="prev-next-title">Bayesian Optimization with AFL Pipelines</p>
       </div>
     </a>
     <a class="right-next"
@@ -1366,8 +1401,7 @@ Data variables:
             
             
               
-                <dialog id="pst-secondary-sidebar-modal"></dialog>
-                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
 
   <div class="sidebar-secondary-item">
@@ -1402,13 +1436,13 @@ Data variables:
   </nav></div>
 
   <div class="sidebar-secondary-item">
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/tutorials/visualization.ipynb.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div></div>
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/tutorials/visualization.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
 
 </div></div>
               
@@ -1423,8 +1457,8 @@ Data variables:
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
 
 
   
@@ -1446,7 +1480,7 @@ Data variables:
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
     <br/>
   </p>
 </div>
@@ -1459,8 +1493,7 @@ Data variables:
       
         <div class="footer-item">
 <p class="theme-version">
-  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
 </p></div>
       
     </div>

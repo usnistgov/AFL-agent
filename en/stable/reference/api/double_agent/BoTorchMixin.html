@@ -1,0 +1,892 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>AFL.double_agent.BoTorchMixin module &#8212; AFL-agent  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/ntd2d.css?v=525a25f0" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/api/double_agent/BoTorchMixin';</script>
+    <link rel="icon" href="../../../_static/logo_light.svg"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="AFL.double_agent.plotting module" href="plotting.html" />
+    <link rel="prev" title="AFL.double_agent.util module" href="util.html" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+
+  <link rel="stylesheet" href="https://pages.nist.gov/nist-header-footer/css/nist-combined.css">
+  <script src="https://code.jquery.com/jquery-3.6.2.min.js" type="text/javascript" defer="defer"></script>
+  <script src="https://pages.nist.gov/nist-header-footer/js/nist-header-footer.js" type="text/javascript" defer="defer"></script>
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/logo_text_large_light.svg" class="logo__image only-light" alt="AFL-agent  documentation - Home"/>
+    <script>document.write(`<img src="../../../_static/logo_text_large_dark.svg" class="logo__image only-dark" alt="AFL-agent  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/installation.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../how-to/index.html">
+    How-To Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../explanations/index.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/usnistgov/afl-agent" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/installation.html">
+    Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../how-to/index.html">
+    How-To Guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../explanations/index.html">
+    Explanations
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/usnistgov/afl-agent" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">AFL.double_agent Package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="AcquisitionFunction.html">AFL.double_agent.AcquisitionFunction module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AutoSAS.html">AFL.double_agent.AutoSAS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking.html">AFL.double_agent.benchmarking module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Boundary.html">AFL.double_agent.Boundary module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Extrapolator.html">AFL.double_agent.Extrapolator module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Generator.html">AFL.double_agent.Generator module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MaskGrid.html">AFL.double_agent.MaskGrid module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PairMetric.html">AFL.double_agent.PairMetric module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Labeler.html">AFL.double_agent.Labeler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Preprocessor.html">AFL.double_agent.Preprocessor module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TensorFlowExtrapolator.html">AFL.double_agent.TensorFlowExtrapolator module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="util.html">AFL.double_agent.util module</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">AFL.double_agent.BoTorchMixin module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting.html">AFL.double_agent.plotting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pipeline.html">AFL.double_agent.Pipeline module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PipelineOp.html">AFL.double_agent.PipelineOp module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PipelineContext.html">AFL.double_agent.PipelineContext module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AutoSAS_Driver.html">AFL.double_agent.AutoSAS_Driver module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AgentDriver.html">AFL.double_agent.AgentDriver module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AgentClient.html">AFL.double_agent.AgentClient module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VirtualInstrumentDriver.html">AFL.double_agent.VirtualInstrumentDriver module</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../agent/index.html">AFL.agent package</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">AFL.double_agent Package</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">AFL.double_a...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-AFL.double_agent.BoTorchMixin">
+<span id="afl-double-agent-botorchmixin-module"></span><h1>AFL.double_agent.BoTorchMixin module<a class="headerlink" href="#module-AFL.double_agent.BoTorchMixin" title="Link to this heading">#</a></h1>
+<p>BoTorch machinery shared by the GP regressors, classifiers and acquisition ops.</p>
+<p>Everything BoTorch specific lives on <a class="reference internal" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin" title="AFL.double_agent.BoTorchMixin.BoTorchMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoTorchMixin</span></code></a>: the lazy import of the
+optional dependency, the tensor helpers that move data between <code class="docutils literal notranslate"><span class="pre">xarray</span></code> and
+<code class="docutils literal notranslate"><span class="pre">torch</span></code>, GP construction, and the bound helpers that read a
+<a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp" title="AFL.double_agent.PipelineOp.PipelineOp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineOp</span></code></a>’s own attributes so an op can call
+<code class="docutils literal notranslate"><span class="pre">self.candidates(dataset)</span></code> instead of threading the same variable and dimension
+names through every call. <a class="reference internal" href="#AFL.double_agent.BoTorchMixin.ScoreFunctionAcquisition" title="AFL.double_agent.BoTorchMixin.ScoreFunctionAcquisition"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScoreFunctionAcquisition</span></code></a> is the one module-level
+object: a <code class="docutils literal notranslate"><span class="pre">torch.nn.Module</span></code> adapter for user score functions.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.BoTorchMixin.</span></span><span class="sig-name descname"><span class="pre">BoTorchMixin</span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>All BoTorch machinery an op needs, as methods on one class.</p>
+<p>Mix this into a <a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp" title="AFL.double_agent.PipelineOp.PipelineOp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineOp</span></code></a> subclass (list it
+<em>before</em> the op base class) and call <code class="xref py py-meth docutils literal notranslate"><span class="pre">_init_botorch()</span></code> at the end of
+<code class="docutils literal notranslate"><span class="pre">__init__</span></code>.</p>
+<p>The class has two layers. <strong>Stateless helpers</strong> (static/class methods such as
+<a class="reference internal" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.optimization_bounds_to_tensor" title="AFL.double_agent.BoTorchMixin.BoTorchMixin.optimization_bounds_to_tensor"><code class="xref py py-meth docutils literal notranslate"><span class="pre">optimization_bounds_to_tensor()</span></code></a>, <a class="reference internal" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.fit_single_task_gp" title="AFL.double_agent.BoTorchMixin.BoTorchMixin.fit_single_task_gp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_single_task_gp()</span></code></a>,
+<a class="reference internal" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.evaluate_acquisition_on_grid" title="AFL.double_agent.BoTorchMixin.BoTorchMixin.evaluate_acquisition_on_grid"><code class="xref py py-meth docutils literal notranslate"><span class="pre">evaluate_acquisition_on_grid()</span></code></a>) take explicit arguments and can be called
+on the class itself, e.g. <code class="docutils literal notranslate"><span class="pre">BoTorchMixin.fit_single_task_gp(train_x,</span> <span class="pre">train_y)</span></code>.
+<strong>Bound helpers</strong> (<a class="reference internal" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.candidates" title="AFL.double_agent.BoTorchMixin.BoTorchMixin.candidates"><code class="xref py py-meth docutils literal notranslate"><span class="pre">candidates()</span></code></a>, <a class="reference internal" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.bounds_tensor" title="AFL.double_agent.BoTorchMixin.BoTorchMixin.bounds_tensor"><code class="xref py py-meth docutils literal notranslate"><span class="pre">bounds_tensor()</span></code></a>, <a class="reference internal" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.load_model" title="AFL.double_agent.BoTorchMixin.BoTorchMixin.load_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_model()</span></code></a>,
+<a class="reference internal" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.optimize_acqf" title="AFL.double_agent.BoTorchMixin.BoTorchMixin.optimize_acqf"><code class="xref py py-meth docutils literal notranslate"><span class="pre">optimize_acqf()</span></code></a>, …) read the following attributes, which the op sets itself:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">grid_variable</span></code>, <code class="docutils literal notranslate"><span class="pre">grid_dim</span></code></dt><dd><p>Candidate grid and the dimension indexing its points; the last remaining
+dimension (or <code class="docutils literal notranslate"><span class="pre">component_dim</span></code> if the op defines one) indexes components.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">feature_input_variable</span></code>, <code class="docutils literal notranslate"><span class="pre">predictor_input_variable</span></code>, <code class="docutils literal notranslate"><span class="pre">sample_dim</span></code>, <code class="docutils literal notranslate"><span class="pre">objective_direction</span></code></dt><dd><p>Only needed by <a class="reference internal" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.training_data" title="AFL.double_agent.BoTorchMixin.BoTorchMixin.training_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">training_data()</span></code></a> (regressors).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">bounds</span></code>, <code class="docutils literal notranslate"><span class="pre">is_simplex</span></code>, <code class="docutils literal notranslate"><span class="pre">model_variable</span></code>, <code class="docutils literal notranslate"><span class="pre">model_uri</span></code>, <code class="docutils literal notranslate"><span class="pre">num_restarts</span></code>, <code class="docutils literal notranslate"><span class="pre">raw_samples</span></code></dt><dd><p>Set by <code class="xref py py-meth docutils literal notranslate"><span class="pre">_init_botorch()</span></code>.</p>
+</dd>
+</dl>
+<p>The mixin does not define <code class="docutils literal notranslate"><span class="pre">__init__</span></code> so it composes with any <code class="docutils literal notranslate"><span class="pre">PipelineOp</span></code>
+constructor signature.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.BOUNDS_OUTPUT">
+<span class="sig-name descname"><span class="pre">BOUNDS_OUTPUT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'bounds'</span></em><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.BOUNDS_OUTPUT" title="Link to this definition">#</a></dt>
+<dd><p>dimension and coordinate names used for the <code class="docutils literal notranslate"><span class="pre">bounds</span></code> output</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.best_grid_point">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">best_grid_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">candidate_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.best_grid_point" title="Link to this definition">#</a></dt>
+<dd><p>Fallback when optimization fails: the grid point with the largest (finite) value.</p>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">value)</span></code> with <code class="docutils literal notranslate"><span class="pre">x</span></code> shaped <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">d)</span></code>.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.botorch">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">botorch</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.botorch" title="Link to this definition">#</a></dt>
+<dd><p>The BoTorch symbols, imported on first use so <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">AFL</span></code> works without BoTorch.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.bounds_tensor">
+<span class="sig-name descname"><span class="pre">bounds_tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.bounds_tensor" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">self.bounds</span></code> as a <code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">d)</span></code> tensor aligned with the grid’s components.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">write_output</span></code> is true and the grid has component names, the bounds are
+also written to the <code class="docutils literal notranslate"><span class="pre">bounds</span></code> output so downstream ops can read them.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.build_builtin_acquisition">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">build_builtin_acquisition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">acquisition_kind</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">best_f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.build_builtin_acquisition" title="Link to this definition">#</a></dt>
+<dd><p>Instantiate one of the built-in BoTorch acquisition functions.</p>
+<p><code class="docutils literal notranslate"><span class="pre">acquisition_kind</span></code> is <code class="docutils literal notranslate"><span class="pre">&quot;logei&quot;</span></code> (analytic LogEI) or <code class="docutils literal notranslate"><span class="pre">&quot;qlogei&quot;</span></code> (Monte Carlo
+qLogEI for joint batches).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.build_single_task_gp">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">build_single_task_gp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standardize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.build_single_task_gp" title="Link to this definition">#</a></dt>
+<dd><p>Construct an <em>unfitted</em> SingleTaskGP. Used to rebuild saved models.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.candidates">
+<span class="sig-name descname"><span class="pre">candidates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.candidates" title="Link to this definition">#</a></dt>
+<dd><p>The candidate grid <code class="docutils literal notranslate"><span class="pre">grid_variable</span></code> as an <code class="docutils literal notranslate"><span class="pre">(n,</span> <span class="pre">d)</span></code> tensor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.component_names">
+<span class="sig-name descname"><span class="pre">component_names</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.component_names" title="Link to this definition">#</a></dt>
+<dd><p>Component coordinate values of the grid, or <code class="docutils literal notranslate"><span class="pre">None</span></code> when the grid has no component coords.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.constraints">
+<span class="sig-name descname"><span class="pre">constraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.constraints" title="Link to this definition">#</a></dt>
+<dd><p>Simplex inequality constraints when <code class="docutils literal notranslate"><span class="pre">is_simplex</span></code> is set, otherwise <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.dataset_to_botorch_candidates">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dataset_to_botorch_candidates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.dataset_to_botorch_candidates" title="Link to this definition">#</a></dt>
+<dd><p>The candidate grid as an <code class="docutils literal notranslate"><span class="pre">(n,</span> <span class="pre">d)</span></code> double tensor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.dataset_to_botorch_training_data">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dataset_to_botorch_training_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor_input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'maximize'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'minimize'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'minimize'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.dataset_to_botorch_training_data" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">(train_x,</span> <span class="pre">train_y)</span></code> double tensors; <code class="docutils literal notranslate"><span class="pre">train_y</span></code> is negated when minimizing.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.evaluate_acquisition_on_grid">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">evaluate_acquisition_on_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">acq_function</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">candidate_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.evaluate_acquisition_on_grid" title="Link to this definition">#</a></dt>
+<dd><p>Evaluate an acquisition function at every row of <code class="docutils literal notranslate"><span class="pre">candidate_x</span></code> <code class="docutils literal notranslate"><span class="pre">(n,</span> <span class="pre">d)</span></code>.</p>
+<p>Points are evaluated individually when <code class="docutils literal notranslate"><span class="pre">q</span> <span class="pre">&lt;=</span> <span class="pre">1</span></code>. For joint acquisitions with
+<code class="docutils literal notranslate"><span class="pre">q</span> <span class="pre">&gt;</span> <span class="pre">1</span></code> the grid is scanned with a sliding window of <code class="docutils literal notranslate"><span class="pre">q</span></code> consecutive points;
+windows that do not fit are padded with <code class="docutils literal notranslate"><span class="pre">-inf</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.fit_single_task_gp">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fit_single_task_gp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standardize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.fit_single_task_gp" title="Link to this definition">#</a></dt>
+<dd><p>Build and fit a SingleTaskGP by maximizing the exact marginal log likelihood.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.get_observed_best_f">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_observed_best_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'maximize'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'minimize'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'maximize'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.get_observed_best_f" title="Link to this definition">#</a></dt>
+<dd><p>Best observed target in original objective units (<code class="docutils literal notranslate"><span class="pre">train_y</span></code> is in maximization space).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.grid_component_dim">
+<span class="sig-name descname"><span class="pre">grid_component_dim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.grid_component_dim" title="Link to this definition">#</a></dt>
+<dd><p>The component dimension of the grid (<code class="docutils literal notranslate"><span class="pre">self.component_dim</span></code> if the op defines one).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.import_botorch">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">import_botorch</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.import_botorch" title="Link to this definition">#</a></dt>
+<dd><p>Import the BoTorch symbols the ops use, with a single helpful error message.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.load_model">
+<span class="sig-name descname"><span class="pre">load_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.load_model" title="Link to this definition">#</a></dt>
+<dd><p>Load the model whose ref an upstream op wrote to <code class="docutils literal notranslate"><span class="pre">model_variable</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.make_simplex_constraints">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">make_simplex_constraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.make_simplex_constraints" title="Link to this definition">#</a></dt>
+<dd><p>Return BoTorch-compatible simplex constraints.</p>
+<p>BoTorch’s <cite>optimize_acqf</cite> accepts linear inequality constraints of the form</p>
+<div class="math notranslate nohighlight">
+\[\sum_i a_i x_i \ge b.\]</div>
+<p>A simplex equality <span class="math notranslate nohighlight">\(\sum_i x_i = 1\)</span> is therefore encoded as the pair</p>
+<div class="math notranslate nohighlight">
+\[\sum_i x_i \ge 1, \qquad -\sum_i x_i \ge -1,\]</div>
+<p>which together are exactly equivalent to the equality constraint.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.optimization_bounds_to_tensor">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">optimization_bounds_to_tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.optimization_bounds_to_tensor" title="Link to this definition">#</a></dt>
+<dd><p>Convert explicit constructor bounds into a <code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">d)</span></code> BoTorch bounds tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bounds</strong> – Either a mapping from component name to <code class="docutils literal notranslate"><span class="pre">{&quot;min&quot;:</span> <span class="pre">lower,</span> <span class="pre">&quot;max&quot;:</span> <span class="pre">upper}</span></code>
+dictionaries, a mapping from component name to <code class="docutils literal notranslate"><span class="pre">(lower,</span> <span class="pre">upper)</span></code> pairs,
+or an ordered sequence of <code class="docutils literal notranslate"><span class="pre">(lower,</span> <span class="pre">upper)</span></code> pairs.</p></li>
+<li><p><strong>component_names</strong> – Optional ordered component names used to align mapping-based bounds with
+model inputs.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.optimization_bounds_to_xarray">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">optimization_bounds_to_xarray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataArray</span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.optimization_bounds_to_xarray" title="Link to this definition">#</a></dt>
+<dd><p>Represent optimization bounds as an xarray DataArray.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.optimize_acqf">
+<span class="sig-name descname"><span class="pre">optimize_acqf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">acq_function</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_initial_conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.optimize_acqf" title="Link to this definition">#</a></dt>
+<dd><p>Maximize <code class="docutils literal notranslate"><span class="pre">acq_function</span></code> over <code class="docutils literal notranslate"><span class="pre">bounds</span></code> with BoTorch’s <code class="docutils literal notranslate"><span class="pre">optimize_acqf</span></code>.</p>
+<p>Uses <code class="docutils literal notranslate"><span class="pre">self.num_restarts</span></code> / <code class="docutils literal notranslate"><span class="pre">self.raw_samples</span></code>. <code class="docutils literal notranslate"><span class="pre">with_grad=False</span></code> makes the
+L-BFGS-B optimizer use finite-difference gradients, which is required for score
+functions that are not differentiable by autograd. Returns detached
+<code class="docutils literal notranslate"><span class="pre">(candidates,</span> <span class="pre">values)</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.posterior_to_xarray">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">posterior_to_xarray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">posterior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataArray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'maximize'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'minimize'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'maximize'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.posterior_to_xarray" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">{prefix}_mean</span></code> / <code class="docutils literal notranslate"><span class="pre">{prefix}_variance</span></code> over the grid, mean in original objective units.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.save_model">
+<span class="sig-name descname"><span class="pre">save_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">builder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.save_model" title="Link to this definition">#</a></dt>
+<dd><p>Save <code class="docutils literal notranslate"><span class="pre">model</span></code> to <code class="docutils literal notranslate"><span class="pre">model_uri</span></code> and write the ref to <code class="docutils literal notranslate"><span class="pre">{prefix}_model</span></code>; no-op without <code class="docutils literal notranslate"><span class="pre">model_uri</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.BoTorchMixin.training_data">
+<span class="sig-name descname"><span class="pre">training_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.training_data" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">(train_x,</span> <span class="pre">train_y)</span></code> for this op’s feature/predictor variables, in maximization space.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.Bounds">
+<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.BoTorchMixin.</span></span><span class="sig-name descname"><span class="pre">Bounds</span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.Bounds" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">{component:</span> <span class="pre">{&quot;min&quot;:</span> <span class="pre">lo,</span> <span class="pre">&quot;max&quot;:</span> <span class="pre">hi}}</span></code>,
+<code class="docutils literal notranslate"><span class="pre">{component:</span> <span class="pre">(lo,</span> <span class="pre">hi)}</span></code> or an ordered sequence of <code class="docutils literal notranslate"><span class="pre">(lo,</span> <span class="pre">hi)</span></code> pairs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optimization bounds for BoTorch ops</p>
+</dd>
+</dl>
+<p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>] | <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]] | <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.ScoreFunctionAcquisition">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.BoTorchMixin.</span></span><span class="sig-name descname"><span class="pre">ScoreFunctionAcquisition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.ScoreFunctionAcquisition" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Adapt a user score function to BoTorch’s acquisition interface.</p>
+<p>The wrapped function scores one candidate set: it receives <code class="docutils literal notranslate"><span class="pre">X</span></code> with shape
+<code class="docutils literal notranslate"><span class="pre">(q,</span> <span class="pre">d)</span></code> (<code class="docutils literal notranslate"><span class="pre">q</span></code> jointly proposed design points, no batch dimension) and returns a
+single scalar, higher being better. This module adds BoTorch’s batch handling: a
+<code class="docutils literal notranslate"><span class="pre">(b,</span> <span class="pre">q,</span> <span class="pre">d)</span></code> input is scored one candidate set at a time and returned as <code class="docutils literal notranslate"><span class="pre">(b,)</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">X</span></code> is a <code class="docutils literal notranslate"><span class="pre">torch.Tensor</span></code> so that torch-based functions are optimized with exact
+gradients. Functions that work on NumPy arrays also work: if the function cannot
+handle a tensor that requires gradients, or returns something without autograd
+history, it is called on a detached tensor (which NumPy accepts as an array) and
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">differentiable</span></code> is set to <code class="docutils literal notranslate"><span class="pre">False</span></code> so that the optimizer switches to
+finite differences.</p>
+<p><code class="docutils literal notranslate"><span class="pre">kwargs</span></code> are the static <code class="docutils literal notranslate"><span class="pre">args</span></code> of the acquisition spec, with any
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code> placeholders already resolved; the
+function is called as <code class="docutils literal notranslate"><span class="pre">function(X,</span> <span class="pre">**kwargs)</span></code>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.ScoreFunctionAcquisition.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.ScoreFunctionAcquisition.forward" title="Link to this definition">#</a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="AFL.double_agent.BoTorchMixin.ScoreFunctionAcquisition.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#AFL.double_agent.BoTorchMixin.ScoreFunctionAcquisition.score" title="Link to this definition">#</a></dt>
+<dd><p>Score one <code class="docutils literal notranslate"><span class="pre">(q,</span> <span class="pre">d)</span></code> candidate set, returning a scalar tensor.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="util.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">AFL.double_agent.util module</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="plotting.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">AFL.double_agent.plotting module</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.BOUNDS_OUTPUT"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.BOUNDS_OUTPUT</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.best_grid_point"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.best_grid_point()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.botorch"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.botorch</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.bounds_tensor"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.bounds_tensor()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.build_builtin_acquisition"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.build_builtin_acquisition()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.build_single_task_gp"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.build_single_task_gp()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.candidates"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.candidates()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.component_names"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.component_names()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.constraints"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.constraints()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.dataset_to_botorch_candidates"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.dataset_to_botorch_candidates()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.dataset_to_botorch_training_data"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.dataset_to_botorch_training_data()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.evaluate_acquisition_on_grid"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.evaluate_acquisition_on_grid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.fit_single_task_gp"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.fit_single_task_gp()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.get_observed_best_f"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.get_observed_best_f()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.grid_component_dim"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.grid_component_dim()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.import_botorch"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.import_botorch()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.load_model"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.load_model()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.make_simplex_constraints"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.make_simplex_constraints()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.optimization_bounds_to_tensor"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.optimization_bounds_to_tensor()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.optimization_bounds_to_xarray"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.optimization_bounds_to_xarray()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.optimize_acqf"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.optimize_acqf()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.posterior_to_xarray"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.posterior_to_xarray()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.save_model"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.save_model()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.BoTorchMixin.training_data"><code class="docutils literal notranslate"><span class="pre">BoTorchMixin.training_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.Bounds"><code class="docutils literal notranslate"><span class="pre">Bounds</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.ScoreFunctionAcquisition"><code class="docutils literal notranslate"><span class="pre">ScoreFunctionAcquisition</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.ScoreFunctionAcquisition.forward"><code class="docutils literal notranslate"><span class="pre">ScoreFunctionAcquisition.forward()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.BoTorchMixin.ScoreFunctionAcquisition.score"><code class="docutils literal notranslate"><span class="pre">ScoreFunctionAcquisition.score()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../../../_sources/reference/api/double_agent/BoTorchMixin.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+
+  
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright : Official Contribution of the US Government.  Not subject to copyright in the United States.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+
+  <!-- Taken from https://www.filamentgroup.com/lab/html-includes/#another-demo%3A-including-another-html-file -->
+  <iframe src="../../../_static/ntd2d_menu.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
+  </body>
+</html>

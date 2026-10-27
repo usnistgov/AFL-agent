@@ -9,6 +9,7 @@ Pipeline Operations
 
    AcquisitionFunction
    AutoSAS
+   benchmarking
    Boundary
    Extrapolator
    Generator
@@ -27,6 +28,7 @@ Utilities
 
    xarray_extensions
    util
+   BoTorchMixin
    plotting
 
 Core Components
@@ -49,3 +51,4 @@ APIServer Drivers
    AutoSAS_Driver
    AgentDriver
    AgentClient
+   VirtualInstrumentDriver

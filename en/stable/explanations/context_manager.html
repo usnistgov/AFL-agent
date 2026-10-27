@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 
 
-<html lang="en" data-content_root="" >
+<html lang="en" data-content_root="../" >
 
   <head>
     <meta charset="utf-8" />
@@ -16,33 +16,30 @@
     document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
     document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
   </script>
-  <!--
-    this give us a css class that will be invisible only if js is disabled
-  -->
-  <noscript>
-    <style>
-      .pst-js-only { display: none !important; }
-
-    </style>
-  </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/ntd2d.css?v=525a25f0" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
   
-  <!-- So that users can add custom icons -->
-  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
 
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=b3ba4146"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -55,7 +52,6 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="" />
 
   <link rel="stylesheet" href="https://pages.nist.gov/nist-header-footer/css/nist-combined.css">
   <script src="https://code.jquery.com/jquery-3.6.2.min.js" type="text/javascript" defer="defer"></script>
@@ -77,8 +73,19 @@
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
 
   
-  <dialog id="pst-search-dialog">
-    
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
 <form class="bd-search d-flex align-items-center"
       action="../search.html"
       method="get">
@@ -86,6 +93,7 @@
   <input type="search"
          class="form-control"
          name="q"
+         id="search-input"
          placeholder="Search the docs ..."
          aria-label="Search the docs ..."
          autocomplete="off"
@@ -93,8 +101,8 @@
          autocapitalize="off"
          spellcheck="false"/>
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
-</form>
-  </dialog>
+</form></div>
+  </div>
 
   <div class="pst-async-banner-revealer d-none">
   <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
@@ -128,7 +136,7 @@
     
     
     <img src="../_static/logo_text_large_light.svg" class="logo__image only-light" alt="AFL-agent  documentation - Home"/>
-    <img src="../_static/logo_text_large_dark.svg" class="logo__image only-dark pst-js-only" alt="AFL-agent  documentation - Home"/>
+    <script>document.write(`<img src="../_static/logo_text_large_dark.svg" class="logo__image only-dark" alt="AFL-agent  documentation - Home"/>`);</script>
   
   
 </a></div>
@@ -177,6 +185,13 @@
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
   </ul>
 </nav></div>
       
@@ -188,21 +203,29 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
- <i class="fa-solid fa-magnifying-glass"></i>
- <span class="search-button__default-text">Search</span>
- <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-</button>
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
         </div>
       
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -227,11 +250,15 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
- <i class="fa-solid fa-magnifying-glass"></i>
- <span class="search-button__default-text">Search</span>
- <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-</button>
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
     </div>
   
 
@@ -250,8 +277,7 @@
       
       
       
-      <dialog id="pst-primary-sidebar-modal"></dialog>
-      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+      <div class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -300,6 +326,13 @@
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
   </ul>
 </nav></div>
           
@@ -312,11 +345,15 @@
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -354,14 +391,9 @@
   
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
-      <div class="sidebar-primary-item">
-<div id="ethical-ad-placement"
-      class="flat"
-      data-ea-publisher="readthedocs"
-      data-ea-type="readthedocs-sidebar"
-      data-ea-manual="true">
-</div></div>
   </div>
+  
+  <div id="rtd-footer-container"></div>
 
 
       </div>
@@ -379,6 +411,8 @@
       
         <div class="header-article-item">
 
+
+
 <nav aria-label="Breadcrumb" class="d-print-none">
   <ul class="bd-breadcrumbs">
     
@@ -390,7 +424,7 @@
     
     <li class="breadcrumb-item"><a href="index.html" class="nav-link">Explanations</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">The Context Manager Pattern</span></li>
+    <li class="breadcrumb-item active" aria-current="page">The Context...</li>
   </ul>
 </nav>
 </div>
@@ -408,10 +442,10 @@
                 <article class="bd-article">
                   
   <section id="the-context-manager-pattern">
-<h1>The Context Manager Pattern<a class="headerlink" href="#the-context-manager-pattern" title="Permalink to this heading">#</a></h1>
+<h1>The Context Manager Pattern<a class="headerlink" href="#the-context-manager-pattern" title="Link to this heading">#</a></h1>
 <p>The AFL double agent framework employs Python’s context manager pattern to create an elegant, intuitive interface for building pipelines. This document explains the conceptual underpinnings of this design choice, how it works internally, and the benefits it provides to developers.</p>
 <section id="why-context-managers">
-<h2>Why Context Managers?<a class="headerlink" href="#why-context-managers" title="Permalink to this heading">#</a></h2>
+<h2>Why Context Managers?<a class="headerlink" href="#why-context-managers" title="Link to this heading">#</a></h2>
 <p>Context managers in Python (implemented using the <cite>with</cite> statement) traditionally serve two primary purposes:</p>
 <ol class="arabic simple">
 <li><p><strong>Resource Management</strong>: They ensure proper acquisition and release of resources (like file handles or network connections).</p></li>
@@ -420,51 +454,51 @@
 <p>In the AFL pipeline system, we leverage the second aspect - creating a temporary “context” in which operations are automatically associated with the current pipeline. This design creates a more readable, intuitive API that reduces boilerplate code and makes pipeline construction feel natural in Python.</p>
 <p>Here’s a simple example of how this pattern improves code readability:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Using context manager approach</span>
-<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;MyPipeline&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
-    <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;processed_data&quot;</span><span class="p">)</span>
-    <span class="n">AnotherOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;processed_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;final_result&quot;</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"MyPipeline"</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
+    <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"processed_data"</span><span class="p">)</span>
+    <span class="n">AnotherOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"processed_data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"final_result"</span><span class="p">)</span>
 
 <span class="c1"># Without context manager - more verbose and error-prone</span>
-<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;MyPipeline&quot;</span><span class="p">)</span>
-<span class="n">op1</span> <span class="o">=</span> <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;processed_data&quot;</span><span class="p">)</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"MyPipeline"</span><span class="p">)</span>
+<span class="n">op1</span> <span class="o">=</span> <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"processed_data"</span><span class="p">)</span>
 <span class="n">pipeline</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">op1</span><span class="p">)</span>
-<span class="n">op2</span> <span class="o">=</span> <span class="n">AnotherOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;processed_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;final_result&quot;</span><span class="p">)</span>
+<span class="n">op2</span> <span class="o">=</span> <span class="n">AnotherOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"processed_data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"final_result"</span><span class="p">)</span>
 <span class="n">pipeline</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">op2</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
 <section id="the-stack-based-context-design">
-<h2>The Stack-Based Context Design<a class="headerlink" href="#the-stack-based-context-design" title="Permalink to this heading">#</a></h2>
+<h2>The Stack-Based Context Design<a class="headerlink" href="#the-stack-based-context-design" title="Link to this heading">#</a></h2>
 <p>At the heart of the context manager implementation is a thread-local stack of pipeline contexts:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">contexts</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">local</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>The implementation in <cite>PipelineContext.py</cite> shows how this stack is managed:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">PipelineContext</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inherited by Pipeline to allow for context manager abuse&quot;&quot;&quot;</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">PipelineContext</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Inherited by Pipeline to allow for context manager abuse"""</span>
 
     <span class="n">contexts</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">local</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">get_contexts</span><span class="p">()</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">typ</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">typ</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
         <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">get_contexts</span><span class="p">()</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">get_contexts</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">contexts</span><span class="p">,</span> <span class="s2">&quot;stack&quot;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_contexts</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">contexts</span><span class="p">,</span> <span class="s2">"stack"</span><span class="p">):</span>
             <span class="bp">cls</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">stack</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">get_context</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the deepest context on the stack.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_context</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Return the deepest context on the stack."""</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get_contexts</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">NoContextException</span><span class="p">(</span><span class="s2">&quot;No context on context stack&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">NoContextException</span><span class="p">(</span><span class="s2">"No context on context stack"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>This design:</p>
@@ -475,7 +509,7 @@
 </ol>
 </section>
 <section id="how-it-works-conceptually">
-<h2>How It Works Conceptually<a class="headerlink" href="#how-it-works-conceptually" title="Permalink to this heading">#</a></h2>
+<h2>How It Works Conceptually<a class="headerlink" href="#how-it-works-conceptually" title="Link to this heading">#</a></h2>
 <p>The pipeline context system works on a simple principle: when you create a pipeline within a <cite>with</cite> statement, that pipeline becomes the “active” context. Any operations created inside that block are automatically added to the active pipeline.</p>
 <p>The flow works like this:</p>
 <ol class="arabic simple">
@@ -485,7 +519,7 @@
 <li><p>When the <cite>with</cite> block exits, the pipeline is popped from the stack, and any previous context becomes active again.</p></li>
 </ol>
 <p>Here’s the code from <cite>PipelineOp.py</cite> that illustrates how operations automatically register themselves:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
              <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
              <span class="n">input_variable</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
              <span class="n">output_variable</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -505,7 +539,7 @@
 <p>This process creates a natural, hierarchical relationship between pipelines and their operations, making the code structure visually reflect the pipeline structure.</p>
 </section>
 <section id="benefits-of-the-context-manager-approach">
-<h2>Benefits of the Context Manager Approach<a class="headerlink" href="#benefits-of-the-context-manager-approach" title="Permalink to this heading">#</a></h2>
+<h2>Benefits of the Context Manager Approach<a class="headerlink" href="#benefits-of-the-context-manager-approach" title="Link to this heading">#</a></h2>
 <p>This design provides several important benefits:</p>
 <dl class="simple">
 <dt><strong>Reduced Verbosity</strong></dt><dd><p>Without the context manager, each operation would need to be explicitly added to its pipeline, cluttering the code with repetitive calls.</p>
@@ -519,13 +553,13 @@
 </dl>
 </section>
 <section id="implementation-details-and-considerations">
-<h2>Implementation Details and Considerations<a class="headerlink" href="#implementation-details-and-considerations" title="Permalink to this heading">#</a></h2>
+<h2>Implementation Details and Considerations<a class="headerlink" href="#implementation-details-and-considerations" title="Link to this heading">#</a></h2>
 <p>There are a few important implementation details to be aware of:</p>
 <dl class="simple">
 <dt><strong>The NoContextException</strong></dt><dd><p>When attempting to get the current context outside any <cite>with</cite> block, a <cite>NoContextException</cite> is raised. This is handled gracefully in the <cite>PipelineOp</cite> constructor.</p>
 </dd>
 </dl>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">NoContextException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">NoContextException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
     <span class="k">pass</span>
 </pre></div>
 </div>
@@ -536,50 +570,50 @@
 </dd>
 </dl>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Using context manager</span>
-<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;pipeline1&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">p1</span><span class="p">:</span>
-    <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"pipeline1"</span><span class="p">)</span> <span class="k">as</span> <span class="n">p1</span><span class="p">:</span>
+    <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"y"</span><span class="p">)</span>
 
 <span class="c1"># Using manual construction</span>
-<span class="n">p2</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;pipeline2&quot;</span><span class="p">)</span>
-<span class="n">op</span> <span class="o">=</span> <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+<span class="n">p2</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"pipeline2"</span><span class="p">)</span>
+<span class="n">op</span> <span class="o">=</span> <span class="n">MyOperation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"y"</span><span class="p">)</span>
 <span class="n">p2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
 <section id="advanced-patterns">
-<h2>Advanced Patterns<a class="headerlink" href="#advanced-patterns" title="Permalink to this heading">#</a></h2>
+<h2>Advanced Patterns<a class="headerlink" href="#advanced-patterns" title="Link to this heading">#</a></h2>
 <p>The context manager design enables several advanced patterns:</p>
 <dl class="simple">
 <dt><strong>Pipeline Factories</strong></dt><dd><p>Functions that create and return pipelines can leverage the context manager pattern to provide a clean API for building configurable pipeline templates.</p>
 </dd>
 </dl>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">create_processing_pipeline</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Factory function to create standardized processing pipelines&quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">_processing&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_processing_pipeline</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Factory function to create standardized processing pipelines"""</span>
+    <span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">_processing"</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
         <span class="c1"># Common operations for all data types</span>
-        <span class="n">Normalize</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;normalized_data&quot;</span><span class="p">)</span>
+        <span class="n">Normalize</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"raw_data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"normalized_data"</span><span class="p">)</span>
 
         <span class="c1"># Conditional operations based on data_type</span>
-        <span class="k">if</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">&quot;image&quot;</span><span class="p">:</span>
-            <span class="n">ImageFilter</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;normalized_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;filtered_data&quot;</span><span class="p">,</span>
-                        <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;gaussian&quot;</span><span class="p">)</span>
-            <span class="n">threshold_var</span> <span class="o">=</span> <span class="s2">&quot;filtered_data&quot;</span>
-        <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">&quot;signal&quot;</span><span class="p">:</span>
-            <span class="n">SignalFilter</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;normalized_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;filtered_data&quot;</span><span class="p">,</span>
-                         <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;lowpass&quot;</span><span class="p">)</span>
-            <span class="n">threshold_var</span> <span class="o">=</span> <span class="s2">&quot;filtered_data&quot;</span>
+        <span class="k">if</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">"image"</span><span class="p">:</span>
+            <span class="n">ImageFilter</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"normalized_data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"filtered_data"</span><span class="p">,</span>
+                        <span class="n">filter_type</span><span class="o">=</span><span class="s2">"gaussian"</span><span class="p">)</span>
+            <span class="n">threshold_var</span> <span class="o">=</span> <span class="s2">"filtered_data"</span>
+        <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">"signal"</span><span class="p">:</span>
+            <span class="n">SignalFilter</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"normalized_data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"filtered_data"</span><span class="p">,</span>
+                         <span class="n">filter_type</span><span class="o">=</span><span class="s2">"lowpass"</span><span class="p">)</span>
+            <span class="n">threshold_var</span> <span class="o">=</span> <span class="s2">"filtered_data"</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">threshold_var</span> <span class="o">=</span> <span class="s2">&quot;normalized_data&quot;</span>
+            <span class="n">threshold_var</span> <span class="o">=</span> <span class="s2">"normalized_data"</span>
 
         <span class="c1"># Final thresholding operation with configurable threshold</span>
-        <span class="n">Threshold</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">threshold_var</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;thresholded_data&quot;</span><span class="p">,</span>
+        <span class="n">Threshold</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">threshold_var</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"thresholded_data"</span><span class="p">,</span>
                   <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">pipeline</span>
 
 <span class="c1"># Usage</span>
-<span class="n">image_pipeline</span> <span class="o">=</span> <span class="n">create_processing_pipeline</span><span class="p">(</span><span class="s2">&quot;image&quot;</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)</span>
-<span class="n">signal_pipeline</span> <span class="o">=</span> <span class="n">create_processing_pipeline</span><span class="p">(</span><span class="s2">&quot;signal&quot;</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="n">image_pipeline</span> <span class="o">=</span> <span class="n">create_processing_pipeline</span><span class="p">(</span><span class="s2">"image"</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)</span>
+<span class="n">signal_pipeline</span> <span class="o">=</span> <span class="n">create_processing_pipeline</span><span class="p">(</span><span class="s2">"signal"</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="simple">
@@ -587,75 +621,75 @@
 </dd>
 </dl>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Conceptual example of how nested pipelines might work</span>
-<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;master_pipeline&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">master</span><span class="p">:</span>
+<span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"master_pipeline"</span><span class="p">)</span> <span class="k">as</span> <span class="n">master</span><span class="p">:</span>
     <span class="c1"># Some operations in the master pipeline</span>
-    <span class="n">DataLoader</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;file_path&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">)</span>
+    <span class="n">DataLoader</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"file_path"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"raw_data"</span><span class="p">)</span>
 
     <span class="c1"># Create a nested pipeline for preprocessing</span>
-    <span class="k">with</span> <span class="n">NestedPipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;preprocessing&quot;</span><span class="p">,</span> <span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">,</span>
-                         <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;preprocessed_data&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">preprocess</span><span class="p">:</span>
-        <span class="n">Normalize</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;normalized&quot;</span><span class="p">)</span>
-        <span class="n">RemoveOutliers</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;normalized&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;cleaned&quot;</span><span class="p">)</span>
-        <span class="c1"># The last output becomes the nested pipeline&#39;s output</span>
+    <span class="k">with</span> <span class="n">NestedPipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"preprocessing"</span><span class="p">,</span> <span class="n">input_variable</span><span class="o">=</span><span class="s2">"raw_data"</span><span class="p">,</span>
+                         <span class="n">output_variable</span><span class="o">=</span><span class="s2">"preprocessed_data"</span><span class="p">)</span> <span class="k">as</span> <span class="n">preprocess</span><span class="p">:</span>
+        <span class="n">Normalize</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"raw_data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"normalized"</span><span class="p">)</span>
+        <span class="n">RemoveOutliers</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"normalized"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"cleaned"</span><span class="p">)</span>
+        <span class="c1"># The last output becomes the nested pipeline's output</span>
 
     <span class="c1"># Continue with operations in the master pipeline</span>
-    <span class="n">ModelPredictor</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;preprocessed_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;predictions&quot;</span><span class="p">)</span>
+    <span class="n">ModelPredictor</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"preprocessed_data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"predictions"</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="simple">
 <dt><strong>Dynamic Pipeline Construction</strong></dt><dd><p>The context approach makes it easier to conditionally add operations to a pipeline based on runtime parameters, enhancing flexibility.</p>
 </dd>
 </dl>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">build_adaptive_pipeline</span><span class="p">(</span><span class="n">data_properties</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Builds a pipeline that adapts to properties of the data&quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;adaptive_pipeline&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_adaptive_pipeline</span><span class="p">(</span><span class="n">data_properties</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Builds a pipeline that adapts to properties of the data"""</span>
+    <span class="k">with</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"adaptive_pipeline"</span><span class="p">)</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
         <span class="c1"># Basic operations for all cases</span>
-        <span class="n">LoadData</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data_path&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">)</span>
+        <span class="n">LoadData</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"data_path"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"raw_data"</span><span class="p">)</span>
 
         <span class="c1"># Add preprocessing operations based on data properties</span>
-        <span class="k">if</span> <span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;has_missing_values&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
-            <span class="n">ImputeMissingValues</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;raw_data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;imputed_data&quot;</span><span class="p">)</span>
-            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">&quot;imputed_data&quot;</span>
+        <span class="k">if</span> <span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"has_missing_values"</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="n">ImputeMissingValues</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"raw_data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"imputed_data"</span><span class="p">)</span>
+            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">"imputed_data"</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">&quot;raw_data&quot;</span>
+            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">"raw_data"</span>
 
-        <span class="k">if</span> <span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;needs_normalization&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
-            <span class="n">Normalize</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">current_data</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;normalized_data&quot;</span><span class="p">)</span>
-            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">&quot;normalized_data&quot;</span>
+        <span class="k">if</span> <span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"needs_normalization"</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+            <span class="n">Normalize</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">current_data</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"normalized_data"</span><span class="p">)</span>
+            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">"normalized_data"</span>
 
         <span class="c1"># Add dimensionality reduction if data has high dimensions</span>
-        <span class="k">if</span> <span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dimensions&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
-            <span class="n">PCA</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">current_data</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;reduced_data&quot;</span><span class="p">,</span>
-                <span class="n">n_components</span><span class="o">=</span><span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target_dimensions&quot;</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
-            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">&quot;reduced_data&quot;</span>
+        <span class="k">if</span> <span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"dimensions"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
+            <span class="n">PCA</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">current_data</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"reduced_data"</span><span class="p">,</span>
+                <span class="n">n_components</span><span class="o">=</span><span class="n">data_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"target_dimensions"</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+            <span class="n">current_data</span> <span class="o">=</span> <span class="s2">"reduced_data"</span>
 
         <span class="c1"># Final output operation</span>
-        <span class="n">Analyze</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">current_data</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;results&quot;</span><span class="p">)</span>
+        <span class="n">Analyze</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="n">current_data</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"results"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">pipeline</span>
 
 <span class="c1"># Usage</span>
 <span class="n">data_props</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;has_missing_values&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="s2">&quot;needs_normalization&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
-    <span class="s2">&quot;target_dimensions&quot;</span><span class="p">:</span> <span class="mi">50</span>
+    <span class="s2">"has_missing_values"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">"needs_normalization"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">"dimensions"</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+    <span class="s2">"target_dimensions"</span><span class="p">:</span> <span class="mi">50</span>
 <span class="p">}</span>
 <span class="n">my_pipeline</span> <span class="o">=</span> <span class="n">build_adaptive_pipeline</span><span class="p">(</span><span class="n">data_props</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
 <section id="alternatives-considered">
-<h2>Alternatives Considered<a class="headerlink" href="#alternatives-considered" title="Permalink to this heading">#</a></h2>
+<h2>Alternatives Considered<a class="headerlink" href="#alternatives-considered" title="Link to this heading">#</a></h2>
 <p>The context manager approach was chosen over several alternatives:</p>
 <dl class="simple">
 <dt><strong>Fluent Builder Pattern</strong></dt><dd><p>A chained method approach (e.g., <cite>pipeline.add_op1().add_op2()</cite>) would be less verbose but wouldn’t provide the visual structure of nested blocks.</p>
 </dd>
 </dl>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Hypothetical fluent builder approach</span>
-<span class="n">pipeline</span> <span class="o">=</span> <span class="p">(</span><span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;MyPipeline&quot;</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;path&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">))</span>
-            <span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Process</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;processed&quot;</span><span class="p">)))</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="p">(</span><span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"MyPipeline"</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"path"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"data"</span><span class="p">))</span>
+            <span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Process</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"processed"</span><span class="p">)))</span>
 </pre></div>
 </div>
 <dl class="simple">
@@ -663,9 +697,9 @@
 </dd>
 </dl>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Explicit registration approach</span>
-<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;MyPipeline&quot;</span><span class="p">)</span>
-<span class="n">loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;path&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">)</span>
-<span class="n">processor</span> <span class="o">=</span> <span class="n">Process</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;processed&quot;</span><span class="p">)</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"MyPipeline"</span><span class="p">)</span>
+<span class="n">loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"path"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"data"</span><span class="p">)</span>
+<span class="n">processor</span> <span class="o">=</span> <span class="n">Process</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"processed"</span><span class="p">)</span>
 <span class="n">pipeline</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">loader</span><span class="p">)</span>
 <span class="n">pipeline</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">processor</span><span class="p">)</span>
 </pre></div>
@@ -675,22 +709,22 @@
 </dd>
 </dl>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Hypothetical decorator-based approach</span>
-<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;MyPipeline&quot;</span><span class="p">)</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"MyPipeline"</span><span class="p">)</span>
 
-<span class="nd">@pipeline</span><span class="o">.</span><span class="n">operation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;path&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span><span class="n">dataset</span><span class="p">):</span>
+<span class="nd">@pipeline</span><span class="o">.</span><span class="n">operation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"path"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"data"</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">(</span><span class="n">dataset</span><span class="p">):</span>
     <span class="c1"># Load data implementation</span>
     <span class="k">return</span> <span class="n">loaded_data</span>
 
-<span class="nd">@pipeline</span><span class="o">.</span><span class="n">operation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">&quot;processed&quot;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">process_data</span><span class="p">(</span><span class="n">dataset</span><span class="p">):</span>
+<span class="nd">@pipeline</span><span class="o">.</span><span class="n">operation</span><span class="p">(</span><span class="n">input_variable</span><span class="o">=</span><span class="s2">"data"</span><span class="p">,</span> <span class="n">output_variable</span><span class="o">=</span><span class="s2">"processed"</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_data</span><span class="p">(</span><span class="n">dataset</span><span class="p">):</span>
     <span class="c1"># Processing implementation</span>
     <span class="k">return</span> <span class="n">processed_data</span>
 </pre></div>
 </div>
 </section>
 <section id="conclusion">
-<h2>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this heading">#</a></h2>
+<h2>Conclusion<a class="headerlink" href="#conclusion" title="Link to this heading">#</a></h2>
 <p>The context manager pattern in AFL’s pipeline system demonstrates how Python’s language features can be leveraged to create intuitive, readable APIs. By using context managers, the framework provides a balance of clarity, flexibility, and conciseness that makes building complex data processing pipelines more manageable.</p>
 </section>
 </section>
@@ -730,8 +764,7 @@
             
             
               
-                <dialog id="pst-secondary-sidebar-modal"></dialog>
-                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
 
   <div class="sidebar-secondary-item">
@@ -754,13 +787,13 @@
   </nav></div>
 
   <div class="sidebar-secondary-item">
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/explanations/context_manager.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div></div>
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/explanations/context_manager.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
 
 </div></div>
               
@@ -775,8 +808,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
 
 
   
@@ -798,7 +831,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
     <br/>
   </p>
 </div>
@@ -811,8 +844,7 @@
       
         <div class="footer-item">
 <p class="theme-version">
-  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
 </p></div>
       
     </div>
