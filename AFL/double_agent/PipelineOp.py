@@ -321,7 +321,9 @@ class PipelineOp(ABC):
         return prefixed_variable
 
     def _get_attrs(self) -> Dict:
-        output_dict = copy.deepcopy(self.__dict__)
+        # Shallow copy: every value is stringified below, and live constructor arguments
+        # (virtual instruments, compiled kernels) may not be deep-copyable.
+        output_dict = dict(self.__dict__)
         for key in self._banned_from_attrs:
             try:
                 del output_dict[key]

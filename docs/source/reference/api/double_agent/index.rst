@@ -9,6 +9,7 @@ Pipeline Operations
 
    AcquisitionFunction
    AutoSAS
+   benchmarking
    Boundary
    Extrapolator
    Generator
