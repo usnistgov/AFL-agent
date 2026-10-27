@@ -1,0 +1,7 @@
+{
+    "instrument": "ProteinGlycerolTemperaturePhaseMap",
+    "instrument_overrides": {
+        "noise": 0.0,
+        "random_seed": 7
+    }
+}

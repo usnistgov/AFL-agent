@@ -1,3 +1,10 @@
+# Import netCDF4 before h5py (pulled in by AFL.automation): when the two ship different HDF5
+# builds the first import wins and NetCDF reads/writes fail otherwise. See _netcdf.py.
+try:
+    import netCDF4  # noqa: F401
+except ImportError:
+    pass
+
 from .Pipeline import *
 from .AcquisitionFunction import *
 from .Extrapolator import *

@@ -161,3 +161,22 @@ def test_line_sampler_invalid_n_samples(dataset_probs):
     op = MinMax1DLineSampler(n_samples=20)
     with pytest.raises(ValueError):
         op.calculate(dataset_probs)
+
+
+def test_argmax_exploration_prob_one_is_deterministic(dataset_1d):
+    op = ArgMax(exploration_prob=1.0)
+    outs = {float(op.calculate(dataset_1d).output[op.output_variable].values[0]) for _ in range(20)}
+    assert outs == {4.0}
+
+
+def test_argmax_exploration_prob_zero_never_returns_argmax(dataset_1d):
+    op = ArgMax(exploration_prob=0.0)
+    for _ in range(20):
+        out = op.calculate(dataset_1d).output[op.output_variable].values
+        assert out.shape == (1,)
+        assert not np.isclose(out[0], 4)
+
+
+def test_argmax_exploration_prob_validated():
+    with pytest.raises(ValueError):
+        ArgMax(exploration_prob=1.5)

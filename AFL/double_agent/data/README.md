@@ -7,6 +7,12 @@ This directory contains example datasets used by the AFL-agent library. These da
 Currently, the following datasets are available:
 
 - `example_dataset.nc`: A synthetic dataset with compositions, measurements, and ground truth labels.
+- `bioformulation_phase_boundaries.nc`: Labelled protein/temperature/glycerol phase diagram (15625 grid
+  points, labels 0 = solid-liquid, 1 = single phase, 2 = liquid-liquid) used by
+  `AFL.double_agent.VirtualInstruments.ProteinGlycerolTemperaturePhaseMap` (a `VirtualSASInstrument`
+  subclass) to trace phase boundaries.
+- `SANS/{low,med,high}_q.ABS`: NIST SANS reference configurations (q, I, dI, dq) that set the q-grid and
+  uncertainties of the spectra produced by `ProteinGlycerolTemperaturePhaseMap`.
 
 ## Usage
 

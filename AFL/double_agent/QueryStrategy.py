@@ -18,6 +18,9 @@ class ArgMax(PipelineOp):
         Dataset variable representing the design grid or domain.
     output_prefix : str, default="composition"
         Prefix for the output variable.
+    exploration_prob : float, default=1.0
+        Probability of returning the true argmax. With probability ``1 - exploration_prob``
+        a uniformly random other grid point is returned instead (stochastic argmax).
     name : str, default="ArgMax"
         Name of the pipeline operation.
 
@@ -31,6 +34,7 @@ class ArgMax(PipelineOp):
         input_variable: str = "composition_utility",
         grid_variable:str="composition_marginal_domain",
         output_prefix:str="composition",
+        exploration_prob: float = 1.0,
         name: str = "ArgMax",
     ) -> None:
         output_variable = f"{output_prefix}_next"
@@ -40,6 +44,9 @@ class ArgMax(PipelineOp):
             output_variable=output_variable
         )
         self.grid_variable = grid_variable
+        if not 0.0 <= exploration_prob <= 1.0:
+            raise ValueError("exploration_prob must be in [0, 1]")
+        self.exploration_prob = exploration_prob
 
     def calculate(self, dataset: xr.Dataset) -> Self:
         """
@@ -63,13 +70,14 @@ class ArgMax(PipelineOp):
         x = dataset[self.grid_variable]
         
         # x^* = argmax_{x} u(x)
+        i_opt = self.stochastic_argmax(ux.values)
         if x.ndim==1:
-            x_opt = x.values[np.argmax(ux.values).item()]
+            x_opt = x.values[i_opt]
             output = xr.DataArray(x_opt.reshape(-1, ),
                                 dims=(self._prefix_output("next_n"), ),
                                 )
         else:
-            x_opt = x.values[np.argmax(ux.values).item(),:] 
+            x_opt = x.values[i_opt,:] 
             output = xr.DataArray(x_opt.reshape(-1, x.values.shape[-1]),
                                 dims=(self._prefix_output("next_n"), x.dims[1]),
                                 )
@@ -80,6 +88,16 @@ class ArgMax(PipelineOp):
         that maximizes the utility.
         """).strip()
         return self
+
+    def stochastic_argmax(self, u_values) -> int:
+        """Index of the maximum of ``u_values``, or of a random other point with
+        probability ``1 - exploration_prob``."""
+        u_values = np.asarray(u_values).reshape(-1)
+        best_idx = int(np.argmax(u_values))
+        if len(u_values) == 1 or np.random.random() < self.exploration_prob:
+            return best_idx
+        others = np.delete(np.arange(len(u_values)), best_idx)
+        return int(np.random.choice(others))
 
 class FullWidthHalfMaximum1D(PipelineOp):
     """

@@ -16,7 +16,8 @@ from typing import Optional, Dict, Any, List, Tuple, get_type_hints, Union
 import numpy as np
 import xarray as xr
 
-from AFL.double_agent.Pipeline import Pipeline
+from AFL.double_agent.Pipeline import Pipeline, load_environment
+from AFL.double_agent._netcdf import save_netcdf
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.AgentWebAppMixin import AgentWebAppMixin
 from AFL.double_agent._automation_compat import Driver
@@ -392,6 +393,9 @@ class DoubleAgentDriver(AgentWebAppMixin, Driver):
     defaults = {}
     defaults["save_path"] = "/home/AFL/"
     defaults["pipeline"] = {}
+    # Import path of a module that defines the pipeline; supplies the live Python objects
+    # behind {"ref": ...} entries of the pipeline JSON (see Pipeline.load_environment).
+    defaults["pipeline_environment"] = None
     defaults["tiled_input_groups"] = []  # List[Dict] with concat_dim, variable_prefix, entry_ids
     # Configuration for the direct-entry data collection API.  The xarray
     # dataset is kept in memory and populated by append_dataset.
@@ -414,9 +418,10 @@ class DoubleAgentDriver(AgentWebAppMixin, Driver):
             assert "ops" in self.config["pipeline"], "Pipeline ops in config are required"
             assert "description" in self.config["pipeline"], "Pipeline description in config is required"
 
-            self. pipeline = Pipeline(
+            objects = self._environment_objects(self.config.get("pipeline_environment"))
+            self.pipeline = Pipeline(
                 name=self.config["pipeline"]["name"],
-                ops=[PipelineOp.from_json(op) for op in self.config["pipeline"]["ops"]],
+                ops=[PipelineOp.from_json(op, objects=objects) for op in self.config["pipeline"]["ops"]],
                 description=self.config["pipeline"]["description"],
             )
         else:
@@ -441,7 +446,19 @@ class DoubleAgentDriver(AgentWebAppMixin, Driver):
         return status
         
 
-    def initialize_pipeline(self, db_uuid: str = None, pipeline: List[Dict[str, Any]] = None, name: str = "Pipeline") -> None:
+    @staticmethod
+    def _environment_objects(environment: Optional[str]) -> Dict[str, Any]:
+        if not environment:
+            return {}
+        return load_environment(environment)
+
+    def initialize_pipeline(
+        self,
+        db_uuid: str = None,
+        pipeline: List[Dict[str, Any]] = None,
+        name: str = "Pipeline",
+        environment: Optional[str] = None,
+    ) -> None:
         """
         Set the `double_agent.Pipeline` to outline
 
@@ -456,6 +473,12 @@ class DoubleAgentDriver(AgentWebAppMixin, Driver):
             Either this or `db_uuid` must be provided.
         name: str, default="Pipeline"
             Name for the pipeline when constructing from operations list.
+        environment: str, optional
+            Import path of a module (installed on the server) that defines the pipeline.
+            Required when the operations JSON contains ``{"ref": ...}`` entries, i.e. the
+            pipeline uses lambdas, closures or live objects; the module is imported and
+            the objects behind the references are taken from the ``Pipeline`` instances it
+            defines (see `AFL.double_agent.Pipeline.load_environment`).
 
         Example
         -------
@@ -475,6 +498,12 @@ class DoubleAgentDriver(AgentWebAppMixin, Driver):
         ops = [{'class': 'AFL.double_agent.SomeOp', 'args': {...}}]
         client.enqueue(task_name='initialize_pipeline', pipeline=ops)
         ```
+
+        Using a pipeline with lambdas / live objects defined in an importable module:
+        ```python
+        client.enqueue(task_name='initialize_pipeline', pipeline=pipeline.to_dict()["ops"],
+                       environment="mypkg.manifold_pipeline")
+        ```
         """
         if db_uuid is not None and pipeline is not None:
             raise ValueError("Cannot specify both db_uuid and pipeline. Use one or the other.")
@@ -488,9 +517,11 @@ class DoubleAgentDriver(AgentWebAppMixin, Driver):
             self.config["pipeline"] = self.pipeline.to_dict()
         else:
             # Construct pipeline from operations list
-            pipeline_ops = [PipelineOp.from_json(op) for op in pipeline]
+            objects = self._environment_objects(environment)
+            pipeline_ops = [PipelineOp.from_json(op, objects=objects) for op in pipeline]
             self.pipeline = Pipeline(name=name, ops=pipeline_ops)
             self.config["pipeline"] = self.pipeline.to_dict()
+            self.config["pipeline_environment"] = environment
 
     @staticmethod
     def _metadata_path(metadata: Dict[str, Any], path: Optional[str]) -> Any:
@@ -842,7 +873,7 @@ class DoubleAgentDriver(AgentWebAppMixin, Driver):
                 pathlib.Path(self.config["save_path"])
                 / f"{AL_campaign_name}_SAM-{str(sample_uuid)[-6:]}_AG-{ag_uid[-6:]}.nc"
             )
-            self.last_results.to_netcdf(path)
+            save_netcdf(self.last_results, path)
 
         if deposit:
             self.deposit_obj(self.last_results, uid=ag_uid)

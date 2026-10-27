@@ -14,9 +14,10 @@ PipelineOps in this system follow these conventions:
 """
 
 import copy
+import importlib
 import pickle
 import re
-from typing import Generator, Optional, List
+from typing import Any, Dict, Generator, Optional, List
 import warnings
 import datetime
 import json
@@ -175,6 +176,21 @@ class Pipeline(PipelineContext):
     def copy(self) -> Self:
         return copy.deepcopy(self)
 
+    @property
+    def objects(self) -> Dict[str, Any]:
+        """Live Python objects held by this pipeline's ops, keyed by export reference.
+
+        These are constructor arguments without a JSON form (lambdas, closures, live
+        instances). ``to_dict``/``write_json`` write them as ``{"ref": ...}``; pass this
+        mapping to :meth:`read_json` / :meth:`PipelineOp.from_json` as ``objects=`` to
+        rebuild the pipeline, or make the defining module importable on the server and
+        use :func:`load_environment`.
+        """
+        objects: Dict[str, Any] = {}
+        for op in self:
+            objects.update(op.live_objects())
+        return objects
+
     def to_dict(
         self,
         description: Optional[str] = None
@@ -223,22 +239,40 @@ class Pipeline(PipelineContext):
         print(f"Pipeline successfully written to {filename}.")
 
     @staticmethod
-    def read_json(filename: str):
+    def read_json(
+        filename: str,
+        objects: Optional[Dict[str, Any]] = None,
+        environment: Optional[str] = None,
+    ):
         """Read pipeline from json file on disk
+
+        Parameters
+        ----------
+        filename : str
+        objects : dict, optional
+            Live objects for ``{"ref": ...}`` arguments (see :attr:`objects`).
+        environment : str, optional
+            Import path of a module that builds the pipeline; its live objects are
+            collected with :func:`load_environment` and merged into ``objects``.
 
         Usage
         -----
         ```python
         from AFL.double_agent.Pipeline import Pipeline
-        pipeline1 = Pipeline.read_json('pickled_pipeline.pkl')
+        pipeline1 = Pipeline.read_json('pipeline.json')
+        pipeline2 = Pipeline.read_json('pipeline.json', environment="mypkg.my_pipeline")
         ````
         """
         with open(filename, "r") as f:
             pipeline_dict = json.load(f)
 
+        objects = dict(objects or {})
+        if environment is not None:
+            objects = {**load_environment(environment), **objects}
+
         pipeline = Pipeline(
             name=pipeline_dict["name"],
-            ops=[PipelineOp.from_json(op) for op in pipeline_dict["ops"]],
+            ops=[PipelineOp.from_json(op, objects=objects) for op in pipeline_dict["ops"]],
             description=pipeline_dict["description"],
         )
 
@@ -412,3 +446,24 @@ class Pipeline(PipelineContext):
 
         self.result = dataset1
         return dataset1
+
+
+def load_environment(module) -> Dict[str, Any]:
+    """Collect the live objects of every :class:`Pipeline` defined in a module.
+
+    ``module`` is an import path string or an already imported module. Importing the
+    module runs the user's pipeline definition (functions, lambdas, instances); the
+    ``objects`` of each ``Pipeline`` instance found in its globals are merged, plus any
+    mapping named ``PIPELINE_OBJECTS``. This is how the AgentDriver server obtains the
+    Python objects behind ``{"ref": ...}`` entries of a pipeline JSON.
+    """
+    if isinstance(module, str):
+        module = importlib.import_module(module)
+    objects: Dict[str, Any] = {}
+    for value in vars(module).values():
+        if isinstance(value, Pipeline):
+            objects.update(value.objects)
+    extra = getattr(module, "PIPELINE_OBJECTS", None)
+    if isinstance(extra, dict):
+        objects.update(extra)
+    return objects

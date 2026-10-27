@@ -22,7 +22,7 @@ from scipy.stats import multivariate_normal, qmc  # type: ignore
 from typing_extensions import Self
 
 from AFL.double_agent.PipelineOp import PipelineOp
-from AFL.double_agent.util import import_botorch, optimization_bounds_to_tensor
+from AFL.double_agent.BoTorchMixin import BoTorchMixin
 
 
 class Generator(PipelineOp):
@@ -152,7 +152,7 @@ class CartesianGrid(Generator):
         return self
 
 
-class RandomBoundedDesign(Generator):
+class RandomBoundedDesign(BoTorchMixin, Generator):
     """Generate a reproducible random design within named box bounds.
 
     Parameters
@@ -230,13 +230,12 @@ class RandomBoundedDesign(Generator):
             upper = [float(self.bounds[component]["max"]) for component in components]
             parameters = qmc.scale(unit_points, lower, upper)
         else:
-            bounds = optimization_bounds_to_tensor(
+            bounds = self.optimization_bounds_to_tensor(
                 self.bounds,
                 component_names=components,
             )
-            draw_sobol_samples = import_botorch()["draw_sobol_samples"]
             parameters = (
-                draw_sobol_samples(
+                self.botorch["draw_sobol_samples"](
                     bounds=bounds,
                     n=self.count,
                     q=1,

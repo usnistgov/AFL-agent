@@ -21,6 +21,10 @@ class MarginalEntropyOverDimension(PipelineOp):
         Dimension label representing components in the design grid.
     grid_variable : str, default="design_space_grid"
         Dataset variable representing the design grid.
+    sample_variable : str, default="design_space"
+        Dataset variable holding the measured design points (same components as the grid).
+        Their unique non-marginal coordinates are written to ``<output_prefix>_sampled`` so an
+        acquisition function can exclude them (``MaxValueAF(excluded_comps_variables=...)``).
     output_variable : str, default="composition_utility"
         Name of the variable in the dataset to store the entropy-based utility.
     name : str, default="MarginalEntropyOverDimension"
@@ -37,6 +41,7 @@ class MarginalEntropyOverDimension(PipelineOp):
         coordinate_dims :  List[str]= ['temperature'],
         component_dim: str = "ds_dim",
         grid_variable:str = "design_space_grid",
+        sample_variable: str = "design_space",
         output_variable: str = "composition_utility",
         name: str = "MarginalEntropyOverDimension",
     ) -> None:
@@ -47,6 +52,7 @@ class MarginalEntropyOverDimension(PipelineOp):
         )
         self.coordinate_dims = coordinate_dims
         self.grid_variable = grid_variable 
+        self.sample_variable = sample_variable
         self.component_dim = component_dim 
 
 
@@ -70,6 +76,8 @@ class MarginalEntropyOverDimension(PipelineOp):
             
             - `output_variable`: Array of marginal entropy values per unique non-marginal point.
             - `<output_prefix>_domain`: Array of corresponding domain points for non-marginal dimensions.
+            - `<output_prefix>_sampled`: Unique non-marginal coordinates of the points in
+              `sample_variable` (dims ``<output_prefix>_s``, ``<output_prefix>_d``).
         """
         grid = dataset[self.grid_variable]
         all_coordinate_dims = grid[self.component_dim].values.tolist()
@@ -98,13 +106,27 @@ class MarginalEntropyOverDimension(PipelineOp):
         self.output[self.output_variable].attrs["description"] = "Entropy calculated by marginalizing probability over certain dimension(s)" # type: ignore 
 
         domain_variable = self._prefix_output("domain")
+        dim_name = self._prefix_output("d")
         if not domain_variable in dataset:
             domain = xr.DataArray(x.reshape(-1, len(complement_dims)), 
-                                dims=(self._prefix_output("n"), self._prefix_output("d")),
-                                coords={self._prefix_output("d"): complement_dims}
+                                dims=(self._prefix_output("n"), dim_name),
+                                coords={dim_name: complement_dims}
                                 )
             self.output[domain_variable] = domain
             self.output[domain_variable].attrs["description"] = f"Domain of the {self.output_variable} computed." # type: ignore
+
+        # previously measured non-marginal points, for exclusion in acquisition functions
+        if self.sample_variable in dataset:
+            sampled = dataset[self.sample_variable].drop_sel({self.component_dim: self.coordinate_dims})
+            sampled = sampled.transpose(..., self.component_dim).sel({self.component_dim: complement_dims})
+            unique_sampled = sampled.to_pandas().drop_duplicates().reset_index(drop=True)
+            sampled_variable = self._prefix_output("sampled")
+            self.output[sampled_variable] = xr.DataArray(
+                unique_sampled.values.reshape(-1, len(complement_dims)),
+                dims=(self._prefix_output("s"), dim_name),
+                coords={dim_name: complement_dims},
+            )
+            self.output[sampled_variable].attrs["description"] = f"Unique measured points in the domain of {self.output_variable}." # type: ignore
 
         return self    
     
@@ -125,6 +147,10 @@ class MarginalEntropyAlongDimension(PipelineOp):
         Dimension along which the entropy is computed.
     grid_variable : str, default="design_space_grid"
         Dataset variable representing the design grid.
+    sample_variable : str, default="design_space"
+        Dataset variable holding the measured design points (same components as the grid).
+        The `coordinate_dim` values already measured at the conditioning point are written to
+        ``<coordinate_dim>_sampled`` so an acquisition function can exclude them.
     component_dim : str, default="ds_dim"
         Dimension label representing components in the grid.
     output_variable : str, default="temperature"
@@ -143,6 +169,7 @@ class MarginalEntropyAlongDimension(PipelineOp):
         conditioning_point : str = "next_composition",
         coordinate_dim:str = "temperature",
         grid_variable:str = "design_space_grid",        
+        sample_variable: str = "design_space",
         component_dim: str = "ds_dim",
         output_variable:str="temperature",
         name: str = "MarginalEntropyAlongDimension",
@@ -156,6 +183,7 @@ class MarginalEntropyAlongDimension(PipelineOp):
         self.coordinate_dim = coordinate_dim
         self.conditioning_point = conditioning_point       
         self.grid_variable = grid_variable 
+        self.sample_variable = sample_variable
         self.component_dim = component_dim
 
     def calculate(self, dataset: xr.Dataset) -> Self:
@@ -174,15 +202,18 @@ class MarginalEntropyAlongDimension(PipelineOp):
             
             - `output_variable`: Array of entropy values along the specified coordinate dimension.
             - `<output_prefix>_domain`: Array of corresponding domain points along the coordinate dimension.
+            - `<output_prefix>_sampled`: `coordinate_dim` values of the points in `sample_variable`
+              located at the conditioning point (dims ``<output_prefix>_s``, ``<output_prefix>_d``).
         """
         cp = dataset[self.conditioning_point]
 
         grid = dataset[self.grid_variable]
         all_coordinate_dims = grid[self.component_dim].values.tolist()
-        complement_dims = [d for d in all_coordinate_dims if d not in self.coordinate_dim]
+        complement_dims = [d for d in all_coordinate_dims if d != self.coordinate_dim]
         grid_complement_dims = grid.sel({self.component_dim:complement_dims}).values
 
-        squared_distances = np.sum((cp.values - grid_complement_dims) ** 2, axis=1)
+        cp_values = cp.values.reshape(-1, len(complement_dims))
+        squared_distances = np.sum((cp_values - grid_complement_dims) ** 2, axis=1)
         idx = np.argwhere(squared_distances<1e-5)
         T = grid.sel({self.component_dim:self.coordinate_dim}).values[idx]
 
@@ -202,5 +233,19 @@ class MarginalEntropyAlongDimension(PipelineOp):
             domain = xr.DataArray(T.squeeze(), dims=self._prefix_output("n"))
             self.output[domain_variable] = domain
             self.output[domain_variable].attrs["description"] = f"Domain of the {self.output_variable} computed." # type: ignore
+
+        # coordinate_dim values already measured at the conditioning point, for exclusion
+        if self.sample_variable in dataset:
+            sampled = dataset[self.sample_variable].transpose(..., self.component_dim)
+            sampled_complement = sampled.sel({self.component_dim: complement_dims}).values
+            squared_distances = np.sum((cp_values - sampled_complement) ** 2, axis=1)
+            at_cp = np.argwhere(squared_distances < 1e-5).reshape(-1)
+            T_sampled = sampled.sel({self.component_dim: self.coordinate_dim}).values[at_cp]
+            sampled_variable = self._prefix_output("sampled")
+            self.output[sampled_variable] = xr.DataArray(
+                np.unique(T_sampled).reshape(-1, 1),
+                dims=(self._prefix_output("s"), self._prefix_output("d")),
+            )
+            self.output[sampled_variable].attrs["description"] = f"{self.coordinate_dim} values already measured at {self.conditioning_point}." # type: ignore
 
         return self
