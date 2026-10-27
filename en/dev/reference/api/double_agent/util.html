@@ -43,13 +43,11 @@
     <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../../_static/copybutton.js?v=f281be69"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'reference/api/double_agent/util';</script>
     <link rel="icon" href="../../../_static/logo_light.svg"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="AFL.double_agent.plotting module" href="plotting.html" />
+    <link rel="next" title="AFL.double_agent.BoTorchMixin module" href="BoTorchMixin.html" />
     <link rel="prev" title="AFL.double_agent.xarray_extensions module" href="xarray_extensions.html" />
   
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -187,6 +185,13 @@
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
   </ul>
 </nav></div>
       
@@ -321,6 +326,13 @@ document.write(`
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
   </ul>
 </nav></div>
           
@@ -372,6 +384,7 @@ document.write(`
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">AFL.double_agent Package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="AcquisitionFunction.html">AFL.double_agent.AcquisitionFunction module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="AutoSAS.html">AFL.double_agent.AutoSAS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking.html">AFL.double_agent.benchmarking module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Boundary.html">AFL.double_agent.Boundary module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Extrapolator.html">AFL.double_agent.Extrapolator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Generator.html">AFL.double_agent.Generator module</a></li>
@@ -382,6 +395,7 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="TensorFlowExtrapolator.html">AFL.double_agent.TensorFlowExtrapolator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">AFL.double_agent.util module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BoTorchMixin.html">AFL.double_agent.BoTorchMixin module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="plotting.html">AFL.double_agent.plotting module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Pipeline.html">AFL.double_agent.Pipeline module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PipelineOp.html">AFL.double_agent.PipelineOp module</a></li>
@@ -389,6 +403,7 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="AutoSAS_Driver.html">AFL.double_agent.AutoSAS_Driver module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="AgentDriver.html">AFL.double_agent.AgentDriver module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="AgentClient.html">AFL.double_agent.AgentClient module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VirtualInstrumentDriver.html">AFL.double_agent.VirtualInstrumentDriver module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -458,26 +473,6 @@ document.write(`
 <span id="afl-double-agent-util-module"></span><h1>AFL.double_agent.util module<a class="headerlink" href="#module-AFL.double_agent.util" title="Link to this heading">#</a></h1>
 <p>A collection of helper methods/classes</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="AFL.double_agent.util.dataset_to_botorch_candidates">
-<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.util.</span></span><span class="sig-name descname"><span class="pre">dataset_to_botorch_candidates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#AFL.double_agent.util.dataset_to_botorch_candidates" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="AFL.double_agent.util.dataset_to_botorch_training_data">
-<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.util.</span></span><span class="sig-name descname"><span class="pre">dataset_to_botorch_training_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor_input_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'maximize'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'minimize'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'minimize'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.util.dataset_to_botorch_training_data" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="AFL.double_agent.util.evaluate_log_expected_improvement">
-<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.util.</span></span><span class="sig-name descname"><span class="pre">evaluate_log_expected_improvement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">candidate_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">best_f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#AFL.double_agent.util.evaluate_log_expected_improvement" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="AFL.double_agent.util.evaluate_qlog_expected_improvement">
-<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.util.</span></span><span class="sig-name descname"><span class="pre">evaluate_qlog_expected_improvement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">candidate_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">best_f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#AFL.double_agent.util.evaluate_qlog_expected_improvement" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="AFL.double_agent.util.extract_parameters">
 <span class="sig-prename descclassname"><span class="pre">AFL.double_agent.util.</span></span><span class="sig-name descname"><span class="pre">extract_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="PipelineOp.html#AFL.double_agent.PipelineOp.PipelineOp" title="AFL.double_agent.PipelineOp.PipelineOp"><span class="pre">PipelineOp</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'__init__'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="headerlink" href="#AFL.double_agent.util.extract_parameters" title="Link to this definition">#</a></dt>
 <dd><p>Attempt to reconstruct the input parameters for a object’s constructor</p>
@@ -490,21 +485,6 @@ document.write(`
 </dd>
 </dl>
 </dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="AFL.double_agent.util.fit_single_task_gp">
-<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.util.</span></span><span class="sig-name descname"><span class="pre">fit_single_task_gp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standardize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.util.fit_single_task_gp" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="AFL.double_agent.util.get_observed_best_f">
-<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.util.</span></span><span class="sig-name descname"><span class="pre">get_observed_best_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'maximize'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'minimize'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'maximize'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#AFL.double_agent.util.get_observed_best_f" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="AFL.double_agent.util.import_botorch">
-<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.util.</span></span><span class="sig-name descname"><span class="pre">import_botorch</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.util.import_botorch" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="AFL.double_agent.util.listify">
@@ -535,59 +515,6 @@ Out[2]:
 <p>In the last example, without listify the result would have been t,e,s,t on newlines.</p>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="AFL.double_agent.util.make_simplex_constraints">
-<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.util.</span></span><span class="sig-name descname"><span class="pre">make_simplex_constraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.util.make_simplex_constraints" title="Link to this definition">#</a></dt>
-<dd><p>Return BoTorch-compatible simplex constraints.</p>
-<p>BoTorch’s <cite>optimize_acqf</cite> accepts linear inequality constraints of the form</p>
-<div class="math notranslate nohighlight">
-\[\sum_i a_i x_i \ge b.\]</div>
-<p>A simplex equality <span class="math notranslate nohighlight">\(\sum_i x_i = 1\)</span> is therefore encoded as the pair</p>
-<div class="math notranslate nohighlight">
-\[\sum_i x_i \ge 1, \qquad -\sum_i x_i \ge -1,\]</div>
-<p>which together are exactly equivalent to the equality constraint. This helper
-returns that pair so the optimizer can enforce the simplex using the API it
-already exposes.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="AFL.double_agent.util.optimization_bounds_to_tensor">
-<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.util.</span></span><span class="sig-name descname"><span class="pre">optimization_bounds_to_tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#AFL.double_agent.util.optimization_bounds_to_tensor" title="Link to this definition">#</a></dt>
-<dd><p>Convert explicit constructor bounds into a BoTorch bounds tensor.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>bounds</strong> – Either a mapping from component name to <code class="docutils literal notranslate"><span class="pre">{&quot;min&quot;:</span> <span class="pre">lower,</span> <span class="pre">&quot;max&quot;:</span> <span class="pre">upper}</span></code>
-dictionaries, a mapping from component name to <code class="docutils literal notranslate"><span class="pre">(lower,</span> <span class="pre">upper)</span></code> pairs,
-or an ordered sequence of <code class="docutils literal notranslate"><span class="pre">(lower,</span> <span class="pre">upper)</span></code> pairs.</p></li>
-<li><p><strong>component_names</strong> – Optional ordered component names used to align mapping-based bounds with
-model inputs.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="AFL.double_agent.util.optimization_bounds_to_xarray">
-<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.util.</span></span><span class="sig-name descname"><span class="pre">optimization_bounds_to_xarray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataArray</span></span></span><a class="headerlink" href="#AFL.double_agent.util.optimization_bounds_to_xarray" title="Link to this definition">#</a></dt>
-<dd><p>Represent optimization bounds as an xarray DataArray.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="AFL.double_agent.util.optimize_acquisition_function">
-<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.util.</span></span><span class="sig-name descname"><span class="pre">optimize_acquisition_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">best_f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acquisition_kind</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'logei'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_restarts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inequality_constraints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_initial_conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.util.optimize_acquisition_function" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="AFL.double_agent.util.optimize_posterior_mean">
-<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.util.</span></span><span class="sig-name descname"><span class="pre">optimize_posterior_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_restarts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'maximize'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'minimize'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'maximize'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inequality_constraints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_initial_conditions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.util.optimize_posterior_mean" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="AFL.double_agent.util.posterior_to_xarray">
-<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.util.</span></span><span class="sig-name descname"><span class="pre">posterior_to_xarray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">posterior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataArray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'maximize'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'minimize'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'maximize'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="headerlink" href="#AFL.double_agent.util.posterior_to_xarray" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
 </section>
 
 
@@ -610,11 +537,11 @@ model inputs.</p></li>
       </div>
     </a>
     <a class="right-next"
-       href="plotting.html"
+       href="BoTorchMixin.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">AFL.double_agent.plotting module</p>
+        <p class="prev-next-title">AFL.double_agent.BoTorchMixin module</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -636,21 +563,8 @@ model inputs.</p></li>
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.util.dataset_to_botorch_candidates"><code class="docutils literal notranslate"><span class="pre">dataset_to_botorch_candidates()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.util.dataset_to_botorch_training_data"><code class="docutils literal notranslate"><span class="pre">dataset_to_botorch_training_data()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.util.evaluate_log_expected_improvement"><code class="docutils literal notranslate"><span class="pre">evaluate_log_expected_improvement()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.util.evaluate_qlog_expected_improvement"><code class="docutils literal notranslate"><span class="pre">evaluate_qlog_expected_improvement()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.util.extract_parameters"><code class="docutils literal notranslate"><span class="pre">extract_parameters()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.util.fit_single_task_gp"><code class="docutils literal notranslate"><span class="pre">fit_single_task_gp()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.util.get_observed_best_f"><code class="docutils literal notranslate"><span class="pre">get_observed_best_f()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.util.import_botorch"><code class="docutils literal notranslate"><span class="pre">import_botorch()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.util.listify"><code class="docutils literal notranslate"><span class="pre">listify()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.util.make_simplex_constraints"><code class="docutils literal notranslate"><span class="pre">make_simplex_constraints()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.util.optimization_bounds_to_tensor"><code class="docutils literal notranslate"><span class="pre">optimization_bounds_to_tensor()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.util.optimization_bounds_to_xarray"><code class="docutils literal notranslate"><span class="pre">optimization_bounds_to_xarray()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.util.optimize_acquisition_function"><code class="docutils literal notranslate"><span class="pre">optimize_acquisition_function()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.util.optimize_posterior_mean"><code class="docutils literal notranslate"><span class="pre">optimize_posterior_mean()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.util.posterior_to_xarray"><code class="docutils literal notranslate"><span class="pre">posterior_to_xarray()</span></code></a></li>
 </ul>
   </nav></div>
 

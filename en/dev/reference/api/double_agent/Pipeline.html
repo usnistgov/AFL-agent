@@ -185,6 +185,13 @@
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
   </ul>
 </nav></div>
       
@@ -319,6 +326,13 @@ document.write(`
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
   </ul>
 </nav></div>
           
@@ -370,6 +384,7 @@ document.write(`
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">AFL.double_agent Package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="AcquisitionFunction.html">AFL.double_agent.AcquisitionFunction module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="AutoSAS.html">AFL.double_agent.AutoSAS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking.html">AFL.double_agent.benchmarking module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Boundary.html">AFL.double_agent.Boundary module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Extrapolator.html">AFL.double_agent.Extrapolator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Generator.html">AFL.double_agent.Generator module</a></li>
@@ -380,6 +395,7 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="TensorFlowExtrapolator.html">AFL.double_agent.TensorFlowExtrapolator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="util.html">AFL.double_agent.util module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BoTorchMixin.html">AFL.double_agent.BoTorchMixin module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="plotting.html">AFL.double_agent.plotting module</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">AFL.double_agent.Pipeline module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PipelineOp.html">AFL.double_agent.PipelineOp module</a></li>
@@ -387,6 +403,7 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="AutoSAS_Driver.html">AFL.double_agent.AutoSAS_Driver module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="AgentDriver.html">AFL.double_agent.AgentDriver module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="AgentClient.html">AFL.double_agent.AgentClient module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VirtualInstrumentDriver.html">AFL.double_agent.VirtualInstrumentDriver module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -586,6 +603,17 @@ be distinguishable by having Generator in the name, but this isn’t enforced at
 <dd><p>Build a networkx graph representation of this pipeline</p>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline.objects">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline.objects" title="Link to this definition">#</a></dt>
+<dd><p>Live Python objects held by this pipeline’s ops, keyed by export reference.</p>
+<p>These are constructor arguments without a JSON form (lambdas, closures, live
+instances). <code class="docutils literal notranslate"><span class="pre">to_dict</span></code>/<code class="docutils literal notranslate"><span class="pre">write_json</span></code> write them as <code class="docutils literal notranslate"><span class="pre">{&quot;ref&quot;:</span> <span class="pre">...}</span></code>; pass this
+mapping to <a class="reference internal" href="#AFL.double_agent.Pipeline.Pipeline.read_json" title="AFL.double_agent.Pipeline.Pipeline.read_json"><code class="xref py py-meth docutils literal notranslate"><span class="pre">read_json()</span></code></a> / <code class="xref py py-meth docutils literal notranslate"><span class="pre">PipelineOp.from_json()</span></code> as <code class="docutils literal notranslate"><span class="pre">objects=</span></code> to
+rebuild the pipeline, or make the defining module importable on the server and
+use <a class="reference internal" href="#AFL.double_agent.Pipeline.load_environment" title="AFL.double_agent.Pipeline.load_environment"><code class="xref py py-func docutils literal notranslate"><span class="pre">load_environment()</span></code></a>.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline.output_variables">
 <span class="sig-name descname"><span class="pre">output_variables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline.output_variables" title="Link to this definition">#</a></dt>
@@ -608,15 +636,26 @@ recreate this Pipeline.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="AFL.double_agent.Pipeline.Pipeline.read_json">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">read_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline.read_json" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">read_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objects</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Pipeline.Pipeline.read_json" title="Link to this definition">#</a></dt>
 <dd><p>Read pipeline from json file on disk</p>
-<section id="usage">
-<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading">#</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">`python</span>
-<span class="pre">from</span> <span class="pre">AFL.double_agent.Pipeline</span> <span class="pre">import</span> <span class="pre">Pipeline</span>
-<span class="pre">pipeline1</span> <span class="pre">=</span> <span class="pre">Pipeline.read_json('pickled_pipeline.pkl')</span>
-<span class="pre">``</span></code></p>
-</section>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>)</p></li>
+<li><p><strong>objects</strong> (<em>dict</em><em>, </em><em>optional</em>) – Live objects for <code class="docutils literal notranslate"><span class="pre">{&quot;ref&quot;:</span> <span class="pre">...}</span></code> arguments (see <a class="reference internal" href="#AFL.double_agent.Pipeline.Pipeline.objects" title="AFL.double_agent.Pipeline.Pipeline.objects"><code class="xref py py-attr docutils literal notranslate"><span class="pre">objects</span></code></a>).</p></li>
+<li><p><strong>environment</strong> (<em>str</em><em>, </em><em>optional</em>) – Import path of a module that builds the pipeline; its live objects are
+collected with <a class="reference internal" href="#AFL.double_agent.Pipeline.load_environment" title="AFL.double_agent.Pipeline.load_environment"><code class="xref py py-func docutils literal notranslate"><span class="pre">load_environment()</span></code></a> and merged into <code class="docutils literal notranslate"><span class="pre">objects</span></code>.</p></li>
+<li><p><strong>Usage</strong></p></li>
+<li><p><strong>-----</strong></p></li>
+<li><p><strong>```python</strong> – </p></li>
+<li><p><strong>Pipeline</strong> (<em>from AFL.double_agent.Pipeline import</em>)</p></li>
+<li><p><strong>Pipeline.read_json</strong><strong>(</strong><strong>'pipeline.json'</strong><strong>)</strong> (<em>pipeline1 =</em>)</p></li>
+<li><p><strong>Pipeline.read_json</strong><strong>(</strong><strong>'pipeline.json'</strong> (<em>pipeline2 =</em>)</p></li>
+<li><p><strong>environment=&quot;mypkg.my_pipeline&quot;</strong><strong>)</strong></p></li>
+<li><p><strong>````</strong> – </p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -628,8 +667,8 @@ recreate this Pipeline.</p>
 <p>Please use the  <cite>read_json</cite>  and <cite>write_json</cite> methods. The pickle methods
 are insecure and prone to errors.</p>
 </div>
-<section id="id1">
-<h2>Usage<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">`python</span>
 <span class="pre">from</span> <span class="pre">AFL.double_agent.Pipeline</span> <span class="pre">import</span> <span class="pre">Pipeline</span>
 <span class="pre">pipeline1</span> <span class="pre">=</span> <span class="pre">Pipeline.read('pickled_pipeline.pkl')</span>
@@ -684,6 +723,17 @@ are insecure and prone to errors.</p>
 </dl>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="AFL.double_agent.Pipeline.load_environment">
+<span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Pipeline.</span></span><span class="sig-name descname"><span class="pre">load_environment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#AFL.double_agent.Pipeline.load_environment" title="Link to this definition">#</a></dt>
+<dd><p>Collect the live objects of every <a class="reference internal" href="#AFL.double_agent.Pipeline.Pipeline" title="AFL.double_agent.Pipeline.Pipeline"><code class="xref py py-class docutils literal notranslate"><span class="pre">Pipeline</span></code></a> defined in a module.</p>
+<p><code class="docutils literal notranslate"><span class="pre">module</span></code> is an import path string or an already imported module. Importing the
+module runs the user’s pipeline definition (functions, lambdas, instances); the
+<code class="docutils literal notranslate"><span class="pre">objects</span></code> of each <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> instance found in its globals are merged, plus any
+mapping named <code class="docutils literal notranslate"><span class="pre">PIPELINE_OBJECTS</span></code>. This is how the AgentDriver server obtains the
+Python objects behind <code class="docutils literal notranslate"><span class="pre">{&quot;ref&quot;:</span> <span class="pre">...}</span></code> entries of a pipeline JSON.</p>
 </dd></dl>
 
 </section>
@@ -748,6 +798,7 @@ are insecure and prone to errors.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.extend"><code class="docutils literal notranslate"><span class="pre">Pipeline.extend()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.input_variables"><code class="docutils literal notranslate"><span class="pre">Pipeline.input_variables()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.make_graph"><code class="docutils literal notranslate"><span class="pre">Pipeline.make_graph()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.objects"><code class="docutils literal notranslate"><span class="pre">Pipeline.objects</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.output_variables"><code class="docutils literal notranslate"><span class="pre">Pipeline.output_variables()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.print"><code class="docutils literal notranslate"><span class="pre">Pipeline.print()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.print_code"><code class="docutils literal notranslate"><span class="pre">Pipeline.print_code()</span></code></a></li>
@@ -759,6 +810,7 @@ are insecure and prone to errors.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.Pipeline.write_pkl"><code class="docutils literal notranslate"><span class="pre">Pipeline.write_pkl()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#AFL.double_agent.Pipeline.load_environment"><code class="docutils literal notranslate"><span class="pre">load_environment()</span></code></a></li>
 </ul>
   </nav></div>
 

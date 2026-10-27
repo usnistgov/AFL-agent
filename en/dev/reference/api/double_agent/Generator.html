@@ -185,6 +185,13 @@
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
   </ul>
 </nav></div>
       
@@ -319,6 +326,13 @@ document.write(`
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
   </ul>
 </nav></div>
           
@@ -370,6 +384,7 @@ document.write(`
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">AFL.double_agent Package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="AcquisitionFunction.html">AFL.double_agent.AcquisitionFunction module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="AutoSAS.html">AFL.double_agent.AutoSAS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking.html">AFL.double_agent.benchmarking module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Boundary.html">AFL.double_agent.Boundary module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Extrapolator.html">AFL.double_agent.Extrapolator module</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">AFL.double_agent.Generator module</a></li>
@@ -380,6 +395,7 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="TensorFlowExtrapolator.html">AFL.double_agent.TensorFlowExtrapolator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="xarray_extensions.html">AFL.double_agent.xarray_extensions module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="util.html">AFL.double_agent.util module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BoTorchMixin.html">AFL.double_agent.BoTorchMixin module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="plotting.html">AFL.double_agent.plotting module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Pipeline.html">AFL.double_agent.Pipeline module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PipelineOp.html">AFL.double_agent.PipelineOp module</a></li>
@@ -387,6 +403,7 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="AutoSAS_Driver.html">AFL.double_agent.AutoSAS_Driver module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="AgentDriver.html">AFL.double_agent.AgentDriver module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="AgentClient.html">AFL.double_agent.AgentClient module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VirtualInstrumentDriver.html">AFL.double_agent.VirtualInstrumentDriver module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -641,7 +658,7 @@ generation is performed.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="AFL.double_agent.Generator.RandomBoundedDesign">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AFL.double_agent.Generator.</span></span><span class="sig-name descname"><span class="pre">RandomBoundedDesign</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'latin_hypercube'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'initial_sample'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'component'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'RandomBoundedDesign'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#AFL.double_agent.Generator.RandomBoundedDesign" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#AFL.double_agent.Generator.Generator" title="AFL.double_agent.Generator.Generator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Generator</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="BoTorchMixin.html#AFL.double_agent.BoTorchMixin.BoTorchMixin" title="AFL.double_agent.BoTorchMixin.BoTorchMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoTorchMixin</span></code></a>, <a class="reference internal" href="#AFL.double_agent.Generator.Generator" title="AFL.double_agent.Generator.Generator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Generator</span></code></a></p>
 <p>Generate a reproducible random design within named box bounds.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>

@@ -188,6 +188,13 @@
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
   </ul>
 </nav></div>
       
@@ -322,6 +329,13 @@ document.write(`
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../casestudies/index.html">
+    Case Studies
+  </a>
+</li>
+
   </ul>
 </nav></div>
           
@@ -438,7 +452,7 @@ document.write(`
                   
   <section id="Bayesian-Optimization-with-AFL-Pipelines">
 <h1>Bayesian Optimization with AFL Pipelines<a class="headerlink" href="#Bayesian-Optimization-with-AFL-Pipelines" title="Link to this heading">#</a></h1>
-<p>This tutorial shows an end-to-end Bayesian optimization campaign that stays native to the AFL pipeline API while using the BoTorch-backed <code class="docutils literal notranslate"><span class="pre">BoTorchRegressor</span></code> and <code class="docutils literal notranslate"><span class="pre">BoTorchAcquisition</span></code> ops.</p>
+<p>This tutorial shows an end-to-end Bayesian optimization campaign that stays native to the AFL pipeline API while using the BoTorch-backed <code class="docutils literal notranslate"><span class="pre">BoTorchRegressor</span></code>, <code class="docutils literal notranslate"><span class="pre">BoTorchPosteriorAcquisition</span></code>, and <code class="docutils literal notranslate"><span class="pre">BoTorchAcquisition</span></code> ops.</p>
 <p>Each optimization round runs the same AFL <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> on the current <code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>, reads the recommended next sample from the pipeline outputs, evaluates a BoTorch standard test function, and appends the new observation back into the dataset.</p>
 <p>The notebook is written for low-dimensional synthetic objectives from <code class="docutils literal notranslate"><span class="pre">botorch.test_functions.synthetic</span></code>, such as <code class="docutils literal notranslate"><span class="pre">Branin</span></code>, <code class="docutils literal notranslate"><span class="pre">Ackley</span></code>, and <code class="docutils literal notranslate"><span class="pre">Hartmann</span></code>.</p>
 <section id="1.-Set-Up-the-Environment">
@@ -457,7 +471,9 @@ document.write(`
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
@@ -466,6 +482,7 @@ document.write(`
     <span class="n">CartesianGrid</span><span class="p">,</span>
     <span class="n">Standardize</span><span class="p">,</span>
     <span class="n">BoTorchRegressor</span><span class="p">,</span>
+    <span class="n">BoTorchPosteriorAcquisition</span><span class="p">,</span>
     <span class="n">BoTorchAcquisition</span><span class="p">,</span>
 <span class="p">)</span>
 
@@ -1236,6 +1253,10 @@ Data variables:
     <span class="n">name</span><span class="p">:</span> <span class="p">{</span><span class="s2">"min"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">lo</span><span class="p">),</span> <span class="s2">"max"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">hi</span><span class="p">),</span> <span class="s2">"steps"</span><span class="p">:</span> <span class="mi">20</span><span class="p">}</span>
     <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">component_names</span><span class="p">,</span> <span class="n">bounds</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
 <span class="p">}</span>
+<span class="c1"># Standardize maps every component onto [0, 1], so optimize in that space</span>
+<span class="n">std_bounds</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="p">{</span><span class="s2">"min"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">component_names</span><span class="p">}</span>
+<span class="c1"># where BoTorchRegressor saves the fitted GP for the acquisition ops (see AFL.double_agent.torch_io)</span>
+<span class="n">MODEL_DIR</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">"bayesopt_models_"</span><span class="p">)</span>
 
 <span class="k">with</span> <span class="n">Pipeline</span><span class="p">()</span> <span class="k">as</span> <span class="n">bayesopt_pipeline</span><span class="p">:</span>
     <span class="n">CartesianGrid</span><span class="p">(</span>
@@ -1260,6 +1281,7 @@ Data variables:
         <span class="n">component_dim</span><span class="o">=</span><span class="s2">"component"</span><span class="p">,</span>
     <span class="p">)</span>
 
+    <span class="c1"># the only op that fits a GP; it saves the model so the acquisition ops can reuse it</span>
     <span class="n">BoTorchRegressor</span><span class="p">(</span>
         <span class="n">feature_input_variable</span><span class="o">=</span><span class="s2">"composition_std"</span><span class="p">,</span>
         <span class="n">predictor_input_variable</span><span class="o">=</span><span class="s2">"objective"</span><span class="p">,</span>
@@ -1268,17 +1290,27 @@ Data variables:
         <span class="n">sample_dim</span><span class="o">=</span><span class="s2">"sample"</span><span class="p">,</span>
         <span class="n">output_prefix</span><span class="o">=</span><span class="s2">"botorch"</span><span class="p">,</span>
         <span class="n">objective_direction</span><span class="o">=</span><span class="s2">"minimize"</span><span class="p">,</span>
-        <span class="n">posterior_optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">model_uri</span><span class="o">=</span><span class="n">MODEL_DIR</span><span class="p">,</span>  <span class="c1"># writes the model ref to "botorch_model"</span>
+    <span class="p">)</span>
+
+    <span class="n">BoTorchPosteriorAcquisition</span><span class="p">(</span>
+        <span class="n">feature_input_variable</span><span class="o">=</span><span class="s2">"composition_std"</span><span class="p">,</span>
+        <span class="n">grid_variable</span><span class="o">=</span><span class="s2">"composition_grid"</span><span class="p">,</span>
+        <span class="n">grid_dim</span><span class="o">=</span><span class="s2">"grid"</span><span class="p">,</span>
+        <span class="n">objective_direction</span><span class="o">=</span><span class="s2">"minimize"</span><span class="p">,</span>
+        <span class="n">bounds</span><span class="o">=</span><span class="n">std_bounds</span><span class="p">,</span>
+        <span class="n">model_variable</span><span class="o">=</span><span class="s2">"botorch_model"</span><span class="p">,</span>
+        <span class="n">output_prefix</span><span class="o">=</span><span class="s2">"botorch"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">BoTorchAcquisition</span><span class="p">(</span>
         <span class="n">feature_input_variable</span><span class="o">=</span><span class="s2">"composition_std"</span><span class="p">,</span>
-        <span class="n">predictor_input_variable</span><span class="o">=</span><span class="s2">"objective"</span><span class="p">,</span>
         <span class="n">grid_variable</span><span class="o">=</span><span class="s2">"composition_grid"</span><span class="p">,</span>
         <span class="n">grid_dim</span><span class="o">=</span><span class="s2">"grid"</span><span class="p">,</span>
-        <span class="n">sample_dim</span><span class="o">=</span><span class="s2">"sample"</span><span class="p">,</span>
         <span class="n">objective_direction</span><span class="o">=</span><span class="s2">"minimize"</span><span class="p">,</span>
-        <span class="n">acquisition_kind</span><span class="o">=</span><span class="s2">"qlogei"</span><span class="p">,</span>
+        <span class="n">bounds</span><span class="o">=</span><span class="n">std_bounds</span><span class="p">,</span>
+        <span class="n">acquisition</span><span class="o">=</span><span class="s2">"qlogei"</span><span class="p">,</span>
+        <span class="n">model_variable</span><span class="o">=</span><span class="s2">"botorch_model"</span><span class="p">,</span>
         <span class="n">best_f_variable</span><span class="o">=</span><span class="s2">"botorch_best_f"</span><span class="p">,</span>
         <span class="n">output_prefix</span><span class="o">=</span><span class="s2">"botorch"</span><span class="p">,</span>
         <span class="n">decision_rtol</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
