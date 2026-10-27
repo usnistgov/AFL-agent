@@ -11,6 +11,7 @@ from AFL.double_agent.VirtualInstrumentDriver import (
     resolve_instrument_class,
 )
 from AFL.double_agent.VirtualInstruments import GaussianVirtualInstrument
+from AFL.double_agent._automation_compat import Driver, FallbackDriver
 
 
 def test_available_instruments_lists_virtual_instrument_classes():
@@ -48,6 +49,10 @@ def test_driver_is_named_after_the_instrument_and_forwards_its_methods(tmp_path)
         driver.not_a_method
 
 
+@pytest.mark.skipif(
+    Driver is FallbackDriver,
+    reason="config files are only written by the AFL-automation Driver, not the fallback",
+)
 def test_driver_and_instrument_keep_separate_config_files(tmp_path):
     VirtualInstrumentDriver(afl_home=tmp_path)
     assert (tmp_path / "GaussianVirtualInstrument.config.json").exists()
