@@ -85,3 +85,76 @@ class TestData:
             with pytest.warns(UserWarning):
                 datasets = list_datasets()
                 assert datasets == []
+
+
+import subprocess
+import sys
+
+import xarray as xr
+
+from AFL.double_agent import _netcdf
+
+
+def test_load_netcdf_retries_with_h5netcdf(monkeypatch, tmp_path):
+    """The default engine failing with an HDF error triggers one retry with h5netcdf."""
+    engines = []
+    sentinel = xr.Dataset({"a": ("x", [1.0, 2.0])})
+
+    def flaky(p, **kw):
+        engines.append(kw.get("engine"))
+        if "engine" not in kw:
+            raise OSError("NetCDF: HDF error")
+        return sentinel
+
+    monkeypatch.setattr(xr, "load_dataset", flaky)
+    monkeypatch.setattr(_netcdf, "_fallback_available", lambda: True)
+    assert _netcdf.load_netcdf(tmp_path / "t.nc") is sentinel
+    assert engines == [None, "h5netcdf"]
+
+
+def test_load_netcdf_does_not_mask_errors_with_explicit_engine(monkeypatch, tmp_path):
+    monkeypatch.setattr(xr, "load_dataset", lambda p, **kw: (_ for _ in ()).throw(OSError("boom")))
+    with pytest.raises(OSError, match="boom"):
+        _netcdf.load_netcdf(tmp_path / "missing.nc", engine="netcdf4")
+
+
+def test_save_netcdf_retries_with_h5netcdf(monkeypatch, tmp_path):
+    calls = []
+
+    def flaky(self, p, **kw):
+        calls.append(kw.get("engine"))
+        if "engine" not in kw:
+            raise RuntimeError("NetCDF: Problem with HDF5 dimscales.")
+
+    monkeypatch.setattr(xr.Dataset, "to_netcdf", flaky)
+    monkeypatch.setattr(_netcdf, "_fallback_available", lambda: True)
+    _netcdf.save_netcdf(xr.Dataset({"a": ("x", [3.0])}), tmp_path / "t.nc")
+    assert calls == [None, "h5netcdf"]
+
+
+def test_netcdf_roundtrip_after_h5py_import(tmp_path):
+    """Writing and reading through the helpers works even when h5py was imported first."""
+    pytest.importorskip("h5py")
+    pytest.importorskip("h5netcdf")
+    code = (
+        "import h5py\n"
+        "import xarray as xr\n"
+        "from AFL.double_agent._netcdf import load_netcdf, save_netcdf\n"
+        f"path = {str(tmp_path / 't.nc')!r}\n"
+        "save_netcdf(xr.Dataset({'a': ('x', [1.0, 2.0])}), path)\n"
+        "assert load_netcdf(path)['a'].values.tolist() == [1.0, 2.0]\n"
+    )
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
+def test_packaged_datasets_load_after_h5py_import():
+    """Importing h5py first must not break the packaged NetCDF files (mismatched HDF5 builds)."""
+    pytest.importorskip("h5py")
+    code = (
+        "import h5py\n"
+        "from AFL.double_agent.data import load_dataset\n"
+        "print(load_dataset('example_dataset').sizes)\n"
+    )
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr

@@ -194,7 +194,6 @@ class PhaseMapF1Score(PipelineOp):
         self.score: Dict[str, Any] = {}
         self._banned_from_attrs.extend(["test_points", "test_labels", "score"])
 
-    # -- resolution helpers -------------------------------------------------------
     def resolve_bounds(self) -> Dict[str, Tuple[float, float]]:
         """``self.bounds`` or the instrument's ``component_limits`` in ``components`` order."""
         if self.bounds is not None:
@@ -237,7 +236,6 @@ class PhaseMapF1Score(PipelineOp):
             )
         return load_model(str(dataset[self.model_variable].values[()]))
 
-    # -- the op -----------------------------------------------------------------------
     def calculate(self, dataset: xr.Dataset) -> Self:
         X, y_true = self.test_set()
         model = self.load_model(dataset)

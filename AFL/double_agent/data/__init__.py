@@ -78,10 +78,9 @@ def load_dataset(name: str, lazy: bool=False) -> xr.Dataset:
             f"Available datasets: {list_datasets()}"
         )
         
-    if lazy:
-        return xr.open_dataset(file_path)
-    else:
-        return xr.load_dataset(file_path)
+    from AFL.double_agent._netcdf import load_netcdf
+
+    return load_netcdf(file_path, lazy=lazy)
 
 
 # Define specific dataset loaders

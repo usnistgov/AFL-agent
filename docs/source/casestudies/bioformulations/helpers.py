@@ -1,285 +1,185 @@
-"""Plotting helpers for the bioformulations case-study notebooks.
+"""Settings, acquisition scores and pipeline of the manifold active learning case studies.
 
-The functions draw the figures of the baseline and the manifold active learning campaigns on the
-``ProteinGlycerolTemperaturePhaseMap`` virtual instrument:
+Shared by the notebooks *Manifold Active Learning of a Protein Formulation Phase Map*
+(``manifold_active_learning.ipynb``), which runs ``pipeline`` in-process, and *Closed-Loop
+Manifold Active Learning with AFL Servers* (``manifold_active_learning_server.ipynb``), which
+sends ``pipeline.to_dict()["ops"]`` to a running ``DoubleAgentDriver``. The pipeline holds
+lambdas, the SRSF manifold and the simulator, which have no JSON form: ``to_dict`` records them
+as ``{"ref": ...}`` entries, so the server notebook passes ``environment="helpers"`` and the
+agent server imports this module to obtain the live objects behind the references
+(``AFL.double_agent.Pipeline.load_environment``). Launch the agent server with this directory on
+``PYTHONPATH`` so the import succeeds. Plotting lives in ``visuals.py``.
 
-* ``plot_phase_map`` -- a 3D scatter of the design-space grid coloured by phase label, used for
-  the ground truth of the simulator
-* ``plot_baseline_iteration`` / ``plot_manifold_iteration`` -- the six-panel figure of one
-  iteration: sampled points, most probable phase and predictive entropy of the fitted model,
-  the two acquisition stages of the current proposal and the temperatures measured so far
-* ``plot_score_history`` -- the F1 score and accuracy of the model against the simulator over
-  the campaign
+The pipeline is the one of the companion notebook *Manifold Active Learning of a Protein
+Formulation Phase Map*:
 
-Colours follow the AFL-bioformulations convention: fixed phase colours, ``magma`` for magnitudes
-(entropy, acquisition) and ``viridis`` for ordered sequences (optimiser steps, batches).
+1. ``DirichletGPExtrapolator`` phase classifier on (protein, temperature, glycerol)
+2. ``PhaseMapF1Score`` benchmark of the classifier against the simulator
+3. ``BoTorchAcquisition`` over the composition with ``composition_score``
+4. ``SRSFHilbertSphereAcquisitionFunction`` over the temperature profile with ``profile_score``
 """
 
-from __future__ import annotations
+import tempfile
 
-from typing import Dict, Mapping, Optional, Sequence, Tuple
-
-import matplotlib.colors as mcolors
-import matplotlib.pyplot as plt
 import numpy as np
-import xarray as xr
-from matplotlib.cm import ScalarMappable
+import torch
 
-PHASE_COLORS = ["tab:red", "tab:olive", "tab:cyan"]  # S-L, Single, L-L
-PHASE_NAMES = ["S-L", "Single", "L-L"]
-MAGNITUDE_CMAP = "magma"
-SEQUENCE_CMAP = "viridis"
-SCATTER_KWARGS = {"s": 30, "edgecolors": "k", "linewidths": 0.5, "alpha": 0.85, "depthshade": False}
-GRID_KWARGS = {"s": 12, "alpha": 0.7, "depthshade": False, "linewidths": 0}
+from AFL.double_agent.AcquisitionFunction import BoTorchAcquisition
+from AFL.double_agent.benchmarking import PhaseMapF1Score
+from AFL.double_agent.Generator import CartesianGrid
+from AFL.double_agent.Pipeline import Pipeline
+from AFL.double_agent.PyTorchExtrapolator import DirichletGPExtrapolator
+from AFL.double_agent.representations.functions import SRSFHilbertSphere, SRSFHilbertSphereAcquisitionFunction
+from AFL.double_agent.variables import Variable
+from AFL.double_agent.VirtualInstruments import ProteinGlycerolTemperaturePhaseMap
 
-Limits = Mapping[str, Tuple[float, float]]
-TemperatureHistory = Dict[int, np.ndarray]  # batch_id -> measured temperatures
+SEED = 1000  # seed of the benchmark test set
 
+# design space
+LIMITS = {"protein": (0.5, 75.0), "glycerol": (0.5, 10.0), "temperature": (0.5, 45.0)}
+BOUNDS_T = list(LIMITS["temperature"])  # profile values in [0, 1] are mapped onto this range
+GRID_STEPS = 20  # 3D grid on which the GP posterior (phase map) is evaluated
+COMPOSITION_GRID_STEPS = 10  # 2D grid on which the composition score is reported
 
-# --------------------------------------------------------------------------- building blocks
-def _xy(components: Sequence[str]) -> list:
-    return [c for c in components if c != "temperature"]
+# phase classifier
+GP_PARAMS = {"method": "mll", "n_iterations": 200, "verbose": False}
+MODEL_DIR = tempfile.mkdtemp(prefix="afl_manifold_gp_")  # where the fitted GP is written each iteration
 
+# acquisition
+N_SAMPLING_POINTS = 100  # discretisation of a temperature profile on [0, 1]
+OPTIMIZE_XY = {"num_restarts": 8, "raw_samples": 64}  # BoTorch optimiser of the composition score
+OPTIMIZE_F = {"n_restarts": 8, "n_iterations": 100}  # Riemannian optimiser of the profile score
+N_MC_PROFILES = 16  # random profiles averaged in the composition score
+PROFILE_SCORE_POWER = 1.0  # exponent on the entropy in profile_score
+PROFILE = {"dt": 0.05, "dT": 3.0}  # sampling of the optimal profile and the degC rounding of its temperatures
 
-def _xyz(data: xr.DataArray, components: Sequence[str], component_dim: str = "ds_dim"):
-    """(protein, glycerol, temperature) columns of a (..., component_dim) array."""
-    xy = _xy(components)
-    sel = lambda c: data.sel({component_dim: c}).values.reshape(-1)  # noqa: E731
-    return sel(xy[0]), sel(xy[1]), sel("temperature")
+# benchmark
+N_TEST_PER_PHASE = 100  # stratified test points per phase of the F1 score
+F1_AVERAGE = "weighted"  # sklearn f1_score averaging: weighted, macro, micro or None (per phase)
 
+# The benchmark scores the classifier against this instance; the measurements of the campaign
+# come from the instrument *server*, which runs its own instance of the same class.
+sim = ProteinGlycerolTemperaturePhaseMap()
+COMPONENTS = sim.components  # feature order of the instrument: protein, temperature, glycerol
+XY = [c for c in COMPONENTS if c != "temperature"]  # composition components: protein, glycerol
+T_INDEX = COMPONENTS.index("temperature")
 
-def _style_3d(ax, limits: Limits, components: Sequence[str], title: str) -> None:
-    xy = _xy(components)
-    ax.set_xlim(*limits[xy[0]])
-    ax.set_ylim(*limits[xy[1]])
-    ax.set_zlim(*limits["temperature"])
-    ax.set_xlabel(xy[0])
-    ax.set_ylabel(xy[1])
-    ax.set_zlabel("temperature", labelpad=1)
-    ax.set_title(title)
+MANIFOLD = SRSFHilbertSphere(n_sampling_points=N_SAMPLING_POINTS, ambient_dim=1)  # shared by both stages
 
-
-def _phase_colorbar(fig, ax, n_phases: int = 3):
-    """Discrete colour bar for the phase labels next to ``ax``."""
-    cmap = mcolors.ListedColormap(PHASE_COLORS[:n_phases])
-    norm = mcolors.BoundaryNorm(np.arange(n_phases + 1), cmap.N)
-    cbar = fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), ax=ax, shrink=0.6, pad=0.1,
-                        ticks=np.arange(n_phases) + 0.5)
-    cbar.ax.set_yticklabels(PHASE_NAMES[:n_phases])
-    return cbar
-
-
-def draw_phase_grid(fig, ax, grid: xr.DataArray, labels, limits: Limits, components: Sequence[str],
-                    title: str) -> None:
-    """3D scatter of the design-space ``grid`` (dims ``(..., ds_dim)``) coloured by phase ``labels``."""
-    x, y, z = _xyz(grid, components)
-    labels = np.asarray(labels).astype(int).reshape(-1)
-    for label in np.unique(labels):
-        m = labels == label
-        ax.scatter(x[m], y[m], z[m], color=PHASE_COLORS[label], **GRID_KWARGS)
-    _phase_colorbar(fig, ax)
-    _style_3d(ax, limits, components, title)
+phase_model = Variable("phase_model")  # written by the extrapolator (model_uri=MODEL_DIR)
+composition_next = Variable("composition_next")  # written by the stage-1 acquisition
 
 
-def draw_samples(ax, ds_running: xr.Dataset, batch_id: int, limits: Limits, components: Sequence[str]) -> None:
-    """Measured points coloured by phase; the batch ``batch_id`` is ringed."""
-    x, y, z = _xyz(ds_running["design_space"], components)
-    labels = ds_running["phases"].values.astype(int).reshape(-1)
-    for label in np.unique(labels):
-        m = labels == label
-        ax.scatter(x[m], y[m], z[m], color=PHASE_COLORS[label], label=PHASE_NAMES[label], **SCATTER_KWARGS)
-    new = ds_running["batch_sample_id"].values == batch_id
-    ax.scatter(x[new], y[new], z[new], s=90, facecolors="none", edgecolors="k", linewidths=1.2,
-               depthshade=False, label="latest batch")
-    ax.legend(loc="upper left", fontsize=8, frameon=False)
-    _style_3d(ax, limits, components, "Sampled points")
+def entropy_along_profiles(xy, q, model, manifold, bounds_t):
+    """Classifier entropy along temperature profiles ``q`` at composition ``xy``; shape (n_q, n_t)."""
+    fx = manifold.srsf_to_function(q)  # (n_q, n_t, 1) in [0, 1]
+    t_values = fx * (bounds_t[1] - bounds_t[0]) + bounds_t[0]
+    xy = xy.reshape(1, 1, 2).expand(t_values.shape[0], t_values.shape[1], -1)
+    cols = [xy[..., :1], xy[..., 1:]]
+    cols.insert(T_INDEX, t_values)
+    X = torch.cat(cols, dim=-1).reshape(-1, 3)
+    _, _, entropy, _ = model.predict(X)
+    return entropy.reshape(t_values.shape[:2])
 
 
-def draw_model_entropy(fig, ax, ds_result: xr.Dataset, limits: Limits, components: Sequence[str]) -> None:
-    """Predictive entropy of the classifier on the design-space grid."""
-    x, y, z = _xyz(ds_result["design_space_grid"], components)
-    img = ax.scatter(x, y, z, c=ds_result["phase_entropy"].values.reshape(-1), cmap=MAGNITUDE_CMAP, **GRID_KWARGS)
-    fig.colorbar(img, ax=ax, shrink=0.6, pad=0.1, label="entropy S(x)")
-    _style_3d(ax, limits, components, "Model: predictive entropy")
+def composition_score(X, model, manifold, bounds_t, n_mc_samples=16, seed=0):
+    """Expected entropy at composition ``X`` over random profiles (same profiles on every call)."""
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(seed)
+        q = manifold.random(n_samples=n_mc_samples).to(X)
+    return torch.stack(
+        [entropy_along_profiles(xy, q, model, manifold, bounds_t).mean() for xy in X.reshape(-1, 2)]
+    ).mean()
 
 
-def draw_composition_surface(fig, ax, xy_grid: np.ndarray, values: np.ndarray, limits: Limits,
-                             components: Sequence[str], title: str, label: str,
-                             measured: Optional[np.ndarray] = None, nxt: Optional[np.ndarray] = None) -> None:
-    """2D acquisition landscape over (protein, glycerol) with the measured and the next composition."""
-    xy = _xy(components)
-    img = ax.tricontourf(xy_grid[:, 0], xy_grid[:, 1], values, levels=20, cmap=MAGNITUDE_CMAP)
-    if measured is not None and len(measured):
-        ax.scatter(measured[:, 0], measured[:, 1], s=18, color="k", label="measured")
-    if nxt is not None:
-        ax.scatter(nxt[:, 0], nxt[:, 1], marker="*", s=180, c="w", edgecolors="k", label="next")
-    ax.set_xlim(*limits[xy[0]])
-    ax.set_ylim(*limits[xy[1]])
-    ax.set_xlabel(xy[0])
-    ax.set_ylabel(xy[1])
-    ax.set_title(title)
-    ax.legend(loc="upper right", fontsize=8, frameon=False)
-    fig.colorbar(img, ax=ax, label=label)
+def profile_score(q, composition, model, manifold, bounds_t, power=1.0):
+    """Mean entropy along each profile ``q`` at ``composition``; one value per profile."""
+    entropy = entropy_along_profiles(composition, q, model, manifold, bounds_t)
+    return (entropy**power).mean(dim=1)
 
 
-def draw_temperature_history(fig, ax, temperature_history: TemperatureHistory, limits: Limits) -> None:
-    """Measured temperatures of every batch, ordered within the batch and coloured by batch."""
-    batches = sorted(temperature_history)
-    cmap = plt.get_cmap(SEQUENCE_CMAP)
-    norm = mcolors.Normalize(vmin=min(batches), vmax=max(max(batches), min(batches) + 1))
-    for b in batches:
-        t = np.sort(np.asarray(temperature_history[b], dtype=float))
-        u = np.linspace(0.0, 1.0, len(t)) if len(t) > 1 else np.array([0.5])
-        ax.plot(u, t, marker="o", ms=4, lw=1.5, color=cmap(norm(b)))
-    lo, hi = limits["temperature"]
-    ax.plot([0, 1], [lo, hi], color="0.6", ls="--", lw=1, label="uniform ramp")
-    ax.set_xlim(0, 1)
-    ax.set_ylim(lo, hi)
-    ax.set_xlabel("position in batch")
-    ax.set_ylabel("temperature")
-    ax.set_title("Measured temperatures per batch")
-    ax.legend(loc="upper left", fontsize=8, frameon=False)
-    fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), ax=ax, label="batch")
+def get_temperature_profile(f_star, bounds_t, dt=0.05, dT=3.0):
+    """Discretise the optimal profile ``f*`` (values in [0, 1]) into the unique temperatures to measure."""
+    f = np.asarray(f_star).reshape(-1)
+    tt = np.linspace(0.0, 1.0, int(np.floor(1.0 / dt)))
+    temps = np.interp(tt, np.linspace(0.0, 1.0, len(f)), f) * (bounds_t[1] - bounds_t[0]) + bounds_t[0]
+    temps = np.round(temps / dT) * dT
+    return np.unique(np.clip(temps, *bounds_t))
 
 
-def _iteration_figure(ds_result, ds_running, batch_id, limits, components, title):
-    """Figure with the three shared top panels; returns ``(fig, bottom_axes)``."""
-    fig = plt.figure(figsize=(16, 9))
-    fig.subplots_adjust(wspace=0.45, hspace=0.35)
-    ax3d = [fig.add_subplot(2, 3, col + 1, projection="3d") for col in range(3)]
-    ax2d = [fig.add_subplot(2, 3, col + 4) for col in range(3)]
-    draw_samples(ax3d[0], ds_running, batch_id, limits, components)
-    draw_phase_grid(fig, ax3d[1], ds_result["design_space_grid"], ds_result["phase_mean"].values,
-                    limits, components, "Model: most probable phase")
-    draw_model_entropy(fig, ax3d[2], ds_result, limits, components)
-    fig.suptitle(f"{title}, batch {batch_id}, {ds_running.sizes['sample']} measurements")
-    return fig, ax2d
+with Pipeline(name="manifoldAL") as pipeline:
+    CartesianGrid(
+        output_variable="design_space_grid",
+        sample_dim="ds_grid",
+        component_dim="ds_dim",
+        grid_spec={c: {"min": LIMITS[c][0], "max": LIMITS[c][1], "steps": GRID_STEPS} for c in COMPONENTS},
+        name="Grid-DesignSpace",
+    )
+    CartesianGrid(
+        output_variable="composition_grid",
+        sample_dim="comp_grid",
+        component_dim="component",
+        grid_spec={c: {"min": LIMITS[c][0], "max": LIMITS[c][1], "steps": COMPOSITION_GRID_STEPS} for c in XY},
+        name="Grid-Composition",
+    )
+    # phase classifier on (protein, temperature, glycerol); feature scaling lives inside the model
+    DirichletGPExtrapolator(
+        feature_input_variable="design_space",
+        predictor_input_variable="phases",
+        output_prefix="phase",
+        grid_variable="design_space_grid",
+        grid_dim="ds_grid",
+        sample_dim="sample",
+        component_dim="ds_dim",
+        params=GP_PARAMS,
+        standardize=True,
+        bounds={c: LIMITS[c] for c in COMPONENTS},
+        model_uri=MODEL_DIR,  # writes the model ref to "phase_model"
+        name="DirichletGPExtrapolator-PhaseLabels",
+    )
+    # benchmark: F1 score of the classifier against the simulator on a phase-stratified test set
+    # (drawn once, equal points per phase); writes "benchmark_f1", "benchmark_accuracy", ...
+    PhaseMapF1Score(
+        ground_truth=sim,
+        bounds={c: LIMITS[c] for c in COMPONENTS},
+        model_variable="phase_model",
+        average=F1_AVERAGE,
+        n_per_phase=N_TEST_PER_PHASE,
+        seed=SEED,
+        output_prefix="benchmark",
+        name="PhaseMapF1Score",
+    )
+    # stage 1: composition in R^2 maximising the expected entropy over random profiles
+    BoTorchAcquisition(
+        feature_input_variable="composition",
+        grid_variable="composition_grid",
+        grid_dim="comp_grid",
+        bounds={c: LIMITS[c] for c in XY},
+        acquisition=lambda X: composition_score(X, phase_model, MANIFOLD, BOUNDS_T, n_mc_samples=N_MC_PROFILES),
+        output_prefix="composition",
+        output_variable="composition_next",
+        **OPTIMIZE_XY,
+        name="BoTorchAcquisition-Composition",
+    )
+    # stage 2: temperature profile on the SRSF Hilbert sphere at that composition
+    SRSFHilbertSphereAcquisitionFunction(
+        manifold=MANIFOLD,
+        acquisition=lambda q: profile_score(q, composition_next, phase_model, MANIFOLD, BOUNDS_T, power=PROFILE_SCORE_POWER),
+        bounds_t=BOUNDS_T,
+        output_prefix="profile",
+        **OPTIMIZE_F,
+        name="SRSF-TemperatureProfile",
+    )
 
 
-# --------------------------------------------------------------------------- figures
-def plot_phase_map(grid: np.ndarray, labels, limits: Limits, components: Sequence[str],
-                   title: str = "Simulator: ground-truth phase map"):
-    """3D scatter of ``grid`` (rows ordered like ``components``) coloured by phase ``labels``."""
-    fig = plt.figure(figsize=(6, 5))
-    ax = fig.add_subplot(projection="3d")
-    grid = xr.DataArray(np.asarray(grid), dims=["ds_grid", "ds_dim"], coords={"ds_dim": list(components)})
-    draw_phase_grid(fig, ax, grid, labels, limits, components, title)
-    return fig
+def xarray_to_target(results):
+    """Turn a pipeline result into the composition and temperatures to measure next.
 
-
-def plot_baseline_iteration(ds_result: xr.Dataset, ds_running: xr.Dataset, batch_id: int,
-                            next_temperatures: Sequence[float], temperature_history: TemperatureHistory,
-                            limits: Limits, components: Sequence[str]):
-    """Six panels of one baseline (grid acquisition) iteration.
-
-    ``ds_result`` is the pipeline output holding the proposal (``composition_next``,
-    ``temperature_next``), ``ds_running`` the measured dataset whose batch ``batch_id`` is ringed and
-    ``next_temperatures`` the temperatures selected at the proposed composition.
+    Stage 1 writes ``composition_next`` (over ``component``), stage 2 the optimal profile
+    ``profile_function`` with values in [0, 1]; the profile is mapped onto ``BOUNDS_T`` and
+    discretised into the unique temperatures of the sweep.
     """
-    xy = _xy(components)
-    prefix = "_".join(xy)  # MarginalEntropyOverDimension names its outputs "<complement dims>_*"
-    comp_dim = f"{prefix}_d"
-    fig, ax2d = _iteration_figure(ds_result, ds_running, batch_id, limits, components, "Baseline AL")
-
-    # composition acquisition: entropy over temperature on the (protein, glycerol) grid, measured points excluded
-    grid = ds_result[f"{prefix}_domain"].transpose(..., comp_dim).sel({comp_dim: xy}).values
-    surface = ds_result["composition_decision_surface"].values.reshape(-1)
-    measured = ds_result[f"{prefix}_sampled"].sel({comp_dim: xy}).values
-    nxt = ds_result["composition_next"].sel({comp_dim: xy}).values.reshape(-1, 2)
-    draw_composition_surface(fig, ax2d[0], grid, surface, limits, components,
-                             "Composition acquisition (entropy over T, excluded)", "decision surface",
-                             measured=measured, nxt=nxt)
-
-    # temperature acquisition at the chosen composition
-    ax = ax2d[1]
-    t = ds_result["temperature_domain"].values.reshape(-1)
-    order = np.argsort(t)
-    ax.plot(t[order], ds_result["temperature_utility"].values.reshape(-1)[order], color="0.3", lw=2,
-            label="entropy along T")
-    ax.plot(t[order], ds_result["temperature_decision_surface"].values.reshape(-1)[order],
-            color=plt.get_cmap(MAGNITUDE_CMAP)(0.6), lw=2, ls="-.", label="decision surface")
-    for i, ti in enumerate(np.sort(np.asarray(next_temperatures, dtype=float))):
-        ax.axvline(ti, color="k", ls="--", lw=1, label="selected batch" if i == 0 else None)
-    ax.set_xlim(*limits["temperature"])
-    ax.set_xlabel("temperature")
-    ax.set_ylabel("utility")
-    ax.set_title(f"Temperature acquisition at ({nxt[0, 0]:.1f}, {nxt[0, 1]:.1f})")
-    ax.legend(loc="upper right", fontsize=8, frameon=False)
-
-    draw_temperature_history(fig, ax2d[2], temperature_history, limits)
-    return fig
-
-
-def plot_manifold_iteration(ds_result: xr.Dataset, ds_running: xr.Dataset, batch_id: int,
-                            next_temperatures: Sequence[float], temperature_history: TemperatureHistory,
-                            limits: Limits, components: Sequence[str], n_trajectory_curves: int = 12):
-    """Six panels of one manifold (BoTorch composition + SRSF profile) iteration.
-
-    ``ds_result`` is the pipeline output holding the proposal (``composition_next``,
-    ``profile_function``, ``profile_trajectory``, ``profile_loss``), ``ds_running`` the measured
-    dataset whose batch ``batch_id`` is ringed and ``next_temperatures`` the temperatures the
-    proposed profile is discretised into.
-    """
-    xy = _xy(components)
-    lo, hi = limits["temperature"]
-    to_temperature = lambda f: lo + (hi - lo) * np.asarray(f)  # noqa: E731
-    fig, ax2d = _iteration_figure(ds_result, ds_running, batch_id, limits, components, "Manifold AL")
-
-    # composition acquisition landscape (expected profile entropy) and its optimum
-    grid = ds_result["composition_grid"].transpose(..., "component").sel(component=xy).values
-    surface = ds_result["composition_decision_surface"].values.reshape(-1)
-    measured = np.unique(ds_running["composition"].sel(component=xy).values, axis=0)
-    nxt = ds_result["composition_next"].sel(component=xy).values.reshape(-1, 2)
-    draw_composition_surface(fig, ax2d[0], grid, surface, limits, components,
-                             "Composition acquisition (expected profile entropy)", "score",
-                             measured=measured, nxt=nxt)
-
-    # function-space optimisation of the temperature profile
-    ax = ax2d[1]
-    t = ds_result["profile_function"]["profile_t"].values
-    f_star = to_temperature(ds_result["profile_function"].values[:, 0])
-    traj = ds_result["profile_trajectory"].values[:, :, 0]  # (steps, t)
-    steps = np.unique(np.linspace(0, traj.shape[0] - 1, n_trajectory_curves).astype(int))
-    cmap = plt.get_cmap(SEQUENCE_CMAP)
-    norm = mcolors.Normalize(vmin=0, vmax=traj.shape[0] - 1)
-    for s in steps:
-        ax.plot(t, to_temperature(traj[s]), color=cmap(norm(s)), lw=1, alpha=0.8)
-    fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), ax=ax, label="optimiser step")
-    ax.plot(t, f_star, color="k", ls="--", lw=2, label="optimal profile f*")
-    measured_t = np.sort(np.asarray(next_temperatures, dtype=float))
-    if np.all(np.diff(f_star) >= 0):
-        u_measured = np.interp(measured_t, f_star, t)
-    else:
-        u_measured = np.linspace(0, 1, len(measured_t))
-    ax.scatter(u_measured, measured_t, s=60, c="w", edgecolors="k", zorder=5, label="measured")
-    best = int(ds_result["profile_restart_star"].values)
-    final_score = -ds_result["profile_loss"].values[best, -1]
-    ax.set_xlim(0, 1)
-    ax.set_ylim(lo, hi)
-    ax.set_xlabel("profile coordinate t")
-    ax.set_ylabel("temperature")
-    ax.set_title(f"Profile optimisation at ({nxt[0, 0]:.1f}, {nxt[0, 1]:.1f}), score {final_score:.3f}")
-    ax.legend(loc="upper left", fontsize=8, frameon=False)
-
-    draw_temperature_history(fig, ax2d[2], temperature_history, limits)
-    return fig
-
-
-def plot_score_history(history, ax=None):
-    """F1 score and accuracy of the model against the simulator over the acquired compositions.
-
-    ``history`` is a ``pandas.DataFrame`` (or list of records) with ``iteration``, ``f1`` and ``accuracy``.
-    """
-    import pandas as pd
-
-    history = pd.DataFrame(history)
-    if ax is None:
-        _, ax = plt.subplots(figsize=(6.4, 4.2))
-    ax.plot(history["iteration"], history["f1"], marker="o", lw=2, label="F1 score")
-    ax.plot(history["iteration"], history["accuracy"], marker="s", lw=2, ls="--", label="accuracy")
-    ax.set_xlabel("acquired compositions")
-    ax.set_ylabel("model vs simulator")
-    ax.set_ylim(0, 1)
-    ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
-    ax.legend(frameon=False, loc="lower right")
-    return ax
+    return {
+        **{c: float(results.composition_next.sel(component=c)) for c in XY},
+        "temperatures": get_temperature_profile(results.profile_function.values, BOUNDS_T, **PROFILE),
+    }

@@ -10,8 +10,7 @@ Currently, the following datasets are available:
 - `bioformulation_phase_boundaries.nc`: Labelled protein/temperature/glycerol phase diagram (15625 grid
   points, labels 0 = solid-liquid, 1 = single phase, 2 = liquid-liquid) used by
   `AFL.double_agent.VirtualInstruments.ProteinGlycerolTemperaturePhaseMap` (a `VirtualSASInstrument`
-  subclass) to trace phase boundaries. Copied from
-  `bioformulationagents/dataset/250610-extrap_expand_dataset.nc` in AFL-bioformulations.
+  subclass) to trace phase boundaries.
 - `SANS/{low,med,high}_q.ABS`: NIST SANS reference configurations (q, I, dI, dq) that set the q-grid and
   uncertainties of the spectra produced by `ProteinGlycerolTemperaturePhaseMap`.
 

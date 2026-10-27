@@ -112,8 +112,7 @@ class GaussianVirtualInstrument(VirtualInstrument):
 class VirtualSASInstrument(VirtualInstrument):
     """Base class for simulating small-angle scattering from a labelled phase diagram.
 
-    A port of the ``VirtualSAS_theory`` simulator used in AFL-bioformulations
-    (``bioformulationagents.afl.helpers.get_simulator``). Phase regions are traced as
+    Phase regions are traced as
     alpha-shape hulls from a labelled boundary dataset. A requested composition is
     located in those hulls and a SasView model assigned to that phase generates the
     scattering curve on the q-grid of the loaded reference instrument configurations.
@@ -139,16 +138,15 @@ class VirtualSASInstrument(VirtualInstrument):
 
     Notes
     -----
-    Phase lookup mirrors the original: with ``fast_locate`` the first hull containing the
+    Phase lookup: with ``fast_locate`` the first hull containing the
     point (or within ``locate_tolerance`` of it, in min-max scaled space) wins, so points
     close to a boundary may be attributed to a neighbouring phase. Compositions outside
-    every hull are assigned the nearest phase and flagged with ``in_hull=False``; the
-    original raised an error in that case.
+    every hull are assigned the nearest phase and flagged with ``in_hull=False``.
 
     ``measure`` takes composition rows ordered like the ``component`` coordinate of the
     boundary dataset and returns a dataset with ``I``, ``I_noiseless``, ``dI`` over
-    ``(sample, q)`` and integer ``labels``. ``simple_expose`` keeps the single-composition
-    dict interface of the original simulator.
+    ``(sample, q)`` and integer ``labels``. ``simple_expose`` offers a single-composition
+    dict interface.
 
     Optional configuration keys consumed by the constructor when present
     (subclasses provide them through ``defaults``):
@@ -208,7 +206,6 @@ class VirtualSASInstrument(VirtualInstrument):
         for label, spec in (self.config.get("sasview_models") or {}).items():
             self.add_sasview_model(label=str(label), **spec)
 
-    # ------------------------------------------------------------------ setup
     @property
     def components(self) -> list[str]:
         """Component names in the order ``measure`` expects."""
@@ -229,7 +226,9 @@ class VirtualSASInstrument(VirtualInstrument):
                 from AFL.double_agent.data import get_data_dir
 
                 path = get_data_dir() / f"{dataset}.nc"
-            ds = xr.load_dataset(path)
+            from AFL.double_agent._netcdf import load_netcdf
+
+            ds = load_netcdf(path)
         labels_var = ds.attrs.get("labels", "labels")
         ds["labels"] = ds[labels_var].astype(str)
         self.boundary_dataset = ds
@@ -315,7 +314,6 @@ class VirtualSASInstrument(VirtualInstrument):
             "sasdata": list(self.reference_data),
         }
 
-    # --------------------------------------------------------------- physics
     def locate(self, composition) -> list[str]:
         """Return the phase labels whose hulls contain ``composition`` (one row)."""
         from trimesh.proximity import signed_distance
@@ -378,7 +376,6 @@ class VirtualSASInstrument(VirtualInstrument):
             q[order],
         )
 
-    # ------------------------------------------------------------------- API
     def measure(self, parameters) -> xr.Dataset:
         """Measure one or more composition rows ordered like :attr:`components`."""
         components = self.components
@@ -413,7 +410,7 @@ class VirtualSASInstrument(VirtualInstrument):
         )
 
     def simple_expose(self, composition: dict) -> xr.Dataset:
-        """Single-composition interface matching the original ``VirtualSAS_theory.simple_expose``.
+        """Simulate scattering for a single composition given as a dict.
 
         ``composition`` maps component name to value. The returned dataset has ``I``,
         ``I_noiseless`` and ``dI`` over ``q`` and the phase label as a string in
@@ -453,15 +450,13 @@ class VirtualSASInstrument(VirtualInstrument):
 class ProteinGlycerolTemperaturePhaseMap(VirtualSASInstrument):
     """Virtual SAS instrument for the protein / temperature / glycerol phase map.
 
-    Reproduces the AFL-bioformulations ``get_simulator`` configuration exactly: the
-    ``bioformulation_phase_boundaries`` dataset packaged in ``AFL/double_agent/data``,
+    Uses the ``bioformulation_phase_boundaries`` dataset packaged in ``AFL/double_agent/data``,
     three NIST SANS reference configurations, and ``power_law`` / ``sphere`` /
     ``polymer_excl_volume`` SasView models for phases 0 (solid-liquid), 1 (single
     phase) and 2 (liquid-liquid).
 
     ``measure`` exposes one ``(protein, glycerol)`` composition at several temperatures
-    and returns the rows in the layout used by the active learning pipelines (see
-    ``examples/afl-agent_pipelines/afl-agent_manifold.py`` in AFL-bioformulations).
+    and returns the rows in the layout used by the active learning pipelines.
     """
 
     instrument_name = "Virtual SAS Instrument (protein/glycerol/temperature)"
@@ -523,3 +518,26 @@ class ProteinGlycerolTemperaturePhaseMap(VirtualSASInstrument):
             ds["batch_sample_id"] = ("sample", np.full(len(temperatures), int(batch_id)))
         ds.attrs.update({"components": xy, "components_dim": "component", "labels": "phases"})
         return ds.drop_vars("sample")
+
+    def expose(self, protein: float, glycerol: float, temperature: float) -> xr.Dataset:
+        """Expose one composition at one temperature and return that single sample.
+
+        This is the per-exposure task of the instrument when it runs as an AFL-automation
+        APIServer: the returned dataset has no ``sample`` dimension, so the server writes it
+        to Tiled as one run document (with the ``set_sample`` identity in its attributes) and
+        ``DoubleAgentDriver.append_dataset`` can stack such entries along its sample dimension.
+
+        Parameters
+        ----------
+        protein, glycerol, temperature : float
+            Design point to expose.
+
+        Returns
+        -------
+        xarray.Dataset
+            The row of :meth:`measure` for this design point with the ``sample`` dimension
+            removed: ``I``, ``I_noiseless``, ``dI`` over ``q``, ``design_space`` over
+            ``ds_dim``, ``composition`` over ``component`` and the scalar ``phases`` label.
+        """
+        ds = self.measure(protein, glycerol, [float(temperature)])
+        return ds.isel(sample=0, drop=True)

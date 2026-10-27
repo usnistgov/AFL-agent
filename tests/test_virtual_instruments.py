@@ -113,10 +113,9 @@ def test_virtual_sas_instrument_measures_batches(sas_instrument):
 def test_virtual_sas_instrument_reproduces_boundary_labels(sas_instrument):
     """Points of the boundary dataset are mostly located in their own phase.
 
-    Agreement is not perfect by design: like the original simulator, ``fast_locate``
-    accepts the first hull within ``locate_tolerance`` (0.1 in min-max scaled space), so
-    points near a boundary are attributed to whichever phase is checked first. The
-    numbers here match the original ``VirtualSAS_theory`` on the same compositions.
+    Agreement is not perfect by design: ``fast_locate`` accepts the first hull within
+    ``locate_tolerance`` (0.1 in min-max scaled space), so points near a boundary are
+    attributed to whichever phase is checked first.
     """
     ds = sas_instrument.boundary_dataset
     comp = ds["composition"].transpose("sample", "component").values
@@ -138,11 +137,11 @@ def test_virtual_sas_instrument_reproduces_boundary_labels(sas_instrument):
     assert np.mean(sum(agree.values(), [])) > 0.5
 
 
-def test_virtual_sas_instrument_simple_expose_matches_original_interface(sas_instrument):
+def test_virtual_sas_instrument_simple_expose_interface(sas_instrument):
     ds = sas_instrument.simple_expose({"protein": 30.0, "temperature": 25.0, "glycerol": 4.0})
     assert ds["I"].dims == ("q",)
     assert ds.attrs["labels"] in {"0", "1", "2"}
-    int(ds.attrs["labels"])  # the AFL-bioformulations oracle casts this
+    int(ds.attrs["labels"])  # must be castable to int
     np.testing.assert_array_equal(ds["component"], ["protein", "temperature", "glycerol"])
 
 
@@ -217,3 +216,17 @@ def test_virtual_sas_base_class_is_dataset_agnostic(tmp_path):
     result = base.measure([[0.1, 0.5, 0.5], [0.9, 0.5, 0.5]])
     assert result["labels"].values.tolist() == ["a", "b"]
     assert result["I"].shape == (2, len(result["q"]))
+
+
+def test_protein_glycerol_expose_returns_one_sample_without_sample_dim(sas_instrument):
+    row = sas_instrument.expose(protein=30.0, glycerol=4.0, temperature=25.0)
+    assert "sample" not in row.dims
+    assert row["I"].dims == ("q",)
+    assert row["design_space"].dims == ("ds_dim",)
+    assert row["composition"].dims == ("component",)
+    assert row["phases"].ndim == 0
+    np.testing.assert_array_equal(
+        row["design_space"].sel(ds_dim=["protein", "temperature", "glycerol"]).values, [30.0, 25.0, 4.0]
+    )
+    full = sas_instrument.measure(30.0, 4.0, [25.0])
+    assert int(row["phases"]) == int(full["phases"].isel(sample=0))

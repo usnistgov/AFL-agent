@@ -51,3 +51,4 @@ APIServer Drivers
    AutoSAS_Driver
    AgentDriver
    AgentClient
+   VirtualInstrumentDriver

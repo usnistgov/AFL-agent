@@ -17,6 +17,7 @@ import numpy as np
 import xarray as xr
 
 from AFL.double_agent.Pipeline import Pipeline, load_environment
+from AFL.double_agent._netcdf import save_netcdf
 from AFL.double_agent.PipelineOp import PipelineOp
 from AFL.double_agent.AgentWebAppMixin import AgentWebAppMixin
 from AFL.double_agent._automation_compat import Driver
@@ -872,7 +873,7 @@ class DoubleAgentDriver(AgentWebAppMixin, Driver):
                 pathlib.Path(self.config["save_path"])
                 / f"{AL_campaign_name}_SAM-{str(sample_uuid)[-6:]}_AG-{ag_uid[-6:]}.nc"
             )
-            self.last_results.to_netcdf(path)
+            save_netcdf(self.last_results, path)
 
         if deposit:
             self.deposit_obj(self.last_results, uid=ag_uid)
